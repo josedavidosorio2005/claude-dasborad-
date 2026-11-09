@@ -44,6 +44,10 @@ async function _totalTraficoRenderPanel(p, i){
     kpi(delMeses.length ? gdFmtValor(s.contestados) : '—', 'Total contestados · incluye todas las salidas · '+lbl) +
     kpi(delMeses.length && s.nivelAtencion !== null ? gdFmtValor(s.nivelAtencion*100, '%') : '—', 'Nivel de atención total · contestados ÷ ingresados · '+lbl) +
     '</div>';
+  // Fase 297: Aurora y HLM, lineas de ingreso por mes con su propio titulo.
+  if(typeof graficasLineasAplica === 'function' && graficasLineasAplica(campana)){
+    html += '<div class="aurora-chart-title gl-titulo">Flujo de llamadas &amp; WhatsApp – líneas de ingreso por mes</div>';
+  }
   html += '<div class="aurora-chart-wrap" style="height:320px"><canvas id="tt-c-'+i+'"></canvas></div>';
   html += '</div>';
   host.innerHTML = html;
@@ -60,7 +64,9 @@ function totalTraficoSumaFilas(filas){
 }
 
 // 2 barras por mes: Total llamadas + WhatsApp (ingresados) y Total contestados.
+// Fase 297: Aurora y HLM, 3 lineas de ingreso (_ttDibujarLineas).
 function _ttDibujarGrafica(i, filas){
+  if(typeof graficasLineasAplica === 'function' && graficasLineasAplica(_ttCampanaPorPanel[i])){ _ttDibujarLineas(i, filas); return; }
   var ds = [
     { label: 'Total llamadas + WhatsApp', data: filas.map(function(f){ return f.ingresados; }), backgroundColor: (typeof colorSerie==='function' ? colorSerie('principal') : '#004150'), borderRadius: 4 },
     { label: 'Total contestados', data: filas.map(function(f){ return f.contestados; }), backgroundColor: (typeof colorSerie==='function' ? colorSerie('secundaria') : '#3DA2DB'), borderRadius: 4 },
@@ -79,6 +85,34 @@ function _ttDibujarGrafica(i, filas){
     formatter: function(v){ return gdFmtValor(v); } };
   loDatalabelsAuto(o);
   _gdChart('tt-c-'+i, { type: 'bar', data: { labels: filas.map(function(f){ return citasAtendidasMesLbl(f.mes); }), datasets: ds }, options: o });
+}
+
+// Fase 297 (pedido del supervisor): 3 lineas por mes -- Total (azul) =
+// llamadas ingresadas + WhatsApp ingresados, Llamadas ingresadas (naranja) y
+// WhatsApp ingresados (verde). Valor encima de cada punto, leyenda abajo. Sin
+// contestados ni salida: esos siguen en las tarjetas de arriba.
+function _ttDibujarLineas(i, filas){
+  var s = totalTraficoSeriesIngreso(filas);
+  var col = graficasLineasColores(typeof temaActual === 'function' && temaActual() === 'dark');
+  var linea = function(label, data, color, orden){
+    return { type: 'line', label: label, data: data, borderColor: color, backgroundColor: color, pointBackgroundColor: color,
+      borderWidth: 2.5, pointRadius: 4, pointHoverRadius: 6, tension: 0.2, fill: false, order: orden,
+      datalabels: { color: color } };
+  };
+  var ds = [
+    linea('Total (llamadas + WhatsApp ingresados)', s.total, col.total, 1),
+    linea('Llamadas ingresadas', s.llamadas, col.llamadas, 2),
+    linea('WhatsApp ingresados', s.whatsapp, col.whatsapp, 3),
+  ];
+  var o = loFmt(lo());
+  o.plugins.legend = { position: 'bottom', labels: { font: { size: 12 }, boxWidth: 12, padding: 10, usePointStyle: true, color: leyendaColorTexto() } };
+  o.plugins.datalabels = Object.assign({}, o.plugins.datalabels, { align: 'top', anchor: 'center', offset: 4,
+    display: function(ctx){ return ctx.chart && ctx.chart.width > 600 ? true : 'auto'; },
+    formatter: function(v){ return v===null||v===undefined ? '' : gdFmtValor(v); } });
+  o.scales.y.beginAtZero = true;
+  o.scales.y.grace = '12%';
+  o.layout = { padding: { top: 20, left: 10, right: 30 } }; // la ultima etiqueta no se corta en el celular
+  _gdChart('tt-c-'+i, { type: 'line', data: { labels: filas.map(function(f){ return mesNombreLargo(f.mes); }), datasets: ds }, options: o });
 }
 
 if (typeof module !== 'undefined' && module.exports) {

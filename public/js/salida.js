@@ -74,8 +74,10 @@ async function _salidaRenderPanel(p, i){
   html += '<div id="sal-tarjetas-wrap-'+i+'"></div>';
   // Fase 163: cada grafica en su propio cuadro, con su titulo (Fase 165: mas grande).
   // Fase 189 (pedido de Edwin): los botones Total / Línea General / Línea 3P van en la cabecera de cada grafica.
-  html += gdGraficaHtml('Llamadas de salida', '<div class="aurora-chart-wrap" style="height:280px"><canvas id="sal-llam-'+i+'" data-titulo="Llamadas de salida"></canvas></div>', { destacado: true, acciones: '<div id="sal-lin-llamadas-'+i+'"></div>' });
-  html += gdGraficaHtml('WhatsApp de salida', '<div class="aurora-chart-wrap" style="height:280px"><canvas id="sal-wpp-'+i+'" data-titulo="WhatsApp de salida"></canvas></div>', { destacado: true, acciones: '<div id="sal-lin-wpp-'+i+'"></div>' });
+  // Fase 297: Aurora y HLM, nota fija bajo cada grafica de linea (que se entienda que es variacion).
+  var notaVar = (typeof graficasLineasAplica === 'function' && graficasLineasAplica(campana)) ? '<p class="gl-nota">▲ ▼ = variación frente al mes anterior (no es un porcentaje del total).</p>' : '';
+  html += gdGraficaHtml('Llamadas de salida', '<div class="aurora-chart-wrap" style="height:280px"><canvas id="sal-llam-'+i+'" data-titulo="Llamadas de salida"></canvas></div>' + notaVar, { destacado: true, acciones: '<div id="sal-lin-llamadas-'+i+'"></div>' });
+  html += gdGraficaHtml('WhatsApp de salida', '<div class="aurora-chart-wrap" style="height:280px"><canvas id="sal-wpp-'+i+'" data-titulo="WhatsApp de salida"></canvas></div>' + notaVar, { destacado: true, acciones: '<div id="sal-lin-wpp-'+i+'"></div>' });
   html += '<div id="sal-tabla-'+i+'"></div>';
   html += '</div>';
   host.innerHTML = html;
@@ -108,7 +110,7 @@ async function _salDibujar(campana, i, opciones){
   }
 
   // Fase 188/189: botones Total / Línea General / Línea 3P de cada grafica (solo con la clasificacion por cliente).
-  _salFilas[i] = { filas: filas, meses: mesesSal };
+  _salFilas[i] = { filas: filas, meses: mesesSal, campana: campana }; // Fase 297: campana para la grafica de lineas
   var conLineas = filas.some(function(f){ return f.lineaPorCliente; });
   if(!_salLinea[i] || !conLineas) _salLinea[i] = { llamadas: 'TOTAL', wpp: 'TOTAL' };
   ['llamadas', 'wpp'].forEach(function(c){
@@ -205,8 +207,8 @@ function _salPintar(i){
   }
   // Fase 167: filtro "Meses" -- grafica y tabla (Fase 207: tambien las tarjetas).
   var filasMeses = (typeof gdAplicarFiltroMeses === 'function' ? gdAplicarFiltroMeses(filas, function(f){ return f.mes; }) : filas);
-  _salDibujarGrafica('sal-llam-'+i, filasMeses, 'llamadas', 'Llamadas de salida'+sufijo('llamadas'), lineas.llamadas);
-  _salDibujarGrafica('sal-wpp-'+i, filasMeses, 'wpp', 'WhatsApp de salida'+sufijo('wpp'), lineas.wpp);
+  _salDibujarGrafica('sal-llam-'+i, filasMeses, 'llamadas', 'Llamadas de salida'+sufijo('llamadas'), lineas.llamadas, d.campana);
+  _salDibujarGrafica('sal-wpp-'+i, filasMeses, 'wpp', 'WhatsApp de salida'+sufijo('wpp'), lineas.wpp, d.campana);
   if(tablaEl) tablaEl.innerHTML = _salTablaHtml(filasMeses, mesSel, lineas);
 }
 
@@ -292,7 +294,9 @@ async function salGuardarLineas(i){
 // tendencia no se lee (decision de la Parte 1 de la fase), asi que NUNCA se
 // usa gdComboDatasets/una linea aqui, a diferencia de Efectividad de
 // Agendamiento/Citas (que si tienen varios meses de historia).
-function _salDibujarGrafica(canvasId, filas, canal, tituloEje, linea){
+function _salDibujarGrafica(canvasId, filas, canal, tituloEje, linea, campana){
+  // Fase 297: Aurora y HLM, una linea por canal con la variacion mes a mes.
+  if(typeof graficasLineasAplica === 'function' && graficasLineasAplica(campana)){ _salDibujarLinea(canvasId, filas, canal, tituloEje, linea); return; }
   var labels = filas.map(function(f){ return salidaMesLbl(f.mes); });
   // Fase 183 (pedido de Edwin): una sola serie con toda la salida del mes
   // (3P y General ya tienen su propia grafica); antes 3P/General/Sin asignar.
@@ -302,6 +306,40 @@ function _salDibujarGrafica(canvasId, filas, canal, tituloEje, linea){
   var o = loFmt(loBar(tituloEje));
   loDatalabelsAuto(o);
   _gdChart(canvasId, { data: { labels: labels, datasets: ds }, options: o });
+}
+
+// Fase 297 (pedido del supervisor, Aurora y HLM): solo linea, con el valor en
+// cada punto y, debajo, la variacion frente al mes anterior ("▲ +8 %" verde,
+// "▼ −3 %" rojo). El tooltip lo dice en palabras ("Variación vs. <mes>").
+// Mismos numeros que las barras (salidaValorLinea: WhatsApp = 0 + 4062 + 4063).
+function _salDibujarLinea(canvasId, filas, canal, tituloEje, linea){
+  var meses = filas.map(function(f){ return f.mes; });
+  var valores = filas.map(function(f){ return salidaValorLinea(f, canal, linea || 'TOTAL'); });
+  var vari = variacionMesAMes(valores, meses);
+  var col = graficasLineasColores(typeof temaActual === 'function' && temaActual() === 'dark');
+  var color = canal === 'llamadas' ? col.llamadas : col.whatsapp;
+  var ds = [{ type: 'line', label: tituloEje, data: valores, borderColor: color, backgroundColor: color, pointBackgroundColor: color,
+    borderWidth: 2.5, pointRadius: 4, pointHoverRadius: 6, tension: 0.2, fill: false,
+    datalabels: { labels: {
+      valor: { align: 'top', anchor: 'center', offset: 4, color: color, font: { size: 12, weight: 'bold' },
+        formatter: function(v){ return v===null||v===undefined ? '' : gdFmtValor(v); } },
+      variacion: { align: 'bottom', anchor: 'center', offset: 6, font: { size: 11, weight: 'bold' },
+        backgroundColor: function(){ return CHART_DL_BG; },
+        color: function(ctx){ var sd = variacionSentido(vari[ctx.dataIndex]); return sd === 'sube' ? col.sube : (sd === 'baja' ? col.baja : col.igual); },
+        display: function(ctx){ return vari[ctx.dataIndex] !== null; },
+        formatter: function(v, ctx){ var p = vari[ctx.dataIndex], sd = variacionSentido(p); return (sd === 'sube' ? '▲ ' : (sd === 'baja' ? '▼ ' : '')) + variacionTexto(p); } },
+    } } }];
+  var o = loFmt(lo());
+  o.plugins.legend = { display: false };
+  o.plugins.datalabels = { display: true };
+  o.plugins.tooltip.callbacks.afterLabel = function(ctx){
+    var p = vari[ctx.dataIndex];
+    return p === null ? '' : 'Variación vs. ' + mesNombreLargo(meses[ctx.dataIndex - 1]) + ': ' + variacionTexto(p);
+  };
+  o.scales.y.beginAtZero = true;
+  o.scales.y.grace = '15%';
+  o.layout = { padding: { top: 22, bottom: 6, left: 10, right: 30 } }; // la ultima etiqueta no se corta en el celular
+  _gdChart(canvasId, { type: 'line', data: { labels: filas.map(function(f){ return salidaMesLbl(f.mes); }), datasets: ds }, options: o });
 }
 
 // Tabla de datos debajo de las graficas (mismo patron "Resumen por mes" de

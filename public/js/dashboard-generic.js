@@ -1673,7 +1673,9 @@ function renderGenericKpis(){
 // (_gdBootstrap, abajo, usa el mismo filtro). Revertir = quitar `oculta` de
 // la config (server/dashboard-config-seed.js).
 function _gdTabsVisibles(){
-  return (_gd.config.layout.tabs || []).filter(function(t){ return !t.oculta; });
+  var tabs = (_gd.config.layout.tabs || []).filter(function(t){ return !t.oculta; });
+  // Fase 297: Aurora y HLM, orden pedido por el supervisor (solo al mostrar; la base no cambia).
+  return typeof pestanasOrdenCliente === 'function' ? pestanasOrdenCliente(tabs, _gd.cliente) : tabs;
 }
 function renderGenericTabs(){
   document.getElementById('gd-tabs').innerHTML = _gdTabsVisibles().map(function(t){

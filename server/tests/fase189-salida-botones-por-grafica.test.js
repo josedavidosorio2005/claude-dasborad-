@@ -89,7 +89,7 @@ test('vista: sin fila de botones arriba; un grupo en la cabecera de cada grafica
   assert.ok(pintar.includes("var v = salidaValorLinea(delMeses[k], canal, lineas[canal]);"));
   assert.ok(pintar.includes("var totalLlam = sumarLinea('llamadas');"));
   assert.ok(pintar.includes("var totalWpp = sumarLinea('wpp');"));
-  assert.ok(pintar.includes("_salDibujarGrafica('sal-wpp-'+i, filasMeses, 'wpp', 'WhatsApp de salida'+sufijo('wpp'), lineas.wpp);"));
+  assert.ok(pintar.includes("_salDibujarGrafica('sal-wpp-'+i, filasMeses, 'wpp', 'WhatsApp de salida'+sufijo('wpp'), lineas.wpp, d.campana);")); // Fase 297: + campana
   // En el celular, los botones debajo del titulo; 44 px en el tablero movil (regla de la Fase 175).
   const css = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'css', 'styles.css'), 'utf8');
   assert.match(css, /@media \(max-width:480px\)\{\.gd-grafica-cab\{flex-direction:column;align-items:stretch;\}/);

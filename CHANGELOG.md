@@ -4,6 +4,21 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.146.0 — Noviembre 2026
+
+**Fase 297: Clínica Aurora y Hospital La María — gráficas de líneas y nuevo orden de pestañas.**
+
+- **Total tráfico**: la gráfica ahora es de **líneas por mes** («Flujo de llamadas & WhatsApp –
+  líneas de ingreso por mes») con 3 líneas: **Total** (azul, llamadas ingresadas + WhatsApp
+  ingresados), **Llamadas ingresadas** (naranja) y **WhatsApp ingresados** (verde), con el valor
+  encima de cada punto. Ya no muestra «Total contestados» en la gráfica (sigue en las tarjetas).
+- **Llamadas y WhatsApp de salida**: cada gráfica es ahora **una línea** con el valor en cada
+  punto y, debajo, la **variación frente al mes anterior** (▲ +8 % en verde si sube, ▼ −3 % en
+  rojo si baja). Al pasar el mouse dice «Variación vs. <mes>». Los números son los mismos de antes.
+- **Orden de las pestañas**: Total tráfico → Tráfico de Llamadas → Tráfico de WhatsApp →
+  Llamadas y WhatsApp de salida → Agendas por usuaria → Errores → Tipificación.
+- ORLANT y Mobilize se ven igual que antes.
+
 ## v1.145.0 — Noviembre 2026
 
 **Fase 296: «Información pendiente» en vez de pantallas vacías.**

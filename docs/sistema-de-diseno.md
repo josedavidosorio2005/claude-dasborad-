@@ -497,6 +497,21 @@ Edwin ("naranja zapote para que se vea la fecha"): el texto y el borde de
 en claro y oscuro (el encabezado no cambia con el tema). Medido en
 `fase133-parte6-regresion-wcag.test.js`. No se usa en ningún otro lugar.
 
+## Líneas de Aurora y HLM en azul, naranja y verde (Fase 297) — excepción documentada
+
+Pedido del supervisor de Clínica Aurora (09/11/2026), igual en Hospital La
+María: en **Total tráfico** las 3 líneas de ingreso van en azul (Total),
+naranja (Llamadas ingresadas) y verde (WhatsApp ingresados); en **Llamadas y
+WhatsApp de salida**, la línea de llamadas en naranja y la de WhatsApp en
+verde, con la variación mes a mes en verde (▲ sube) y rojo (▼ baja). Aquí
+esos tonos son **series con nombre** (leyenda o título de la gráfica), no
+semáforo; la variación sí lleva el sentido bueno/malo que pidió el
+supervisor, siempre con ▲/▼ y el signo (nunca solo el color) y una nota
+fija bajo la gráfica ("variación frente al mes anterior"). Valores en
+`graficasLineasColores()` (`public/js/graficas-lineas-logic.js`), todos
+≥ 3:1 contra la tarjeta en claro y oscuro (WCAG 1.4.11), medido en
+`fase297-graficas-lineas.test.js`. ORLANT y Mobilize no cambian.
+
 ## Fechas con nombre (Fase 147)
 
 Todo lo que se **ve** muestra el mes con nombre: "Septiembre 2026", y por
