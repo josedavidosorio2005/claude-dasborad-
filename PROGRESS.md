@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.153.0` (ver `server/package.json`, expuesta en
+- **Versión**: `1.154.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -486,6 +486,7 @@ mismo orden):
 - Fase 256 — Calidad B5: «Resultado de los monitoreos» en Mobilize › Calidad y «Mis resultados» con calificación por mes e ítems a reforzar (v1.130.0, 2026-11-05)
 - Fase 257 — Diseño del enlace Encuesta NPS → Calidad (solo docs, 2026-11-05)
 - Fase 258 — Cierre de Calidad de Mobilize: bitácora, pendientes y tabla resumen de las Fases 249–257 (solo docs, 2026-11-05)
+- Fase 307 — Calidad para que los líderes evalúen: ORLANT conserva su Calidad y suma «Resultado de los monitoreos» al final; Aurora ya lo tenía (se muestra con el primer monitoreo) (v1.154.0, 2026-11-10)
 - Fase 306 — Aurora: pestañas «Inasistencia» (% por especialidad) y «Encuestas» (por entidad y por fecha), cada una con su carga; Errores siempre de última (v1.153.0, 2026-11-10; el pedido la llamó «Fase 303»)
 - Fase 305 — Filtros por campaña (ya no se cruzan), nombres completos en Agendas, Errores al final en Aurora, botones resaltados en Mobilize (v1.152.0, 2026-11-10)
 - Fase 304 — Aurora › Agendas: base bajo los filtros, botones resaltados, gráfica 2 de línea de mayor a menor, cada gráfica con sus botones, paleta azul (v1.151.0, 2026-11-10)

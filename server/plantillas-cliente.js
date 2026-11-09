@@ -178,6 +178,7 @@ const GENERADORES = {
         { tipo: 'calidad_kpis', campana },
         { tipo: 'calidad_pie', campana, titulo: 'Distribución de clasificación' },
         { tipo: 'calidad_bar_asesores', campana, titulo: 'Promedio de calidad por asesor' },
+        { tipo: 'calidad_monitoreos_panel', campana }, // Fase 307: + lo que califican los lideres (como Mobilize)
       ]
       : [{ tipo: 'calidad_monitoreos_panel', campana }],
   }),

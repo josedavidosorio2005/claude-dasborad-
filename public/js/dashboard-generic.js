@@ -1829,8 +1829,15 @@ function renderGenericTab(key){
 
   // KPI-row panels van fuera de la rejilla; el resto en una rejilla de 2 columnas
   var html = subtabsHtml;
+  // Fase 307: en una pestaña que tambien tiene graficas en la rejilla (Calidad de
+  // ORLANT: indicadores + torta + barras), «Resultado de los monitoreos» va al
+  // FINAL, despues de la rejilla, para no correr lo que ya se veia. Sin rejilla
+  // (Mobilize, Aurora, HLM) queda donde siempre.
+  var tieneRejilla = panels.some(function(p, i){ return indicesVisibles.indexOf(i) !== -1 && GD_TIPOS_SIN_LIENZO.indexOf(p.tipo) === -1; });
+  var htmlAlFinal = '';
   panels.forEach(function(p, i){
     if(indicesVisibles.indexOf(i) === -1) return;
+    if(p.tipo === 'calidad_monitoreos_panel' && tieneRejilla){ var secAlFinal = gdClaseSeccion(gdSeccionDeTipo(p.tipo)); htmlAlFinal += '<div id="gd-p'+i+'"'+(secAlFinal ? ' class="'+secAlFinal+'"' : '')+'></div>'; return; }
     if(p.tipo === 'kpi_row' || p.tipo === 'calidad_kpis'){
       // El filtro de asesor/fecha de Calidad (_gdRenderCalidad) va ANTES de
       // la rejilla de tarjetas KPI, nunca adentro (.aurora-kpis es un
@@ -1881,6 +1888,7 @@ function renderGenericTab(key){
         '<div class="aurora-chart-wrap" style="height:230px"><canvas id="gd-c'+x.i+'"></canvas></div>' + notasDiv + '</div>';
     }).join('') + '</div>';
   }
+  html += htmlAlFinal; // Fase 307
   host.innerHTML = html;
 
   panels.forEach(function(p, i){ if(indicesVisibles.indexOf(i)!==-1) _gdRenderPanel(p, i); });

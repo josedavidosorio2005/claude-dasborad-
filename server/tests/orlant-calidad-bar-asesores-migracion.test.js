@@ -86,6 +86,7 @@ test('migracion dashboards_config_orlant_calidad_bar_asesores_v1: agrega el pane
   const layout = JSON.parse(row.layout);
   const tab = layout.tabs.find((t) => t.key === 'calidad');
   assert.ok(tab);
+  tab.panels = tab.panels.filter((p) => p.tipo !== 'calidad_monitoreos_panel') /* Fase 307 */;
   assert.equal(tab.panels.length, 3);
   assert.deepEqual(tab.panels[0], CALIDAD_VIEJO.panels[0], 'calidad_kpis queda exactamente igual');
   assert.deepEqual(tab.panels[1], CALIDAD_VIEJO.panels[1], 'calidad_pie queda exactamente igual');
@@ -118,5 +119,6 @@ test('migracion dashboards_config_orlant_calidad_bar_asesores_v1: es idempotente
   const despues = db2.prepare('SELECT layout FROM dashboards_config WHERE cliente = ?').get('ORLANT').layout;
   assert.equal(antes, despues, 'reabrir la base (segunda corrida real de todas las migraciones) da byte a byte el mismo resultado');
   const tab = JSON.parse(despues).tabs.find((t) => t.key === 'calidad');
-  assert.equal(tab.panels.length, 3, 'sigue siendo 3 -- no se agrego un segundo calidad_bar_asesores');
+  assert.equal(tab.panels.filter((p) => p.tipo === 'calidad_bar_asesores').length, 1, 'no se agrego un segundo calidad_bar_asesores');
+  assert.equal(tab.panels.length, 4, 'kpis + pie + barras + monitoreos (Fase 307), sin duplicados');
 });

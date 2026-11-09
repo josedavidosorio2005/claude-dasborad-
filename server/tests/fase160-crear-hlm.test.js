@@ -91,7 +91,8 @@ test('una base nueva termina todas las migraciones con HLM, creada despues de la
     'fase287_asesor_oculto_cliente_v1', // Fase 287: parametro asesorOcultoCliente de Aurora y HLM
     'fase301_agendas_usuaria_base_v1', // Fase 301: columna base en agendas_usuaria (ADD COLUMN, sin tocar filas)
     'fase302_agendas_tres_bases_v1', // Fase 302: columnas entidad/prof y la pestaña «Agendas» (sobre una base nueva ya viene asi)
-    'fase306_aurora_inasistencia_encuestas_v1']; // Fase 306: tablas y pestañas Inasistencia y Encuestas (solo Aurora)
+    'fase306_aurora_inasistencia_encuestas_v1', // Fase 306: tablas y pestañas Inasistencia y Encuestas (solo Aurora)
+    'fase307_orlant_calidad_monitoreos_v1']; // Fase 307: monitoreos al final de Calidad de ORLANT (no toca Aurora/HLM)
   assert.deepEqual(orden.slice(iHlm + 1).filter((n) => !POSTERIORES.includes(n)), [], 'ninguna migracion vieja corre despues de crear HLM');
   const r = reg.leerRegistro(db).find((c) => c.nombre === HLM);
   assert.ok(r, 'HLM en el registro de clientes');

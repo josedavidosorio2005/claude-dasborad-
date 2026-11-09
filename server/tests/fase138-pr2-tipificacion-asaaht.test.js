@@ -174,7 +174,7 @@ test('migracion dashboards_config_orlant_tipificacion_opciones_mobilize_v1: no t
   const row = db.prepare("SELECT layout FROM dashboards_config WHERE cliente = 'ORLANT'").get();
   const layout = JSON.parse(row.layout);
   const calidad = layout.tabs.find((t) => t.key === 'calidad');
-  assert.deepEqual(calidad.panels, LAYOUT_ORLANT_VIEJO.tabs[1].panels);
+  assert.deepEqual(calidad.panels.filter((p) => p.tipo !== 'calidad_monitoreos_panel') /* Fase 307: + monitoreos al final */, LAYOUT_ORLANT_VIEJO.tabs[1].panels);
 });
 
 test('migraciones asaaht_v1 + asaata_aht_v1 (Fase 145): el panel viejo de MOBILIZE ("asa"+"aht") termina en "asaata"+"aht", igual que el seed', () => {

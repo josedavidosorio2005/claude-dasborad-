@@ -15,12 +15,8 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   encabezado del Portal Supervisor lo muestra. Detalle en
   `docs/historico/progress-fases.md` (Fase 281).
 
-- **Calidad de ORLANT como la de Mobilize** (Fase 269, pedido del 06/11) — en
-  Mobilize, Aurora y HLM la pestaña Calidad ya muestra solo «Resultado de los
-  monitoreos». ORLANT no se cambió: hoy su pestaña muestra «Distribución de
-  clasificación» y «Promedio de calidad por asesor», que salen de la base de
-  Cargar datos, y dejarían de verse. Se aplica (misma migración idempotente,
-  sin borrar datos) con tu OK.
+- ~~**Calidad de ORLANT como la de Mobilize**~~ — resuelto en la Fase 307 (10/11): ORLANT
+  conserva sus 3 paneles y suma «Resultado de los monitoreos» al final (decisión del usuario).
 
 - **Usuario de Calidad para que Edwin pruebe** (Fase 253) — la cuenta de
   Edwin en producción es SUPERVISOR (ORLANT y MOBILIZE, sin "crear

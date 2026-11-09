@@ -33,7 +33,8 @@ test('migracion: el panel de monitoreos al final de Calidad de Aurora y HLM; ORL
     assert.equal(cal.panels[cal.panels.length - 1].tipo, 'calidad_monitoreos_panel', c);
     assert.equal(cal.panels.filter((p) => p.tipo === 'calidad_monitoreos_panel').length, 1, c);
   }
-  assert.ok(!JSON.stringify(layoutDe('ORLANT')).includes('calidad_monitoreos_panel'));
+  // Fase 307: ORLANT lo tiene al final de SU Calidad (la de siempre + monitoreos).
+  assert.deepEqual(layoutDe('ORLANT').tabs.find((t) => t.key === 'calidad').panels.map((p) => p.tipo), ['calidad_kpis', 'calidad_pie', 'calidad_bar_asesores', 'calidad_monitoreos_panel']);
   assert.equal(JSON.stringify(layoutDe('ORLANT')), JSON.stringify(generarLayout(PERFILES_ACTUALES.ORLANT).layout), 'ORLANT = su foto');
   const antes = JSON.stringify([layoutDe(AURORA), layoutDe(HLM)]);
   dbMod.agregarMonitoreosPanelAuroraHlm();
