@@ -18,7 +18,10 @@
 //      subida que no termina se corta (408) y libera el turno.
 'use strict';
 
-const { actorDeLaPeticion, isFullAdmin, can, canLoadData, canLoadAnyModule, identidadParaLimiteDeTasa } = require('./auth');
+const { actorDeLaPeticion, isFullAdmin, can, canLoadData, canLoadAnyModule, supervisorCarga, identidadParaLimiteDeTasa } = require('./auth');
+// Fase 299: filtro previo de las cargas de una campana (admin o SUPERVISOR con
+// clientes); la ruta revisa despues que sea SU campana (canLoadCampaign).
+const adminOSupervisor = (a) => isFullAdmin(a) || supervisorCarga(a);
 
 const CODIGO = 'CARGAS_EN_CURSO';
 const ESPERA_SUGERIDA_S = 3;
@@ -30,10 +33,10 @@ const RUTAS_DE_CARGA = [
   { re: /^\/api\/inventario\/carga-(items|movimientos)$/, puede: (a) => can(a, 'Inventario') },
   { re: /^\/api\/gerencia\/carga$/, puede: (a) => canLoadData(a) },
   { re: /^\/api\/monitoreos\/bulk$/, puede: (a) => isFullAdmin(a) || a.rol === 'CALIDAD' || a.rol === 'SUPERVISOR' },
-  { re: /^\/api\/calidad\/codificaciones\/bulk$/, puede: (a) => isFullAdmin(a) },
-  { re: /^\/api\/calidad\/nivel-servicio\/carga-diaria$/, puede: (a) => isFullAdmin(a) },
+  { re: /^\/api\/calidad\/codificaciones\/bulk$/, puede: adminOSupervisor }, // Fase 299
+  { re: /^\/api\/calidad\/nivel-servicio\/carga-diaria$/, puede: adminOSupervisor }, // Fase 299
   { re: /^\/api\/admin\/borrado-rango$/, puede: (a) => isFullAdmin(a) },
-  { re: /^\/api\/sura-televentas\/[^/]+\/bases\/[^/]+\/[^/]+$/, puede: (a) => isFullAdmin(a) }, // Fase 215
+  { re: /^\/api\/sura-televentas\/[^/]+\/bases\/[^/]+\/[^/]+$/, puede: adminOSupervisor }, // Fase 215; Fase 299: + supervisor
   { re: /\/carga(\/impacto)?$/, puede: (a) => canLoadAnyModule(a) },
   { re: /^\/api\/dashboard\/cargas(\/\d+)?$/, puede: (a) => canLoadAnyModule(a) },
   { re: /^\/api\/centro-cargas\/versiones\/[^/]+\/deshacer$/, puede: (a) => canLoadAnyModule(a) },

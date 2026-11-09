@@ -238,7 +238,9 @@ test('base cruda de punta a punta: asesor por usuario y fecha de cambio, linea p
 test('vista: los 2 botones solo para el administrador y solo en ORLANT; la ventana tiene "+", Excel y Guardar; Centro de cargas reconoce la base cruda', () => {
   const ag = JS('agendas.js');
   assert.match(ag, /_AGENDAS_CLIENTES_CLASIFICACION = \['ORLANT'\]/);
-  assert.match(ag, /isFullAdmin\(\)\) return ''/);
+  // Fase 299: el administrador o el supervisor de la campana.
+  assert.match(ag, /isFullAdmin\(\)\) \|\| \(typeof puedeCargarCampanaSesion === 'function' && puedeCargarCampanaSesion\(campana\)\);/);
+  assert.match(ag, /!puedeClasif\) return ''/);
   assert.match(ag, />Clasificación de usuarios<\/button>/);
   assert.match(ag, />Clasificación de líneas<\/button>/);
   const html = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'index.html'), 'utf8');

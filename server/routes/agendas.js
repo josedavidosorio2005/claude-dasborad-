@@ -13,7 +13,7 @@ const express = require('express');
 const db = require('../db');
 // Fase 158: cache de /opciones (ver cache-opciones.js).
 const { opcionesConCache } = require('../cache-opciones');
-const { requireActor, campaignAccess, canLoadModule, isFullAdmin } = require('../auth');
+const { requireActor, campaignAccess, canLoadModule, isFullAdmin, canLoadCampaign } = require('../auth');
 const { validate, schemas } = require('../validation');
 const { impactoAgendas, cargarAgendas, agendasPorEspecialidad, agendasPorMes, agendasPorLinea, agendasRanking, agendasOpciones } = require('../agendas');
 const { usaClasificacionAgendas, listarUsuarios, guardarUsuarios, listarCodigos, guardarCodigos } = require('../agendas-clasificacion');
@@ -154,9 +154,10 @@ router.post(
 // agendas: el navegador la necesita para no mandar al servidor un codigo
 // fuera de la lista (puede ser una cedula).
 function _rechazoClasificacion(req, res, campana, { soloAdmin }) {
-  const puede = isFullAdmin(req.actor) || (!soloAdmin && canLoadModule(req.actor, 'agendas') && campaignAccess(req.actor, campana));
+  // Fase 299: "soloAdmin" = el administrador o el SUPERVISOR de esa campana.
+  const puede = canLoadCampaign(req.actor, campana) || (!soloAdmin && canLoadModule(req.actor, 'agendas') && campaignAccess(req.actor, campana));
   if (!puede) {
-    res.status(403).json({ error: 'Solo un administrador puede ver o cambiar esta clasificación' });
+    res.status(403).json({ error: 'Solo un administrador o un supervisor de esta campaña puede ver o cambiar esta clasificación' });
     return true;
   }
   if (!usaClasificacionAgendas(campana)) {

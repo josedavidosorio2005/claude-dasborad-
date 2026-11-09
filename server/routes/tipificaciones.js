@@ -14,7 +14,7 @@ const express = require('express');
 const db = require('../db');
 // Fase 158: cache de /opciones (ver cache-opciones.js).
 const { opcionesConCache } = require('../cache-opciones');
-const { requireActor, campaignAccess, canLoadModule, isFullAdmin } = require('../auth');
+const { requireActor, campaignAccess, canLoadModule, isFullAdmin, canLoadCampaign } = require('../auth');
 const { listarSkillsWhatsapp, guardarSkillsWhatsapp } = require('../skills-whatsapp');
 const { validate, schemas } = require('../validation');
 const {
@@ -184,10 +184,10 @@ router.put(
   requireActor,
   validate(schemas.skillsWhatsappBody),
   wrap((req, res) => {
-    if (!isFullAdmin(req.actor)) {
-      return res.status(403).json({ error: 'Solo un administrador puede cambiar los skills de WhatsApp' });
-    }
     const b = req.body;
+    if (!canLoadCampaign(req.actor, b.campana)) { // Fase 299: admin o supervisor de la campana
+      return res.status(403).json({ error: 'Solo un administrador o un supervisor de esta campaña puede cambiar los skills de WhatsApp' });
+    }
     if (!campaignAccess(req.actor, b.campana)) {
       return res.status(403).json({ error: 'Sin acceso a los datos de esta campana' });
     }
@@ -222,8 +222,8 @@ router.get(
   requireActor,
   validate(schemas.clasificacionAsesoresQuery, 'query'),
   wrap((req, res) => {
-    if (!isFullAdmin(req.actor)) {
-      return res.status(403).json({ error: 'Solo un administrador puede ver la clasificación de asesores' });
+    if (!canLoadCampaign(req.actor, req.query.campana)) { // Fase 299
+      return res.status(403).json({ error: 'Solo un administrador o un supervisor de esta campaña puede ver la clasificación de asesores' });
     }
     if (!usaClasificacionAsesores(req.query.campana)) {
       return res.status(404).json({ error: 'Este cliente no usa la clasificación de asesores' });
@@ -237,10 +237,10 @@ router.put(
   requireActor,
   validate(schemas.clasificacionAsesoresBody),
   wrap((req, res) => {
-    if (!isFullAdmin(req.actor)) {
-      return res.status(403).json({ error: 'Solo un administrador puede cambiar la clasificación de asesores' });
-    }
     const b = req.body;
+    if (!canLoadCampaign(req.actor, b.campana)) { // Fase 299
+      return res.status(403).json({ error: 'Solo un administrador o un supervisor de esta campaña puede cambiar la clasificación de asesores' });
+    }
     if (!usaClasificacionAsesores(b.campana)) {
       return res.status(404).json({ error: 'Este cliente no usa la clasificación de asesores' });
     }

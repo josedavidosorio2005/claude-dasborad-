@@ -4,6 +4,24 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.147.0 — Noviembre 2026
+
+**Fase 299: los supervisores cargan los datos de sus campañas, también SURA.**
+
+- Un **supervisor** puede cargar datos en **todas las campañas que tiene asignadas**, incluido
+  **SURA** (bases del mes, metas y códigos del tablero Televentas). Antes, en SURA solo podía el
+  administrador. Una campaña nueva queda cubierta sola en cuanto se le asigna al supervisor.
+- También puede manejar, en sus campañas: la clasificación de asesores (Tipificación y salida),
+  las listas de Agendamiento, los skills de WhatsApp, las codificaciones y el nivel de servicio.
+- Cada supervisor solo carga en **sus** campañas (por ejemplo, quien tiene Aurora y Hospital La
+  María no puede cargar en ORLANT ni en SURA). Clientes y asesores siguen sin poder cargar.
+- Siguen siendo **solo del administrador**: crear o borrar usuarios, cambiar contraseñas, crear
+  campañas, la configuración del sistema (umbrales, plantillas de Calidad, alias de asesores,
+  configuración de tableros, cronograma de metas de Calidad) y descargar el Excel original de
+  SURA (trae las cédulas reales).
+- Queda registrado **quién y cuándo** hizo cada carga; en SURA, también cada cambio de metas o
+  códigos (en el Historial).
+
 ## v1.146.1 — Noviembre 2026
 
 **Fase 298: skills sin nombre en Tipificación.**

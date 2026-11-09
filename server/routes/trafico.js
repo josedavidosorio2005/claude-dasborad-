@@ -120,7 +120,8 @@ router.get(
   '/calidad/trafico/plantilla',
   requireActor,
   wrap((req, res) => {
-    if (!canLoadData(req.actor)) {
+    // Fase 299: la plantilla VACIA la baja tambien quien carga este modulo (supervisor, CALIDAD con su permiso).
+    if (!canLoadModule(req.actor, 'flujo_llamadas')) {
       return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para descargar la plantilla' });
     }
     res.download(PLANTILLA_TRAFICO_PATH, 'PLANTILLA_TRAFICO_INCONEXION_VACIA.xlsx', (err) => {

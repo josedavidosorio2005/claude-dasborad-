@@ -9,7 +9,7 @@ const express = require('express');
 const db = require('../db');
 // Fase 158: cache de /opciones (ver cache-opciones.js).
 const { opcionesConCache } = require('../cache-opciones');
-const { requireActor, campaignAccess, canLoadModule, isFullAdmin } = require('../auth');
+const { requireActor, campaignAccess, canLoadModule, isFullAdmin, canLoadCampaign } = require('../auth');
 const { asesoresSalidaDelMes, guardarLineasDelMes, usaClasificacionPorCliente, inventarioLineasPorMes } = require('../salida-cdr');
 const { ocultaAsesores } = require('../privacidad-cliente'); // Fase 287 (#5)
 const { validate, schemas } = require('../validation');
@@ -114,10 +114,10 @@ router.put(
   requireActor,
   validate(schemas.salidaAsesoresBody),
   wrap((req, res) => {
-    if (!isFullAdmin(req.actor)) {
-      return res.status(403).json({ error: 'Solo un administrador puede asignar la línea de los asesores' });
-    }
     const b = req.body;
+    if (!canLoadCampaign(req.actor, b.campana)) { // Fase 299: admin o supervisor de la campana
+      return res.status(403).json({ error: 'Solo un administrador o un supervisor de esta campaña puede asignar la línea de los asesores' });
+    }
     // Fase 187: con la clasificacion por cliente, la linea mes a mes ya no se cambia.
     if (usaClasificacionPorCliente(db, b.campana)) {
       return res.status(409).json({ error: 'La línea de los asesores ahora es una sola para todos los meses: cámbiala en Tipificación, "Clasificación de asesores".' });
@@ -141,8 +141,8 @@ router.get(
   requireActor,
   validate(schemas.salidaQuery, 'query'),
   wrap((req, res) => {
-    if (!isFullAdmin(req.actor)) {
-      return res.status(403).json({ error: 'Solo un administrador puede ver las líneas guardadas por mes' });
+    if (!canLoadCampaign(req.actor, req.query.campana)) { // Fase 299
+      return res.status(403).json({ error: 'Solo un administrador o un supervisor de esta campaña puede ver las líneas guardadas por mes' });
     }
     res.json(inventarioLineasPorMes(db, req.query.campana));
   })

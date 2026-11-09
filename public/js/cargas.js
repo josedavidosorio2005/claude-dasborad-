@@ -472,7 +472,8 @@ async function _cargasPintarSkillsWhatsapp(cliente){
   var card = document.getElementById('carga-skills-wpp-card');
   var lista = document.getElementById('carga-skills-wpp-lista');
   if(!card || !lista) return;
-  var aplica = !!cliente && _cargasEsAdmin() && _cargasPlan.some(function(h){ return h.tipo==='tipificacion' && h.canalTipificacion==='WHATSAPP'; });
+  // Fase 299: el administrador o el supervisor de este cliente.
+  var aplica = !!cliente && (_cargasEsAdmin() || (typeof puedeCargarCampanaSesion === 'function' && puedeCargarCampanaSesion(cliente))) && _cargasPlan.some(function(h){ return h.tipo==='tipificacion' && h.canalTipificacion==='WHATSAPP'; });
   card.style.display = aplica ? '' : 'none';
   _cargasSkillsWppCliente = aplica ? cliente : null;
   if(!aplica) return;

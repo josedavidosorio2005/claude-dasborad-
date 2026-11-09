@@ -97,7 +97,7 @@ async function _ccCargar() {
 }
 
 // Fase 218: «Cargar información» de SURA (sura-televentas.js, stvMontarCarga).
-// Escribir es solo del administrador (lo exige el servidor): al resto, un aviso.
+// Escribir: el administrador y el supervisor de ese cliente (Fase 299; lo exige el servidor): al resto, un aviso.
 async function _ccCargarTeleventas(body, gen) {
   var host = document.getElementById('cc-stv-host');
   document.getElementById('cc-migas').innerHTML = '<span aria-current="page">' + esc(_cc.cliente) + '</span>';
@@ -106,7 +106,7 @@ async function _ccCargarTeleventas(body, gen) {
     if (gen !== undefined && gen !== _ccGeneracion) return; // Fase 241: llego tarde, otro cliente ya esta elegido
     if (!perm.puedeEditar) {
       stvDesmontarCarga();
-      body.innerHTML = '<div class="cc-aviso">Las bases, metas y códigos de ' + esc(_cc.cliente) + ' solo los carga el administrador.</div>';
+      body.innerHTML = '<div class="cc-aviso">Las bases, metas y códigos de ' + esc(_cc.cliente) + ' solo los carga el administrador o un supervisor de este cliente.</div>';
       return;
     }
     body.innerHTML = '<p class="cc-intro">Bases del mes, metas y códigos del tablero Televentas: es lo mismo de «Cargar información» dentro del tablero.</p>';

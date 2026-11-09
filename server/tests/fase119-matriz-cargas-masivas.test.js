@@ -76,6 +76,8 @@ function auth(rol) { return { Authorization: 'Bearer ' + tokens[rol] }; }
 // EXCEPTO Trafico de Llamadas (ver abajo).
 function deberiaPasar(rol, campana, familiaNombre) {
   if (rol === 'ADMIN') return true;
+  // Fase 299: el SUPERVISOR carga en SU campana (rol + campaignAccess), nunca en la ajena.
+  if (rol === 'SUPERVISOR') return campana === PROPIA;
   if (rol === 'REPORTES') {
     // Hallazgo real (Fase 119, confirmado por lectura de
     // routes/trafico.js tras esta prueba fallar): a diferencia de las

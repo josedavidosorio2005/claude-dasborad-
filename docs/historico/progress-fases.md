@@ -19962,3 +19962,44 @@ base demo con datos sintéticos, CLIENTE y SUPERVISOR, 375/768/1440 px) sin erro
 solo lectura (SUPERVISOR #56) antes y después: 0 errores de la app, ninguna petición > 3 s, todo
 lo de arriba visible. **Sin verificar en producción con la cuenta del cliente** (en las dos
 corridas se repitió la del supervisor). Informe: `docs/revision-aurora-hlm-2026-11-09.md`.
+
+
+## Fase 299 — El SUPERVISOR carga los datos de sus campañas, también SURA (v1.147.0, 2026-11-09)
+
+Pedido del usuario: el supervisor general (5 clientes) no podía cargar SURA (bases, metas,
+códigos): solo el administrador. Regla nueva, **por rol y sin listas de campañas**:
+
+- `server/auth.js`: `supervisorCarga` = rol SUPERVISOR con al menos un cliente asignado (perfil
+  nuevo `supervisa_<C>` o el de antes con `cliente_`/`campana_`); antes solo el perfil nuevo.
+  `supervisorPuedeCargarEn(actor, c)` y `canLoadCampaign(actor, c)` = admin o SUPERVISOR con
+  `campaignAccess` a esa campaña. Una campaña creada después queda cubierta en cuanto se asigna.
+- SURA (`routes/sura-televentas.js`): montar/reemplazar/eliminar bases y cambiar metas/códigos =
+  `canLoadCampaign`; descargar el Excel original (cédulas reales) sigue solo admin
+  (`puedeDescargar`; el botón se oculta). El supervisor lee con cédulas seudonimizadas, como todo
+  no-admin. Nuevo evento de Historial `SURA_CONFIG_CAMBIADA` (solo la clave, nunca el valor).
+- Antes solo admin, ahora admin o supervisor de esa campaña: nivel de servicio (manual y carga
+  diaria), codificaciones, listas de Agendamiento (usuarios y códigos de entidad), skills de
+  WhatsApp, clasificación de asesores, líneas de salida por asesor. Las rutas `/:id` responden
+  403 antes de leer el registro a quien no carga en ninguna campaña.
+- Plantillas vacías de Tráfico de Llamadas/WhatsApp y Llamadas únicas: `canLoadModule`.
+- `cargas-simultaneas.js` (filtro previo de la Fase 154): SURA, codificaciones y carga diaria
+  dejan pasar al supervisor (la ruta revisa después la campaña exacta). Lo encontró la prueba nueva.
+- Front: `centroPuedeCargarCampana`/`puedeCargarCampanaSesion` (`centro-cargas-logic.js`) en los
+  botones de clasificación, editor de líneas, listas de Agendamiento y skills de WhatsApp.
+  Codificaciones y nivel de servicio manual siguen en pantallas de administración (el servidor ya
+  lo permite; no se abrieron esas pantallas al supervisor).
+- **Siguen solo admin**: usuarios (crear/borrar/contraseñas/permisos), crear campañas
+  (`dashboards_config`), umbrales, plantillas de Calidad, alias de asesores, cronograma de metas
+  de Calidad, mapeo global de skills de tráfico y control de cobertura (cruzan clientes), borrado
+  por rango.
+- Registro de cargas: ya se guardaba `cargadoPorNombre`/fecha en cada módulo y en SURA
+  (`sura_bases`, `sura_config.actualizadoPorNombre/En`); se agregó el evento de config de SURA.
+
+**Pruebas.** `fase299-supervisor-carga` (6): regla por rol (incluye una campaña inventada), SURA
+como supervisor general (carga, metas, códigos, quién/cuándo, Historial, 403 al original),
+supervisor con perfil viejo, el de Aurora+HLM recibe 403 en SURA y en ORLANT, CLIENTE y ASESOR
+403, y lo de administración 403 con cuerpo válido. Matrices de la Fase 118/119 y la de la Fase
+283 actualizadas a la regla nueva (categorías `cargaCampana`, `cargaGlobalModulo`,
+`cargaGlobalModuloCliente`). Suite 2774/2774, `npm audit` 0. Local (Playwright + Brave, copia de
+la base demo, 375/768/1440): el supervisor general ve los 5 clientes y el panel de SURA con
+«Montar base»; el de Aurora+HLM, solo esos 2; 0 errores de consola.

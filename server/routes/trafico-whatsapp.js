@@ -47,7 +47,8 @@ router.get(
   '/calidad/trafico/whatsapp/plantilla',
   requireActor,
   wrap((req, res) => {
-    if (!canLoadData(req.actor)) {
+    // Fase 299: la plantilla VACIA la baja tambien quien carga este modulo (supervisor, CALIDAD con su permiso).
+    if (!canLoadModule(req.actor, 'flujo_whatsapp')) {
       return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para descargar la plantilla' });
     }
     res.download(PLANTILLA_TRAFICO_WPP_PATH, 'PLANTILLA_TRAFICO_WHATSAPP_INCONEXION_VACIA.xlsx', (err) => {

@@ -62,9 +62,25 @@ function centroPuedeCargarModulo(u, esAdmin, modulo) {
   if (esAdmin) return true;
   var p = (u && u.perms) || {};
   if (p.cargarDatos === true) return true;
-  // Fase 283: el SUPERVISOR (perfil nuevo) carga todos los modulos de sus clientes.
-  if (u && u.rol === 'SUPERVISOR' && typeof supervisorUsaPerfil === 'function' && supervisorUsaPerfil(u.rol, p) && supervisorClientes(p).length) return true;
+  // Fase 283: el SUPERVISOR carga todos los modulos de sus clientes. Fase 299: por
+  // ROL (perfil nuevo o el de antes), mismo criterio que auth.supervisorCarga.
+  if (u && u.rol === 'SUPERVISOR' && Object.keys(p).some(function (k) { return /^(cliente|campana|supervisa)_/.test(k) && p[k] === true; })) return true;
   return !!(u && u.rol === 'CALIDAD' && p['cargar_' + modulo] === true);
+}
+// Fase 299: cargas y codigos de UNA campana que antes eran solo del administrador
+// (clasificacion de asesores, lineas de salida, listas de Agendamiento, skills de
+// WhatsApp): el administrador o el SUPERVISOR con acceso a esa campana. Mismo
+// criterio que auth.canLoadCampaign del servidor (el candado real).
+function centroPuedeCargarCampana(u, esAdmin, campana) {
+  if (esAdmin) return true;
+  var p = (u && u.perms) || {};
+  if (!u || u.rol !== 'SUPERVISOR' || !campana) return false;
+  return p['cliente_' + campana] === true || p['campana_' + campana] === true || p['supervisa_' + campana] === true;
+}
+// La sesion del navegador (currentUser / isFullAdmin de ui-core.js).
+function puedeCargarCampanaSesion(campana) {
+  var esAdmin = typeof isFullAdmin === 'function' && isFullAdmin();
+  return centroPuedeCargarCampana(typeof currentUser !== 'undefined' ? currentUser : null, esAdmin, campana);
 }
 function centroPuedeCargarAlgo(u, esAdmin) {
   return CENTRO_MODULOS_PERMISO.some(function (m) { return centroPuedeCargarModulo(u, esAdmin, m.id); });
@@ -367,6 +383,7 @@ if (typeof module !== 'undefined' && module.exports) {
     centroModuloDeCarga: centroModuloDeCarga,
     centroPuedeCargarModulo: centroPuedeCargarModulo,
     centroPuedeCargarAlgo: centroPuedeCargarAlgo,
+    centroPuedeCargarCampana: centroPuedeCargarCampana,
     centroNombreMes: centroNombreMes,
     centroEstadoMes: centroEstadoMes,
     centroTextoRegistros: centroTextoRegistros,

@@ -10,7 +10,7 @@
 const express = require('express');
 const db = require('../db');
 const calc = require('../calidad-logic');
-const { requireActor, isFullAdmin, campaignAccess, canEvaluateCampaign, canManageMonitoreos, canUsePlantilla } = require('../auth');
+const { requireActor, isFullAdmin, campaignAccess, canEvaluateCampaign, canManageMonitoreos, canUsePlantilla, canLoadCampaign, puedeCargarAlgunaCampana } = require('../auth');
 const { validate, schemas } = require('../validation');
 const { cargarNivelServicioDiario } = require('../nivel-servicio-diario');
 const { fechaLimitesHoyColombia } = require('../fecha-limites');
@@ -847,10 +847,10 @@ router.post(
   requireActor,
   validate(schemas.codificacionBulkBody),
   wrap((req, res) => {
-    if (!isFullAdmin(req.actor)) {
-      return res.status(403).json({ error: 'Solo el administrador puede administrar el catalogo de codificaciones' });
-    }
     const b = req.body;
+    if (!canLoadCampaign(req.actor, b.campana)) { // Fase 299: admin o supervisor de la campana
+      return res.status(403).json({ error: 'Solo el administrador o un supervisor de esta campana puede administrar el catalogo de codificaciones' });
+    }
     const existentes = new Set(
       db
         .prepare('SELECT valor FROM calidad_codificaciones WHERE campana = ?')
@@ -900,11 +900,11 @@ router.put(
   validate(schemas.idParamSchema, 'params'),
   validate(schemas.updateCodificacionBody),
   wrap((req, res) => {
-    if (!isFullAdmin(req.actor)) {
-      return res.status(403).json({ error: 'Solo el administrador puede administrar el catalogo de codificaciones' });
-    }
+    const noPuede = () => res.status(403).json({ error: 'Solo el administrador o un supervisor de esta campana puede administrar el catalogo de codificaciones' });
+    if (!puedeCargarAlgunaCampana(req.actor)) return noPuede(); // Fase 299
     const row = db.prepare('SELECT * FROM calidad_codificaciones WHERE id = ?').get(req.params.id);
     if (!row) return res.status(404).json({ error: 'Codificacion no encontrada' });
+    if (!canLoadCampaign(req.actor, row.campana)) return noPuede();
     const activo = req.body.activo ? 1 : 0;
     db.prepare('UPDATE calidad_codificaciones SET activo=?, updatedAt=? WHERE id=?').run(
       activo,
@@ -1177,10 +1177,10 @@ router.post(
   requireActor,
   validate(schemas.nivelServicioBody),
   wrap((req, res) => {
-    if (!isFullAdmin(req.actor)) {
-      return res.status(403).json({ error: 'Solo el administrador puede cargar el nivel de servicio' });
-    }
     const b = req.body;
+    if (!canLoadCampaign(req.actor, b.campana)) { // Fase 299: admin o supervisor de la campana
+      return res.status(403).json({ error: 'Solo el administrador o un supervisor de esta campana puede cargar el nivel de servicio' });
+    }
     const now = nowStr();
     // sede IS NULL: esta pantalla manual nunca la pide, y con la
     // consolidacion HOSPITAL LA MARIA (2026-09-15) puede haber filas de
@@ -1235,11 +1235,11 @@ router.put(
   validate(schemas.idParamSchema, 'params'),
   validate(schemas.updateNivelServicioBody),
   wrap((req, res) => {
-    if (!isFullAdmin(req.actor)) {
-      return res.status(403).json({ error: 'Solo el administrador puede editar el nivel de servicio' });
-    }
+    const noPuede = () => res.status(403).json({ error: 'Solo el administrador o un supervisor de esta campana puede editar el nivel de servicio' });
+    if (!puedeCargarAlgunaCampana(req.actor)) return noPuede(); // Fase 299
     const row = db.prepare('SELECT * FROM calidad_nivel_servicio WHERE id = ?').get(req.params.id);
     if (!row) return res.status(404).json({ error: 'Registro no encontrado' });
+    if (!canLoadCampaign(req.actor, row.campana)) return noPuede();
     const b = req.body;
     const contestadas20s = b.contestadas20s ?? row.contestadas20s;
     const llamadasTotales = b.llamadasTotales ?? row.llamadasTotales;
@@ -1274,11 +1274,11 @@ router.delete(
   requireActor,
   validate(schemas.idParamSchema, 'params'),
   wrap((req, res) => {
-    if (!isFullAdmin(req.actor)) {
-      return res.status(403).json({ error: 'Solo el administrador puede eliminar el nivel de servicio' });
-    }
+    const noPuede = () => res.status(403).json({ error: 'Solo el administrador o un supervisor de esta campana puede eliminar el nivel de servicio' });
+    if (!puedeCargarAlgunaCampana(req.actor)) return noPuede(); // Fase 299
     const row = db.prepare('SELECT * FROM calidad_nivel_servicio WHERE id = ?').get(req.params.id);
     if (!row) return res.status(404).json({ error: 'Registro no encontrado' });
+    if (!canLoadCampaign(req.actor, row.campana)) return noPuede();
     db.prepare('DELETE FROM calidad_nivel_servicio WHERE id = ?').run(row.id);
     logCalEvent('NIVEL_SERVICIO_DEL', '-', row.campana, req.actor, `${row.mes}`);
     res.json({ ok: true });
@@ -1298,10 +1298,10 @@ router.post(
   requireActor,
   validate(schemas.nivelServicioCargaDiariaBody),
   wrap((req, res) => {
-    if (!isFullAdmin(req.actor)) {
-      return res.status(403).json({ error: 'Solo el administrador puede cargar el nivel de servicio' });
-    }
     const b = req.body;
+    if (!canLoadCampaign(req.actor, b.campana)) { // Fase 299: admin o supervisor de la campana
+      return res.status(403).json({ error: 'Solo el administrador o un supervisor de esta campana puede cargar el nivel de servicio' });
+    }
     const resultado = cargarNivelServicioDiario(db, {
       campana: b.campana,
       archivoNombre: b.archivoNombre || '',

@@ -348,7 +348,9 @@ var _AGENDAS_CLIENTES_CLASIFICACION = ['ORLANT'];
 var _agClasif = { modo: 'usuarios', campana: '', i: null, lista: [], sinAsesor: [], fueraDeLista: 0 };
 
 function _agendasBotonesClasifHtml(campana, i){
-  if(_AGENDAS_CLIENTES_CLASIFICACION.indexOf(campana) === -1 || typeof isFullAdmin !== 'function' || !isFullAdmin()) return '';
+  // Fase 299: el administrador o el supervisor de la campana.
+  var puedeClasif = (typeof isFullAdmin === 'function' && isFullAdmin()) || (typeof puedeCargarCampanaSesion === 'function' && puedeCargarCampanaSesion(campana));
+  if(_AGENDAS_CLIENTES_CLASIFICACION.indexOf(campana) === -1 || !puedeClasif) return '';
   return '<div class="agendas-clasif-botones" style="margin:0 0 12px">' +
     '<button type="button" class="btn-sm" onclick="agendasAbrirClasificacion(\'usuarios\','+i+')">Clasificación de usuarios</button>' +
     '<button type="button" class="btn-sm" onclick="agendasAbrirClasificacion(\'lineas\','+i+')">Clasificación de líneas</button></div>';
