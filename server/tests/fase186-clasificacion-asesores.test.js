@@ -164,7 +164,8 @@ test('tarjetas: Sin clasificar solo si hay; sin la nota "Salida de ..." (Fase 23
 test('vista: boton solo para el administrador (en la cabecera), filtro de Línea en cada mitad (Fase 232), tarjetas', () => {
   const s = JS('tipificacion.js');
   // Fase 277: el boton solo con clasificacion (Aurora conserva la vista sin lineas).
-  assert.ok(s.includes("(clasif && (typeof isFullAdmin === 'function' && isFullAdmin()) ? '<button type=\"button\" class=\"btn-sm\" onclick=\"tipifAbrirClasificacion('+i+')\">Clasificación de asesores</button>' : '')"));
+  // Fase 299: el administrador o el supervisor de la campana.
+  assert.ok(s.includes("(clasif && ((typeof isFullAdmin === 'function' && isFullAdmin()) || (typeof puedeCargarCampanaSesion === 'function' && puedeCargarCampanaSesion(campana))) ? '<button type=\"button\" class=\"btn-sm\" onclick=\"tipifAbrirClasificacion('+i+')\">Clasificación de asesores</button>' : '')"));
   assert.ok(s.includes('onclick="tipifAbrirClasificacion(\'+i+\')">Clasificación de asesores</button>'));
   assert.ok(s.includes("<label for=\"tipif-f-linea-'+i+'-'+c.canal+'\">Línea (General / 3P)</label>")); // Fase 232: en cada mitad
   assert.ok(s.includes("linea: v('tipif-f-linea-'+i+'-'+canal)"), 'el filtro es de cada mitad');

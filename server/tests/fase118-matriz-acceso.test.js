@@ -139,6 +139,10 @@ function inventarioRutas() {
 //                           distincion de cliente -- ver comentario de
 //                           dashboards.js sobre /dashboard/secciones y
 //                           /dashboard/cargas).
+//      'cargaGlobalModulo' — canLoadAnyModule/canLoadModule sin cliente en la
+//                           ruta (Fase 299: el SUPERVISOR con clientes tambien).
+//      'cargaCampana'  — canLoadCampaign (Fase 299): el administrador o el
+//                        SUPERVISOR con acceso a ESA campana.
 //      'cargaManual'   — familia de endpoints de carga masiva con esquema de
 //                        fila complejo (ver cabecera del archivo): politica
 //                        confirmada por LECTURA de codigo, no ejecutada aqui.
@@ -169,7 +173,7 @@ declarar(['POST /monitoreos'], 'calidadEval');
 declarar(['POST /monitoreos/bulk'], 'calidadEval');
 declarar(['PUT /monitoreos/:id', 'DELETE /monitoreos/:id'], 'calidadManage');
 declarar(['GET /calidad/codificaciones'], 'scopedRead');
-declarar(['POST /calidad/codificaciones/bulk', 'PUT /calidad/codificaciones/:id'], 'admin');
+declarar(['POST /calidad/codificaciones/bulk', 'PUT /calidad/codificaciones/:id'], 'cargaCampana'); // Fase 299
 declarar(['GET /calidad/plantillas/admin', 'POST /calidad/plantillas/importar', 'PUT /calidad/plantillas/:id/activo'], 'admin'); // Fase 253: importador y versiones
 // Fase 122: alias de nombre de asesor -- a diferencia de codificaciones
 // (lectura scoped por campana, escritura admin), aqui las 3 operaciones
@@ -179,12 +183,13 @@ declarar(['GET /metas/cumplimiento', 'GET /metas/mi-meta'], 'scopedRead');
 declarar(['GET /metas'], 'scopedReadOrAdmin'); // con campana: scoped: sin campana: admin
 declarar(['POST /metas', 'PUT /metas/:id', 'DELETE /metas/:id'], 'admin');
 declarar(['GET /calidad/nivel-servicio'], 'scopedReadOrAdmin');
-declarar(['POST /calidad/nivel-servicio', 'PUT /calidad/nivel-servicio/:id', 'DELETE /calidad/nivel-servicio/:id'], 'admin');
+declarar(['POST /calidad/nivel-servicio', 'PUT /calidad/nivel-servicio/:id', 'DELETE /calidad/nivel-servicio/:id'], 'cargaCampana'); // Fase 299
 declarar(['GET /calidad/nivel-servicio/diario'], 'scopedRead');
 declarar(['POST /calidad/nivel-servicio/carga-diaria'], 'cargaManual');
 
 // Trafico / Trafico WhatsApp / Agendas / Efectividad x2 / Tipificacion / Inasistencia
-declarar(['GET /calidad/trafico/plantilla', 'GET /calidad/trafico/skills', 'GET /calidad/trafico/cobertura', 'GET /calidad/trafico/whatsapp/plantilla'], 'dataLoaderGlobal');
+declarar(['GET /calidad/trafico/cobertura'], 'dataLoaderGlobal');
+declarar(['GET /calidad/trafico/plantilla', 'GET /calidad/trafico/skills', 'GET /calidad/trafico/whatsapp/plantilla'], 'cargaGlobalModulo'); // Fase 299
 declarar(['PUT /calidad/trafico/skills/:skillName'], 'dataLoaderGlobal');
 declarar(['GET /calidad/trafico/whatsapp'], 'scopedRead');
 declarar(['POST /calidad/trafico/carga', 'POST /calidad/trafico/carga/impacto', 'POST /calidad/trafico/whatsapp/carga', 'POST /calidad/trafico/whatsapp/carga/impacto'], 'cargaManual');
@@ -197,16 +202,16 @@ declarar(['POST /calidad/tipificacion/carga/impacto', 'POST /calidad/tipificacio
 // Fase 168: mapa de skills de WhatsApp -- lo lee quien carga Tipificacion (canLoadModule + campana),
 // solo un administrador lo cambia. Probado aparte en fase168-tipificacion-cdr.test.js.
 declarar(['GET /calidad/tipificacion/skills-whatsapp'], 'cargaManual');
-declarar(['PUT /calidad/tipificacion/skills-whatsapp'], 'admin');
+declarar(['PUT /calidad/tipificacion/skills-whatsapp'], 'cargaCampana'); // Fase 299
 // Fase 186: salida por linea (la ve quien ve la campana); la clasificacion, solo el administrador.
 declarar(['GET /calidad/tipificacion/salida-por-linea'], 'scopedRead');
 // Fase 267: totales de una mitad en un pedido y los meses del tablero (misma regla: quien ve la campana).
 declarar(['GET /calidad/tipificacion/totales', 'GET /calidad/tipificacion/meses'], 'scopedRead');
-declarar(['GET /calidad/tipificacion/clasificacion-asesores', 'PUT /calidad/tipificacion/clasificacion-asesores'], 'admin');
+declarar(['GET /calidad/tipificacion/clasificacion-asesores', 'PUT /calidad/tipificacion/clasificacion-asesores'], 'cargaCampana'); // Fase 299
 // Fase 210: listas de Agendamiento. La de usuarios (nombres de asesor) es solo del
 // administrador; la de codigos de entidad tambien la LEE quien puede cargar agendas
 // de la campana (el navegador la necesita para proteger el codigo al cargar).
-declarar(['GET /calidad/agendas/usuarios', 'PUT /calidad/agendas/usuarios', 'PUT /calidad/agendas/codigos-entidad'], 'admin');
+declarar(['GET /calidad/agendas/usuarios', 'PUT /calidad/agendas/usuarios', 'PUT /calidad/agendas/codigos-entidad'], 'cargaCampana'); // Fase 299
 declarar(['GET /calidad/agendas/codigos-entidad'], 'cargaManual');
 // Fase 138, PR3 (Mobilize, pedido de Edwin 09/10/2026): Llamadas Unicas --
 // mismo patron exacto que Tipificacion (lectura scopedRead, carga cargaManual).
@@ -216,7 +221,7 @@ declarar(['POST /calidad/llamadas-unicas/carga/impacto', 'POST /calidad/llamadas
 declarar(['POST /calidad/llamadas-abandonadas/carga/impacto', 'POST /calidad/llamadas-abandonadas/carga'], 'cargaManual');
 // Fase 194: reporte de no conectadas (mismo permiso).
 declarar(['POST /calidad/llamadas-no-conectadas/carga/impacto', 'POST /calidad/llamadas-no-conectadas/carga'], 'cargaManual');
-declarar(['GET /calidad/llamadas-unicas/plantilla'], 'dataLoaderGlobal'); // mismo patron que GET /calidad/trafico/plantilla
+declarar(['GET /calidad/llamadas-unicas/plantilla'], 'cargaGlobalModulo'); // mismo patron que GET /calidad/trafico/plantilla
 // Fase 141, Parte C (Mobilize): Llamadas de salida -- mismo patron que
 // Llamadas Unicas. /detalle ademas exige rol interno (CLIENTES_DASH con
 // acceso a la campana recibe 403): esa regla se prueba en
@@ -249,9 +254,9 @@ declarar(['GET /calidad/total-trafico/mensual'], 'scopedRead'); // Fase 219
 declarar(['POST /calidad/salida/carga/impacto', 'POST /calidad/salida/carga'], 'cargaManual');
 // Fase 170: linea 3P/General de los asesores por mes (salida del CDR).
 declarar(['GET /calidad/salida/asesores'], 'scopedRead');
-declarar(['PUT /calidad/salida/asesores'], 'admin');
+declarar(['PUT /calidad/salida/asesores'], 'cargaCampana'); // Fase 299
 // Fase 187: inventario de las lineas guardadas mes a mes (solo lectura, solo administrador).
-declarar(['GET /calidad/salida/lineas-por-mes'], 'admin');
+declarar(['GET /calidad/salida/lineas-por-mes'], 'cargaCampana'); // Fase 299
 // Fase 172: resumen de calidad por asesor (Mobilize).
 declarar(['GET /calidad/calidad-resumen/opciones', 'GET /calidad/calidad-resumen/mensual'], 'scopedRead');
 declarar(['POST /calidad/calidad-resumen/carga/impacto', 'POST /calidad/calidad-resumen/carga'], 'cargaManual');
@@ -276,7 +281,9 @@ declarar(['POST /umbrales', 'PUT /umbrales/:id', 'DELETE /umbrales/:id'], 'admin
 // Dashboards
 declarar(['GET /dashboard/clientes'], 'open');
 declarar(['GET /dashboard/ultima-actualizacion'], 'scopedRead'); // Fase 131 Parte 4, mismo gate que GET /dashboard/:cliente (clienteAccess)
-declarar(['GET /dashboard/secciones/:cliente', 'GET /dashboard/cargas'], 'dataLoaderGlobal');
+declarar(['GET /dashboard/cargas'], 'cargaGlobalModulo'); // Fase 299
+// Fase 299: cargarDatos en cualquier cliente; el SUPERVISOR, solo en el suyo (canLoadAnyModule + campaignAccess).
+declarar(['GET /dashboard/secciones/:cliente'], 'cargaGlobalModuloCliente');
 // Fase 153 (P2, maqueta; PR 5): Centro de cargas. El resumen por mes exige poder
 // cargar (canLoadData, o en CALIDAD su cargar_<modulo>) Y acceso a ese cliente
 // (campaignAccess); la descarga de
@@ -284,17 +291,17 @@ declarar(['GET /dashboard/secciones/:cliente', 'GET /dashboard/cargas'], 'dataLo
 declarar(['GET /centro-cargas/:cliente', 'GET /centro-cargas/:cliente/:carga/:mes/datos', 'GET /centro-cargas/:cliente/versiones', 'GET /centro-cargas/:cliente/:carga/:mes/conteo', 'DELETE /centro-cargas/:cliente/:carga/:mes'], 'cargaYcliente');
 // Deshacer: mismo criterio sobre el cliente de la version (fase153-versiones.test.js).
 declarar(['POST /centro-cargas/versiones/:id/deshacer'], 'cargaYclienteVersion');
-declarar(['GET /centro-cargas-plantillas/:archivo'], 'dataLoaderGlobal');
+declarar(['GET /centro-cargas-plantillas/:archivo'], 'cargaGlobalModulo'); // Fase 299
 // Fase 215: Televentas de SURA. Leer = campaignAccess al cliente (y que el
-// cliente tenga ese tablero, 404 si no); el archivo original y toda
-// escritura = solo administrador. Matriz propia (cliente, REPORTES con
+// cliente tenga ese tablero, 404 si no); el archivo original = solo administrador; escribir = administrador o, desde la
+// Fase 299, el SUPERVISOR de ese cliente (fase299-supervisor-carga.test.js). Matriz propia (cliente, REPORTES con
 // cargarDatos, cliente ajeno, sin sesion) en fase215-sura-televentas.test.js.
 declarar(['GET /sura-televentas/:cliente/resumen', 'GET /sura-televentas/:cliente/bases/:tipo/:mes'], 'televentasLectura');
 declarar(['GET /sura-televentas/:cliente/bases/:tipo/:mes/archivo', 'POST /sura-televentas/:cliente/bases/:tipo/:mes',
-  'DELETE /sura-televentas/:cliente/bases/:tipo/:mes', 'PUT /sura-televentas/:cliente/config/:clave'], 'televentasAdmin');
+  'DELETE /sura-televentas/:cliente/bases/:tipo/:mes', 'PUT /sura-televentas/:cliente/config/:clave'], 'televentasAdmin'); // escritura: + supervisor (Fase 299)
 declarar(['GET /dashboards/config', 'GET /dashboards/config/:cliente', 'POST /dashboards/config', 'PUT /dashboards/config/:cliente', 'DELETE /dashboards/config/:cliente'], 'admin');
 declarar(['GET /dashboard/:cliente'], 'skip'); // gate por adapter.permiso variable segun el cliente -- cubierto indirectamente via can('Inventario'|'Gerencia'|'GestionHumana') en sus rutas propias
-declarar(['POST /dashboard/cargas', 'DELETE /dashboard/cargas/:id'], 'dataLoaderGlobal');
+declarar(['POST /dashboard/cargas', 'DELETE /dashboard/cargas/:id'], 'cargaGlobalModulo'); // Fase 299
 
 // Fase 126: borrado de produccion por base+rango, solo administrador
 // completo (ver server/tests/fase126-admin-borrado-rango.test.js para la
@@ -349,6 +356,10 @@ function quienDeberiaPasarDataLoaderGlobal(rol) {
   // canLoadData: isFullAdmin o perms.cargarDatos===true -- en nuestro seed, solo REPORTES lo trae por defecto.
   return ['ADMIN', 'REPORTES'].includes(rol);
 }
+// Fase 299: canLoadAnyModule/canLoadModule -- ademas el SUPERVISOR (con clientes).
+function quienDeberiaPasarCargaGlobalModulo(rol) {
+  return quienDeberiaPasarDataLoaderGlobal(rol) || rol === 'SUPERVISOR';
+}
 
 for (const [ruta, pol] of Object.entries(POLITICA)) {
   const [method, rawPath] = ruta.split(' ');
@@ -376,6 +387,12 @@ for (const [ruta, pol] of Object.entries(POLITICA)) {
           deberiaPasar = quienDeberiaPasarModulo(mod).includes(rol);
         } else if (pol.tipo === 'dataLoaderGlobal') {
           deberiaPasar = quienDeberiaPasarDataLoaderGlobal(rol);
+        } else if (pol.tipo === 'cargaGlobalModulo') {
+          deberiaPasar = quienDeberiaPasarCargaGlobalModulo(rol);
+        } else if (pol.tipo === 'cargaGlobalModuloCliente') {
+          deberiaPasar = quienDeberiaPasarDataLoaderGlobal(rol) || (campana === PROPIA && rol === 'SUPERVISOR');
+        } else if (pol.tipo === 'cargaCampana') {
+          deberiaPasar = rol === 'ADMIN' || (campana === PROPIA && rol === 'SUPERVISOR');
         } else {
           continue; // calidadEval/calidadManage/cargaManual/moduloYcarga se prueban aparte (necesitan POST)
         }
@@ -708,7 +725,7 @@ test('Fase 153: GET /centro-cargas/:cliente -- solo quien carga datos Y tiene ac
   for (const rol of TODOS_LOS_ROLES) {
     for (const campana of [PROPIA, AJENA]) {
       const res = await request(app).get('/api/centro-cargas/' + encodeURIComponent(campana)).set(auth(rol));
-      const deberiaPasar = rol === 'ADMIN' || (campana === PROPIA && quienDeberiaPasarDataLoaderGlobal(rol));
+      const deberiaPasar = rol === 'ADMIN' || (campana === PROPIA && quienDeberiaPasarCargaGlobalModulo(rol)); // Fase 299: + SUPERVISOR
       if (deberiaPasar) assert.equal(res.status, 200, rol + ' ' + campana + ': ' + JSON.stringify(res.body));
       else assert.equal(res.status, 403, rol + ' ' + campana + ' NO deberia ver el Centro de cargas');
     }
@@ -719,7 +736,7 @@ test('Fase 153: GET /centro-cargas/:cliente/:carga/:mes/datos -- mismo criterio 
   for (const rol of TODOS_LOS_ROLES) {
     for (const campana of [PROPIA, AJENA]) {
       const res = await request(app).get('/api/centro-cargas/' + encodeURIComponent(campana) + '/flujo_llamadas/2026-08/datos').set(auth(rol));
-      const deberiaPasar = rol === 'ADMIN' || (campana === PROPIA && quienDeberiaPasarDataLoaderGlobal(rol));
+      const deberiaPasar = rol === 'ADMIN' || (campana === PROPIA && quienDeberiaPasarCargaGlobalModulo(rol)); // Fase 299: + SUPERVISOR
       if (deberiaPasar) assert.equal(res.status, 200, rol + ' ' + campana + ': ' + JSON.stringify(res.body));
       else assert.equal(res.status, 403, rol + ' ' + campana + ' NO deberia descargar lo cargado');
     }
@@ -758,7 +775,10 @@ test('Fase 153 PR 5: CALIDAD sin cargar_<modulo> no sube, no elimina, no deshace
     assert.equal((await request(app).post('/api/calidad/llamadas-unicas/carga').set(auth('CALIDAD')).send(lu(AJENA))).status, 403);
     assert.equal((await request(app).delete('/api/centro-cargas/' + PROPIA + '/tipificacion_llamadas/2026-08').set(auth('CALIDAD'))).status, 403, 'otro modulo');
     // Los demas roles del seed siguen igual que antes (sin cargarDatos no entran).
-    for (const rol of ['SUPERVISOR', 'GERENCIA', 'CLIENTES_DASH', 'ASESOR']) {
+    // Fase 299: el SUPERVISOR si entra a su cliente (no al ajeno).
+    assert.equal((await request(app).get('/api/centro-cargas/' + PROPIA).set(auth('SUPERVISOR'))).status, 200, 'SUPERVISOR en su cliente');
+    assert.equal((await request(app).get('/api/centro-cargas/' + AJENA).set(auth('SUPERVISOR'))).status, 403, 'SUPERVISOR en cliente ajeno');
+    for (const rol of ['GERENCIA', 'CLIENTES_DASH', 'ASESOR']) {
       assert.equal((await request(app).get('/api/centro-cargas/' + PROPIA).set(auth(rol))).status, 403, rol);
     }
     assert.equal((await request(app).get('/api/centro-cargas/' + PROPIA).set(auth('REPORTES'))).status, 200, 'REPORTES sigue igual');

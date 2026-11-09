@@ -205,7 +205,7 @@ async function _tipificacionRenderPanel(p, i){
   // la cabecera. Los demas paneles (Mobilize) siguen con su fila de siempre.
   if(vista){
     html += '<div class="aurora-card-title tipif-cabecera">'+esc(titulo)+
-      (clasif && (typeof isFullAdmin === 'function' && isFullAdmin()) ? '<button type="button" class="btn-sm" onclick="tipifAbrirClasificacion('+i+')">Clasificación de asesores</button>' : '')+
+      (clasif && ((typeof isFullAdmin === 'function' && isFullAdmin()) || (typeof puedeCargarCampanaSesion === 'function' && puedeCargarCampanaSesion(campana))) ? '<button type="button" class="btn-sm" onclick="tipifAbrirClasificacion('+i+')">Clasificación de asesores</button>' : '')+
       '</div>';
   } else {
   html += '<div class="aurora-card-title">'+esc(titulo)+'</div>';

@@ -106,7 +106,8 @@ test('vista: totales con "Sin asignar", aviso, editor solo para admin en meses c
   // Fase 219: el aviso de asesores sin línea ya no se muestra (pedido de Edwin).
   assert.doesNotMatch(s, /no tienen línea \(3P o General\)|no están clasificados/);
   // Fase 278: sin editor de lineas en un cliente sin lineas (Aurora).
-  assert.match(s, /if\(!sinLineas && _salEsAdmin\(\) && filaMes && \(filaMes\.fuenteLlamadas === 'cdr' \|\| filaMes\.fuenteWpp === 'cdr'\)\) await _salCargarEditor/);
+  // Fase 299: el administrador o el supervisor de la campana (_salPuedeClasificar).
+  assert.match(s, /if\(!sinLineas && _salPuedeClasificar\(campana\) && filaMes && \(filaMes\.fuenteLlamadas === 'cdr' \|\| filaMes\.fuenteWpp === 'cdr'\)\) await _salCargarEditor/);
   assert.match(s, /aria-label="Línea de '\+esc\(a\.agente\)\+'"/);
   // Fase 183: la grafica es una sola serie con toda la salida del mes.
   // Fase 188: la serie es la de la linea elegida (Total por defecto).

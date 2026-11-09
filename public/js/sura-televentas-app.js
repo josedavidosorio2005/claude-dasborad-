@@ -111,7 +111,7 @@ function renderMonths(){
     return `<div class="m ${d?"ok":""}"><b>${n}</b>
       <small>${d?`✔ ${fmt(d.rows.reduce((s,r)=>s+r[2],0))} ventas<br>${esc(d.file)}<br>${"montada el "+new Date(d.at).toLocaleDateString("es-CO")+" "+new Date(d.at).toLocaleTimeString("es-CO",{hour:"2-digit",minute:"2-digit"})}${d.v>=2?(d.v>=3?"":"<br>⚠ sin ciudad/edad: reemplázala"):"<br>⚠ sin campaña (D): reemplázala"}${d.x12?"<br>Producción = valor mensual × 12":""}`:"Sin base cargada"}</small>
       <button class="btn ${d?"":"pri"}" data-up="${k}">${d?"Reemplazar":"Montar base"}</button>
-      ${d?`<button class="btn del" data-del="${k}">Eliminar</button><button class="btn dl" data-dl="${k}">⬇ Descargar</button>`:""}</div>`}).join("");
+      ${d?`<button class="btn del" data-del="${k}">Eliminar</button>${PERM&&PERM.puedeDescargar===false?"":`<button class="btn dl" data-dl="${k}">⬇ Descargar</button>`}`:""}</div>`}).join("");
 }
 $("months").addEventListener("click",async e=>{
   const u=e.target.dataset.up,d=e.target.dataset.del,dl=e.target.dataset.dl;
@@ -298,7 +298,7 @@ function renderEst(){
     const ne=d?d.cols.reduce((s,c)=>s+c.N.length,0):0;
     return `<div class="m ${d?"ok":""}"><b>${nm}</b><small>${d?`✔ ${fmt(d.ids.length)} registros · ${ne} estrategias<br>${esc(d.file)}<br>${"montada el "+new Date(d.at).toLocaleDateString("es-CO")}${DB[k]?"":"<br>⚠ falta la base de ventas de este mes"}`:"Sin base de estrategias"}</small>
       <button class="btn ${d?"":"pri"}" data-eup="${k}">${d?"Reemplazar":"Montar base"}</button>
-      ${d?`<button class="btn del" data-edel="${k}">Eliminar</button><button class="btn dl" data-edl="${k}">⬇ Descargar</button>`:""}</div>`}).join("");
+      ${d?`<button class="btn del" data-edel="${k}">Eliminar</button>${PERM&&PERM.puedeDescargar===false?"":`<button class="btn dl" data-edl="${k}">⬇ Descargar</button>`}`:""}</div>`}).join("");
 }
 async function descargarEst(k){
   const o=await origGet("e",k);if(o){bajar(o.name,o.buf);return}
@@ -959,7 +959,7 @@ function renderIni(){
     const cr=d&&DB[k]&&DB[k].pr?(()=>{const s=new Set(DB[k].pr.ids);let n=0;d.ids.forEach(x=>{if(s.has(x))n++});return n})():null;
     return `<div class="m ${d?"ok":""}"><b>${nm}</b><small>${d?`✔ ${fmt(d.ids.length)} registros · ${d.cols.length} columnas<br>${esc(d.file)}<br>${"montada el "+new Date(d.at).toLocaleDateString("es-CO")}${cr!=null?`<br>${fmt(cr)} cruzan con la base de ventas`:"<br>⚠ falta la base de ventas de este mes"}`:"Sin base inicial"}</small>
       <button class="btn ${d?"":"pri"}" data-iup="${k}">${d?"Reemplazar":"Montar base"}</button>
-      ${d?`<button class="btn del" data-idel="${k}">Eliminar</button><button class="btn dl" data-idl="${k}">⬇ Descargar</button>`:""}</div>`}).join("");
+      ${d?`<button class="btn del" data-idel="${k}">Eliminar</button>${PERM&&PERM.puedeDescargar===false?"":`<button class="btn dl" data-idl="${k}">⬇ Descargar</button>`}`:""}</div>`}).join("");
 }
 async function descargarIni(k){
   const o=await origGet("i",k);if(o){bajar(o.name,o.buf);return}

@@ -39,6 +39,10 @@ function _salTotal(f, canal){
 function _salEsAdmin(){
   return (typeof isMasterAdmin === 'function' && isMasterAdmin()) || (typeof currentUser !== 'undefined' && currentUser && currentUser.rol === 'ADMIN');
 }
+// Fase 299: la clasificacion/lineas de asesores tambien la maneja el supervisor de la campana.
+function _salPuedeClasificar(campana){
+  return _salEsAdmin() || (typeof puedeCargarCampanaSesion === 'function' && puedeCargarCampanaSesion(campana));
+}
 
 var _salOpciones = {}; // cache por campana: { meses }
 
@@ -124,13 +128,13 @@ async function _salDibujar(campana, i, opciones){
   var filaMes = filas.filter(function(f){ return f.mes === mesSel; })[0];
   if(asesoresEl && filaMes && filaMes.lineaPorCliente){
     // Fase 187: una sola clasificacion (por cliente), la misma ventana de Tipificacion.
-    asesoresEl.innerHTML = _salEsAdmin() ? gdGraficaHtml('Línea de cada asesor',
+    asesoresEl.innerHTML = _salPuedeClasificar(campana) ? gdGraficaHtml('Línea de cada asesor',
       '<p class="sal-asesores-ayuda">La línea de cada asesor es una sola para todos los meses, la misma de Tipificación. Los que no tengan línea quedan en "Sin clasificar".</p>' +
       '<div class="modal-btns" style="justify-content:flex-start;margin-top:10px"><button type="button" class="btn-primary" onclick="salAbrirClasificacion(\''+esc(campana)+'\', \''+esc(mesSel)+'\')">Clasificación de asesores</button></div>') : '';
   } else if(asesoresEl){
     // Fase 278: un cliente sin lineas (Aurora) no tiene editor de lineas.
     var sinLineas = filas.some(function(f){ return f.sinLineas; });
-    if(!sinLineas && _salEsAdmin() && filaMes && (filaMes.fuenteLlamadas === 'cdr' || filaMes.fuenteWpp === 'cdr')) await _salCargarEditor(campana, i, mesSel);
+    if(!sinLineas && _salPuedeClasificar(campana) && filaMes && (filaMes.fuenteLlamadas === 'cdr' || filaMes.fuenteWpp === 'cdr')) await _salCargarEditor(campana, i, mesSel);
     else asesoresEl.innerHTML = '';
   }
 }

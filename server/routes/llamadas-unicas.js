@@ -46,7 +46,8 @@ router.get(
   '/calidad/llamadas-unicas/plantilla',
   requireActor,
   wrap((req, res) => {
-    if (!canLoadData(req.actor)) {
+    // Fase 299: la plantilla VACIA la baja tambien quien carga este modulo (supervisor, CALIDAD con su permiso).
+    if (!canLoadModule(req.actor, 'llamadas_unicas')) {
       return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para descargar la plantilla' });
     }
     res.download(PLANTILLA_LLAMADAS_UNICAS_PATH, 'PLANTILLA_LLAMADAS_UNICAS_MOBILIZE.xlsx', (err) => {

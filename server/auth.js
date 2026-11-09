@@ -245,8 +245,33 @@ function canLoadData(actor) {
 // ruta sigue exigiendo aparte. `modulo` = id del catalogo (centro-cargas.js).
 // Fase 283: un SUPERVISOR (perfil nuevo) carga TODOS los modulos, solo de sus
 // clientes -- cada ruta exige ademas campaignAccess/clienteAccess al cliente.
+// Fase 299 (pedido del usuario, 09/11): depende del ROL, no del perfil ni de una
+// lista de campanas: cualquier SUPERVISOR con al menos un cliente asignado (perfil
+// nuevo supervisa_<C>, o el de antes con cliente_/campana_) carga. Una campana
+// creada despues queda cubierta sola en cuanto se le asigna. El alcance lo sigue
+// poniendo campaignAccess en cada ruta (id 56: solo Aurora y HLM).
 function supervisorCarga(actor) {
-  return !!(actor && supervisorUsaPerfil(actor.rol, actor.perms) && supervisorClientes(actor.perms).length);
+  if (!actor || actor.rol !== 'SUPERVISOR' || !actor.perms) return false;
+  if (supervisorUsaPerfil(actor.rol, actor.perms)) return supervisorClientes(actor.perms).length > 0;
+  return Object.keys(actor.perms).some((k) => /^(cliente|campana)_/.test(k) && actor.perms[k] === true);
+}
+// Fase 299: ¿este SUPERVISOR puede cargar en ESTA campana? (rol + acceso). Lo usan
+// las cargas que no van por modulo (SURA: bases, metas, codigos).
+function supervisorPuedeCargarEn(actor, campana) {
+  return supervisorCarga(actor) && campaignAccess(actor, campana);
+}
+// Fase 299: cargas y codigos de UNA campana que antes eran solo del administrador
+// (nivel de servicio, codificaciones, listas de Agendamiento, skills de WhatsApp,
+// clasificacion de asesores, SURA): el administrador o el SUPERVISOR de esa campana.
+// Crear/borrar usuarios, contrasenas, campanas, umbrales, plantillas de Calidad y
+// la configuracion de tableros siguen siendo solo del administrador.
+function canLoadCampaign(actor, campana) {
+  return isFullAdmin(actor) || supervisorPuedeCargarEn(actor, campana);
+}
+// Antes de leer un registro por :id: quien no puede cargar en NINGUNA campana
+// recibe 403 sin saber si el id existe.
+function puedeCargarAlgunaCampana(actor) {
+  return isFullAdmin(actor) || supervisorCarga(actor);
 }
 function canLoadModule(actor, modulo) {
   if (canLoadData(actor)) return true;
@@ -292,5 +317,8 @@ module.exports = {
   canLoadModule,
   canLoadAnyModule,
   supervisorCarga,
+  supervisorPuedeCargarEn,
+  canLoadCampaign,
+  puedeCargarAlgunaCampana,
   requireDataLoader,
 };

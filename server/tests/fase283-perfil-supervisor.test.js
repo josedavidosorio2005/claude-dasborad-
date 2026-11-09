@@ -38,11 +38,14 @@ test('regla: sin supervisa_ igual que antes; con supervisa_ solo esa lista (los 
   assert.deepEqual(P.supervisorClientesIniciales('SUPERVISOR', nuevo, ['ORLANT', 'MOBILIZE', 'SURA']), ['SURA', 'CLINICA AURORA']);
 });
 
-test('supervisor SIN migrar: todo igual que antes (abre sus tableros, no carga)', async () => {
+// Fase 299 (pedido del usuario, 09/11): cargar depende del ROL. Un supervisor SIN
+// migrar (cliente_/campana_ de antes) ahora tambien carga, pero solo sus clientes.
+test('supervisor SIN migrar: abre sus tableros y, desde la Fase 299, carga solo sus clientes', async () => {
   const s = await crear({ Calidad: true, cliente_ORLANT: true, campana_ORLANT: true });
   assert.equal((await request(app).get('/api/dashboard/ORLANT').set(H(s.token))).status, 200);
   assert.equal((await request(app).get('/api/dashboard/MOBILIZE').set(H(s.token))).status, 403);
-  assert.equal((await request(app).get('/api/centro-cargas/ORLANT').set(H(s.token))).status, 403, 'sin cargarDatos no cargaba, igual que antes');
+  assert.equal((await request(app).get('/api/centro-cargas/ORLANT').set(H(s.token))).status, 200, 'carga en su cliente (rol SUPERVISOR)');
+  assert.equal((await request(app).get('/api/centro-cargas/MOBILIZE').set(H(s.token))).status, 403, 'nunca en un cliente ajeno');
 });
 
 test('supervisor en el perfil nuevo: abre y carga SOLO sus clientes; el cliente_ viejo ya no cuenta', async () => {
