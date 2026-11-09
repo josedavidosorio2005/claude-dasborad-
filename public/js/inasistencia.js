@@ -138,7 +138,7 @@ async function _inasistenciaRenderPanel(p, i){
   var opciones = await _inasistenciaCargarOpciones(campana);
   if(!opciones.meses || !opciones.meses.length){
     host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">'+esc(titulo)+'</div>'+
-      '<div class="gd-vacio">Sin inasistencia cargada todavia. Un usuario con permiso de administrador debe subir la hoja INASISTENCIA desde "Cargar Datos".</div></div>';
+      avisoPendienteHtml('Inasistencia', 'Sin inasistencia cargada todavía. Un usuario con permiso de administrador debe subir la hoja INASISTENCIA desde "Cargar Datos".') + '</div>'; // Fase 296
     return;
   }
   _inasistenciaSincronizarConMesGlobal(campana, opciones);

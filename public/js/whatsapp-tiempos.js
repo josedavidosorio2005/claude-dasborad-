@@ -74,8 +74,7 @@ async function _wppTiemposRender(i, campana) {
   var op = await _wppTiemposCargarOpciones(campana);
   if (!op.meses || !op.meses.length) {
     _wppTiemposUltimo[campana] = null;
-    content.innerHTML = titulo + '<div class="gd-vacio">Sin tiempos de respuesta de WhatsApp cargados todavía' +
-      (typeof canLoadData === 'function' && canLoadData() ? '. Un usuario con permiso de administrador debe subir el archivo "10. Detalle de llamadas contestadas" de Wolkvox (colas de WhatsApp) desde "Cargar Datos" → "WhatsApp tiempos de respuesta".' : '.') + '</div>';
+    content.innerHTML = titulo + avisoPendienteHtml('tiempos de respuesta de WhatsApp', 'Sin tiempos de respuesta de WhatsApp cargados todavía. Un usuario con permiso de administrador debe subir el archivo "10. Detalle de llamadas contestadas" de Wolkvox (colas de WhatsApp) desde "Cargar Datos" → "WhatsApp tiempos de respuesta".'); // Fase 296
     return;
   }
   // Fase 207: sigue a MESES (Todos = todos los meses cargados; uno = ese

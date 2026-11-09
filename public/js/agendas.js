@@ -108,7 +108,8 @@ async function _agendasRenderPanel(p, i){
   var opciones = await _agendasCargarOpciones(campana);
   if(!opciones.meses || !opciones.meses.length){
     host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">'+esc(titulo)+'</div>'+
-      '<div style="text-align:center;color:var(--c-text-muted);padding:24px 8px">Sin agendas cargadas todavia. Un usuario con permiso de administrador debe subir la hoja AGENDAS desde "Cargar Datos".</div>'+_agendasBotonesClasifHtml(campana, i)+'</div>';
+      avisoPendienteHtml('Agendas', 'Sin agendas cargadas todavía. Un usuario con permiso de administrador debe subir la hoja AGENDAS desde "Cargar Datos".')+ // Fase 296
+      _agendasBotonesClasifHtml(campana, i)+'</div>';
     return;
   }
 

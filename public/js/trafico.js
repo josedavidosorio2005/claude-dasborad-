@@ -576,7 +576,7 @@ async function _traficoRenderPanel(p, i){
   var datos = { filas: filasSede, skills: skillsSede };
   if(!datos.filas.length){
     host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">Tráfico de Llamadas (Wolkvox)</div>'+
-      '<div style="text-align:center;color:var(--c-text-muted);padding:24px 8px">Sin datos cargados todavia. Un usuario con permiso de administrador debe subir el export de Wolkvox desde "Cargar Datos → Tráfico de Llamadas".</div></div>';
+      avisoPendienteHtml('Tráfico de Llamadas', 'Sin datos cargados todavía. Un usuario con permiso de administrador debe subir el export de Wolkvox desde "Cargar Datos → Tráfico de Llamadas".') + '</div>'; // Fase 296
     return;
   }
 
@@ -657,6 +657,7 @@ async function _traficoRenderPanel(p, i){
     '<div class="aurora-card">' +
       '<div class="aurora-card-title">Tráfico de Llamadas (Wolkvox)</div>' +
       '<p class="trafico-rango" id="tv-rango-'+i+'">'+esc(traficoRangoTexto(estado.desde, estado.hasta))+'</p>' +
+      avisoPendienteMesesHtml('el tráfico de llamadas', fechasDisponibles[fechasDisponibles.length-1], fechaLimitesHoyColombia()) + // Fase 296
       '<div class="trafico-filtros" style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;margin-bottom:12px">' +
         '<span id="tv-f-skillbar-'+i+'">'+_traficoFiltroLineaHTML('tv', i, datos.skills, estado.skills, etiquetaLinea, etiquetaLineaPlural)+'</span>' +
         '<div><label for="tv-f-desde-'+i+'" style="display:block;font-size:var(--fs-note);color:var(--c-text-muted);margin-bottom:3px">Desde</label><input type="date" id="tv-f-desde-'+i+'" value="'+esc(estado.desde)+'"></div>' +

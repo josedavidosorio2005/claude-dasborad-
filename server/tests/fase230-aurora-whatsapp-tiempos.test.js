@@ -74,6 +74,7 @@ test('Aurora sin tiempos por rango cargados: el aviso como ORLANT, sin la grafic
   };
   vm.createContext(sb);
   const p = path.join(__dirname, '..', '..', 'public', 'js', 'whatsapp-tiempos.js');
+  vm.runInContext(fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'js', 'aviso-pendiente-logic.js'), 'utf8'), sb); // Fase 296
   vm.runInContext(fs.readFileSync(p, 'utf8'), sb, { filename: p });
   await sb._wppTiemposRender(0, AURORA);
   assert.deepEqual(llamadas, []);

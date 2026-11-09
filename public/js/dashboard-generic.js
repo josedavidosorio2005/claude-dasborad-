@@ -1655,7 +1655,7 @@ function renderGenericBanner(){
   var d = document.createElement('div');
   d.id = 'gd-nodata-banner';
   d.style.cssText = 'grid-column:1/-1;background:var(--c-warning-bg);border:1px solid var(--c-warning);border-radius:8px;padding:12px 16px;color:var(--c-warning-dark);font-size:0.85rem';
-  d.innerHTML = 'Este dashboard todavia no tiene datos cargados. Un usuario con permiso de <strong>Cargar Datos</strong> debe subir los Excel del periodo.';
+  d.innerHTML = avisoPendientePuedeCargar() ? 'Este dashboard todavía no tiene datos cargados. Un usuario con permiso de <strong>Cargar Datos</strong> debe subir los Excel del periodo.' : '<strong>Información pendiente.</strong> Los datos de este tablero todavía no están disponibles. Aparecerán aquí en cuanto se carguen.'; // Fase 296
   host.appendChild(d);
 }
 

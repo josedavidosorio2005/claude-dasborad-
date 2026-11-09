@@ -62,7 +62,7 @@ async function _salidaRenderPanel(p, i){
   var opciones = await _salCargarOpciones(campana);
   if(!opciones.meses || !opciones.meses.length){
     host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">'+esc(titulo)+'</div>'+
-      '<div class="gd-vacio">Sin datos de Llamadas y WhatsApp de salida cargados todavia. Un usuario con permiso de administrador debe subir el archivo de Llamadas y WhatsApp de salida desde "Cargar Datos".</div></div>';
+      avisoPendienteHtml('Llamadas y WhatsApp de salida', 'Sin datos de Llamadas y WhatsApp de salida cargados todavía. Un usuario con permiso de administrador debe subir el archivo de Llamadas y WhatsApp de salida desde "Cargar Datos".') + '</div>'; // Fase 296
     return;
   }
 

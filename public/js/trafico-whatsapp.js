@@ -183,10 +183,10 @@ async function _traficoWppRenderPanel(p, i) {
 
   var datosCampana = await _traficoWppCargarDatos(campana);
   if (!datosCampana.filas.length) {
-    var avisoSinFlujo = '<div style="text-align:center;color:var(--c-text-muted);padding:24px 8px">Sin datos de Flujo de WhatsApp cargados todavia.</div>';
+    var avisoSinFlujo = avisoPendienteHtml('Flujo de WhatsApp', 'Sin datos de Flujo de WhatsApp cargados todavía.'); // Fase 296
     if (_traficoWppSoloNivelServicio(host, i, campana, avisoSinFlujo)) return;
     host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">Tráfico de WhatsApp (Wolkvox)</div>' +
-      '<div style="text-align:center;color:var(--c-text-muted);padding:24px 8px">Sin datos cargados todavia. Un usuario con permiso de administrador debe subir el archivo de Tráfico de WhatsApp desde "Cargar Datos".</div></div>';
+      avisoPendienteHtml('Tráfico de WhatsApp', 'Sin datos cargados todavía. Un usuario con permiso de administrador debe subir el archivo de Tráfico de WhatsApp desde "Cargar Datos".') + '</div>'; // Fase 296
     return;
   }
 
@@ -271,6 +271,7 @@ async function _traficoWppRenderPanel(p, i) {
     '<div class="aurora-card">' +
       '<div class="aurora-card-title">Tráfico de WhatsApp (Wolkvox)</div>' +
       '<p class="trafico-rango" id="tww-rango-'+i+'">'+esc(traficoRangoTexto(estado.desde, estado.hasta))+'</p>' +
+      avisoPendienteMesesHtml('el tráfico de WhatsApp', fechasFinDisp[fechasFinDisp.length-1], fechaLimitesHoyColombia()) + // Fase 296
       '<div class="trafico-filtros" style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;margin-bottom:12px">' +
         '<span id="tww-f-skillbar-'+i+'">'+_traficoFiltroLineaHTML('tww', i, colas, estado.skills, 'Cola', 'colas')+'</span>' +
         '<div><label for="tww-f-desde-'+i+'" style="display:block;font-size:var(--fs-note);color:var(--c-text-muted);margin-bottom:3px">Desde</label><input type="date" id="tww-f-desde-'+i+'" value="'+esc(estado.desde)+'"></div>' +
