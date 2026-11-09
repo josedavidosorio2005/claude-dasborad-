@@ -25,6 +25,8 @@ var CENTRO_PANEL_A_MODULO = {
   calidad_resumen_panel: 'calidad_resumen', // Fase 172
   calidad_monitoreos_panel: 'calidad', // Fase 256
   agendas_usuaria_panel: 'agendas_usuaria', // Fase 259
+  aurora_inasistencia_panel: 'inasistencia_au', // Fase 306
+  aurora_encuestas_panel: 'encuestas_au', // Fase 306
   flujo_hora_panel: 'flujo_hora', // Fase 196
 };
 
@@ -44,6 +46,8 @@ var CENTRO_MODULOS_PERMISO = [
   { id: 'flujo_hora', nombre: 'Flujo por hora' }, // Fase 196
   { id: 'tipificacion', nombre: 'Tipificación' },
   { id: 'encuesta', nombre: 'Encuesta' },
+  { id: 'inasistencia_au', nombre: 'Inasistencia (Aurora)' }, // Fase 306
+  { id: 'encuestas_au', nombre: 'Encuestas (Aurora)' }, // Fase 306
   { id: 'agendas_usuaria', nombre: 'Agendas (3 bases)' }, // Fase 259; Fase 303 (no confundir con «Agendas» de ORLANT)
   { id: 'calidad_resumen', nombre: 'Calidad: resumen por asesor' }, // Fase 172
 ];
@@ -183,6 +187,9 @@ var CENTRO_CARGA_PLAN = {
   calidad_resumen: { tipo: 'calidad_resumen', mensual: true, sinFecha: true },
   // Fase 259: conteos agregados con su mes (de la cita); reemplaza el mes entero.
   agendas_usuaria: { tipo: 'agendas_usuaria', mensual: true },
+  // Fase 306 (Aurora): las sube su propia ventana (aurora-bases.js, abAbrirCarga).
+  inasistencia_au: { tipo: 'inasistencia_au', mensual: true },
+  encuestas_au: { tipo: 'encuestas_au', mensual: true },
 };
 
 function centroSubeDesdeMes(cargaId) { return Object.prototype.hasOwnProperty.call(CENTRO_CARGA_PLAN, cargaId); }

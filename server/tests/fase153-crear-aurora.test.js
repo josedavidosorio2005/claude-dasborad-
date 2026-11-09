@@ -87,7 +87,8 @@ test('una base nueva termina todas las migraciones con Aurora, creada despues de
     'fase285_logo_aurora_v1', // Fases 284 y 285 (logo de Aurora: solo su columna logo)
     'fase287_asesor_oculto_cliente_v1', // Fase 287: parametro asesorOcultoCliente de Aurora y HLM
     'fase301_agendas_usuaria_base_v1', // Fase 301: columna base en agendas_usuaria (ADD COLUMN, sin tocar filas)
-    'fase302_agendas_tres_bases_v1']; // Fase 302: columnas entidad/prof y la pestaña «Agendas» (sobre una base nueva ya viene asi)
+    'fase302_agendas_tres_bases_v1', // Fase 302: columnas entidad/prof y la pestaña «Agendas» (sobre una base nueva ya viene asi)
+    'fase306_aurora_inasistencia_encuestas_v1']; // Fase 306: tablas y pestañas Inasistencia y Encuestas (solo Aurora)
   assert.deepEqual(orden.slice(iAur + 1).filter((n) => !POSTERIORES.includes(n)), [], 'ninguna migracion vieja corre despues de crear Aurora');
   assert.ok(fila(), 'Aurora sigue ahi al final');
   const r = reg.leerRegistro(db).find((c) => c.nombre === AURORA);
@@ -103,14 +104,14 @@ test('el dashboard de Aurora es el de la plantilla: pestanas como ORLANT, sin da
   const cfg = { titulo: f.titulo, vista: f.vista, secciones: JSON.parse(f.secciones), layout: JSON.parse(f.layout) };
   assert.deepEqual(cfg, auroraEsperada());
   // Fase 259: + agendas_usuaria (oculta; propia de Aurora, no viene de ORLANT).
-  assert.deepEqual(cfg.layout.tabs.map((t) => t.key), ['trafico', 'trafico_whatsapp', 'salida', 'total_trafico', 'agendas_usuaria', 'errores', 'tipificacion', 'calidad'] /* Fase 284: + errores */);
+  assert.deepEqual(cfg.layout.tabs.map((t) => t.key), ['trafico', 'trafico_whatsapp', 'salida', 'total_trafico', 'agendas_usuaria', 'inasistencia_au', 'encuestas_au', 'errores', 'tipificacion', 'calidad'] /* Fase 306 */ /* Fase 284: + errores */);
   // Fase 284: "Errores" se ve aunque no haya errores.
-  assert.deepEqual(cfg.layout.tabs.map((t) => !!t.oculta), [false, false, true, false, true, false, true, true]);
+  assert.deepEqual(cfg.layout.tabs.map((t) => !!t.oculta), [false, false, true, false, true, false, false, false, true, true]); // Fase 306: Inasistencia y Encuestas visibles
   // Mismas pestanas que ORLANT (salvo la campana).
   const orl = generarLayout(PERFILES_ACTUALES.ORLANT).layout.tabs;
   // Fase 269: Calidad ya no es la de ORLANT: solo el resultado de los monitoreos.
   assert.deepEqual(cfg.layout.tabs.find((t) => t.key === 'calidad').panels, [{ tipo: 'calidad_monitoreos_panel', campana: AURORA }]);
-  for (const t of cfg.layout.tabs.filter((x) => x.key !== 'agendas_usuaria' && x.key !== 'errores' && x.key !== 'calidad')) {
+  for (const t of cfg.layout.tabs.filter((x) => !['agendas_usuaria', 'errores', 'calidad', 'inasistencia_au', 'encuestas_au'].includes(x.key))) { // Fase 306: pestañas propias de Aurora
     const o = orl.find((x) => x.key === t.key);
     // Fase 206: "Llamadas ingresadas" (etiquetaTotal) es solo de ORLANT, no de la plantilla.
     const panelesOrlant = o.panels.map((p) => { const c = Object.assign({}, p); delete c.etiquetaTotal; return c; });

@@ -4,6 +4,24 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.153.0 — Noviembre 2026
+
+**Fase 306: Clínica Aurora estrena las pestañas «Inasistencia» y «Encuestas».**
+
+- **Inasistencia:** muestra el **% de inasistencia por especialidad**: las citas con estado
+  «No asistió» divididas entre el total de citas de esa especialidad. Se ve solo el porcentaje,
+  de mayor a menor, con los nombres completos. Se carga en Cargar datos › Clínica Aurora ›
+  «Inasistencia (Aurora)», subiendo la base de inasistencias de la clínica tal cual.
+- **Encuestas:** muestra cuántas encuestas hay **por entidad** (barras, de mayor a menor) y
+  **por fecha** (línea de tiempo). Las encuestas sin entidad no se grafican. Se carga en
+  «Encuestas (Aurora)» con el compilado de encuestas de la clínica.
+- Las columnas se buscan por su nombre, en cualquier orden. Si se sube un archivo en la casilla
+  equivocada, la plataforma lo avisa y no guarda nada.
+- **Privacidad:** los nombres, documentos y teléfonos de los pacientes nunca salen del
+  computador; a la plataforma solo llegan cantidades.
+- **Clínica Aurora:** «Errores» sigue siendo siempre la última pestaña.
+- ORLANT no cambia.
+
 ## v1.152.0 — Noviembre 2026
 
 **Fase 305: cada campaña recuerda sus propios filtros; nombres completos en Agendas.**

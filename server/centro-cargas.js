@@ -44,6 +44,9 @@ const CARGAS_POR_MODULO = {
   // Fase 259: reporte de citas de la clinica (Aurora), conteos agregados por mes de la cita.
   // Fase 284: Errores no se carga con una base (se registra en la plataforma).
   errores: [],
+  // Fase 306 (Aurora): base de inasistencias y compilado de encuestas, conteos por mes.
+  inasistencia_au: [{ id: 'inasistencia_au', nombre: 'Base de inasistencias (Aurora)', tabla: 'aurora_inasistencia', fecha: 'mes', plantilla: null }],
+  encuestas_au: [{ id: 'encuestas_au', nombre: 'Compilado de encuestas (Aurora)', tabla: 'aurora_encuestas', fecha: 'mes', plantilla: null }],
   agendas_usuaria: [{ id: 'agendas_usuaria', nombre: 'Agendas (citas, cancelaciones e inasistencias)', tabla: 'agendas_usuaria', fecha: 'mes', plantilla: null }], // Fase 303
   calidad_resumen: [{ id: 'calidad_resumen', nombre: 'Calidad: resumen por asesor', tabla: 'calidad_resumen_asesor', fecha: 'mes', plantilla: 'PLANTILLA_CALIDAD_RESUMEN.xlsx' }],
   // Calidad: la plantilla depende de los items de cada campana (se descarga

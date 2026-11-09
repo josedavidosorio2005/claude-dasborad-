@@ -4835,6 +4835,15 @@ function agendasTresBasesAurora() {
 }
 runOnceMigration('fase302_agendas_tres_bases_v1', agendasTresBasesAurora);
 
+// Fase 306 (10/11): Clinica Aurora -- pestañas «Inasistencia» y «Encuestas» con
+// sus bases (tablas nuevas aurora_inasistencia y aurora_encuestas, solo conteos).
+// Solo Aurora; ningun otro cliente. Idempotente.
+function auroraInasistenciaEncuestas() {
+  require('./aurora-bases').crearTablas(db);
+  habilitarModulosComoOrlant(AURORA, ['inasistencia_au', 'encuestas_au'], 'fase306_aurora_inasistencia_encuestas_v1');
+}
+runOnceMigration('fase306_aurora_inasistencia_encuestas_v1', auroraInasistenciaEncuestas);
+
 // Fase 269 (pedido de Edwin, 05/11): en MOBILIZE, CLINICA AURORA y HOSPITAL
 // LA MARIA la pestaña Calidad queda solo con "Resultado de los monitoreos"
 // (calidad_monitoreos_panel). Se quitan de la pantalla el resumen subido en
@@ -4944,6 +4953,7 @@ module.exports.crearAgendasUsuariaAurora = crearAgendasUsuariaAurora;
 module.exports.agregarMonitoreosPanelAuroraHlm = agregarMonitoreosPanelAuroraHlm;
 module.exports.migrarAgendasUsuariaVistas = migrarAgendasUsuariaVistas;
 module.exports.agendasTresBasesAurora = agendasTresBasesAurora; // Fase 302
+module.exports.auroraInasistenciaEncuestas = auroraInasistenciaEncuestas; // Fase 306
 module.exports.migrarMobilizeResumenSoloTitulos = migrarMobilizeResumenSoloTitulos;
 module.exports.migrarMobilizeResumenOrdenComoOrlant = migrarMobilizeResumenOrdenComoOrlant;
 module.exports.migrarOrlantTraficoEtiquetaTotal = migrarOrlantTraficoEtiquetaTotal;

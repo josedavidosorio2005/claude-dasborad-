@@ -1106,6 +1106,9 @@ async function _gdBootstrap(conservar){
       if(p.tipo === 'encuesta_panel' && typeof _encuestaCargarOpciones === 'function') fuentesSoloPanel.push(function(){ return _encuestaCargarOpciones(camp).then(function(r){ return r.meses; }); });
       // Fase 259: Agendas por usuaria -- sus meses entran en MESES y su pestaña se destapa (en memoria) al tener datos.
       if(p.tipo === 'agendas_usuaria_panel' && typeof _auCargarOpciones === 'function') fuentesSoloPanel.push(function(){ return _auCargarOpciones(camp).then(function(r){ if(r.meses.length && camp === _gd.cliente){ var tabAu = (_gd.config.layout.tabs || []).find(function(t){ return t.key === 'agendas_usuaria'; }); if(tabAu) tabAu.oculta = false; } return r.meses; }); });
+      // Fase 306: Inasistencia y Encuestas de Aurora -- sus meses entran en MESES.
+      if(p.tipo === 'aurora_inasistencia_panel' && typeof _abCargarOpciones === 'function') fuentesSoloPanel.push(function(){ return _abCargarOpciones('inasistencia', camp).then(function(r){ return r.meses; }); });
+      if(p.tipo === 'aurora_encuestas_panel' && typeof _abCargarOpciones === 'function') fuentesSoloPanel.push(function(){ return _abCargarOpciones('encuestas', camp).then(function(r){ return r.meses; }); });
       if(p.tipo === 'trafico_whatsapp_combo' && typeof wppTiemposUsa === 'function' && wppTiemposUsa(camp)) fuentesSoloPanel.push(function(){ return _wppTiemposCargarOpciones(camp).then(function(r){ return r.meses; }); });
       if(p.tipo === 'llamadas_unicas_panel' && typeof _llamadasSalidaCargarOpciones === 'function') fuentesSoloPanel.push(function(){ return _llamadasSalidaCargarOpciones(camp).then(function(r){ return r.meses; }); });
     });
@@ -1804,7 +1807,7 @@ function switchGenericSubtab(key){
 // la exclusion de la rejilla de graficas, que antes eran dos copias a mano.
 var GD_TIPOS_PANEL_PROPIO = ['trafico_combo', 'trafico_whatsapp_combo', 'agendas_panel', 'inasistencia_panel', 'tipificacion_panel',
   'efectividad_agendamiento_panel', 'efectividad_citas_panel', 'salida_panel', 'total_trafico_panel', 'llamadas_unicas_panel',
-  'encuesta_panel', 'calidad_resumen_panel', 'calidad_monitoreos_panel', 'agendas_usuaria_panel', 'flujo_hora_panel', 'errores_panel']; // Fase 284: errores_panel
+  'encuesta_panel', 'calidad_resumen_panel', 'calidad_monitoreos_panel', 'agendas_usuaria_panel', 'flujo_hora_panel', 'errores_panel', 'aurora_inasistencia_panel', 'aurora_encuestas_panel']; // Fase 306 // Fase 284: errores_panel
 // Paneles que nunca van en la rejilla de graficas (<canvas id="gd-c<i>">).
 var GD_TIPOS_SIN_LIENZO = ['kpi_row', 'calidad_kpis', 'tabla', 'nota_kpi'].concat(GD_TIPOS_PANEL_PROPIO);
 
@@ -1903,6 +1906,8 @@ function _gdRenderPanel(p, i){
   if(p.tipo === 'calidad_resumen_panel'){ _calidadResumenRenderPanel(p, i); return; } // Fase 172
   if(p.tipo === 'calidad_monitoreos_panel'){ _cmpRender(p, i); return; } // Fase 256
   if(p.tipo === 'agendas_usuaria_panel'){ _auRender(p, i); return; } // Fase 259
+  if(p.tipo === 'aurora_inasistencia_panel'){ _abRenderInasistencia(p, i); return; } // Fase 306
+  if(p.tipo === 'aurora_encuestas_panel'){ _abRenderEncuestas(p, i); return; } // Fase 306
   if(p.tipo === 'flujo_hora_panel'){ _flujoHoraRenderPanel(p, i); return; } // Fase 196
   if(p.tipo === 'errores_panel'){ _erroresRenderPanel(p, i); return; } // Fase 284
   if(p.tipo === 'total_trafico_panel'){ _totalTraficoRenderPanel(p, i); return; } // Fase 219
@@ -2697,6 +2702,13 @@ async function _gdDatosPanelesTab(){
     if(p.tipo === 'errores_panel'){
       var fEr = (typeof erroresFilasExport === 'function') ? erroresFilasExport(p.campana) : [];
       out = out.concat(fEr.length ? fEr : [{ titulo: 'Errores', tipo: 'aviso', filas: [], mensaje: 'Sin errores registrados para el periodo actual.' }]);
+      continue;
+    }
+    // Fase 306: Inasistencia (% por especialidad) y Encuestas (por entidad) de Aurora.
+    if(p.tipo === 'aurora_inasistencia_panel' || p.tipo === 'aurora_encuestas_panel'){
+      var fAb = (typeof _abFilasExport === 'function') ? _abFilasExport(i) : [];
+      var tAb = p.tipo === 'aurora_inasistencia_panel' ? 'Inasistencia por especialidad' : 'Encuestas por entidad';
+      out.push(fAb.length ? { titulo: tAb, tipo: 'tabla', filas: fAb } : { titulo: tAb, tipo: 'aviso', filas: [], mensaje: 'Sin datos para el periodo actual.' });
       continue;
     }
     // Fase 259: la tabla por asesora (solo conteos), con los filtros del panel.

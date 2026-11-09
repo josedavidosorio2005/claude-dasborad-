@@ -2061,6 +2061,7 @@ div.ca-bar-fila{cursor:default}
 .au-ag-vermas{display:flex;justify-content:center;margin-top:10px}
 .au-g2-wrap{height:440px}
 @media (max-width:600px){.au-g2-wrap{height:560px}}
+.ab-nota{margin:0 0 8px;color:var(--c-text-muted);font-size:var(--fs-small)} /* Fase 306 */
 .au-ag-nota{margin:8px 0 0;color:var(--c-text-muted);font-size:var(--fs-small);text-align:center}
 .au-tabla .au-total th,.au-tabla .au-total td{font-weight:700;border-top:2px solid var(--c-border)}
 .aurora-rank-table.alias-tabla input{min-height:40px;width:100%;padding:6px 8px;border:1px solid var(--c-border-control);border-radius:var(--r-sm);background:var(--c-surface);color:var(--c-text);font:inherit}

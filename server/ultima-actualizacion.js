@@ -48,6 +48,8 @@ const FUENTES = [
   { tabla: 'whatsapp_tiempos', campoCampana: 'campana', campoFecha: 'createdAt' },
   { tabla: 'calidad_resumen_asesor', campoCampana: 'campana', campoFecha: 'createdAt' }, // Fase 172
   { tabla: 'agendas_usuaria', campoCampana: 'campana', campoFecha: 'createdAt' }, // Fase 259
+  { tabla: 'aurora_inasistencia', campoCampana: 'campana', campoFecha: 'createdAt' }, // Fase 306
+  { tabla: 'aurora_encuestas', campoCampana: 'campana', campoFecha: 'createdAt' }, // Fase 306
 ];
 
 const RE_FECHA_PROCESO = /^(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2}):(\d{2})$/;

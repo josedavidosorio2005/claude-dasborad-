@@ -85,7 +85,7 @@ test('orden de pestañas de Aurora y HLM (Fase 300): Total tráfico TERCERA, y l
   const tabs = ['trafico', 'trafico_whatsapp', 'salida', 'total_trafico', 'agendas_usuaria', 'errores', 'tipificacion', 'calidad'].map((key) => ({ key }));
   for (const c of ['CLINICA AURORA', 'HOSPITAL LA MARIA']) {
     assert.deepEqual(G.pestanasOrdenCliente(tabs, c).map((t) => t.key),
-      ['trafico', 'trafico_whatsapp', 'total_trafico', 'salida', 'agendas_usuaria', 'tipificacion', 'errores', 'calidad'], c); // Fase 305: Errores despues de Tipificacion
+      ['trafico', 'trafico_whatsapp', 'total_trafico', 'salida', 'agendas_usuaria', 'tipificacion', 'calidad', 'errores'], c); // Fase 306: Errores SIEMPRE de ultima
   }
   // HLM hoy solo tiene 3 visibles.
   assert.deepEqual(G.pestanasOrdenCliente([{ key: 'trafico' }, { key: 'trafico_whatsapp' }, { key: 'total_trafico' }], 'HOSPITAL LA MARIA').map((t) => t.key),

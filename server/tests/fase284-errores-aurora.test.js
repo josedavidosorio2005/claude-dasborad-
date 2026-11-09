@@ -28,8 +28,9 @@ test('migracion: modulo `errores` solo en Aurora; pestaña «Errores» justo des
   assert.ok(r.find((c) => c.nombre === AURORA).modulos.includes('errores'));
   for (const c of r.filter((x) => x.nombre !== AURORA)) assert.ok(!(c.modulos || []).includes('errores'), c.nombre);
   const tabs = layoutDe(AURORA).tabs;
-  const i = tabs.findIndex((t) => t.key === 'agendas_usuaria');
-  assert.ok(i !== -1);
+  const i = tabs.findIndex((t) => t.key === 'agendas_usuaria') + 2; // Fase 306: entre Agendas y Errores van Inasistencia y Encuestas
+  assert.ok(i > 1);
+  assert.deepEqual(tabs.slice(i - 1, i + 1).map((t) => t.key), ['inasistencia_au', 'encuestas_au']);
   assert.equal(tabs[i + 1].key, 'errores');
   assert.equal(tabs[i + 1].label, 'Errores');
   assert.ok(!tabs[i + 1].oculta, 'se ve aunque no haya errores');
