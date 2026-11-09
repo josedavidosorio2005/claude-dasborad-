@@ -12,10 +12,12 @@ const { contrasteRazon } = require('../../public/js/contraste-logic.js');
 
 const JS = path.join(__dirname, '..', '..', 'public', 'js');
 
-test('solo Aurora y HLM usan las graficas de lineas; ORLANT y Mobilize siguen igual', () => {
+test('salida en lineas: solo Aurora y HLM; Total tráfico en lineas: Aurora, HLM y ORLANT (Fase 300); Mobilize y SURA igual', () => {
   assert.equal(G.graficasLineasAplica('CLINICA AURORA'), true);
   assert.equal(G.graficasLineasAplica('hospital la maria'), true);
-  for (const c of ['ORLANT', 'MOBILIZE', 'SURA', '', undefined]) assert.equal(G.graficasLineasAplica(c), false, String(c));
+  for (const c of ['ORLANT', 'MOBILIZE', 'SURA', '', undefined]) assert.equal(G.graficasLineasAplica(c), false, 'salida ' + String(c));
+  for (const c of ['CLINICA AURORA', 'HOSPITAL LA MARIA', 'ORLANT', 'orlant']) assert.equal(G.totalTraficoLineasAplica(c), true, 'total ' + c);
+  for (const c of ['MOBILIZE', 'SURA', '', undefined]) assert.equal(G.totalTraficoLineasAplica(c), false, 'total ' + String(c));
 });
 
 test('Total = llamadas ingresadas + WhatsApp ingresados (sin contestados ni salida)', () => {
@@ -79,17 +81,32 @@ test('Total tráfico: titulo pedido y 3 lineas, nunca "contestados" en la grafic
   assert.doesNotMatch(cuerpo, /contestad/i);
 });
 
-test('orden de pestañas de Aurora y HLM: el pedido, y las demas al final sin perder ninguna', () => {
+test('orden de pestañas de Aurora y HLM (Fase 300): Total tráfico TERCERA, y las demas al final sin perder ninguna', () => {
   const tabs = ['trafico', 'trafico_whatsapp', 'salida', 'total_trafico', 'agendas_usuaria', 'errores', 'tipificacion', 'calidad'].map((key) => ({ key }));
   for (const c of ['CLINICA AURORA', 'HOSPITAL LA MARIA']) {
     assert.deepEqual(G.pestanasOrdenCliente(tabs, c).map((t) => t.key),
-      ['total_trafico', 'trafico', 'trafico_whatsapp', 'salida', 'agendas_usuaria', 'errores', 'tipificacion', 'calidad'], c);
+      ['trafico', 'trafico_whatsapp', 'total_trafico', 'salida', 'agendas_usuaria', 'errores', 'tipificacion', 'calidad'], c);
   }
-  // HLM hoy solo tiene 3 visibles: mismo orden relativo.
+  // HLM hoy solo tiene 3 visibles.
   assert.deepEqual(G.pestanasOrdenCliente([{ key: 'trafico' }, { key: 'trafico_whatsapp' }, { key: 'total_trafico' }], 'HOSPITAL LA MARIA').map((t) => t.key),
-    ['total_trafico', 'trafico', 'trafico_whatsapp']);
-  assert.deepEqual(G.pestanasOrdenCliente(tabs, 'ORLANT').map((t) => t.key), tabs.map((t) => t.key), 'ORLANT no cambia');
+    ['trafico', 'trafico_whatsapp', 'total_trafico']);
   assert.notEqual(G.pestanasOrdenCliente(tabs, 'CLINICA AURORA'), tabs, 'no muta la lista original');
+});
+
+test('ORLANT (Fase 300): solo Total tráfico se mueve, a TERCERA (despues de WhatsApp); las demas en su orden', () => {
+  // Orden real de produccion (visibles): trafico, trafico_whatsapp, salida, total_trafico, ... calidad.
+  const orl = ['trafico', 'trafico_whatsapp', 'salida', 'total_trafico', 'agendamiento', 'inasistencia', 'efectividad', 'tipificacion', 'calidad', 'flujo'].map((key) => ({ key }));
+  const out = G.pestanasOrdenCliente(orl, 'ORLANT').map((t) => t.key);
+  assert.deepEqual(out, ['trafico', 'trafico_whatsapp', 'total_trafico', 'salida', 'agendamiento', 'inasistencia', 'efectividad', 'tipificacion', 'calidad', 'flujo']);
+  const sinTt = out.filter((k) => k !== 'total_trafico');
+  assert.deepEqual(sinTt, orl.map((t) => t.key).filter((k) => k !== 'total_trafico'), 'el resto, en el mismo orden');
+  // Sin WhatsApp: justo despues de Llamadas. Sin Total tráfico: nada cambia.
+  assert.deepEqual(G.pestanasOrdenCliente([{ key: 'trafico' }, { key: 'salida' }, { key: 'total_trafico' }], 'ORLANT').map((t) => t.key), ['trafico', 'total_trafico', 'salida']);
+  const sinTotal = [{ key: 'trafico' }, { key: 'salida' }];
+  assert.deepEqual(G.pestanasOrdenCliente(sinTotal, 'ORLANT'), sinTotal);
+  assert.equal(orl[3].key, 'total_trafico', 'no muta la lista original');
+  // Mobilize y SURA: sin cambios.
+  for (const c of ['MOBILIZE', 'SURA']) assert.deepEqual(G.pestanasOrdenCliente(orl, c).map((t) => t.key), orl.map((t) => t.key), c);
 });
 
 test('el orden se aplica al mostrar (dashboard-generic.js), no en la base', () => {

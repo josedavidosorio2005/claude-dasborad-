@@ -4,6 +4,20 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.148.0 — Noviembre 2026
+
+**Fase 300: Total tráfico de tercera y la misma gráfica en ORLANT.**
+
+- **Clínica Aurora y Hospital La María**: «Total tráfico» vuelve a ir de **tercera**: Tráfico de
+  Llamadas → Tráfico de WhatsApp → Total tráfico → Llamadas y WhatsApp de salida → Agendas por
+  usuaria → Errores → Tipificación.
+- **ORLANT**: «Total tráfico» usa la **misma gráfica de líneas** que Aurora (Total = llamadas
+  ingresadas + WhatsApp ingresados, Llamadas ingresadas y WhatsApp ingresados, con el valor en
+  cada punto; sin «Total contestados» en la gráfica) y pasa a ir de **tercera**, después de
+  Tráfico de Llamadas y Tráfico de WhatsApp. Las demás pestañas de ORLANT siguen en su orden y
+  ningún número cambia. Las tarjetas de arriba de Total tráfico siguen igual.
+- Mobilize y SURA no cambian.
+
 ## v1.147.0 — Noviembre 2026
 
 **Fase 299: los supervisores cargan los datos de sus campañas, también SURA.**

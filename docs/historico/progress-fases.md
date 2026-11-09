@@ -20003,3 +20003,23 @@ supervisor con perfil viejo, el de Aurora+HLM recibe 403 en SURA y en ORLANT, CL
 `cargaGlobalModuloCliente`). Suite 2774/2774, `npm audit` 0. Local (Playwright + Brave, copia de
 la base demo, 375/768/1440): el supervisor general ve los 5 clientes y el panel de SURA con
 «Montar base»; el de Aurora+HLM, solo esos 2; 0 errores de consola.
+
+
+## Fase 300 — Total tráfico tercera en Aurora/HLM y la misma gráfica en ORLANT (v1.148.0, 2026-11-10)
+
+Pedido del 10/11 (reunión con ORLANT a las 2 p. m.: nada de ORLANT podía romperse).
+
+- `public/js/graficas-lineas-logic.js`: `PESTANAS_ORDEN_AURORA_HLM` corregido (Total tráfico
+  tercera, no primera como dejó la Fase 297). Dos reglas separadas: `graficasLineasAplica`
+  (salida en líneas: Aurora y HLM) y `totalTraficoLineasAplica` (Total tráfico en 3 líneas:
+  Aurora, HLM y ORLANT). Para ORLANT, `pestanasOrdenCliente` solo mueve `total_trafico` justo
+  después de `trafico_whatsapp` (o de `trafico`); el resto queda en su orden. Al mostrar
+  (`_gdTabsVisibles`): `dashboards_config` no cambia.
+- `total-trafico.js` usa `totalTraficoLineasAplica` (el mismo `_ttDibujarLineas`, sin
+  duplicar). La salida de ORLANT sigue en barras; Mobilize y SURA sin cambios. Ningún cálculo
+  cambia (mismas `llamadasEntrada`/`whatsappEntrada` del servidor).
+
+**Pruebas.** `fase297-graficas-lineas` actualizada (orden nuevo de Aurora/HLM; ORLANT: solo se
+mueve Total tráfico, el resto en el mismo orden, sin mutar la lista; Mobilize/SURA igual). Suite
+2775/2775, `npm audit` 0. Local (Playwright + Brave, copia de la base demo con datos sintéticos,
+CLIENTE y SUPERVISOR, 375/768/1440): orden correcto en ORLANT, Aurora y HLM, 0 errores.

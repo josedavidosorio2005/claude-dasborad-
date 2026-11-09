@@ -45,7 +45,7 @@ async function _totalTraficoRenderPanel(p, i){
     kpi(delMeses.length && s.nivelAtencion !== null ? gdFmtValor(s.nivelAtencion*100, '%') : '—', 'Nivel de atención total · contestados ÷ ingresados · '+lbl) +
     '</div>';
   // Fase 297: Aurora y HLM, lineas de ingreso por mes con su propio titulo.
-  if(typeof graficasLineasAplica === 'function' && graficasLineasAplica(campana)){
+  if(typeof totalTraficoLineasAplica === 'function' && totalTraficoLineasAplica(campana)){ // Fase 300: + ORLANT
     html += '<div class="aurora-chart-title gl-titulo">Flujo de llamadas &amp; WhatsApp – líneas de ingreso por mes</div>';
   }
   html += '<div class="aurora-chart-wrap" style="height:320px"><canvas id="tt-c-'+i+'"></canvas></div>';
@@ -66,7 +66,7 @@ function totalTraficoSumaFilas(filas){
 // 2 barras por mes: Total llamadas + WhatsApp (ingresados) y Total contestados.
 // Fase 297: Aurora y HLM, 3 lineas de ingreso (_ttDibujarLineas).
 function _ttDibujarGrafica(i, filas){
-  if(typeof graficasLineasAplica === 'function' && graficasLineasAplica(_ttCampanaPorPanel[i])){ _ttDibujarLineas(i, filas); return; }
+  if(typeof totalTraficoLineasAplica === 'function' && totalTraficoLineasAplica(_ttCampanaPorPanel[i])){ _ttDibujarLineas(i, filas); return; } // Fase 300: + ORLANT
   var ds = [
     { label: 'Total llamadas + WhatsApp', data: filas.map(function(f){ return f.ingresados; }), backgroundColor: (typeof colorSerie==='function' ? colorSerie('principal') : '#004150'), borderRadius: 4 },
     { label: 'Total contestados', data: filas.map(function(f){ return f.contestados; }), backgroundColor: (typeof colorSerie==='function' ? colorSerie('secundaria') : '#3DA2DB'), borderRadius: 4 },
