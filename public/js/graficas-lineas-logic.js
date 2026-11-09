@@ -7,14 +7,23 @@
 //     valor en cada punto y la variación frente al mes anterior.
 // Solo cambia la PRESENTACIÓN: los números salen tal cual de
 // /calidad/total-trafico/mensual (llamadasEntrada, whatsappEntrada) y de
-// /calidad/salida/mensual (salidaValorLinea). ORLANT y Mobilize siguen igual.
+// /calidad/salida/mensual (salidaValorLinea).
+// Fase 300 (10/11): ORLANT usa la MISMA grafica de Total tráfico (solo esa; su
+// salida sigue en barras) y su pestaña pasa a ir tercera. Mobilize y SURA igual.
 // Doble modo (global/Node), sin DOM.
 'use strict';
 
+// Salida en lineas (con variacion mes a mes): Aurora y HLM.
 var GRAFICAS_LINEAS_CLIENTES = ['CLINICA AURORA', 'HOSPITAL LA MARIA'];
+// Total trafico en 3 lineas de ingreso: Aurora, HLM y, desde la Fase 300, ORLANT.
+var TOTAL_TRAFICO_LINEAS_CLIENTES = ['CLINICA AURORA', 'HOSPITAL LA MARIA', 'ORLANT'];
 
+function _glNorm(c) { return String(c || '').trim().toUpperCase(); }
 function graficasLineasAplica(campana) {
-  return GRAFICAS_LINEAS_CLIENTES.indexOf(String(campana || '').trim().toUpperCase()) !== -1;
+  return GRAFICAS_LINEAS_CLIENTES.indexOf(_glNorm(campana)) !== -1;
+}
+function totalTraficoLineasAplica(campana) {
+  return TOTAL_TRAFICO_LINEAS_CLIENTES.indexOf(_glNorm(campana)) !== -1;
 }
 
 // Las 3 series de ingreso por mes (mismo orden que `filas`).
@@ -73,16 +82,33 @@ function graficasLineasColores(oscuro) {
     : { total: '#1d5fa8', llamadas: '#b45309', whatsapp: '#15803d', sube: '#15803d', baja: '#c0392b', igual: '#4f6f7d' };
 }
 
-// Orden de las pestañas de Aurora y HLM (pedido del supervisor): Total tráfico,
-// Tráfico de Llamadas, Tráfico de WhatsApp, Llamadas y WhatsApp de salida (justo
-// después del tráfico), Agendas por usuaria, Errores, Tipificación. Se aplica al
+// Orden de las pestañas de Aurora y HLM (Fase 300, corrige la 297: Total tráfico
+// va TERCERA): Tráfico de Llamadas, Tráfico de WhatsApp, Total tráfico, Llamadas
+// y WhatsApp de salida, Agendas por usuaria, Errores, Tipificación. Se aplica al
 // MOSTRAR (dashboard-generic.js, _gdTabsVisibles): dashboards_config no cambia, así
 // una pestaña que se agregue después por migración no deshace este orden. Las que
 // no están en la lista quedan al final, en el orden que ya tenían. Otro cliente: igual.
-var PESTANAS_ORDEN_AURORA_HLM = ['total_trafico', 'trafico', 'trafico_whatsapp', 'salida', 'agendas_usuaria', 'errores', 'tipificacion'];
+var PESTANAS_ORDEN_AURORA_HLM = ['trafico', 'trafico_whatsapp', 'total_trafico', 'salida', 'agendas_usuaria', 'errores', 'tipificacion'];
+
+// ORLANT (Fase 300): solo se mueve Total tráfico justo despues de Tráfico de
+// WhatsApp (o de Tráfico de Llamadas si no esta); todas las demas, igual.
+function _glMoverTotalTrafico(lista) {
+  var i = -1;
+  for (var k = 0; k < lista.length; k++) if (lista[k] && lista[k].key === 'total_trafico') i = k;
+  if (i === -1) return lista;
+  var tt = lista.splice(i, 1)[0];
+  var ancla = -1;
+  ['trafico_whatsapp', 'trafico'].some(function (key) {
+    for (var j = 0; j < lista.length; j++) if (lista[j] && lista[j].key === key) { ancla = j; return true; }
+    return false;
+  });
+  lista.splice(ancla + 1, 0, tt);
+  return lista;
+}
 
 function pestanasOrdenCliente(tabs, cliente) {
   var lista = (tabs || []).slice();
+  if (_glNorm(cliente) === 'ORLANT') return _glMoverTotalTrafico(lista);
   if (!graficasLineasAplica(cliente)) return lista;
   var pos = function (t) { var k = PESTANAS_ORDEN_AURORA_HLM.indexOf(t && t.key); return k === -1 ? PESTANAS_ORDEN_AURORA_HLM.length : k; };
   return lista.map(function (t, i) { return { t: t, i: i }; })
@@ -92,6 +118,7 @@ function pestanasOrdenCliente(tabs, cliente) {
 
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { PESTANAS_ORDEN_AURORA_HLM: PESTANAS_ORDEN_AURORA_HLM, pestanasOrdenCliente: pestanasOrdenCliente, GRAFICAS_LINEAS_CLIENTES: GRAFICAS_LINEAS_CLIENTES, graficasLineasAplica: graficasLineasAplica,
+    TOTAL_TRAFICO_LINEAS_CLIENTES: TOTAL_TRAFICO_LINEAS_CLIENTES, totalTraficoLineasAplica: totalTraficoLineasAplica,
     totalTraficoSeriesIngreso: totalTraficoSeriesIngreso, variacionMesAMes: variacionMesAMes,
     variacionTexto: variacionTexto, variacionSentido: variacionSentido, graficasLineasColores: graficasLineasColores };
 }
