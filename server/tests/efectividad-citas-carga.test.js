@@ -11,7 +11,7 @@
 
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { request, app, tokenFor, MASTER_PASSWORD } = require('./helpers');
+const { request, app, tokenFor, MASTER_PASSWORD, registrarModulosPrueba } = require('./helpers');
 
 const auth = (t) => ({ Authorization: `Bearer ${t}` });
 
@@ -20,6 +20,8 @@ function fila(over) {
   const base = ['2025-04', 100, 50];
   return Object.assign([], base, over);
 }
+
+registrarModulosPrueba('CLIENTE DEMO CITAS', ['efectividad_citas']); // Fase 310: campaña de prueba en el registro
 
 test('POST /calidad/efectividad-citas/carga: solo quien tiene el permiso Cargar Datos puede subir', async () => {
   const admin = await tokenFor('admin', MASTER_PASSWORD);

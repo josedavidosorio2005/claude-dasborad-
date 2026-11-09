@@ -12,7 +12,7 @@ const express = require('express');
 const db = require('../db');
 // Fase 158: cache de /opciones (ver cache-opciones.js).
 const { opcionesConCache } = require('../cache-opciones');
-const { requireActor, campaignAccess, canLoadData, canLoadModule } = require('../auth');
+const { requireActor, campaignAccess, canLoadData, canLoadModule, campanaDeCarga } = require('../auth');
 const { validate, schemas } = require('../validation');
 const {
   impactoLlamadasUnicas,
@@ -47,7 +47,7 @@ router.get(
   requireActor,
   wrap((req, res) => {
     // Fase 299: la plantilla VACIA la baja tambien quien carga este modulo (supervisor, CALIDAD con su permiso).
-    if (!canLoadModule(req.actor, 'llamadas_unicas')) {
+    if (!canLoadModule(req.actor, 'llamadas_unicas', campanaDeCarga(req))) {
       return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para descargar la plantilla' });
     }
     res.download(PLANTILLA_LLAMADAS_UNICAS_PATH, 'PLANTILLA_LLAMADAS_UNICAS_MOBILIZE.xlsx', (err) => {
@@ -106,7 +106,7 @@ router.post(
   requireActor,
   validate(schemas.llamadasUnicasCargaBody),
   wrap((req, res) => {
-    if (!canLoadModule(req.actor, 'llamadas_unicas')) {
+    if (!canLoadModule(req.actor, 'llamadas_unicas', campanaDeCarga(req))) {
       return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para calcular el impacto de una carga' });
     }
     const b = req.body;
@@ -122,7 +122,7 @@ router.post(
   requireActor,
   validate(schemas.llamadasUnicasCargaBody),
   wrap((req, res) => {
-    if (!canLoadModule(req.actor, 'llamadas_unicas')) {
+    if (!canLoadModule(req.actor, 'llamadas_unicas', campanaDeCarga(req))) {
       return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para subir llamadas unicas' });
     }
     const b = req.body;
@@ -152,7 +152,7 @@ router.post(
   requireActor,
   validate(schemas.llamadasAbandonadasCargaBody),
   wrap((req, res) => {
-    if (!canLoadModule(req.actor, 'llamadas_unicas')) {
+    if (!canLoadModule(req.actor, 'llamadas_unicas', campanaDeCarga(req))) {
       return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para calcular el impacto de una carga' });
     }
     if (!campaignAccess(req.actor, req.body.campana)) {
@@ -167,7 +167,7 @@ router.post(
   requireActor,
   validate(schemas.llamadasAbandonadasCargaBody),
   wrap((req, res) => {
-    if (!canLoadModule(req.actor, 'llamadas_unicas')) {
+    if (!canLoadModule(req.actor, 'llamadas_unicas', campanaDeCarga(req))) {
       return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para subir llamadas abandonadas' });
     }
     const b = req.body;

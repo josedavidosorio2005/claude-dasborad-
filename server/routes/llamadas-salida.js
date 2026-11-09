@@ -14,7 +14,7 @@ const express = require('express');
 const db = require('../db');
 // Fase 158: cache de /opciones (ver cache-opciones.js).
 const { opcionesConCache } = require('../cache-opciones');
-const { requireActor, campaignAccess, canLoadModule } = require('../auth');
+const { requireActor, campaignAccess, canLoadModule, campanaDeCarga } = require('../auth');
 const { validate, schemas } = require('../validation');
 const {
   impactoLlamadasSalida,
@@ -105,7 +105,7 @@ router.post(
   requireActor,
   validate(schemas.llamadasSalidaCargaBody),
   wrap((req, res) => {
-    if (!canLoadModule(req.actor, 'llamadas_unicas')) {
+    if (!canLoadModule(req.actor, 'llamadas_unicas', campanaDeCarga(req))) {
       return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para calcular el impacto de una carga' });
     }
     if (!campaignAccess(req.actor, req.body.campana)) return sinAcceso(res);
@@ -118,7 +118,7 @@ router.post(
   requireActor,
   validate(schemas.llamadasSalidaCargaBody),
   wrap((req, res) => {
-    if (!canLoadModule(req.actor, 'llamadas_unicas')) {
+    if (!canLoadModule(req.actor, 'llamadas_unicas', campanaDeCarga(req))) {
       return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para subir llamadas de salida' });
     }
     const b = req.body;
@@ -146,7 +146,7 @@ router.post(
   requireActor,
   validate(schemas.llamadasNoConectadasCargaBody),
   wrap((req, res) => {
-    if (!canLoadModule(req.actor, 'llamadas_unicas')) {
+    if (!canLoadModule(req.actor, 'llamadas_unicas', campanaDeCarga(req))) {
       return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para calcular el impacto de una carga' });
     }
     if (!campaignAccess(req.actor, req.body.campana)) {
@@ -161,7 +161,7 @@ router.post(
   requireActor,
   validate(schemas.llamadasNoConectadasCargaBody),
   wrap((req, res) => {
-    if (!canLoadModule(req.actor, 'llamadas_unicas')) {
+    if (!canLoadModule(req.actor, 'llamadas_unicas', campanaDeCarga(req))) {
       return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para subir llamadas no conectadas' });
     }
     const b = req.body;

@@ -6,7 +6,7 @@
 const express = require('express');
 const db = require('../db');
 const { opcionesConCache } = require('../cache-opciones');
-const { requireActor, campaignAccess, canLoadModule } = require('../auth');
+const { requireActor, campaignAccess, canLoadModule, campanaDeCarga } = require('../auth');
 const { validate, schemas } = require('../validation');
 const { impactoFlujoHora, cargarFlujoHora, flujoHoraOpciones, flujoHoraMes } = require('../flujo-hora');
 const { wrap, logEvent, actorLabel } = require('./shared');
@@ -25,13 +25,13 @@ router.get('/calidad/flujo-hora/mes', requireActor, validate(schemas.flujoHoraMe
 }));
 
 router.post('/calidad/flujo-hora/carga/impacto', requireActor, validate(schemas.flujoHoraCargaBody), wrap((req, res) => {
-  if (!canLoadModule(req.actor, 'flujo_hora')) return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para calcular el impacto de una carga' });
+  if (!canLoadModule(req.actor, 'flujo_hora', campanaDeCarga(req))) return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para calcular el impacto de una carga' });
   if (!campaignAccess(req.actor, req.body.campana)) return sinAcceso(res);
   res.json(impactoFlujoHora(db, { campana: req.body.campana, filas: req.body.filas }));
 }));
 
 router.post('/calidad/flujo-hora/carga', requireActor, validate(schemas.flujoHoraCargaBody), wrap((req, res) => {
-  if (!canLoadModule(req.actor, 'flujo_hora')) return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para subir el flujo por hora' });
+  if (!canLoadModule(req.actor, 'flujo_hora', campanaDeCarga(req))) return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para subir el flujo por hora' });
   const b = req.body;
   if (!campaignAccess(req.actor, b.campana)) return sinAcceso(res);
   const r = cargarFlujoHora(db, { campana: b.campana, archivoNombre: b.archivoNombre || '', cargadoPorNombre: req.actor.nombre || '-', filas: b.filas });

@@ -13,7 +13,7 @@ const express = require('express');
 const db = require('../db');
 // Fase 158: cache de /opciones (ver cache-opciones.js).
 const { opcionesConCache } = require('../cache-opciones');
-const { requireActor, campaignAccess, canLoadModule, isFullAdmin, canLoadCampaign } = require('../auth');
+const { requireActor, campaignAccess, canLoadModule, isFullAdmin, canLoadCampaign, campanaDeCarga } = require('../auth');
 const { validate, schemas } = require('../validation');
 const { impactoAgendas, cargarAgendas, agendasPorEspecialidad, agendasPorMes, agendasPorLinea, agendasRanking, agendasOpciones } = require('../agendas');
 const { usaClasificacionAgendas, listarUsuarios, guardarUsuarios, listarCodigos, guardarCodigos } = require('../agendas-clasificacion');
@@ -108,7 +108,7 @@ router.post(
   requireActor,
   validate(schemas.agendasCargaBody),
   wrap((req, res) => {
-    if (!canLoadModule(req.actor, 'agendas')) {
+    if (!canLoadModule(req.actor, 'agendas', campanaDeCarga(req))) {
       return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para calcular el impacto de una carga' });
     }
     const b = req.body;
@@ -124,7 +124,7 @@ router.post(
   requireActor,
   validate(schemas.agendasCargaBody),
   wrap((req, res) => {
-    if (!canLoadModule(req.actor, 'agendas')) {
+    if (!canLoadModule(req.actor, 'agendas', campanaDeCarga(req))) {
       return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para subir agendas' });
     }
     const b = req.body;
@@ -155,7 +155,7 @@ router.post(
 // fuera de la lista (puede ser una cedula).
 function _rechazoClasificacion(req, res, campana, { soloAdmin }) {
   // Fase 299: "soloAdmin" = el administrador o el SUPERVISOR de esa campana.
-  const puede = canLoadCampaign(req.actor, campana) || (!soloAdmin && canLoadModule(req.actor, 'agendas') && campaignAccess(req.actor, campana));
+  const puede = canLoadCampaign(req.actor, campana) || (!soloAdmin && canLoadModule(req.actor, 'agendas', campanaDeCarga(req)) && campaignAccess(req.actor, campana));
   if (!puede) {
     res.status(403).json({ error: 'Solo un administrador o un supervisor de esta campaña puede ver o cambiar esta clasificación' });
     return true;

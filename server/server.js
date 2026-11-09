@@ -480,6 +480,8 @@ function createApp() {
     if (err && (err.type === 'entity.parse.failed' || err instanceof SyntaxError)) {
       return res.status(400).json({ error: 'JSON invalido' });
     }
+    // Fase 310: errores con mensaje para el usuario (ej. carga de un modulo ajeno a la campaña).
+    if (err && err.statusPublico) return res.status(err.statusPublico).json({ error: err.message });
     // Fase 157 (S-07): la ruta sin la query (puede traer nombres, ej. ?agente=).
     console.error('[error]', req.method, String(req.originalUrl || '').split('?')[0], '-', err && err.stack ? err.stack : err);
     res.status(500).json({ error: 'Error interno del servidor' });
