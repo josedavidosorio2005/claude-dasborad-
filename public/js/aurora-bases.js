@@ -57,60 +57,127 @@ function _abBarrasH(canvasId, etiquetas, datos, color, formato) {
   _gdChart(canvasId, { type: 'bar', data: { labels: etiquetas, datasets: [{ label: '', data: datos, backgroundColor: color, borderColor: color, maxBarThickness: 34 }] }, options: o });
 }
 
-// ── Inasistencia: % por especialidad (solo el porcentaje), de mayor a menor ──
+// ── Fase 320 (pedido de Edwin, 10/11): Inasistencia y Encuestas más simples ──
+// Vista inicial «Por mes» (una línea, un punto por mes con su valor) y botones para
+// cambiar de vista. El subtítulo dice siempre qué se está mostrando. Los cálculos no
+// cambian (inaPorMes / inaPorEspecialidad usan la misma fórmula de siempre).
+var _abVista = {}; // por campaña: { ina, inaMes, enc, encMes }
+function _abEstado(camp) { return _abVista[camp] || (_abVista[camp] = { ina: 'mes', inaMes: '', enc: 'mes', encMes: '' }); }
+function _abMesLargo(m) { return typeof mesNombreLargo === 'function' ? mesNombreLargo(m) : m; }
+function _abBotones(grupo, lista, activa, i, etiqueta) {
+  return '<div class="gd-subtabs au-ag-botones" role="group" aria-label="' + esc(etiqueta) + '">' + lista.map(function (b) {
+    var on = b.v === activa;
+    return '<button type="button" class="gd-subtab-btn' + (on ? ' on' : '') + '" aria-pressed="' + (on ? 'true' : 'false') + '" data-ab-grupo="' + grupo + '" data-v="' + esc(b.v) + '">' + esc(b.t) + '</button>';
+  }).join('') + '</div>';
+}
+// Linea con el valor visible en cada punto y, opcional, la linea punteada del promedio.
+function _abLinea(canvasId, etiquetas, datos, formato, promedio, etiquetaSerie) {
+  var c = _abColor('total'), cp = _abColor('citas');
+  var o = (typeof lo === 'function') ? lo(null) : { responsive: true, maintainAspectRatio: false, plugins: {}, scales: { x: {}, y: {} } };
+  if (typeof _auEjeDesdeCero === 'function') _auEjeDesdeCero(o);
+  if (o.scales && o.scales.y) { o.scales.y.grace = '18%'; o.scales.y.ticks = Object.assign({}, o.scales.y.ticks, { callback: function (v) { return formato(v); } }); }
+  var angosta = typeof window !== 'undefined' && window.innerWidth < 600;
+  // offset: cada punto en el centro de su espacio (con un solo mes no queda pegado al borde).
+  if (o.scales && o.scales.x) o.scales.x.offset = true;
+  if (o.scales && o.scales.x) o.scales.x.ticks = Object.assign({}, o.scales.x.ticks, { autoSkip: false, maxRotation: 60, font: { size: angosta ? 10 : 12 },
+    callback: function (v) { var t = String(this.getLabelForValue(v) || ''); return typeof auPartirEtiqueta === 'function' ? auPartirEtiqueta(t, angosta ? 12 : 18) : t; } });
+  o.plugins.datalabels = Object.assign({}, o.plugins.datalabels, { display: function (ctx) { return ctx.datasetIndex === 0; }, align: 'top', anchor: 'end', color: c, formatter: function (v) { return formato(v); } });
+  o.plugins.legend = { display: promedio !== null && promedio !== undefined, position: 'bottom', labels: { boxWidth: 14, font: { size: 12 } } };
+  o.plugins.tooltip = { callbacks: { label: function (ctx) { return ctx.dataset.label + ': ' + formato(ctx.parsed.y); } } };
+  o.layout = { padding: { top: 26, left: 10, right: 24 } };
+  var ds = [{ label: etiquetaSerie, data: datos, borderColor: c, backgroundColor: c, pointBackgroundColor: c, borderWidth: 2.5, pointRadius: 6, tension: 0.2, fill: false }];
+  if (promedio !== null && promedio !== undefined) ds.push({ label: 'Promedio de los meses: ' + formato(promedio), data: datos.map(function () { return promedio; }), borderColor: cp, backgroundColor: cp, borderDash: [7, 5], borderWidth: 2, pointRadius: 0, fill: false });
+  _gdChart(canvasId, { type: 'line', data: { labels: etiquetas, datasets: ds }, options: o });
+}
+function _abSinDatos(el, titulo, texto) {
+  el.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">' + esc(titulo) + '</div><div class="gd-vacio" role="status">' + esc(texto) + '</div></div>';
+}
+function _abEnlazar(el, camp, p, i) {
+  el.querySelectorAll('[data-ab-grupo]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var st = _abEstado(camp), g = b.getAttribute('data-ab-grupo'), v = b.getAttribute('data-v');
+      st[g] = v;
+      (el.dataset.abTipo === 'inasistencia' ? _abRenderInasistencia : _abRenderEncuestas)(p, i);
+    });
+  });
+}
+
+// ── Inasistencia ──
 async function _abRenderInasistencia(p, i) {
   var el = document.getElementById('gd-p' + i); if (!el) return;
   var camp = p.campana || _gd.cliente;
   el.dataset.campana = camp; el.dataset.abTipo = 'inasistencia';
-  var titulo = p.titulo || 'Inasistencia por especialidad';
   var datos;
   try { datos = await _abCargar('inasistencia', camp); } catch (e) { el.innerHTML = '<div class="aurora-card"><div class="gd-aviso-mes" role="status">' + esc(e.message) + '</div></div>'; return; }
-  if (!datos.filas.length) { _abVacio(el, titulo, 'Inasistencia', 'Todavía no hay base de inasistencias. Súbela en Cargar datos › ' + esc(camp) + ' › Inasistencia (Aurora) › Subir.'); return; }
-  var esp = inaPorEspecialidad(datos.filas, _abMeses());
-  if (!esp.length) { el.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">' + esc(titulo) + '</div><div class="gd-vacio" role="status">Sin citas para los meses elegidos.</div></div>'; return; }
-  var alto = Math.max(280, 46 * esp.length + 80);
-  el.innerHTML = gdGraficaHtml(esc(titulo),
-    '<p class="ab-nota">% de inasistencia = citas con estado «No asistió» ÷ total de citas de la especialidad.</p>' +
-    '<div class="aurora-chart-wrap" style="height:' + alto + 'px"><canvas id="gd-c' + i + '-ab-ina"></canvas></div>', { destacado: true });
-  _abBarrasH('gd-c' + i + '-ab-ina', esp.map(function (x) { return x.especialidad; }), esp.map(function (x) { return x.pct; }), _abColor('citas'), abPct);
+  if (!datos.filas.length) { _abVacio(el, 'Inasistencia', 'Inasistencia', 'Todavía no hay base de inasistencias. Súbela en Cargar datos › ' + esc(camp) + ' › Inasistencia (Aurora) › Subir.'); return; }
+  var st = _abEstado(camp), meses = abMesesConDatos(datos.filas, _abMeses());
+  if (!meses.length) { _abSinDatos(el, 'Inasistencia', 'Sin citas para los meses elegidos.'); return; }
+  if (meses.indexOf(st.inaMes) === -1) st.inaMes = meses[meses.length - 1];
+  var vistas = _abBotones('ina', [{ v: 'mes', t: 'Por mes' }, { v: 'especialidad', t: 'Por especialidad' }], st.ina, i, 'Ver inasistencia');
+  var nota = '<p class="ab-nota">% de inasistencia = citas con estado «No asistió» ÷ total de citas.</p>';
+  if (st.ina === 'especialidad') {
+    var esp = inaPorEspecialidad(datos.filas, [st.inaMes]);
+    var selMes = meses.length > 1 ? '<div class="ab-meses">' + _abBotones('inaMes', meses.map(function (m) { return { v: m, t: _abMesLargo(m) }; }), st.inaMes, i, 'Mes') + '</div>' : '';
+    var alto = Math.max(340, Math.min(560, 18 * esp.length + 300));
+    el.innerHTML = gdGraficaHtml('Inasistencia por especialidad', '<p class="ab-sub">Mes: <b>' + esc(_abMesLargo(st.inaMes)) + '</b> · ' + esp.length + ' especialidad(es), de mayor a menor</p>' + selMes + nota +
+      '<div class="aurora-chart-wrap" style="height:' + alto + 'px"><canvas id="gd-c' + i + '-ab-ina"></canvas></div>', { destacado: true, acciones: vistas });
+    _abLinea('gd-c' + i + '-ab-ina', esp.map(function (x) { return x.especialidad; }), esp.map(function (x) { return x.pct; }), abPct, null, '% inasistencia');
+  } else {
+    var serie = inaPorMes(datos.filas, meses), prom = abPromedio(serie.map(function (x) { return x.pct; }));
+    el.innerHTML = gdGraficaHtml('Inasistencia por mes', '<p class="ab-sub">Un punto por mes (' + serie.length + (serie.length === 1 ? ' mes' : ' meses') + ') · promedio de los meses: <b>' + esc(abPct(prom)) + '</b></p>' + nota +
+      '<div class="aurora-chart-wrap" style="height:340px"><canvas id="gd-c' + i + '-ab-ina"></canvas></div>', { destacado: true, acciones: vistas });
+    _abLinea('gd-c' + i + '-ab-ina', serie.map(function (x) { return _abMesLargo(x.mes); }), serie.map(function (x) { return x.pct; }), abPct, serie.length > 1 ? prom : null, '% inasistencia del mes');
+  }
+  _abEnlazar(el, camp, p, i);
 }
 
-// ── Encuestas: una barra por entidad y la linea de tiempo por fecha ──
+// ── Encuestas ── (el compilado no trae especialidad: se ofrece «Por entidad»)
 async function _abRenderEncuestas(p, i) {
   var el = document.getElementById('gd-p' + i); if (!el) return;
   var camp = p.campana || _gd.cliente;
   el.dataset.campana = camp; el.dataset.abTipo = 'encuestas';
-  var titulo = p.titulo || 'Encuestas';
   var datos;
   try { datos = await _abCargar('encuestas', camp); } catch (e) { el.innerHTML = '<div class="aurora-card"><div class="gd-aviso-mes" role="status">' + esc(e.message) + '</div></div>'; return; }
-  if (!datos.filas.length) { _abVacio(el, titulo, 'Encuestas', 'Todavía no hay compilado de encuestas. Súbelo en Cargar datos › ' + esc(camp) + ' › Encuestas (Aurora) › Subir.'); return; }
-  var meses = _abMeses();
-  var ent = encPorEntidad(datos.filas, meses), fec = encPorFecha(datos.filas, meses);
-  if (!ent.length) { el.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">' + esc(titulo) + '</div><div class="gd-vacio" role="status">Sin encuestas para los meses elegidos.</div></div>'; return; }
-  var alto = Math.max(280, 46 * ent.length + 80);
-  el.innerHTML =
-    gdGraficaHtml('Encuestas por entidad', '<p class="ab-nota">Las encuestas sin entidad no se grafican.</p><div class="aurora-chart-wrap" style="height:' + alto + 'px"><canvas id="gd-c' + i + '-ab-ent"></canvas></div>', { destacado: true }) +
-    gdGraficaHtml('Encuestas por fecha', '<div class="aurora-chart-wrap" style="height:320px"><canvas id="gd-c' + i + '-ab-fec"></canvas></div>', { destacado: true });
-  _abBarrasH('gd-c' + i + '-ab-ent', ent.map(function (x) { return x.entidad; }), ent.map(function (x) { return x.n; }), _abColor('citas'), _abFmtN);
-  var c = _abColor('total');
-  var o = (typeof lo === 'function') ? lo(null) : { responsive: true, maintainAspectRatio: false, plugins: {}, scales: { x: {}, y: {} } };
-  if (typeof _auEjeDesdeCero === 'function') _auEjeDesdeCero(o);
-  if (o.scales && o.scales.y) o.scales.y.grace = '12%';
-  if (typeof loDatalabelsAuto === 'function') loDatalabelsAuto(o, _abFmtN);
-  if (o.plugins.datalabels) o.plugins.datalabels.color = c;
-  o.plugins.legend = { display: false };
-  o.layout = { padding: { top: 22, left: 10, right: 30 } };
-  _gdChart('gd-c' + i + '-ab-fec', { type: 'line', data: { labels: fec.map(function (x) { return _abFechaCorta(x.fecha); }),
-    datasets: [{ label: 'Encuestas', data: fec.map(function (x) { return x.n; }), borderColor: c, backgroundColor: c, pointBackgroundColor: c, borderWidth: 2.5, pointRadius: 5, tension: 0.25, fill: false }] }, options: o });
+  if (!datos.filas.length) { _abVacio(el, 'Encuestas', 'Encuestas', 'Todavía no hay compilado de encuestas. Súbelo en Cargar datos › ' + esc(camp) + ' › Encuestas (Aurora) › Subir.'); return; }
+  var st = _abEstado(camp), meses = abMesesConDatos(datos.filas, _abMeses());
+  if (!meses.length) { _abSinDatos(el, 'Encuestas', 'Sin encuestas para los meses elegidos.'); return; }
+  if (meses.indexOf(st.encMes) === -1) st.encMes = meses[meses.length - 1];
+  var vistas = _abBotones('enc', [{ v: 'mes', t: 'Por mes' }, { v: 'entidad', t: 'Por entidad' }, { v: 'dia', t: 'Por día' }], st.enc, i, 'Ver encuestas');
+  var selMes = meses.length > 1 ? '<div class="ab-meses">' + _abBotones('encMes', meses.map(function (m) { return { v: m, t: _abMesLargo(m) }; }), st.encMes, i, 'Mes') + '</div>' : '';
+  var nota = '<p class="ab-nota">Las encuestas sin entidad no se cuentan.</p>';
+  if (st.enc === 'entidad') {
+    var ent = encPorEntidad(datos.filas, [st.encMes]);
+    var alto = Math.max(340, Math.min(560, 18 * ent.length + 300));
+    el.innerHTML = gdGraficaHtml('Encuestas por entidad', '<p class="ab-sub">Mes: <b>' + esc(_abMesLargo(st.encMes)) + '</b> · ' + ent.length + ' entidad(es), de mayor a menor</p>' + selMes + nota +
+      '<div class="aurora-chart-wrap" style="height:' + alto + 'px"><canvas id="gd-c' + i + '-ab-enc"></canvas></div>', { destacado: true, acciones: vistas });
+    _abLinea('gd-c' + i + '-ab-enc', ent.map(function (x) { return x.entidad; }), ent.map(function (x) { return x.n; }), _abFmtN, null, 'Encuestas');
+  } else if (st.enc === 'dia') {
+    var fec = encPorFecha(datos.filas, [st.encMes]);
+    el.innerHTML = gdGraficaHtml('Encuestas por día', '<p class="ab-sub">Mes: <b>' + esc(_abMesLargo(st.encMes)) + '</b> · un punto por día con encuestas</p>' + selMes + nota +
+      '<div class="aurora-chart-wrap" style="height:340px"><canvas id="gd-c' + i + '-ab-enc"></canvas></div>', { destacado: true, acciones: vistas });
+    _abLinea('gd-c' + i + '-ab-enc', fec.map(function (x) { return _abFechaCorta(x.fecha); }), fec.map(function (x) { return x.n; }), _abFmtN, null, 'Encuestas');
+  } else {
+    var serie = encPorMes(datos.filas, meses), prom = abPromedio(serie.map(function (x) { return x.n; }));
+    el.innerHTML = gdGraficaHtml('Encuestas por mes', '<p class="ab-sub">Cantidad de encuestas, un punto por mes (' + serie.length + (serie.length === 1 ? ' mes' : ' meses') + ')' + (serie.length > 1 ? ' · promedio de los meses: <b>' + esc(_abFmtN(prom)) + '</b>' : '') + '</p>' + nota +
+      '<div class="aurora-chart-wrap" style="height:340px"><canvas id="gd-c' + i + '-ab-enc"></canvas></div>', { destacado: true, acciones: vistas });
+    _abLinea('gd-c' + i + '-ab-enc', serie.map(function (x) { return _abMesLargo(x.mes); }), serie.map(function (x) { return x.n; }), _abFmtN, serie.length > 1 ? prom : null, 'Encuestas del mes');
+  }
+  _abEnlazar(el, camp, p, i);
 }
 
-// Para Exportar del tablero: la tabla que se ve.
+// Para Exportar del tablero: la tabla de la vista que se ve.
 function _abFilasExport(i) {
   var host = document.getElementById('gd-p' + i); if (!host) return [];
   var camp = host.dataset.campana, tipo = host.dataset.abTipo, d = (_abCache[camp] || {})[tipo];
   if (!d) return [];
-  if (tipo === 'inasistencia') return inaPorEspecialidad(d.filas, _abMeses()).map(function (x) { return { Especialidad: x.especialidad, '% inasistencia': x.pct }; });
-  return encPorEntidad(d.filas, _abMeses()).map(function (x) { return { Entidad: x.entidad, Encuestas: x.n }; });
+  var st = _abEstado(camp), meses = abMesesConDatos(d.filas, _abMeses());
+  if (tipo === 'inasistencia') {
+    if (st.ina === 'especialidad') return inaPorEspecialidad(d.filas, [st.inaMes]).map(function (x) { return { Mes: _abMesLargo(st.inaMes), Especialidad: x.especialidad, '% inasistencia': x.pct }; });
+    return inaPorMes(d.filas, meses).map(function (x) { return { Mes: _abMesLargo(x.mes), Citas: x.total, 'No asistió': x.noAsistio, '% inasistencia': x.pct }; });
+  }
+  if (st.enc === 'entidad') return encPorEntidad(d.filas, [st.encMes]).map(function (x) { return { Mes: _abMesLargo(st.encMes), Entidad: x.entidad, Encuestas: x.n }; });
+  if (st.enc === 'dia') return encPorFecha(d.filas, [st.encMes]).map(function (x) { return { Fecha: x.fecha, Encuestas: x.n }; });
+  return encPorMes(d.filas, meses).map(function (x) { return { Mes: _abMesLargo(x.mes), Encuestas: x.n }; });
 }
 
 // ── Carga desde el Centro de cargas (rama Aurora) ──

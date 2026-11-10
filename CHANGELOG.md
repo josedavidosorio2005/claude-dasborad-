@@ -4,6 +4,18 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.159.0 — Noviembre 2026
+
+**Fase 320: cambios de Edwin en Clínica Aurora (reunión del 10/11).**
+
+- **Gestión líneas internas:** el flujo es de WhatsApp: se llama «Flujo WhatsApp de entrada» y
+  dice «Total de WhatsApp» (tarjeta, gráfica, Ver datos y Exportar). Con «Todas» y sin datos dice
+  «Sin datos de este mes». La torta de llamadas no cambia.
+- **Inasistencia:** empieza con una línea por mes (el % de cada mes con su valor y el promedio de
+  los meses). Con «Por especialidad» se ve el mes elegido por especialidad. El cálculo no cambia.
+- **Encuestas:** empieza con la cantidad por mes en línea. Botones «Por entidad» (del mes elegido)
+  y «Por día». El compilado no trae especialidad, por eso no hay vista por especialidad.
+
 ## v1.158.1 — Noviembre 2026
 
 **Fase 319: tres arreglos menores.**

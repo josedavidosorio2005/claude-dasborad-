@@ -2068,6 +2068,9 @@ div.ca-bar-fila{cursor:default}
 .au-g2-wrap{height:440px}
 @media (max-width:600px){.au-g2-wrap{height:560px}}
 .ab-nota{margin:0 0 8px;color:var(--c-text-muted);font-size:var(--fs-small)} /* Fase 306 */
+/* Fase 320: subtitulo (que se muestra) y selector de mes de Inasistencia y Encuestas */
+.ab-sub{margin:0 0 8px;color:var(--c-text);font-size:var(--fs-body)}
+.ab-meses{margin:0 0 10px}
 /* Fase 311: «Gestión líneas internas» (Aurora) */
 .li-botones{margin:0 0 12px}
 .li-sin-datos{font-weight:400;font-size:var(--fs-small);opacity:.8}

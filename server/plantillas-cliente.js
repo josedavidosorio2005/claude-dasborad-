@@ -90,7 +90,7 @@ function lineasInternasTab(campana) {
   return {
     key: 'lineas_internas', label: 'Gestión líneas internas',
     panels: [
-      { tipo: 'aurora_li_flujo_panel', campana, titulo: 'Flujo de llamadas' },
+      { tipo: 'aurora_li_flujo_panel', campana, titulo: 'Flujo WhatsApp de entrada' }, // Fase 320 (Edwin): es WhatsApp, no llamadas
       { tipo: 'aurora_li_cdr_panel', campana, titulo: 'CDR llamadas' },
       { tipo: 'aurora_li_whatsapp_panel', campana, titulo: 'WhatsApp' },
     ],

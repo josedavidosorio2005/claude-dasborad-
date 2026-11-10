@@ -20400,3 +20400,17 @@ tocado: a 375 px las tarjetas del módulo de Calidad se montan sobre el contenid
   con «Subir», Deshacer). Solo en las 3 bases de líneas internas; la lógica de reemplazo no cambia.
 - Prueba `fase319-arreglos-menores` (4). Verificación local main vs rama a 375/768/1440, claro y
   oscuro: sin solapes ni recortes, 1440 igual a `main`, 0 errores.
+
+## Fase 320 — Aurora: pedidos de Edwin del 10/11 (v1.159.0, 2026-11-10)
+
+- **Gestión líneas internas:** textos del flujo a WhatsApp («Flujo WhatsApp de entrada», «Total de
+  WhatsApp», eje y nota); migración `fase320_titulo_flujo_li_v1` cambia solo el título de ese panel en
+  el layout de Aurora. Con «Todas» sin datos: «Sin datos de este mes». La torta CDR no se tocó.
+- **Inasistencia** (`aurora-bases.js`): vista inicial «Por mes» (línea, `inaPorMes`: la misma fórmula
+  aplicada a cada mes, + línea punteada del promedio simple de los meses, `abPromedio`) y «Por
+  especialidad» (línea, mes elegido con botones). Subtítulo con lo que se muestra.
+- **Encuestas:** «Por mes» (línea, `encPorMes`), «Por entidad» y «Por día» del mes elegido. El
+  compilado solo trae FECHA, CÉDULA, NOMBRE, CELULAR y ENTIDAD: no hay especialidad.
+- `docs/pendientes-2026-11-10.md`: el usuario en mayúsculas, resuelto desde la Fase 310.
+- Prueba `fase320-aurora-ajustes-edwin` (6). Local con las bases reales (solo local): 4.232 citas
+  (3,9 %) y 2.941 encuestas, iguales a lo cargado; 375/768/1440, claro y oscuro, 0 errores.
