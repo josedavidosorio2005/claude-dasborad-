@@ -205,6 +205,8 @@ M('<select id="cf" hidden>', '<select id="cf" hidden aria-label="Campaña">');
 M('<input type="date" id="fd">', '<input type="date" id="fd" aria-label="Desde">');
 M('<input type="date" id="fh">', '<input type="date" id="fh" aria-label="Hasta">');
 M('<select id="fp">', '<select id="fp" aria-label="Producto">');
+// Fase 326 (pedido de Edwin): en SURA no hay «agendas»: el titulo es «Ventas por mes».
+M('>Agendas (ventas) por mes</h2>', '>Ventas por mes</h2>');
 for (const [id, que] of [['ric', 'ciudades'], ['rid', 'departamentos'], ['tic', 'ciudades'], ['tid', 'departamentos'], ['tip', 'productos']]) {
   M(`<input id="${id}" `, `<input id="${id}" aria-label="Agregar ${que}" `);
 }
@@ -234,6 +236,7 @@ X('r=parseIni(buf);', 'r=stvLimpiarTexto(parseIni(buf));', 1);
 X('async function dicSave(k,m){DB.__dic=DB.__dic||{};DB.__dic[k]=m;', 'async function dicSave(k,m){DB.__dic=DB.__dic||{};DB.__dic[k]=stvLimpiarTexto(m);', 1);
 X('async function tipSave(T){DB.__tip=T;', 'async function tipSave(T){DB.__tip=T=stvLimpiarTexto(T);', 1);
 X('${d.file}', '${esc(d.file)}', 3);
+X('"Agendas (ventas)")+" por mes"', '"Ventas")+" por mes"', 1); // Fase 326: «Ventas por mes»
 X('${x.n}', '${esc(x.n)}', 19);
 X('${g.name}', '${esc(g.name)}', 7);
 X('`Estrategia # ${g.num} · ${esc(g.name)}`]', '`Estrategia # ${g.num} · ${g.name}`]', 1); // va a sel(), que ya escapa

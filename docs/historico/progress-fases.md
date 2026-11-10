@@ -20478,3 +20478,11 @@ pantalla (sus datos nunca van al repo).
 `descuento`: las demás plantillas no cambian. Medido en local con las líneas reales del texto
 (`Range.getClientRects`): antes 6 valores partidos a 768 y 1440 px; ahora 0 en 375/768/1440, claro y
 oscuro. Prueba `fase322` ajustada.
+
+## Fase 326 — Televentas SURA: «Ventas por mes» (v1.163.2, 2026-11-10)
+
+Pedido de Edwin: el título de la gráfica 4 de Cumplimiento (`#g4t`) decía «Agendas (ventas) por mes».
+Cambiado en el archivo generado y en el generador (`M()` del markup y `X()` del JS), así no se pierde
+al regenerar. Regenerado desde el HTML de Edwin en una carpeta temporal: los reemplazos aplican y
+no agregan diferencias (el HTML local ya difería en 6 líneas de otra versión). Pendiente de
+aprobación de Edwin: el encabezado de sección «📅 Agendas» (misma pestaña). Prueba `fase326` (2).
