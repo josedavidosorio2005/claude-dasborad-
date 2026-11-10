@@ -4,6 +4,15 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.155.2 — Noviembre 2026
+
+**Fase 313: Clínica Aurora — los skills 4166 y 4169 ya salen con su nombre.**
+
+- En la Tipificación de WhatsApp de Aurora, «Skill 4166 (nombre pendiente)» ahora dice «Área
+  Programación» y «Skill 4169 (nombre pendiente)» dice «Área Patología», igual que en Gestión
+  líneas internas. Solo cambia el nombre: las cifras siguen iguales. ORLANT y las demás campañas
+  no cambian.
+
 ## v1.155.1 — Noviembre 2026
 
 **Fase 312: Clínica Aurora › Gestión líneas internas — el skill 0 de WhatsApp ahora se llama «WhatsApp de salida».**
