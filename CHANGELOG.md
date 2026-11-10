@@ -4,6 +4,13 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.155.1 — Noviembre 2026
+
+**Fase 312: Clínica Aurora › Gestión líneas internas — el skill 0 de WhatsApp ahora se llama «WhatsApp de salida».**
+
+- Antes salía como «Skill 0» en la torta y en el filtro de skill de WhatsApp. Solo cambia el
+  nombre: las cifras, las demás pestañas de Aurora y ORLANT siguen igual.
+
 ## v1.155.0 — Noviembre 2026
 
 **Fase 311: Clínica Aurora — pestaña nueva «Gestión líneas internas» (la operación interna en Wolkvox).**

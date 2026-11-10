@@ -20292,3 +20292,12 @@ flujo 230 / 181 / 49, NS 58,4 %; CDR 752 (740 salida, 12 entrada); WhatsApp 1.78
 
 **Pruebas.** `fase311-aurora-lineas-internas` (10) + ajustes de listas cerradas (fase118, 134,
 150, 153, 160, 230, 306, 307, helpers-aurora). Suite 2845/2845.
+
+## Fase 312 — Líneas internas: skill 0 de WhatsApp = «WhatsApp de salida» (v1.155.1, 2026-11-10)
+
+Confirmado por el supervisor: el SKILL_ID 0 del HistChat de líneas internas es «WhatsApp de
+salida». Va en `LI_SKILLS_OTROS` (`public/js/lineas-internas-logic.js`), aparte de `LI_SKILLS`
+(las áreas), para que no salga como botón del flujo. Solo cambia el nombre visible (torta y
+filtro de skill); el valor guardado sigue siendo `0` y los conteos no cambian (1.588 de
+octubre). La salida del CDR sigue agrupada como «Llamadas de salida» y el nivel de servicio a 20
+segundos. Prueba `fase311-aurora-lineas-internas` ajustada (10/10).
