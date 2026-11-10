@@ -20,7 +20,62 @@ const TIPOS = {
     columnas: ['mes', 'fecha', 'entidad', 'n'],
     suma: 'n',
   },
+  // Fase 311: «Gestión líneas internas» (Wolkvox interno de la clinica), aparte de
+  // las bases de siempre. Solo conteos: nada de telefonos, cedulas ni comentarios.
+  flujo_li: {
+    tabla: 'aurora_li_flujo',
+    columnas: ['mes', 'fecha', 'skill', 'total', 'contestadas', 'abandonadas', 'nivelServicio'],
+    suma: 'total',
+  },
+  cdr_li: {
+    tabla: 'aurora_li_cdr',
+    columnas: ['mes', 'agente', 'skill', 'tipo', 'tipificacion', 'n'],
+    suma: 'n',
+  },
+  whatsapp_li: {
+    tabla: 'aurora_li_whatsapp',
+    columnas: ['mes', 'agente', 'skill', 'tipo', 'tipificacion', 'n'],
+    suma: 'n',
+  },
 };
+
+// Fase 311: tablas de «Gestión líneas internas» (migracion propia).
+function crearTablasLineasInternas(db) {
+  const tipif = (t) => `
+    CREATE TABLE IF NOT EXISTS ${t} (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      campana TEXT NOT NULL,
+      mes TEXT NOT NULL,
+      agente TEXT NOT NULL,
+      skill TEXT NOT NULL,
+      tipo TEXT NOT NULL,
+      tipificacion TEXT NOT NULL,
+      n INTEGER NOT NULL,
+      archivoNombre TEXT,
+      cargadoPorNombre TEXT,
+      createdAt TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_${t}_campana_mes ON ${t}(campana, mes);`;
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS aurora_li_flujo (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      campana TEXT NOT NULL,
+      mes TEXT NOT NULL,
+      fecha TEXT NOT NULL,
+      skill TEXT NOT NULL,
+      total INTEGER NOT NULL,
+      contestadas INTEGER NOT NULL,
+      abandonadas INTEGER NOT NULL,
+      nivelServicio REAL,
+      archivoNombre TEXT,
+      cargadoPorNombre TEXT,
+      createdAt TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_aurora_li_flujo_campana_mes ON aurora_li_flujo(campana, mes);
+    ${tipif('aurora_li_cdr')}
+    ${tipif('aurora_li_whatsapp')}
+  `);
+}
 
 function crearTablas(db) {
   db.exec(`
@@ -98,4 +153,4 @@ function datos(db, tipo, campana) {
   return { filas: db.prepare(`SELECT ${t.columnas.join(', ')} FROM ${t.tabla} WHERE campana = ? ORDER BY mes`).all(campana) };
 }
 
-module.exports = { TIPOS, crearTablas, impacto, cargar, opciones, datos };
+module.exports = { TIPOS, crearTablas, crearTablasLineasInternas, impacto, cargar, opciones, datos };

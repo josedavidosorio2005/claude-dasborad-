@@ -4,8 +4,16 @@
 // aurora-bases-logic.js; colores AU_PALETA (agendas-usuaria-logic.js). Siguen el
 // filtro MESES de arriba; los datos se guardan por campaña (_abCache[camp]).
 var _abCache = {}; // por campaña: { inasistencia: { filas }, encuestas: { filas } }
-var AB_RUTA = { inasistencia: '/calidad/aurora-inasistencia', encuestas: '/calidad/aurora-encuestas' };
-var AB_MODULO_TIPO = { inasistencia_au: 'inasistencia', encuestas_au: 'encuestas' };
+var AB_RUTA = { inasistencia: '/calidad/aurora-inasistencia', encuestas: '/calidad/aurora-encuestas',
+  // Fase 311: «Gestión líneas internas»
+  flujo_li: '/calidad/aurora-li-flujo', cdr_li: '/calidad/aurora-li-cdr', whatsapp_li: '/calidad/aurora-li-whatsapp' };
+var AB_MODULO_TIPO = { inasistencia_au: 'inasistencia', encuestas_au: 'encuestas', flujo_li: 'flujo_li', cdr_li: 'cdr_li', whatsapp_li: 'whatsapp_li' };
+// Fase 311: nombre, ayuda y lector de las 3 bases de líneas internas (lineas-internas-logic.js).
+var AB_LI = {
+  flujo_li: { nombre: 'Flujo líneas internas', ayuda: 'El HistQueue de Wolkvox tal cual (.xlsx). Se usan las columnas SKILL_NAME, DATE, INBOUND_CALLS, ANSWER_CALLS, ABANDON_CALLS y SERVICE_LEVEL_20SEC (por nombre, en cualquier orden). Si trae una hoja por área, se leen todas.' },
+  cdr_li: { nombre: 'CDR líneas internas', ayuda: 'El HistCDR de Wolkvox tal cual (.xlsx). Se usan AGENT_NAME, DATE, DESCRIPTION_COD_ACT, SKILL_NAME y SKILL_ID (por nombre). SKILL_NAME «-» = llamada de salida. Las filas PRUEBA no se cuentan.' },
+  whatsapp_li: { nombre: 'WhatsApp líneas internas', ayuda: 'El HistChat de Wolkvox tal cual (.xlsx). Se usan AGENT_NAME, DATE_CLOSE, DESCRIPTION_COD_ACT y SKILL_ID (por nombre). Las filas PRUEBA no se cuentan.' },
+};
 
 async function _abCargar(tipo, camp) {
   var c = _abCache[camp] || (_abCache[camp] = {});
@@ -108,10 +116,10 @@ function _abFilasExport(i) {
 // ── Carga desde el Centro de cargas (rama Aurora) ──
 function abAbrirCarga(moduloId, cliente, mes) {
   var tipo = AB_MODULO_TIPO[moduloId]; if (!tipo) return;
-  var nombre = tipo === 'inasistencia' ? 'Base de inasistencias' : 'Compilado de encuestas';
-  var ayuda = tipo === 'inasistencia'
+  var nombre = AB_LI[tipo] ? AB_LI[tipo].nombre : (tipo === 'inasistencia' ? 'Base de inasistencias' : 'Compilado de encuestas');
+  var ayuda = AB_LI[tipo] ? AB_LI[tipo].ayuda : (tipo === 'inasistencia'
     ? 'La base tal cual la exporta la clínica (.xls o .xlsx). Se usan las columnas fecha, especialidad y estado (por nombre, en cualquier orden).'
-    : 'El compilado tal cual (.xlsx). Se usan las columnas fecha y entidad (por nombre, en cualquier orden). Las filas sin entidad no se cuentan.';
+    : 'El compilado tal cual (.xlsx). Se usan las columnas fecha y entidad (por nombre, en cualquier orden). Las filas sin entidad no se cuentan.');
   _ccDialogo(esc(nombre) + (mes && typeof centroNombreMes === 'function' ? ' (' + esc(centroNombreMes(mes)) + ')' : ''),
     '<p class="au-bases-ayuda">' + ayuda + ' Nada de los pacientes sale de tu equipo: solo se envían conteos. Subir otra vez un mes lo reemplaza (con Deshacer).</p>' +
     '<div class="ig"><label for="ab-archivo">Archivo</label><input type="file" id="ab-archivo" accept=".xls,.xlsx"></div>' +
@@ -132,8 +140,11 @@ async function abGuardarCarga(btn) {
     decir('Leyendo «' + esc(f.name) + '»…');
     var buf = await new Promise(function (ok, mal) { var fr = new FileReader(); fr.onload = function () { ok(fr.result); }; fr.onerror = function () { mal(new Error('No se pudo leer el archivo')); }; fr.readAsArrayBuffer(f); });
     var wb = XLSX.read(new Uint8Array(buf), { type: 'array', sheetStubs: true, cellNF: true });
-    var leer = tipo === 'inasistencia' ? inaParse : encParse, r = null;
-    for (var k = 0; k < wb.SheetNames.length; k++) { // la hoja que tenga las columnas
+    var r = null;
+    // Fase 311: las bases de líneas internas leen TODAS las hojas a la vez.
+    if (AB_LI[tipo]) r = ({ flujo_li: liFlujoParse, cdr_li: liCdrParse, whatsapp_li: liWhatsappParse })[tipo](wb.SheetNames.map(function (n) { return { nombre: n, aoa: XLSX.utils.sheet_to_json(wb.Sheets[n], { header: 1, blankrows: false, defval: null }) }; }), f.name);
+    var leer = tipo === 'inasistencia' ? inaParse : encParse;
+    for (var k = 0; !AB_LI[tipo] && k < wb.SheetNames.length; k++) { // la hoja que tenga las columnas
       var x = leer(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[k]], { header: 1, blankrows: false, defval: null }), f.name);
       if (!x.error) { r = x; break; }
       if (!r) r = x;
@@ -142,7 +153,7 @@ async function abGuardarCarga(btn) {
     if (!r.filas.length) { decir('El archivo no tiene filas para contar.', true); return; }
     var cuerpo = { campana: cliente, archivoNombre: f.name.slice(0, 200), filas: r.filas };
     var imp = await apiRequest('POST', AB_RUTA[tipo] + '/carga/impacto', cuerpo);
-    var resumen = tipo === 'inasistencia'
+    var resumen = AB_LI[tipo] ? liResumenCarga(tipo, r) : tipo === 'inasistencia'
       ? r.citas + ' cita(s), ' + r.noAsistio + ' «No asistió»; estados: ' + Object.keys(r.estados).map(function (e) { return e + ' ' + r.estados[e]; }).join(', ')
       : r.encuestas + ' encuesta(s) con entidad, ' + Object.keys(r.entidades).length + ' entidad(es)';
     var lineas = (imp.meses || []).map(function (m) { return '• ' + mesNombreLargo(m.mes) + ': ' + m.nuevas + (m.existentes > 0 ? ' — REEMPLAZA ' + m.existentes + ' ya cargada(s)' : ' — mes nuevo'); });
@@ -150,6 +161,7 @@ async function abGuardarCarga(btn) {
     if (!confirm('«' + f.name + '»: ' + resumen + '\n\nSe va a guardar:\n' + lineas.join('\n') + avisos + '\n\n¿Continuar?')) { decir('No se guardó nada.'); return; }
     var resp = await apiRequest('POST', AB_RUTA[tipo] + '/carga', cuerpo);
     Object.keys(_abCache).forEach(function (c) { delete _abCache[c]; });
+    if (typeof _liCache !== 'undefined') Object.keys(_liCache).forEach(function (c) { delete _liCache[c]; });
     if (typeof showToast === 'function') showToast(resp.total + ' registro(s) guardados (' + resp.meses.map(mesNombreLargo).join(', ') + ')');
     _ccCerrarDialogo();
     if (typeof _ccCargar === 'function') _ccCargar();

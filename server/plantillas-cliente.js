@@ -52,6 +52,11 @@ const CATALOGO = [
   { id: 'flujo_hora', nombre: 'Flujo por hora', grupo: 'opcional', carga: 'Flujo por hora (Wolkvox)', disponibleParaNuevos: true },
   { id: 'tipificacion', nombre: 'Tipificación', grupo: 'comun', carga: 'CDR / tipificación (Wolkvox)', disponibleParaNuevos: true },
   { id: 'encuesta', nombre: 'Encuesta', grupo: 'opcional', carga: 'HistIVR (Wolkvox)', disponibleParaNuevos: true },
+  // Fase 311 (Clinica Aurora): «Gestión líneas internas» -- una sola pestaña (la de
+  // flujo_li) con las 3 graficas; cdr_li y whatsapp_li solo son tipos de carga.
+  { id: 'flujo_li', nombre: 'Flujo líneas internas', grupo: 'salud', carga: 'HistQueue de Wolkvox de las líneas internas (.xlsx)', disponibleParaNuevos: false, siempreVisible: true },
+  { id: 'cdr_li', nombre: 'CDR líneas internas', grupo: 'salud', carga: 'HistCDR de Wolkvox de las líneas internas (.xlsx)', disponibleParaNuevos: false, siempreVisible: true },
+  { id: 'whatsapp_li', nombre: 'WhatsApp líneas internas', grupo: 'salud', carga: 'HistChat de Wolkvox de las líneas internas (.xlsx)', disponibleParaNuevos: false, siempreVisible: true },
   { id: 'calidad', nombre: 'Calidad', grupo: 'comun', carga: 'Monitoreos + plantilla de evaluación del cliente', disponibleParaNuevos: true },
 ];
 const IDS = CATALOGO.map((m) => m.id);
@@ -80,6 +85,18 @@ function _subtabs(lista) {
 // Pestana por defecto de cada modulo (la de ORLANT, base de la plantilla
 // segun el pedido de Edwin). `activos` es el conjunto de modulos del
 // cliente (Agendas junta su panel con el de Efectividad de Agendamiento).
+// Fase 311: pestaña «Gestión líneas internas» de Aurora (3 graficas, una debajo de otra).
+function lineasInternasTab(campana) {
+  return {
+    key: 'lineas_internas', label: 'Gestión líneas internas',
+    panels: [
+      { tipo: 'aurora_li_flujo_panel', campana, titulo: 'Flujo de llamadas' },
+      { tipo: 'aurora_li_cdr_panel', campana, titulo: 'CDR llamadas' },
+      { tipo: 'aurora_li_whatsapp_panel', campana, titulo: 'WhatsApp' },
+    ],
+  };
+}
+
 const GENERADORES = {
   flujo_llamadas: (campana) => ({
     key: 'trafico', label: 'Tráfico de Llamadas',
@@ -144,6 +161,10 @@ const GENERADORES = {
     key: 'encuestas_au', label: 'Encuestas',
     panels: [{ tipo: 'aurora_encuestas_panel', campana, titulo: 'Encuestas' }],
   }),
+  // Fase 311 (Aurora): la pestaña sale de flujo_li; los otros 2 solo son cargas.
+  flujo_li: (campana) => lineasInternasTab(campana),
+  cdr_li: () => null,
+  whatsapp_li: () => null,
   // Fase 284: visible aunque no haya errores (la pestaña lo avisa).
   errores: (campana) => ({
     key: 'errores', label: 'Errores',
@@ -333,4 +354,5 @@ module.exports = {
   generarLayout,
   TABS_EXTRA,
   AGENDAS_USUARIA_VISTAS,
+  lineasInternasTab, // Fase 311
 };

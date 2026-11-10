@@ -50,6 +50,9 @@ const FUENTES = [
   { tabla: 'agendas_usuaria', campoCampana: 'campana', campoFecha: 'createdAt' }, // Fase 259
   { tabla: 'aurora_inasistencia', campoCampana: 'campana', campoFecha: 'createdAt' }, // Fase 306
   { tabla: 'aurora_encuestas', campoCampana: 'campana', campoFecha: 'createdAt' }, // Fase 306
+  { tabla: 'aurora_li_flujo', campoCampana: 'campana', campoFecha: 'createdAt' }, // Fase 311
+  { tabla: 'aurora_li_cdr', campoCampana: 'campana', campoFecha: 'createdAt' }, // Fase 311
+  { tabla: 'aurora_li_whatsapp', campoCampana: 'campana', campoFecha: 'createdAt' }, // Fase 311
 ];
 
 const RE_FECHA_PROCESO = /^(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2}):(\d{2})$/;

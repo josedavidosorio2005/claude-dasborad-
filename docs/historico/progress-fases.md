@@ -20261,3 +20261,34 @@ Arreglos de los hallazgos 2 y 5 de `docs/revision-seguridad-2026-11-09.md`.
 
 **Pruebas.** `fase310-carga-modulo-login` (5) + ajustes en fase118/119/122 y efectividad-*.
 Suite 2829/2829.
+
+## Fase 311 — Aurora: pestaña «Gestión líneas internas» (v1.155.0, 2026-11-10)
+
+Pedido del supervisor: la clínica pasó su operación interna a Wolkvox; se monta APARTE (se
+integra después) en una pestaña nueva de Clínica Aurora, la última a la derecha.
+
+- **Pestaña** `lineas_internas` («Gestión líneas internas»), 3 paneles uno debajo de otro:
+  `aurora_li_flujo_panel` (barras total / contestadas / abandonadas + línea de nivel de servicio,
+  botones Todas + 5 áreas con el estilo de Agendas; «Todas» = una barra por área, un área = una
+  barra por día), `aurora_li_cdr_panel` (torta de tipificación con filtros agente / skill / tipo;
+  SKILL_NAME «-» = salida; «Sin llamadas de salida» si no hay) y `aurora_li_whatsapp_panel`
+  (torta con filtros agente / skill). Orden: `pestanasOrdenCliente` la pone después de Errores.
+- **Mapa código → nombre** de los 5 skills (supervisor): `LI_SKILLS` en
+  `public/js/lineas-internas-logic.js` (4170 Enfermería, 4165 Farmacia, 4169 Patología,
+  4166 Programación, 4171 Reportes Médicos). Un código fuera del mapa se ve «Skill <código>».
+- **Cargas** nuevas y separadas (`flujo_li`, `cdr_li`, `whatsapp_li`; tablas `aurora_li_*`)
+  sobre el motor de Inasistencia/Encuestas (`server/aurora-bases.js`), mismos permisos. Lectura
+  por nombre de encabezado, todas las hojas; filas PRUEBA excluidas (como Tipificación de
+  Aurora); al servidor solo llegan conteos (nada de teléfono, cédula, CUSTOMER_ID, CONN_ID,
+  USER_ID ni comentarios). WhatsApp por DATE_CLOSE. Nivel de servicio: promedio simple de
+  SERVICE_LEVEL_20SEC, igual que Tráfico de Llamadas.
+- **Migración** `fase311_aurora_lineas_internas_v1`: solo Aurora; agrega los 3 módulos al
+  registro y la pestaña al final SIN regenerar el layout (las demás pestañas quedan idénticas).
+
+**Verificación local** (Playwright + Brave, base demo copiada): textos de las 6 pestañas de Aurora
+y las 9 de ORLANT idénticos entre main y la rama; pestaña nueva en 375/768/1440, claro y oscuro,
+sin scroll horizontal ni errores de consola; cifras con las bases reales de octubre (solo local):
+flujo 230 / 181 / 49, NS 58,4 %; CDR 752 (740 salida, 12 entrada); WhatsApp 1.787.
+
+**Pruebas.** `fase311-aurora-lineas-internas` (10) + ajustes de listas cerradas (fase118, 134,
+150, 153, 160, 230, 306, 307, helpers-aurora). Suite 2845/2845.

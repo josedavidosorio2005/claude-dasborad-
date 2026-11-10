@@ -4844,6 +4844,35 @@ function auroraInasistenciaEncuestas() {
 }
 runOnceMigration('fase306_aurora_inasistencia_encuestas_v1', auroraInasistenciaEncuestas);
 
+// Fase 311 (10/11): Clinica Aurora -- pestaña «Gestión líneas internas» (Wolkvox
+// interno de la clinica), APARTE de las de siempre: tablas nuevas, 3 modulos de
+// carga (flujo_li, cdr_li, whatsapp_li) y la pestaña al FINAL. A diferencia de
+// habilitarModulosComoOrlant, no regenera el layout: las pestañas que ya estaban
+// quedan exactamente igual (mismo orden, mismo contenido). Solo Aurora. Idempotente.
+function auroraLineasInternas() {
+  require('./aurora-bases').crearTablasLineasInternas(db);
+  const MODS = ['flujo_li', 'cdr_li', 'whatsapp_li'];
+  const reg = db.prepare('SELECT modulos FROM clientes_registro WHERE nombre = ?').get(AURORA.nombre);
+  if (!reg) return;
+  let modulos = [];
+  try { modulos = JSON.parse(reg.modulos) || []; } catch (e) { modulos = []; }
+  const ahora = new Date().toISOString();
+  db.transaction(() => {
+    MODS.forEach((m) => { if (!modulos.includes(m)) modulos.push(m); });
+    db.prepare('UPDATE clientes_registro SET modulos = ?, updatedAt = ? WHERE nombre = ?').run(JSON.stringify(modulos), ahora, AURORA.nombre);
+    const row = db.prepare('SELECT layout FROM dashboards_config WHERE cliente = ?').get(AURORA.nombre);
+    if (!row) return;
+    let layout;
+    try { layout = JSON.parse(row.layout); } catch (e) { return; }
+    if (!layout || !Array.isArray(layout.tabs)) return;
+    if (layout.tabs.some((t) => t && t.key === 'lineas_internas')) return;
+    layout.tabs.push(require('./plantillas-cliente').lineasInternasTab(AURORA.nombre));
+    db.prepare('UPDATE dashboards_config SET layout = ?, updatedAt = ? WHERE cliente = ?').run(JSON.stringify(layout), ahora, AURORA.nombre);
+  })();
+  if (!config.isTest) console.log('[db] Migracion fase311_aurora_lineas_internas_v1 aplicada.');
+}
+runOnceMigration('fase311_aurora_lineas_internas_v1', auroraLineasInternas);
+
 // Fase 307 (pedido del supervisor, 10/11): Calidad de ORLANT como Mobilize para
 // que los lideres evaluen. Decision del usuario: se CONSERVA lo que ORLANT ya
 // muestra (indicadores, torta y barras de la base de Cargar datos) y se agrega
@@ -4976,6 +5005,7 @@ module.exports.agregarMonitoreosPanelAuroraHlm = agregarMonitoreosPanelAuroraHlm
 module.exports.migrarAgendasUsuariaVistas = migrarAgendasUsuariaVistas;
 module.exports.agendasTresBasesAurora = agendasTresBasesAurora; // Fase 302
 module.exports.auroraInasistenciaEncuestas = auroraInasistenciaEncuestas; // Fase 306
+module.exports.auroraLineasInternas = auroraLineasInternas; // Fase 311
 module.exports.orlantCalidadMonitoreos = orlantCalidadMonitoreos; // Fase 307
 module.exports.migrarMobilizeResumenSoloTitulos = migrarMobilizeResumenSoloTitulos;
 module.exports.migrarMobilizeResumenOrdenComoOrlant = migrarMobilizeResumenOrdenComoOrlant;

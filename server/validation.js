@@ -776,6 +776,35 @@ const auroraEncuestasCargaBody = z.object({
   archivoNombre: z.string().trim().max(200).optional().default(''),
   filas: z.array(auroraEncuestasFila).min(1, 'El archivo no tiene encuestas con entidad').max(20000, 'Demasiadas filas en un solo archivo'),
 });
+// Fase 311 (Aurora, «Gestión líneas internas»): solo conteos por dia/skill y por
+// agente/skill/tipo/tipificacion. Nada de telefonos, cedulas ni comentarios.
+const auroraLiFlujoFila = z.strictObject({
+  mes: mesSchema,
+  fecha: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Fecha invalida'),
+  skill: z.string().trim().min(1).max(160),
+  total: z.number().int().min(0).max(1000000),
+  contestadas: z.number().int().min(0).max(1000000),
+  abandonadas: z.number().int().min(0).max(1000000),
+  nivelServicio: z.number().min(0).max(100).nullable(),
+});
+const auroraLiFlujoCargaBody = z.object({
+  campana: campanaSchema,
+  archivoNombre: z.string().trim().max(200).optional().default(''),
+  filas: z.array(auroraLiFlujoFila).min(1, 'El archivo no tiene filas de flujo').max(20000, 'Demasiadas filas en un solo archivo'),
+});
+const auroraLiTipifFila = z.strictObject({
+  mes: mesSchema,
+  agente: z.string().trim().min(1).max(160),
+  skill: z.string().trim().min(1).max(160),
+  tipo: z.enum(['entrada', 'salida']),
+  tipificacion: z.string().trim().min(1).max(160),
+  n: z.number().int().min(1).max(1000000),
+});
+const auroraLiTipifCargaBody = z.object({
+  campana: campanaSchema,
+  archivoNombre: z.string().trim().max(200).optional().default(''),
+  filas: z.array(auroraLiTipifFila).min(1, 'El archivo no tiene registros').max(50000, 'Demasiadas filas en un solo archivo'),
+});
 const agendasUsuariaCargaBody = z.object({
   campana: campanaSchema,
   archivoNombre: z.string().trim().max(200).optional().default(''),
@@ -1715,6 +1744,7 @@ module.exports = {
     calidadResumenCargaBody,
     agendasUsuariaQuery, agendasUsuariaCargaBody, // Fase 259
     auroraInasistenciaCargaBody, auroraEncuestasCargaBody, // Fase 306
+    auroraLiFlujoCargaBody, auroraLiTipifCargaBody, // Fase 311
     salidaAsesoresBody,
     skillsWhatsappBody,
     encuestasCargaBody,

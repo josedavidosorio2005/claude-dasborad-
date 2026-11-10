@@ -14,6 +14,10 @@ const sinAcceso = (res) => res.status(403).json({ error: 'Sin acceso a los datos
 const RUTAS = [
   { tipo: 'inasistencia', base: '/calidad/aurora-inasistencia', modulo: 'inasistencia_au', schema: schemas.auroraInasistenciaCargaBody, evento: 'AURORA_INASISTENCIA_CARGA', nombre: 'inasistencia' },
   { tipo: 'encuestas', base: '/calidad/aurora-encuestas', modulo: 'encuestas_au', schema: schemas.auroraEncuestasCargaBody, evento: 'AURORA_ENCUESTAS_CARGA', nombre: 'encuestas' },
+  // Fase 311: «Gestión líneas internas» (mismos permisos que las demas cargas de Aurora).
+  { tipo: 'flujo_li', base: '/calidad/aurora-li-flujo', modulo: 'flujo_li', schema: schemas.auroraLiFlujoCargaBody, evento: 'AURORA_LI_FLUJO_CARGA', nombre: 'flujo de líneas internas' },
+  { tipo: 'cdr_li', base: '/calidad/aurora-li-cdr', modulo: 'cdr_li', schema: schemas.auroraLiTipifCargaBody, evento: 'AURORA_LI_CDR_CARGA', nombre: 'CDR de líneas internas' },
+  { tipo: 'whatsapp_li', base: '/calidad/aurora-li-whatsapp', modulo: 'whatsapp_li', schema: schemas.auroraLiTipifCargaBody, evento: 'AURORA_LI_WHATSAPP_CARGA', nombre: 'WhatsApp de líneas internas' },
 ];
 
 for (const r of RUTAS) {

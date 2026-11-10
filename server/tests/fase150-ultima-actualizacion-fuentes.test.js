@@ -24,7 +24,7 @@ const INSERTS = {
 test('las 4 tablas nuevas estan en FUENTES (14 en total)', () => {
   const tablas = FUENTES.map((f) => f.tabla);
   for (const t of Object.keys(INSERTS)) assert.ok(tablas.includes(t), t);
-  assert.equal(FUENTES.length, 21); // Fase 306: + aurora_inasistencia y aurora_encuestas // Fase 172: + calidad_resumen_asesor; Fase 191: + llamadas_abandonadas; Fase 194: + llamadas_no_conectadas; Fase 196: + flujo_hora; Fase 259: + agendas_usuaria
+  assert.equal(FUENTES.length, 24); // Fase 311: + 3 tablas de líneas internas // Fase 306: + aurora_inasistencia y aurora_encuestas // Fase 172: + calidad_resumen_asesor; Fase 191: + llamadas_abandonadas; Fase 194: + llamadas_no_conectadas; Fase 196: + flujo_hora; Fase 259: + agendas_usuaria
 });
 
 for (const tabla of Object.keys(INSERTS)) {

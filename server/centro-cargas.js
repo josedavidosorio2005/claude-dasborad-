@@ -47,6 +47,10 @@ const CARGAS_POR_MODULO = {
   // Fase 306 (Aurora): base de inasistencias y compilado de encuestas, conteos por mes.
   inasistencia_au: [{ id: 'inasistencia_au', nombre: 'Base de inasistencias (Aurora)', tabla: 'aurora_inasistencia', fecha: 'mes', plantilla: null }],
   encuestas_au: [{ id: 'encuestas_au', nombre: 'Compilado de encuestas (Aurora)', tabla: 'aurora_encuestas', fecha: 'mes', plantilla: null }],
+  // Fase 311 (Aurora, «Gestión líneas internas»): 3 bases propias del Wolkvox interno.
+  flujo_li: [{ id: 'flujo_li', nombre: 'Flujo líneas internas', tabla: 'aurora_li_flujo', fecha: 'mes', plantilla: null }],
+  cdr_li: [{ id: 'cdr_li', nombre: 'CDR líneas internas', tabla: 'aurora_li_cdr', fecha: 'mes', plantilla: null }],
+  whatsapp_li: [{ id: 'whatsapp_li', nombre: 'WhatsApp líneas internas', tabla: 'aurora_li_whatsapp', fecha: 'mes', plantilla: null }],
   agendas_usuaria: [{ id: 'agendas_usuaria', nombre: 'Agendas (citas, cancelaciones e inasistencias)', tabla: 'agendas_usuaria', fecha: 'mes', plantilla: null }], // Fase 303
   calidad_resumen: [{ id: 'calidad_resumen', nombre: 'Calidad: resumen por asesor', tabla: 'calidad_resumen_asesor', fecha: 'mes', plantilla: 'PLANTILLA_CALIDAD_RESUMEN.xlsx' }],
   // Calidad: la plantilla depende de los items de cada campana (se descarga
