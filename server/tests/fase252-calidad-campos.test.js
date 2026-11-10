@@ -84,7 +84,9 @@ test('lista cerrada de campos: alias del HTML, obligatorios y campos no permitid
   const ok = L.normalizarCampos(['asesor', 'fecha', 'codigo', 'obs', 'placa', 'placa'], { codigo: 'Tipificación' });
   assert.deepEqual(ok.campos.map((c) => c.k), ['asesor', 'fecha', 'codificacion', 'observaciones', 'placa']);
   assert.equal(ok.campos[2].etiqueta, 'Tipificación');
-  assert.match(L.normalizarCampos(['asesor', 'cedula']).error, /no permitido/);
+  assert.match(L.normalizarCampos(['asesor', 'documentoPaciente']).error, /no permitido/);
+  // Fase 322: la cedula del cliente SI esta en la lista (SURA), pero se guarda enmascarada.
+  assert.equal(L.enmascararCedula('1.036.555.777'), '••••5777');
   assert.match(L.normalizarCampos(['asesor']).error, /Fecha/);
   assert.deepEqual(L.itemsFaltantes(ITEMS, { 1: 'SI', 2: 'NO', 3: 'SI', 4: 'SI', 5: 'SI', 6: 'N/A' }), [6], 'N/A donde no se admite');
   assert.equal(L.motivoDesdeItems(ITEMS, completo), '3. Item tres · 5. Item cinco');

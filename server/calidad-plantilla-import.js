@@ -15,7 +15,13 @@
 const camposLib = require('./calidad-campos');
 
 const FORMATO = 'inconexion-plantilla-calidad';
-const MOTORES_IMPORTABLES = ['standard']; // 'descuento' (SURA) llega con su propio PR
+// Fase 322: + 'descuento' (Televentas SURA). Items del archivo con ese motor:
+//   critico: true (NO -> nota 0 %), o
+//   descuento: N (NO resta N %), o
+//   opciones: [{ texto, descuento }] (la primera = cumple, descuento 0; hasta 4).
+// Sin N/A en ningun item. El peso del item queda como su mayor descuento (informativo).
+const MOTORES_IMPORTABLES = ['standard', 'descuento'];
+const MAX_OPCIONES = 4;
 const MAX_ITEMS = 60;
 const MAX_VINETAS = 12;
 
@@ -53,14 +59,38 @@ function validarPlantillaImport(archivo, opciones) {
     if (!label) return { error: 'Ítem ' + n + ': falta el nombre' };
     const cat = texto(it.categoria, 80) || 'General';
     const weight = Number(it.peso);
-    if (!Number.isFinite(weight) || weight < 0 || weight > 100) return { error: 'Ítem ' + n + ': el peso debe ser un número de 0 a 100' };
+    if (engine !== 'descuento' && (!Number.isFinite(weight) || weight < 0 || weight > 100)) return { error: 'Ítem ' + n + ': el peso debe ser un número de 0 a 100' }; // Fase 322: el motor descuento no usa peso
     if (it.critico != null && typeof it.critico !== 'boolean') return { error: 'Ítem ' + n + ': "critico" debe ser verdadero o falso' };
     if (it.admiteNA != null && typeof it.admiteNA !== 'boolean') return { error: 'Ítem ' + n + ': "admiteNA" debe ser verdadero o falso' };
     const vinetas = Array.isArray(it.vinetas) ? it.vinetas.map((v) => texto(v, 300)).filter(Boolean).slice(0, MAX_VINETAS) : [];
+    if (engine === 'descuento') {
+      const base = { n, cat, label, critico: it.critico === true, admiteNA: false, descripcion: texto(it.descripcion, 1500), vinetas };
+      if (base.critico) { items.push(Object.assign(base, { weight: 0 })); continue; }
+      if (Array.isArray(it.opciones) && it.opciones.length) {
+        if (it.opciones.length < 2 || it.opciones.length > MAX_OPCIONES) return { error: 'Ítem ' + n + ': las opciones deben ser de 2 a ' + MAX_OPCIONES };
+        const opciones = [];
+        for (let k = 0; k < it.opciones.length; k++) {
+          const o = it.opciones[k] || {};
+          const t = texto(o.texto, 80), d = Number(o.descuento);
+          if (!t) return { error: 'Ítem ' + n + ', opción ' + (k + 1) + ': falta el texto' };
+          if (!Number.isFinite(d) || d < 0 || d > 100) return { error: 'Ítem ' + n + ', opción ' + (k + 1) + ': el descuento debe ser de 0 a 100' };
+          if (k === 0 && d !== 0) return { error: 'Ítem ' + n + ': la primera opción es la que cumple (descuento 0)' };
+          opciones.push({ v: k === 0 ? 'SI' : 'OP' + k, t, descuento: d });
+        }
+        items.push(Object.assign(base, { weight: Math.max.apply(null, opciones.map((o) => o.descuento)), opciones }));
+        continue;
+      }
+      const d = Number(it.descuento);
+      if (!Number.isFinite(d) || d <= 0 || d > 100) return { error: 'Ítem ' + n + ': falta el descuento del NO (de 1 a 100), o márcalo crítico, o dale opciones' };
+      items.push(Object.assign(base, { weight: d, descuento: d }));
+      continue;
+    }
     items.push({ n, cat, label, weight, critico: it.critico === true, admiteNA: it.admiteNA !== false, descripcion: texto(it.descripcion, 1500), vinetas });
   }
   const suma = Math.round(items.reduce((s, it) => s + it.weight, 0) * 100) / 100;
   if (engine === 'standard' && suma !== 100) return { error: 'Los pesos deben sumar 100 (suman ' + suma + ')' };
+  // Fase 322: con el motor descuento, la peor nota sin fallar criticos (todo en su mayor descuento).
+  const peorSinCriticos = engine === 'descuento' ? Math.max(0, Math.round((100 - items.filter((it) => !it.critico).reduce((s, it) => s + it.weight, 0)) * 100) / 100) : null;
 
   const avisos = [];
   const criticos = items.filter((it) => it.critico).length;
@@ -69,7 +99,7 @@ function validarPlantillaImport(archivo, opciones) {
 
   return {
     plantilla: { nombre, campana, engine, campos: c.campos, items, completoObligatorio: true },
-    resumen: { items: items.length, criticos, sumaPesos: suma, categorias: Array.from(new Set(items.map((it) => it.cat))) },
+    resumen: { items: items.length, criticos, sumaPesos: suma, categorias: Array.from(new Set(items.map((it) => it.cat))), motor: engine, peorSinCriticos },
     avisos,
   };
 }

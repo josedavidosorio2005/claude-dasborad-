@@ -15,6 +15,34 @@
 //   engine 'sura'      -> solo SI suma el peso completo; NO y N/A no suman nada.
 //                         Los criticos no penalizan el puntaje, solo cuentan fallos.
 //   total = MAX(0, MIN(100, suma))
+// Fase 322: motor 'descuento' (Televentas SURA, plan C1). Se parte de 100 %:
+//   - critico en NO -> la nota es 0 % (cuenta como fallo); no hay alerta aparte;
+//   - no critico en NO -> resta su `descuento`;
+//   - item con `opciones` [{ v: 'SI'|'OP1'|'OP2'|'OP3', t, descuento }] -> resta el
+//     descuento de la opcion elegida ('SI' = cumple, 0).
+//   total = MAX(0, MIN(100, 100 - descuentos)). Sin N/A. `standard` y `sura` no cambian.
+function descuentoDeItem(it, a) {
+  if (!a) return 0;
+  if (Array.isArray(it.opciones) && it.opciones.length) {
+    const o = it.opciones.find((x) => x.v === a);
+    return o ? Number(o.descuento) || 0 : 0;
+  }
+  return a === 'NO' ? Number(it.descuento) || 0 : 0;
+}
+function clasificar(puntaje) {
+  return puntaje < 70 ? '🔴 CRITICO' : puntaje < 90 ? '🟡 NO CRITICO' : '🟢 SOBRESALIENTE';
+}
+function computeScoreDescuento(items, answers) {
+  let fallos = 0, ded = 0;
+  items.forEach((it) => {
+    const a = answers[it.n];
+    if (it.critico) { if (a === 'NO') fallos++; return; }
+    ded += descuentoDeItem(it, a);
+  });
+  const puntaje = fallos ? 0 : Math.max(0, Math.min(100, Math.round((100 - ded) * 100) / 100));
+  return { puntaje, clasificacion: clasificar(puntaje), fallos, nivelCritico: fallos ? '⛔ CRITICO EN NO (NOTA 0 %)' : '✅ SIN FALLOS CRITICOS' };
+}
+
 function computeScore(items, answers, engine) {
   engine = engine || 'standard';
   answers = answers || {};
@@ -22,6 +50,7 @@ function computeScore(items, answers, engine) {
   if (!answered) {
     return { puntaje: null, clasificacion: '—', fallos: null, nivelCritico: '—' };
   }
+  if (engine === 'descuento') return computeScoreDescuento(items, answers); // Fase 322
   let sum = 0;
   let fallos = 0;
   items.forEach((it) => {
@@ -223,6 +252,7 @@ function nivelServicioCumple(pct) {
 
 module.exports = {
   computeScore,
+  descuentoDeItem, // Fase 322
   cronogramaDerived,
   withDerived,
   metaForLiderInMonth,

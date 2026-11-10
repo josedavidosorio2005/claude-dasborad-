@@ -4,6 +4,19 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.161.0 — Noviembre 2026
+
+**Fase 322: Calidad lista para calificar «Televentas SURA».**
+
+- Nuevo cálculo «por descuento»: se parte de 100 %; si un ítem crítico queda en NO, la nota es
+  0 %; los demás descuentan su porcentaje, y dos ítems tienen opciones con descuento parcial
+  (por ejemplo «No saluda −9 %»). Sin N/A. Lo peor sin fallar críticos es 5 %.
+- El formulario Calificar muestra esas opciones como botones, con «Ver criterio» y la nota en vivo
+  igual a la que guarda el servidor. El Diccionario muestra el impacto de cada respuesta.
+- Campos nuevos para SURA: ID contacto, Tipificación sistema, Estrategia, Motivo de afectación y
+  Causa (texto libre), y la Cédula del cliente, que se guarda solo con sus últimos 4 dígitos.
+- La plantilla se importa en Calidad › Plantillas. ORLANT, Mobilize, Aurora y HLM siguen igual.
+
 ## v1.160.0 — Noviembre 2026
 
 **Fase 321: SURA entra al módulo de Calidad.**

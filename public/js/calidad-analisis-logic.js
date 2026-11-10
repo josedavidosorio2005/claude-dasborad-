@@ -109,6 +109,11 @@ function caFiltrar(monitoreos, mes, texto) {
 function caReglasDiccionario(p) {
   var items = (p && p.items) || [];
   var crit = items.filter(function (it) { return it.critico; }).length;
+  // Fase 322: motor descuento (Televentas SURA).
+  if (p && p.engine === 'descuento') {
+    var peor = Math.max(0, 100 - items.filter(function (it) { return !it.critico; }).reduce(function (s, it) { return s + (Number(it.weight) || 0); }, 0));
+    return [items.length + ' ítems · ' + crit + ' críticos · se parte de 100 %', 'Crítico: un NO deja la nota en 0 %', 'No crítico: un NO (o la opción elegida) descuenta su porcentaje · sin N/A', 'Peor nota sin fallar críticos: ' + peor + ' %'];
+  }
   return [
     items.length + ' ítems · ' + crit + ' críticos · los pesos suman 100',
     'Crítico: un NO resta 20 puntos',
@@ -118,7 +123,13 @@ function caReglasDiccionario(p) {
 }
 
 // Impacto en la nota de cada respuesta (tarjeta del diccionario).
-function caImpacto(it) {
+function caImpacto(it, engine) {
+  // Fase 322: motor descuento: cada respuesta con su descuento.
+  if (engine === 'descuento') {
+    if (it.critico) return [['SI', '0 %'], ['NO', 'nota 0 %']];
+    if (it.opciones && it.opciones.length) return it.opciones.map(function (o) { return [o.t, o.descuento ? '−' + o.descuento + ' %' : '0 %']; });
+    return [['SI', '0 %'], ['NO', '−' + (Number(it.descuento) || 0) + ' %']];
+  }
   return [['SI', '+' + it.weight], ['N/A', it.admiteNA === false ? 'No aplica' : '+' + it.weight], ['NO', it.critico ? String(it.weight - 20) : '0']];
 }
 
