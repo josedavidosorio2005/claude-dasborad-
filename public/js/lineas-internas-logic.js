@@ -174,8 +174,17 @@ function liFlujoParse(hojas, archivo) {
 
 // ── B) y C) Tipificacion (HistCDR / HistChat) -> { filas:[{mes,agente,skill,tipo,
 // tipificacion,n}], registros, excluidas, porSkill:{clave:n}, avisos, error }
+// Fase 315: columnas que delatan la base equivocada (el HistCDR tambien trae AGENT_NAME,
+// DATE, DESCRIPTION_COD_ACT y SKILL_ID, asi que pasaba como WhatsApp).
+var LI_DELATA = { whatsapp: { cols: ['type interaction', 'telephone', 'skill name'], es: 'el CDR de llamadas', va: 'CDR líneas internas' },
+  cdr: { cols: ['channel', 'date close'], es: 'el HistChat de WhatsApp', va: 'WhatsApp líneas internas' } };
 function _liTipifParse(hojas, archivo, canal) {
   var mapa = canal === 'whatsapp' ? LI_MAPA_WHATSAPP : LI_MAPA_CDR;
+  var del = LI_DELATA[canal];
+  for (var q = 0; q < (hojas || []).length; q++) {
+    var enc = ((hojas[q].aoa || [])[0] || []).map(_liN);
+    if (del.cols.some(function (c) { return enc.indexOf(c) !== -1; })) return { error: 'El archivo «' + (archivo || 'sin nombre') + '» parece ' + del.es + ', no esta base. Súbalo en «' + del.va + '».', filas: [] };
+  }
   var agg = {}, out = { registros: 0, excluidas: 0, porSkill: {}, porTipo: { entrada: 0, salida: 0 }, avisos: [], hojasLeidas: 0 };
   var errores = [], sinFecha = 0;
   (hojas || []).forEach(function (h) {

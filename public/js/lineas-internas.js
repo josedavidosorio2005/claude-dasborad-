@@ -123,7 +123,8 @@ function _liRenderTorta(el, p, i, datos, tipo) {
     return l;
   };
   var filtros = '<div class="au-filtros li-filtros">' +
-    _liSelect('agente', 'Agente', opc('agente'), filtro.agente, i) +
+    // Fase 315: la cuenta cliente de Aurora no recibe agentes -> sin filtro de agente.
+    (datos.filas.some(function (f) { return f.agente; }) ? _liSelect('agente', 'Agente', opc('agente'), filtro.agente, i) : '') +
     _liSelect('skill', 'Skill', opc('skill'), filtro.skill, i) +
     (esCdr ? _liSelect('tipo', 'Tipo', [{ v: 'entrada', t: 'Entrada' }, { v: 'salida', t: 'Salida' }], filtro.tipo, i, 'Entrada y salida') : '') + '</div>';
   var res = liTorta(datos.filas, meses, filtro);

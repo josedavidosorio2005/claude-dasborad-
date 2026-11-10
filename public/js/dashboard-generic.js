@@ -894,6 +894,11 @@ async function openGenericDashboardPreview(config){
 // volver a pedir los datos; sin el, el tablero arranca como al abrirlo.
 async function _gdBootstrap(conservar){
   if(typeof _auCache !== 'undefined') _auCache = {}; // Fase 259: al abrir/actualizar, datos y nombres frescos
+  // Fase 315: lo mismo para Inasistencia/Encuestas (Fase 306) y Gestión líneas internas (Fase 311):
+  // sin esto, una base subida desde otra sesion no se veia hasta recargar la pagina.
+  if(typeof _abCache !== 'undefined') _abCache = {};
+  if(typeof _liCache !== 'undefined') _liCache = {};
+  if(!conservar && typeof _liEstado !== 'undefined') _liEstado = {}; // al abrir de nuevo, filtros limpios
   // Fase 305: botones resaltados solo en los clientes de la lista (hoy MOBILIZE).
   var ovB = document.getElementById('gd-overlay');
   if(ovB) ovB.classList.toggle('gd-botones-resaltados', typeof gdBotonesResaltados === 'function' && gdBotonesResaltados(_gd.cliente));

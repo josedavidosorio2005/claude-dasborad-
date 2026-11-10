@@ -4,6 +4,17 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.156.1 — Noviembre 2026
+
+**Fase 315: arreglos de la revisión del 10/11 en Clínica Aurora › Gestión líneas internas.**
+
+- La cuenta del cliente ya no recibe el nombre de los agentes en las tortas de llamadas y de
+  WhatsApp (igual que en Tipificación). Los conteos son los mismos.
+- Si se sube una base mientras el tablero está abierto en otro equipo, al actualizar ya se ven
+  los datos nuevos (antes había que recargar la página). También en Inasistencia y Encuestas.
+- Si se sube el CDR de llamadas en la casilla de WhatsApp (o al revés), la plataforma avisa y no
+  guarda nada.
+
 ## v1.156.0 — Noviembre 2026
 
 **Fase 314: Clínica Aurora › Gestión líneas internas — ajustes del supervisor.**
