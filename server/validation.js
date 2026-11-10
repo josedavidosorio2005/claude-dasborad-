@@ -318,6 +318,13 @@ const updateMonitoreoBody = z
 
 // Fase 253: importar una plantilla de calidad (archivo JSON ya leido en el
 // navegador). El contenido lo valida calidad-plantilla-import.js.
+// Fase 316: editar SOLO la descripcion de los items de una plantilla existente.
+const plantillaDescripcionesBody = z.object({
+  descripciones: z.array(z.strictObject({
+    n: z.number().int().min(1).max(500),
+    descripcion: z.string().trim().max(1000, 'Descripción demasiado larga (máx. 1000)'),
+  })).min(1, 'No hay descripciones').max(500),
+});
 const importarPlantillaBody = z.object({
   archivo: z.looseObject({}),
   principal: z.boolean().optional().default(false),
@@ -1699,6 +1706,7 @@ module.exports = {
     createMonitoreoBody,
     updateMonitoreoBody,
     importarPlantillaBody,
+    plantillaDescripcionesBody, // Fase 316
     monitoreoBulkBody,
     codificacionBulkBody,
     updateCodificacionBody,

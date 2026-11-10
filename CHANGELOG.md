@@ -4,6 +4,15 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.157.0 — Noviembre 2026
+
+**Fase 316: Calidad › Plantillas — editar las descripciones de una plantilla.**
+
+- Cada plantilla tiene un botón «Descripciones» (solo el administrador) para escribir o corregir
+  el texto de cada ítem que se ve en el Diccionario. Solo cambia ese texto: los pesos, los
+  críticos, el orden, las categorías y los monitoreos guardados siguen igual. Sirve para llenar
+  el Diccionario de ORLANT, que hoy sale con «Sin descripción».
+
 ## v1.156.1 — Noviembre 2026
 
 **Fase 315: arreglos de la revisión del 10/11 en Clínica Aurora › Gestión líneas internas.**
