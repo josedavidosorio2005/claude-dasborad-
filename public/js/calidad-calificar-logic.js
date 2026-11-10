@@ -77,6 +77,30 @@ function cc2PorCategoria(items) {
   return out;
 }
 
+// Fase 318 (pedido de Edwin): plantillas que NO traen `campos` pero usan el formulario
+// comun «Calificar» (el de Mobilize/Aurora) con estos campos. La plantilla no se toca:
+// son los mismos datos del formulario de siempre de ORLANT (incluido el canal auditado).
+// Otra campaña: agregar su entrada. Las de motor de descuento (SURA) no.
+var CC2_CAMPOS_POR_CAMPANA = {
+  ORLANT: [
+    { k: 'asesor', etiqueta: 'Nombre del asesor' },
+    { k: 'fecha', etiqueta: 'Fecha' },
+    { k: 'idLlamada', etiqueta: 'ID / Llamada - Wpp' },
+    { k: 'telefono', etiqueta: '# Teléfono' },
+    { k: 'codificacion', etiqueta: 'Codificación' },
+    { k: 'evaluador', etiqueta: 'Evaluador' },
+    { k: 'canal', etiqueta: 'Canal auditado' },
+    { k: 'observaciones', etiqueta: 'Observaciones generales' },
+  ],
+};
+// Campos con que se dibuja el formulario comun para esta plantilla, o null (formulario de antes).
+function cc2CamposDe(p) {
+  if (!p) return null;
+  if (p.campos) return p.campos;
+  if ((p.engine || p.motor) === 'sura') return null;
+  return CC2_CAMPOS_POR_CAMPANA[p.campana] || null;
+}
+
 // Campos del formulario de la plantilla, en 2 bloques: "Información general"
 // (lo de la llamada) y "Detalles adicionales" (motivo y observaciones).
 var CC2_DETALLE = ['motivo', 'observaciones'];
@@ -90,5 +114,6 @@ function cc2Bloques(campos) {
 
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { cc2Faltantes: cc2Faltantes, cc2Deducciones: cc2Deducciones, cc2Nota: cc2Nota, cc2Clase: cc2Clase, cc2Alerta: cc2Alerta,
-    cc2SubItem: cc2SubItem, cc2Motivo: cc2Motivo, cc2SugerirObs: cc2SugerirObs, cc2PorCategoria: cc2PorCategoria, cc2Bloques: cc2Bloques };
+    cc2SubItem: cc2SubItem, cc2Motivo: cc2Motivo, cc2SugerirObs: cc2SugerirObs, cc2PorCategoria: cc2PorCategoria, cc2Bloques: cc2Bloques,
+    CC2_CAMPOS_POR_CAMPANA: CC2_CAMPOS_POR_CAMPANA, cc2CamposDe: cc2CamposDe };
 }

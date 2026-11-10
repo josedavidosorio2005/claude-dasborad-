@@ -22,7 +22,7 @@ function cc2Sync() {
   var viejo = document.getElementById('cf-viejo');
   if (!nuevo || !viejo) return false;
   var p = cc2PlantillaActual(_ccampana);
-  var usar = !!(p && p.campos);
+  var usar = !!cc2CamposDe(p); // Fase 318: tambien las plantillas con campos por campaña (ORLANT)
   nuevo.hidden = !usar;
   viejo.hidden = usar;
   if (!usar) { _cc2.plantilla = null; return false; }
@@ -57,6 +57,8 @@ function _cc2Campo(c) {
   }
   if (c.k === 'fecha') return '<label class="cc2-f">' + lbl + '<input type="date" id="' + id + '" value="' + esc(calFechaHoyLocal()) + '"' + (isFullAdmin() ? '' : ' disabled') + '></label>';
   if (c.k === 'evaluador') return '<label class="cc2-f">' + lbl + '<input type="text" id="' + id + '" value="' + esc(currentUser ? currentUser.nombre : 'Administrador') + '" disabled></label>';
+  // Fase 318: canal auditado del formulario de siempre de ORLANT (se guarda en `canal`).
+  if (c.k === 'canal') return '<label class="cc2-f">' + lbl + '<select id="' + id + '"><option value="LLAMADA">Llamada</option><option value="WPP">WhatsApp / Chat</option></select></label>';
   if (c.k === 'tipoLlamada') return '<label class="cc2-f">' + lbl + '<select id="' + id + '"><option value="">Selecciona…</option><option>Entrada</option><option>Salida</option></select></label>';
   if (c.k === 'codificacion') {
     var activas = calCodificacionesActivas(_ccampana);
@@ -79,7 +81,7 @@ function _cc2Seg(it) {
 
 function cc2Render() {
   var p = _cc2.plantilla;
-  var b = cc2Bloques(p.campos);
+  var b = cc2Bloques(cc2CamposDe(p));
   var itemsHtml = cc2PorCategoria(p.items).map(function (g) {
     return '<div class="cc2-cat">' + esc(g.cat) + '</div>' + g.items.map(function (it) {
       return '<div class="cc2-item" data-item="' + esc(it.n) + '"><span class="cc2-num">' + esc(it.n) + '</span>' +
@@ -219,7 +221,7 @@ async function cc2Guardar() {
   if (!asesor) { showToast(asesorSel && asesorSel.disabled ? 'Esta campaña no tiene usuarios ASESOR: créalos en Usuarios' : 'Selecciona el asesor'); if (asesorSel) asesorSel.focus(); return; }
   document.querySelectorAll('#cf2 .cc2-item.cc2-missing').forEach(function (x) { x.classList.remove('cc2-missing'); });
   var falt = cc2Faltantes(p.items, _cc2.answers);
-  var pideObs = p.campos.some(function (c) { return c.k === 'observaciones'; });
+  var pideObs = cc2CamposDe(p).some(function (c) { return c.k === 'observaciones'; });
   var obsEl = document.getElementById('cc2-f-observaciones');
   var sinObs = pideObs && !_cc2Val('observaciones');
   if (obsEl) obsEl.classList.toggle('cc2-invalid', sinObs);
@@ -246,7 +248,7 @@ async function cc2Guardar() {
     asesor: asesor,
     asesorUserId: uid ? Number(uid) : undefined,
     fecha: _cc2Val('fecha') || calFechaHoyLocal(),
-    canal: 'LLAMADA',
+    canal: _cc2Val('canal') || 'LLAMADA', // Fase 318: ORLANT elige el canal; las demas, Llamada como siempre
     idLlamada: _cc2Val('idLlamada'),
     telefono: _cc2Val('telefono'),
     codificacion: _cc2Val('codificacion'),
@@ -254,7 +256,12 @@ async function cc2Guardar() {
     answers: answers,
     extras: extras,
   };
-  if (!editando) { body.campana = _ccampana; body.plantillaId = p.id; body.evaluador = currentUser ? currentUser.nombre : ''; }
+  if (!editando) {
+    body.campana = _ccampana; body.evaluador = currentUser ? currentUser.nombre : '';
+    // Fase 318: con la plantilla principal sin campos propios (ORLANT), igual que el formulario
+    // de siempre: sin plantillaId (el servidor usa la principal). Las demas, como antes.
+    if (p.campos || !p.principal) body.plantillaId = p.id;
+  }
   var btn = document.getElementById('cc2-guardar');
   try {
     await withButtonLoading(btn, 'Guardando...', function () {
@@ -277,8 +284,10 @@ function cc2Limpiar() {
 // Editar un monitoreo hecho con una plantilla nueva (quien lo califico,
 // Reportes o el administrador; el servidor decide).
 function cc2Editar(m) {
-  var p = CAL_PLANTILLAS_TODAS.find(function (x) { return x.id === m.plantillaId; });
-  if (!p || !p.campos) return false;
+  var p = CAL_PLANTILLAS_TODAS.find(function (x) { return x.id === m.plantillaId; }) ||
+    // Fase 318: los monitoreos viejos sin plantillaId son de la principal de su campaña.
+    (m.plantillaId == null ? CAL_PLANTILLAS_TODAS.find(function (x) { return x.campana === m.campana && x.principal; }) : null);
+  if (!p || !cc2CamposDe(p)) return false;
   _calPlantillaElegida[_ccampana] = p.id;
   _cc2.editId = m.id;
   _cc2.plantilla = p;
@@ -296,6 +305,7 @@ function cc2Editar(m) {
   }
   set('asesor', m.asesor); _cc2AsesorElegido(); set('fecha', m.fecha); set('idLlamada', m.idLlamada); set('telefono', m.telefono);
   set('codificacion', m.codificacion); set('observaciones', m.observaciones); set('evaluador', m.evaluador);
+  set('canal', m.canal || 'LLAMADA'); // Fase 318
   var ex = m.extras || {};
   set('placa', ex.placa); set('tipoLlamada', ex.tipoLlamada); set('idAgente', ex.idAgente);
   cc2Pintar();

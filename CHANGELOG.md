@@ -4,6 +4,20 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.158.0 — Noviembre 2026
+
+**Fase 318: Calidad › Calificar de ORLANT con el mismo formulario de Mobilize.**
+
+- Cada ítem tiene botones SI / NO / N/A (en vez de la lista desplegable), su número, la categoría
+  como encabezado, «Peso X% · NO = −X pts» (o «Crítico · peso X% · NO = −20 pts») y «Ver
+  criterio» con la descripción del Diccionario. A la derecha, la calificación en vivo.
+- Se conservan los datos de siempre de ORLANT, incluido el canal auditado (Llamada o WhatsApp /
+  Chat).
+- Igual que en Mobilize, para guardar hay que calificar los 17 ítems y escribir las
+  observaciones.
+- La plantilla, los pesos, los críticos y el cálculo no cambian; los monitoreos guardados
+  conservan su puntaje. Mobilize, Aurora y las demás campañas siguen igual.
+
 ## v1.157.1 — Noviembre 2026
 
 **Fase 317: Clínica Aurora › Agendas — la cuenta del cliente ve los nombres reales.**
