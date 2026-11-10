@@ -4,6 +4,13 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.163.3 — Noviembre 2026
+
+**Fase 327: Televentas SURA — encabezado «Ventas por mes».**
+
+- En la pestaña Cumplimiento, el encabezado de la sección que decía «📅 Agendas» ahora dice
+  «📅 Ventas por mes». Solo cambia el texto; las cifras y los filtros siguen igual.
+
 ## v1.163.2 — Noviembre 2026
 
 **Fase 326: Televentas SURA — «Ventas por mes».**
