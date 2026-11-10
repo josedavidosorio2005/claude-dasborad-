@@ -61,6 +61,30 @@ function caResumenAsesores(monitoreos) {
   }).sort(function (x, y) { return y.promedio - x.promedio || String(x.asesor).localeCompare(String(y.asesor)); });
 }
 
+// Fase 323 (plan C6, variante SURA): metricas de un grupo de monitoreos de una plantilla
+// por descuento: # monitoreos, promedio, clasificacion del promedio, cuantas notas en 0 %,
+// mejor y peor. Solo cuentan los que tienen nota.
+function caMetricasDescuento(monitoreos) {
+  var notas = (monitoreos || []).map(function (m) { return m.puntaje; }).filter(function (n) { return n !== null && n !== undefined && n !== '' && !isNaN(Number(n)); }).map(Number);
+  if (!notas.length) return { monitoreos: 0, promedio: null, clase: caClase(null), enCero: 0, mejor: null, peor: null };
+  var prom = caR1(notas.reduce(function (s, x) { return s + x; }, 0) / notas.length);
+  return { monitoreos: notas.length, promedio: prom, clase: caClase(prom), enCero: notas.filter(function (n) { return n === 0; }).length,
+    mejor: Math.max.apply(null, notas), peor: Math.min.apply(null, notas) };
+}
+// Resumen por asesor (SURA): una fila por asesor con caMetricasDescuento, de mayor a menor promedio.
+function caResumenDescuento(monitoreos) {
+  var by = {}, orden = [];
+  (monitoreos || []).forEach(function (m) {
+    var k = String(m.asesor || '').trim().toLowerCase();
+    if (!k) return;
+    if (!by[k]) { by[k] = { asesor: m.asesor, lista: [] }; orden.push(k); }
+    by[k].lista.push(m);
+  });
+  return orden.map(function (k) { return Object.assign({ asesor: by[k].asesor }, caMetricasDescuento(by[k].lista)); })
+    .filter(function (f) { return f.monitoreos > 0; })
+    .sort(function (x, y) { return y.promedio - x.promedio || String(x.asesor).localeCompare(String(y.asesor)); });
+}
+
 // Items de la plantilla con cuantos monitoreos los fallaron (NO) y que
 // asesores, de mas a menos fallado. Solo los monitoreos de ESA plantilla.
 function caItemsAfectados(monitoreos, items) {
@@ -135,5 +159,6 @@ function caImpacto(it, engine) {
 
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { caPlantillaDe: caPlantillaDe, caClase: caClase, caAlertaResumen: caAlertaResumen, caKpis: caKpis, caResumenAsesores: caResumenAsesores,
-    caItemsAfectados: caItemsAfectados, caPorMes: caPorMes, caPorClasificacion: caPorClasificacion, caFiltrar: caFiltrar, caReglasDiccionario: caReglasDiccionario, caImpacto: caImpacto };
+    caItemsAfectados: caItemsAfectados, caPorMes: caPorMes, caPorClasificacion: caPorClasificacion, caFiltrar: caFiltrar, caReglasDiccionario: caReglasDiccionario, caImpacto: caImpacto,
+    caMetricasDescuento: caMetricasDescuento, caResumenDescuento: caResumenDescuento }; // Fase 323
 }

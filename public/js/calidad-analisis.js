@@ -62,6 +62,8 @@ function caRenderResumen() {
   var info = _caPlantillaElegida(todos);
   var arr = _caDeLaPlantilla(todos, info.p);
   host.innerHTML = '<div class="ca-filtros">' + _caSelectorPlantilla(info, 'caElegirPlantilla') + '</div>' + caKpisHtml(caKpis(arr));
+  // Fase 323: plantilla por descuento (SURA): # monitoreos, promedio, clasificacion, en 0 %, mejor y peor.
+  if (info.p && info.p.engine === 'descuento') { tbl.innerHTML = caResumenDescuentoHtml(caResumenDescuento(arr)); var afd = document.getElementById('ca-afectados'); if (afd) afd.innerHTML = caAfectadosHtml(arr, info.p, true); return; }
   var filas = caResumenAsesores(arr);
   var html = '<tr><th>#</th><th>Asesor</th><th>Monitoreos</th><th>Promedio</th><th>Clasificación</th><th>Fallos críticos</th><th>Alerta</th></tr>';
   if (!filas.length) html += '<tr><td colspan="7" class="ca-vacio">No hay monitoreos en el periodo' + (_cmesFiltro ? ' (' + esc(typeof mesNombreLargo === 'function' ? mesNombreLargo(_cmesFiltro) : _cmesFiltro) + ')' : '') + '.</td></tr>';
@@ -73,6 +75,17 @@ function caRenderResumen() {
   var af = document.getElementById('ca-afectados');
   if (af) af.innerHTML = caAfectadosHtml(arr, info.p, true);
 }
+// Fase 323: tabla del resumen por asesor de una plantilla por descuento (SURA).
+function caResumenDescuentoHtml(filas) {
+  var html = '<tr><th>#</th><th>Asesor</th><th>Monitoreos</th><th>Promedio</th><th>Clasificación</th><th>En 0 %</th><th>Mejor</th><th>Peor</th></tr>';
+  if (!filas.length) html += '<tr><td colspan="8" class="ca-vacio">No hay monitoreos en el periodo' + (_cmesFiltro ? ' (' + esc(typeof mesNombreLargo === 'function' ? mesNombreLargo(_cmesFiltro) : _cmesFiltro) + ')' : '') + '.</td></tr>';
+  filas.forEach(function (f, i) {
+    html += '<tr class="ca-click" tabindex="0" role="button" aria-label="Ver los monitoreos de ' + esc(textoFormatoNombre(f.asesor)) + '" onclick="caVerAsesor(this.dataset.a)" onkeydown="caTeclaFila(event, this)" data-a="' + esc(f.asesor) + '">' +
+      '<td>' + (i + 1) + '</td><td><b>' + esc(textoFormatoNombre(f.asesor)) + '</b></td><td>' + f.monitoreos + '</td><td>' + _caPct(f.promedio) + '</td><td>' + _caPill(f.clase) + '</td><td>' + f.enCero + '</td><td>' + _caPct(f.mejor) + '</td><td>' + _caPct(f.peor) + '</td></tr>';
+  });
+  return html;
+}
+function caTeclaFila(e, el) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); caVerAsesor(el.dataset.a); } }
 function caVerAsesor(nombre) { _ca.detalleTexto = nombre || ''; switchCalTab('detalle'); }
 
 function caRenderDetalle() {

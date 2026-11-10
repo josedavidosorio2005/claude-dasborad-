@@ -20446,3 +20446,17 @@ pantalla (sus datos nunca van al repo).
   entienden el motor. ORLANT y Mobilize: formulario idéntico a `main` (comparado en local).
 - Prueba `fase322-calidad-motor-descuento` (7). Falta: importar la plantilla en producción y el
   resumen por asesor de SURA (PR siguiente).
+
+## Fase 323 — Resumen por asesor de SURA y plantilla en producción (v1.162.0, 2026-11-10)
+
+- **Producción** (escritura autorizada, única): «Televentas SURA» importada por Calidad › Plantillas
+  como principal de SURA (id 13, 9 ítems, 4 críticos, motor descuento). Sin cambios en las demás
+  plantillas; formularios de ORLANT, Mobilize y Aurora idénticos antes y después; SURA › Calificar
+  con 9 ítems y Diccionario con 9 tarjetas.
+- **Resumen por asesor** (plan C6, variante SURA): `caMetricasDescuento` / `caResumenDescuento`
+  (`calidad-analisis-logic.js`): # monitoreos, promedio, clasificación, en 0 %, mejor y peor. En
+  Calidad › Resumen por asesor (`caResumenDescuentoHtml`), en la vista de resultados
+  (`_cmpPintarResumenDescuento`) y en «Mis resultados» (`mrKpisDescuentoHtml`, solo con
+  /monitoreos/mios). Solo con una plantilla `descuento`: las demás siguen con fallos y alerta.
+- Prueba `fase323-resumen-asesor-sura` (3). Local (Brave, datos sintéticos) 375/768/1440, claro y
+  oscuro, 0 errores.

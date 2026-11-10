@@ -270,6 +270,8 @@ function _cmpResumenAsesor(camp) {
 function _cmpPintarResumen(enfocarBuscar) {
   var c = _cmpCtx[_cmpDlg.camp]; var host = document.getElementById('cmp-dlg-cuerpo'); if (!c || !host) return;
   var filas = ceResumenAsesores(c.arr, _cmpDlg.mes, _cmpDlg.q, c.pl && c.pl.items);
+  // Fase 323: plantilla por descuento (SURA): en 0 %, mejor y peor en vez de alerta y fallos.
+  if (c.pl && (c.pl.engine || c.pl.motor) === 'descuento') { _cmpPintarResumenDescuento(c, host, filas, enfocarBuscar); return; }
   host.innerHTML = '<div class="ca-filtros">' + _cmpMesSelect(ceMesesConDatos(c.arr), _cmpDlg.mes, '_cmpResumenCambiaMes') +
       '<label class="ca-filtro">Asesor <input type="search" id="cmp-dlg-q" placeholder="Buscar asesor" value="' + esc(_cmpDlg.q) + '" oninput="_cmpDlg.q=this.value;_cmpPintarResumen(true)"></label></div>' +
     '<p class="cpl-ayuda">' + filas.length + ' asesor' + (filas.length === 1 ? '' : 'es') + ' · ' + esc(ceMesLabel(_cmpDlg.mes)) + '</p>' +
@@ -281,6 +283,23 @@ function _cmpPintarResumen(enfocarBuscar) {
     '<p class="cpl-ayuda">Se calcula automáticamente con los monitoreos completos de la plantilla. Alerta críticos: 0 fallos = sin fallos · 1 = alerta · 2 o más = crítico frecuente. Toca un asesor para ver sus monitoreos.</p>';
   if (enfocarBuscar) { var q = document.getElementById('cmp-dlg-q'); if (q) { q.focus(); q.setSelectionRange(q.value.length, q.value.length); } }
 }
+function _cmpPintarResumenDescuento(c, host, filas, enfocarBuscar) {
+  var porNombre = {};
+  caResumenDescuento(c.arr.filter(function (m) { return _cmpDlg.mes === 'all' || String(m.fecha || '').slice(0, 7) === _cmpDlg.mes; }))
+    .forEach(function (f) { porNombre[String(f.asesor).trim().toLowerCase()] = f; });
+  host.innerHTML = '<div class="ca-filtros">' + _cmpMesSelect(ceMesesConDatos(c.arr), _cmpDlg.mes, '_cmpResumenCambiaMes') +
+      '<label class="ca-filtro">Asesor <input type="search" id="cmp-dlg-q" placeholder="Buscar asesor" value="' + esc(_cmpDlg.q) + '" oninput="_cmpDlg.q=this.value;_cmpPintarResumen(true)"></label></div>' +
+    '<p class="cpl-ayuda">' + filas.length + ' asesor' + (filas.length === 1 ? '' : 'es') + ' · ' + esc(ceMesLabel(_cmpDlg.mes)) + '</p>' +
+    '<div style="overflow-x:auto"><table class="aurora-rank-table"><tr><th>#</th><th>Nombre del asesor</th><th># Monitoreos</th><th>Prom. puntaje</th><th>Clasificación</th><th>En 0 %</th><th>Mejor</th><th>Peor</th></tr>' +
+      (filas.length ? filas.map(function (a, n) {
+        var d = porNombre[String(a.name).trim().toLowerCase()] || { enCero: 0, mejor: null, peor: null };
+        return '<tr class="ca-click" tabindex="0" role="button" data-a="' + esc(a.name) + '" onclick="_cmpDeResumenADetalle(this.dataset.a)" onkeydown="_cmpTeclaFila(event, this)">' +
+          '<td>' + (n + 1) + '</td><td><b>' + esc(textoFormatoNombre(a.name)) + '</b></td><td>' + a.cnt + '</td><td>' + cePct(a.avg) + '</td><td>' + _caPill(a.clase) + '</td><td>' + d.enCero + '</td><td>' + cePct(d.mejor) + '</td><td>' + cePct(d.peor) + '</td></tr>';
+      }).join('') : '<tr><td colspan="8" class="ca-vacio">' + (_cmpDlg.q ? 'Ningún asesor coincide con la búsqueda.' : 'Sin monitoreos completos en este periodo.') + '</td></tr>') + '</table></div>' +
+    '<p class="cpl-ayuda">Cálculo por descuento: un crítico en NO deja la nota en 0 %. «En 0 %» = monitoreos con nota 0. Toca un asesor para ver sus monitoreos.</p>';
+  if (enfocarBuscar) { var q = document.getElementById('cmp-dlg-q'); if (q) { q.focus(); q.setSelectionRange(q.value.length, q.value.length); } }
+}
+function _cmpTeclaFila(e, el) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); _cmpDeResumenADetalle(el.dataset.a); } }
 function _cmpResumenCambiaMes(v) { _cmpDlg.mes = v; _cmpPintarResumen(); }
 function _cmpDeResumenADetalle(nombre) { var camp = _cmpDlg.camp, mes = _cmpDlg.mes; _cmpDetalleMes(camp, mes, nombre); }
 
