@@ -331,6 +331,8 @@ const importarPlantillaBody = z.object({
   archivo: z.looseObject({}),
   principal: z.boolean().optional().default(false),
   confirmar: z.boolean().optional().default(false),
+  // Fase 324: reemplazar EN SU LUGAR (misma id) una plantilla que todavia no tiene monitoreos.
+  reemplazarId: z.number().int().positive().optional(),
 });
 
 // Fase 95 (tema B): catalogo de codificaciones validas por campana.

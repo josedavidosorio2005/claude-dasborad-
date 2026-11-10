@@ -20460,3 +20460,14 @@ pantalla (sus datos nunca van al repo).
   /monitoreos/mios). Solo con una plantilla `descuento`: las demás siguen con fallos y alerta.
 - Prueba `fase323-resumen-asesor-sura` (3). Local (Brave, datos sintéticos) 375/768/1440, claro y
   oscuro, 0 errores.
+
+## Fase 324 — Plantilla de SURA idéntica a la matriz del supervisor (v1.163.0, 2026-11-10)
+
+- **Reemplazar** (`POST /calidad/plantillas/importar` con `reemplazarId`, solo admin): actualiza en su
+  lugar (misma id, versión y principal) una plantilla activa de la misma campaña con **0 monitoreos**;
+  con monitoreos, 400 (se importa una versión nueva). Botón «Reemplazar» en Calidad › Plantillas.
+- **Diccionario** (motor descuento): «Afectación máxima» por criterio (crítico 100 %) y descripción
+  con sus saltos de línea (`.ca-desc-lineas`); también en «Ver criterio». Otras plantillas igual.
+- Fuente oficial: el Excel «Diccionario Sura» del supervisor (fuera del repo). Coincide con el pedido
+  en orden, nombres, opciones y porcentajes; las descripciones se toman del Excel (saltos de línea y
+  comillas simples en el ítem 2). Prueba `fase322` con el orden oficial y `fase324` (3).

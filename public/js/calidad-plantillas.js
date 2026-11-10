@@ -5,6 +5,7 @@
 var _cplArchivo = null;      // objeto del archivo elegido (solo en memoria)
 var _cplArchivoNombre = '';
 var _cplPrincipal = false;
+var _cplReemplazarId = null; // Fase 324: id de la plantilla (sin monitoreos) a reemplazar en su lugar
 var _cplLista = [];          // Fase 316: plantillas de la tabla (para editar descripciones)
 
 function _cplError(msg) {
@@ -28,7 +29,9 @@ async function calPlantillasRender() {
       var accion = (p.principal ? '' :
         '<button type="button" class="btn-sm ' + (p.activo ? 'btn-delete' : 'btn-edit') + '" onclick="calPlantillaActivo(' + p.id + ',' + (!p.activo) + ')">' + (p.activo ? 'Desactivar' : 'Activar') + '</button>') +
         // Fase 316: solo el texto de la descripcion de cada item (misma plantilla).
-        ' <button type="button" class="btn-sm btn-edit" data-cpl-desc="' + p.id + '" onclick="calPlantillaDescripciones(' + p.id + ')">Descripciones</button>';
+        ' <button type="button" class="btn-sm btn-edit" data-cpl-desc="' + p.id + '" onclick="calPlantillaDescripciones(' + p.id + ')">Descripciones</button>' +
+        // Fase 324: solo sin monitoreos (ninguna nota cambia).
+        (p.activo && !p.monitoreos ? ' <button type="button" class="btn-sm btn-edit" data-cpl-reemplazar="' + p.id + '" onclick="calPlantillaReemplazar(' + p.id + ')">Reemplazar</button>' : '');
       html += '<tr' + (p.activo ? '' : ' class="cpl-inactiva"') + '><td>' + esc(p.campana) + '</td><td>' + esc(p.nombre) + (p.campos ? '' : ' <span class="cpl-etq">formulario de siempre</span>') + '</td>' +
         '<td>' + esc(p.version || 1) + '</td><td>' + (p.items || []).length + '</td><td>' + (p.principal ? 'Sí' : '—') + '</td>' +
         '<td>' + (p.activo ? 'Activa' : 'Inactiva') + '</td><td>' + esc(p.monitoreos) + '</td><td>' + accion + '</td></tr>';
@@ -59,7 +62,7 @@ async function calPlantillaPrevisualizar() {
   if (!_cplArchivo) return;
   var card = document.getElementById('cpl-preview');
   var r;
-  try { r = await apiRequest('POST', '/calidad/plantillas/importar', { archivo: _cplArchivo, principal: _cplPrincipal }); }
+  try { r = await apiRequest('POST', '/calidad/plantillas/importar', Object.assign({ archivo: _cplArchivo, principal: _cplPrincipal }, _cplReemplazarId ? { reemplazarId: _cplReemplazarId } : {})); }
   catch (e) { card.hidden = true; _cplError(e.message); return; }
   _cplError('');
   var p = r.plantilla;
@@ -93,7 +96,7 @@ async function calPlantillaPrevisualizar() {
 }
 
 function calPlantillaDescartar() {
-  _cplArchivo = null; _cplPrincipal = false; _cplError('');
+  _cplArchivo = null; _cplPrincipal = false; _cplReemplazarId = null; _cplError('');
   var card = document.getElementById('cpl-preview');
   card.hidden = true; card.innerHTML = '';
 }
@@ -104,7 +107,7 @@ async function calPlantillaConfirmar() {
   var r;
   try {
     r = await withButtonLoading(btn, 'Importando...', function () {
-      return apiRequest('POST', '/calidad/plantillas/importar', { archivo: _cplArchivo, principal: _cplPrincipal, confirmar: true });
+      return apiRequest('POST', '/calidad/plantillas/importar', Object.assign({ archivo: _cplArchivo, principal: _cplPrincipal, confirmar: true }, _cplReemplazarId ? { reemplazarId: _cplReemplazarId } : {}));
     });
   } catch (e) { _cplError(e.message); return; }
   showToast('Plantilla "' + r.plantilla.nombre + '" importada (versión ' + r.plantilla.version + ')');
@@ -121,6 +124,16 @@ async function calPlantillaActivo(id, activo) {
   if (typeof _usersPlantillas !== 'undefined') _usersPlantillas = null;
   await calLoadPlantillas(true);
   await calPlantillasRender();
+}
+
+// ── Fase 324: reemplazar en su lugar una plantilla SIN monitoreos (misma id) ──
+// Elige el archivo y pasa por la misma vista previa del importador; el servidor exige 0 monitoreos.
+function calPlantillaReemplazar(id) {
+  var input = document.getElementById('cpl-file'); if (!input) return;
+  _cplReemplazarId = id;
+  var restaurar = function () { input.removeEventListener('cancel', restaurar); };
+  input.addEventListener('cancel', function () { _cplReemplazarId = null; restaurar(); }, { once: true });
+  input.click();
 }
 
 // ── Fase 316: editar solo las descripciones de los items de una plantilla ──
