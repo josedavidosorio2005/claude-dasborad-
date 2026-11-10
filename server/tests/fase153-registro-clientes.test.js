@@ -35,7 +35,7 @@ function listaDeConstants(nombre) {
 
 test('el registro sembrado da exactamente las listas de antes', () => {
   assert.deepEqual(reg.listaClientes(db), CON_SURA);
-  assert.deepEqual(reg.campanasCalidad(db), CON_AURORA);
+  assert.deepEqual(reg.campanasCalidad(db), CON_SURA); // Fase 321: SURA con Calidad (asesores y Mis resultados)
   assert.deepEqual(reg.REGISTRO_INICIAL.map((c) => c.nombre), ANTES, 'la semilla sigue siendo solo ORLANT y MOBILIZE');
   // El respaldo de constants.js sigue igual a la semilla.
   assert.deepEqual(listaDeConstants('CLIENTES_LIST'), ANTES);
@@ -83,7 +83,7 @@ test('GET /api/dashboard/clientes expone las listas del registro (y sigue igual 
   assert.equal(r.status, 200);
   assert.deepEqual(r.body.clientes.slice().sort(), [AURORA, 'HOSPITAL LA MARIA', 'MOBILIZE', 'ORLANT']);
   assert.deepEqual(r.body.listaClientes, CON_SURA);
-  assert.deepEqual(r.body.campanasCalidad, CON_AURORA);
+  assert.deepEqual(r.body.campanasCalidad, CON_SURA); // Fase 321
   assert.deepEqual(Object.keys(r.body).sort(), ['campanasCalidad', 'clientes', 'listaClientes', 'registro']);
   const sin = await request(app).get('/api/dashboard/clientes');
   assert.equal(sin.status, 401);
