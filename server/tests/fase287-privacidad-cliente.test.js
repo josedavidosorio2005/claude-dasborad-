@@ -118,7 +118,7 @@ test('Tipificacion y Salida de Aurora: el cliente no recibe la lista de agentes 
   assert.ok(!JSON.stringify(sal.body).includes('Agente Inventado'));
 });
 
-test('Agendas por usuaria y resumen de Calidad de Aurora: "Asesor N" para el cliente, el nombre real para el admin', async () => {
+test('Agendas de Aurora: el cliente ve el nombre real (Fase 317, opcion por modulo); resumen de Calidad: "Asesor N"', async () => {
   db.prepare("INSERT OR IGNORE INTO alias_asesores (campana, alias, canonico, createdAt) VALUES (?, 'usr287a', 'Asesora Real Inventada', '2026-11-07')").run(AURORA);
   insertar('agendas_usuaria', { campana: AURORA, mes: MES, sede: 'Sede', usuario: 'usr287a', canal: 'Llamada', tipoCita: 'Cita', tipoPaciente: 'Nuevo', rol: 'confirma', n: 4, createdAt: '2026-11-07' });
   insertar('calidad_resumen_asesor', { campana: AURORA, mes: MES, agente: 'Asesora Resumen Inventada', monitoreos: 2, puntaje: 90, fallos: 0, createdAt: '2026-11-07' });
@@ -127,10 +127,11 @@ test('Agendas por usuaria y resumen de Calidad de Aurora: "Asesor N" para el cli
   const q = '?campana=' + encodeURIComponent(AURORA);
   const agC = await request(app).get('/api/calidad/agendas-usuaria/datos' + q).set(H(c));
   assert.equal(agC.status, 200, JSON.stringify(agC.body));
-  assert.ok(!JSON.stringify(agC.body).includes('Asesora Real Inventada') && !JSON.stringify(agC.body).includes('usr287a'));
-  assert.ok(agC.body.filas.some((f) => /^Asesor \d+$/.test(f.asesora)));
+  // Fase 317 (supervisor): en Agendas el cliente de Aurora ve lo mismo que el admin.
   const agA = (await request(app).get('/api/calidad/agendas-usuaria/datos' + q).set(H(admin))).body;
   assert.ok(agA.filas.some((f) => f.asesora === 'Asesora Real Inventada'));
+  assert.deepEqual(agC.body, agA, 'mismas filas, nombres, orden y cifras que el administrador');
+  assert.ok(!agC.body.filas.some((f) => /^Asesor \d+$/.test(f.asesora)));
   const reC = (await request(app).get('/api/calidad/calidad-resumen/mensual' + q).set(H(c))).body;
   assert.ok(!JSON.stringify(reC).includes('Asesora Resumen Inventada'));
 });

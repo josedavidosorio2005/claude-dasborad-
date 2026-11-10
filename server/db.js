@@ -4873,6 +4873,23 @@ function auroraLineasInternas() {
 }
 runOnceMigration('fase311_aurora_lineas_internas_v1', auroraLineasInternas);
 
+// Fase 317 (pedido del supervisor, 10/11): la cuenta cliente de Clinica Aurora ve los
+// nombres reales en Agendas («Usuario que registra»). Opcion por modulo del registro
+// (parametros.asesorVisibleClienteModulos, clientes-registro.js); las demas pestañas de
+// Aurora siguen sin nombres. Solo toca parametros de Aurora. Idempotente.
+function agendasNombresClienteAurora() {
+  const reg = db.prepare('SELECT parametros FROM clientes_registro WHERE nombre = ?').get(AURORA.nombre);
+  if (!reg) return;
+  let parametros = {};
+  try { parametros = JSON.parse(reg.parametros) || {}; } catch (e) { parametros = {}; }
+  const lista = Array.isArray(parametros.asesorVisibleClienteModulos) ? parametros.asesorVisibleClienteModulos : [];
+  if (lista.includes('agendas_usuaria')) return;
+  parametros.asesorVisibleClienteModulos = lista.concat(['agendas_usuaria']);
+  db.prepare('UPDATE clientes_registro SET parametros = ?, updatedAt = ? WHERE nombre = ?').run(JSON.stringify(parametros), new Date().toISOString(), AURORA.nombre);
+  if (!config.isTest) console.log('[db] Migracion fase317_agendas_nombres_cliente_aurora_v1 aplicada.');
+}
+runOnceMigration('fase317_agendas_nombres_cliente_aurora_v1', agendasNombresClienteAurora);
+
 // Fase 307 (pedido del supervisor, 10/11): Calidad de ORLANT como Mobilize para
 // que los lideres evaluen. Decision del usuario: se CONSERVA lo que ORLANT ya
 // muestra (indicadores, torta y barras de la base de Cargar datos) y se agrega
@@ -5006,6 +5023,7 @@ module.exports.migrarAgendasUsuariaVistas = migrarAgendasUsuariaVistas;
 module.exports.agendasTresBasesAurora = agendasTresBasesAurora; // Fase 302
 module.exports.auroraInasistenciaEncuestas = auroraInasistenciaEncuestas; // Fase 306
 module.exports.auroraLineasInternas = auroraLineasInternas; // Fase 311
+module.exports.agendasNombresClienteAurora = agendasNombresClienteAurora; // Fase 317
 module.exports.orlantCalidadMonitoreos = orlantCalidadMonitoreos; // Fase 307
 module.exports.migrarMobilizeResumenSoloTitulos = migrarMobilizeResumenSoloTitulos;
 module.exports.migrarMobilizeResumenOrdenComoOrlant = migrarMobilizeResumenOrdenComoOrlant;

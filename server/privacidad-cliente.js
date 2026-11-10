@@ -17,8 +17,11 @@ function esCuentaCliente(actor) {
 }
 
 // ¿A este actor hay que esconderle los nombres de asesor de esta campaña?
-function ocultaAsesores(db, actor, campana) {
-  return esCuentaCliente(actor) && clientesRegistro.asesorOcultoCliente(db, campana);
+// `modulo` (Fase 317, opcional): si la campaña lo tiene en asesorVisibleClienteModulos
+// (registro de clientes), en ESE modulo el cliente ve los nombres reales.
+function ocultaAsesores(db, actor, campana, modulo) {
+  if (!esCuentaCliente(actor) || !clientesRegistro.asesorOcultoCliente(db, campana)) return false;
+  return !(modulo && clientesRegistro.asesorVisibleClienteEnModulo(db, campana, modulo));
 }
 
 // Mapa nombre real -> "Asesor N" (alfabetico, sin distinguir mayusculas ni espacios).
