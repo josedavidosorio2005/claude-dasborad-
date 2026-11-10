@@ -20301,3 +20301,13 @@ salida». Va en `LI_SKILLS_OTROS` (`public/js/lineas-internas-logic.js`), aparte
 filtro de skill); el valor guardado sigue siendo `0` y los conteos no cambian (1.588 de
 octubre). La salida del CDR sigue agrupada como «Llamadas de salida» y el nivel de servicio a 20
 segundos. Prueba `fase311-aurora-lineas-internas` ajustada (10/10).
+
+## Fase 313 — Aurora: nombres de los skills 4166 y 4169 (v1.155.2, 2026-11-10)
+
+Confirmado por el supervisor: 4166 = Área Programación y 4169 = Área Patología (salían «Skill
+<código> (nombre pendiente)» en la Tipificación de WhatsApp de Aurora, el único lugar que usa
+`tipificacionEtiquetaSkill`). `tipificacionEtiquetaSkill` toma el nombre de las áreas de Aurora
+del mapa único `LI_SKILLS` (`public/js/lineas-internas-logic.js`) — sin duplicar la lista — y
+solo para CLINICA AURORA. Solo el texto: el valor guardado y del filtro sigue siendo «Skill
+<código>»; los conteos por opción son los mismos (prueba `fase275-nombres-skill-aurora`). Un
+código sin nombre sigue mostrando «(nombre pendiente)». ORLANT y demás campañas sin cambios.

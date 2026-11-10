@@ -183,6 +183,14 @@ var TIPIFICACION_NOMBRES_SKILL_CLIENTE = {
   },
 };
 
+// Fase 313: mapa de areas de Aurora (LI_SKILLS). En el navegador es global (se carga
+// despues, pero esto se llama al dibujar); en Node se pide con require().
+function _tipificacionAreasAurora() {
+  if (typeof LI_SKILLS !== 'undefined') return LI_SKILLS;
+  if (typeof require === 'function') { try { return require('./lineas-internas-logic.js').LI_SKILLS; } catch (e) { return []; } }
+  return [];
+}
+
 // Texto visible de un skill/cola: los de salida con su nombre fijo; un
 // "Skill <ID>" con nombre en la tabla del cliente (campana), ese nombre; el
 // resto con la regla de nombres de siempre (textoFormatoNombre).
@@ -192,6 +200,13 @@ function tipificacionEtiquetaSkill(skill, campana) {
   var tabla = campana ? TIPIFICACION_NOMBRES_SKILL_CLIENTE[String(campana).trim().toUpperCase()] : null;
   var id = /^skill\s+(\d+)$/i.exec(v);
   if (tabla && id && Object.prototype.hasOwnProperty.call(tabla, id[1])) return tabla[id[1]];
+  // Fase 313 (supervisor, 10/11): en Aurora, los codigos de las areas (4166 Área
+  // Programación, 4169 Área Patología...) toman su nombre del UNICO mapa de areas de
+  // la clinica, LI_SKILLS (lineas-internas-logic.js), sin duplicarlo aqui. Solo el texto.
+  if (id && String(campana || '').trim().toUpperCase() === 'CLINICA AURORA') {
+    var area = _tipificacionAreasAurora().filter(function (s) { return s.codigo === id[1]; })[0];
+    if (area) return area.nombre;
+  }
   // Fase 298 (revision de Aurora/HLM, 09/11): un SKILL_ID sin nombre en la tabla (hoy 4166
   // y 4169 de Aurora, pendientes de Edwin) se lee 'Skill 4166 (nombre pendiente)' en vez
   // de un numero suelto. Solo el texto visible: el valor del filtro sigue igual.
