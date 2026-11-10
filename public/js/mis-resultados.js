@@ -114,6 +114,12 @@ async function renderMisResultados(){
   var promClsMr = promColorMr==='verde'?'kpi-green':promColorMr==='amarillo'?'kpi-org':'kpi-red';
   // "Clasificacion General" ya trae su propio icono+palabra (clasifGeneral,
   // arriba) -- WCAG 1.4.1 ya esta cubierto ahi, sin badge para no duplicar.
+  // Fase 323: asesor de una campaña calificada por descuento (SURA): sus monitoreos, promedio,
+  // clasificacion, cuantas en 0 %, mejor y peor (solo los suyos: /monitoreos/mios).
+  var plPrin = (typeof CAL_PLANTILLAS_TODAS !== 'undefined' && currentUser) ? CAL_PLANTILLAS_TODAS.filter(function(p){ return p.campana===currentUser.asesorCampana && p.principal; })[0] : null;
+  if(plPrin && plPrin.engine==='descuento' && typeof caMetricasDescuento==='function'){
+    document.getElementById('mr-kpis').innerHTML = mrKpisDescuentoHtml(caMetricasDescuento(arr), promClsMr, promColorMr, clasifGeneral);
+  } else
   document.getElementById('mr-kpis').innerHTML =
     '<div class="aurora-kpi"><div class="kv">'+total+'</div><div class="kl">Monitoreos Realizados'+(_mrMesFiltro?' ('+_mrMesFiltro+')':'')+'</div></div>'+
     '<div class="aurora-kpi '+promClsMr+'"><div class="kv">'+((typeof semaforoBadgeHtml === 'function')?semaforoBadgeHtml(promColorMr):'')+(total?promedio:'—')+'</div><div class="kl">Puntaje Promedio</div></div>'+
@@ -151,6 +157,16 @@ async function renderMisResultados(){
   document.getElementById('mr-table').innerHTML = html;
 }
 
+// Fase 323: tarjetas de «Mis resultados» para una plantilla por descuento (SURA).
+function mrKpisDescuentoHtml(md, promCls, promColor, clasif){
+  var v = function(x){ return x===null||x===undefined ? '—' : x; };
+  return '<div class="aurora-kpi"><div class="kv">'+md.monitoreos+'</div><div class="kl">Monitoreos Realizados'+(_mrMesFiltro?' ('+_mrMesFiltro+')':'')+'</div></div>'+
+    '<div class="aurora-kpi '+promCls+'"><div class="kv">'+((typeof semaforoBadgeHtml === 'function')?semaforoBadgeHtml(promColor):'')+(md.monitoreos?md.promedio:'—')+'</div><div class="kl">Puntaje Promedio</div></div>'+
+    '<div class="aurora-kpi '+promCls+'"><div class="kv" style="font-size:1rem">'+calEstadoHtml(clasif)+'</div><div class="kl">Clasificacion General</div></div>'+
+    '<div class="aurora-kpi kpi-red"><div class="kv">'+md.enCero+'</div><div class="kl">Calificaciones en 0 %</div></div>'+
+    '<div class="aurora-kpi"><div class="kv">'+v(md.mejor)+'</div><div class="kl">Mejor calificación</div></div>'+
+    '<div class="aurora-kpi"><div class="kv">'+v(md.peor)+'</div><div class="kl">Peor calificación</div></div>';
+}
 function closeDetalleMonitoreo(){
   var cerrarReal = function(){ document.getElementById('detalle-monitoreo-overlay').classList.remove('show'); };
   if (typeof motionCerrarModal === 'function') motionCerrarModal('detalle-monitoreo-modal', cerrarReal);

@@ -4,6 +4,17 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.162.0 — Noviembre 2026
+
+**Fase 323: resumen por asesor de SURA.**
+
+- En Calidad › Resumen por asesor (y en la vista de resultados) la plantilla «Televentas SURA»
+  muestra por asesor: monitoreos, promedio, clasificación, cuántas calificaciones en 0 %, la mejor
+  y la peor.
+- El asesor de SURA ve esas mismas métricas en «Mis resultados», solo de sus monitoreos.
+- La plantilla «Televentas SURA» ya está importada en la plataforma como principal de SURA.
+  ORLANT, Mobilize, Aurora y HLM siguen igual.
+
 ## v1.161.0 — Noviembre 2026
 
 **Fase 322: Calidad lista para calificar «Televentas SURA».**
