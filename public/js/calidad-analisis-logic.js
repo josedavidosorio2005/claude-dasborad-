@@ -150,9 +150,11 @@ function caReglasDiccionario(p) {
 function caImpacto(it, engine) {
   // Fase 322: motor descuento: cada respuesta con su descuento.
   if (engine === 'descuento') {
-    if (it.critico) return [['SI', '0 %'], ['NO', 'nota 0 %']];
-    if (it.opciones && it.opciones.length) return it.opciones.map(function (o) { return [o.t, o.descuento ? '−' + o.descuento + ' %' : '0 %']; });
-    return [['SI', '0 %'], ['NO', '−' + (Number(it.descuento) || 0) + ' %']];
+    // Fase 325: espacio duro ( ) entre el numero y el «%»: nunca quedan en lineas distintas.
+    var pc = function (n) { return n + ' %'; };
+    if (it.critico) return [['SI', pc(0)], ['NO', 'nota ' + pc(0)]];
+    if (it.opciones && it.opciones.length) return it.opciones.map(function (o) { return [o.t, o.descuento ? pc('−' + o.descuento) : pc(0)]; });
+    return [['SI', pc(0)], ['NO', pc('−' + (Number(it.descuento) || 0))]];
   }
   return [['SI', '+' + it.weight], ['N/A', it.admiteNA === false ? 'No aplica' : '+' + it.weight], ['NO', it.critico ? String(it.weight - 20) : '0']];
 }
