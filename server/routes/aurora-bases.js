@@ -8,6 +8,22 @@ const { requireActor, campaignAccess, canLoadModule, campanaDeCarga } = require(
 const { validate, schemas } = require('../validation');
 const ab = require('../aurora-bases');
 const { wrap, logEvent, actorLabel } = require('./shared');
+const { ocultaAsesores } = require('../privacidad-cliente'); // Fase 315
+
+// Fase 315 (revision del 10/11): en las campañas que ocultan el nombre del asesor a la
+// cuenta cliente (Aurora, HLM -- Fase 287), las tortas de líneas internas llegan SIN el
+// agente (sumadas por mes, skill, tipo y tipificacion), igual que Tipificación: el
+// cliente no recibe la lista de agentes ni puede filtrar por uno. Los conteos no cambian.
+const TIPOS_CON_AGENTE = ['cdr_li', 'whatsapp_li'];
+function sinAgente(filas) {
+  const acc = new Map();
+  for (const f of filas) {
+    const k = [f.mes, f.skill, f.tipo, f.tipificacion].join('');
+    const a = acc.get(k);
+    if (a) a.n += f.n; else acc.set(k, { ...f, agente: '' });
+  }
+  return [...acc.values()];
+}
 
 const router = express.Router();
 const sinAcceso = (res) => res.status(403).json({ error: 'Sin acceso a los datos de esta campana' });
@@ -28,7 +44,9 @@ for (const r of RUTAS) {
   }));
   router.get(r.base + '/datos', requireActor, validate(schemas.agendasUsuariaQuery, 'query'), wrap((req, res) => {
     if (!campaignAccess(req.actor, req.query.campana)) return sinAcceso(res);
-    res.json(ab.datos(db, r.tipo, req.query.campana));
+    const d = ab.datos(db, r.tipo, req.query.campana);
+    if (TIPOS_CON_AGENTE.includes(r.tipo) && ocultaAsesores(db, req.actor, req.query.campana)) return res.json({ ...d, filas: sinAgente(d.filas) });
+    res.json(d);
   }));
   router.post(r.base + '/carga/impacto', requireActor, validate(r.schema), wrap((req, res) => {
     if (!canLoadModule(req.actor, r.modulo, campanaDeCarga(req))) return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para calcular el impacto de una carga' });

@@ -20328,3 +20328,14 @@ código sin nombre sigue mostrando «(nombre pendiente)». ORLANT y demás campa
 
 Verificación local (Brave): 375/768/1440 claro y oscuro sin scroll horizontal ni choques; ORLANT
 sin el botón y con sus mismas pestañas. Prueba nueva `fase314-lineas-internas-ajustes` (5).
+
+## Fase 315 — Revisión de bugs del 10/11 (Fases 311–314) (v1.156.1, 2026-11-10)
+
+Revisión en solo lectura con el cliente en reunión y el supervisor cargando septiembre; detalle en
+`docs/revision-bugs-2026-11-10.md`. Arreglos (PR sin mergear, decide el usuario): (1, alta) la
+cuenta cliente de Aurora recibía los nombres de agentes en `/calidad/aurora-li-{cdr,whatsapp}/datos`
+— ahora sin agente con `ocultaAsesores`, sumado, mismos conteos; (2) `_gdBootstrap` vacía
+`_abCache` y `_liCache` (datos frescos tras cargas de otra sesión) y limpia `_liEstado`; (3) un
+HistCDR en la casilla de WhatsApp (o al revés) se rechaza. Barrido en producción: 0 errores de
+consola y 0 peticiones fallidas en ORLANT, Mobilize, Aurora, HLM y SURA. Prueba
+`fase315-li-privacidad-cliente` (4). Suite 2854/2854.
