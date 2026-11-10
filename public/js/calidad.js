@@ -208,6 +208,21 @@ function calComputeScore(items, answers, engine){
   engine = engine || 'standard';
   var answered = items.some(function(it){ return answers[it.n]; });
   if(!answered) return {puntaje:null, clasificacion:'—', fallos:null, nivelCritico:'—'};
+  // Fase 322: motor descuento (copia exacta de computeScoreDescuento del servidor).
+  if(engine==='descuento'){
+    var f = 0, ded = 0;
+    items.forEach(function(it){
+      var a = answers[it.n];
+      if(it.critico){ if(a==='NO') f++; return; }
+      if(!a) return;
+      if(it.opciones && it.opciones.length){ var o = it.opciones.filter(function(x){ return x.v===a; })[0]; ded += o ? (Number(o.descuento)||0) : 0; }
+      else if(a==='NO') ded += Number(it.descuento)||0;
+    });
+    var pd = f ? 0 : Math.max(0, Math.min(100, Math.round((100-ded)*100)/100));
+    var clasificacion = pd<70 ? '🔴 CRITICO' : (pd<90 ? '🟡 NO CRITICO' : '🟢 SOBRESALIENTE');
+    var nivelCritico = f ? '⛔ CRITICO EN NO (NOTA 0 %)' : '✅ SIN FALLOS CRITICOS';
+    return {puntaje:pd, clasificacion:clasificacion, fallos:f, nivelCritico:nivelCritico};
+  }
   var sum = 0, fallos = 0;
   items.forEach(function(it){
     var a = answers[it.n];

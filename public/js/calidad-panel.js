@@ -350,6 +350,8 @@ function cmpPlantillaDiccionario(camp, plId, pls) {
 function cmpDiccionarioHtml(p) {
   if (!p) return '<p class="ca-vacio">Esta campaña no tiene plantilla.</p>';
   if (p.motor === 'sura' && typeof caDiccionarioHtml === 'function') return caDiccionarioHtml(p);
+  // Fase 322: motor descuento (SURA): reglas e impacto por respuesta (cada opción con su %).
+  if ((p.engine || p.motor) === 'descuento' && typeof caDiccionarioHtml === 'function') return caDiccionarioHtml(Object.assign({}, p, { engine: 'descuento' }));
   var items = (p.items || []).slice().sort(function (a, b) { return a.n - b.n; });
   var crit = items.filter(function (it) { return it.critico; }).length;
   var reglas = '<div class="ca-reglas cmp-reglas">' +

@@ -188,13 +188,17 @@ function verDetalleMonitoreo(idx){
     html += '<div class="qi-cat-header">'+esc(cat)+'</div>';
     items.filter(function(it){return it.cat===cat;}).forEach(function(it){
       var a = answers[it.n] || '';
-      var badgeCls = a==='SI' ? 'qi-answer-si' : a==='NO' ? 'qi-answer-no' : a==='N/A' ? 'qi-answer-na' : 'qi-answer-blank';
+      // Fase 322: en una plantilla de descuento, la opcion elegida con su texto y el impacto del item.
+      var opc = (it.opciones || []).filter(function(o){ return o.v===a; })[0];
+      var textoResp = opc ? opc.t : (a||'—');
+      var badgeCls = a==='SI' ? 'qi-answer-si' : (a==='NO' || (opc && opc.descuento)) ? 'qi-answer-no' : a==='N/A' ? 'qi-answer-na' : 'qi-answer-blank';
+      var desc = plM && plM.engine==='descuento' && typeof cc2SubItem==='function';
       html += '<div class="qi-row">'+
-        '<div class="qi-label">'+(it.critico?'<span class="qi-crit">&#9888;</span>':'')+esc(it.n)+'. '+esc(it.label)+'<span class="qi-weight">('+esc(it.weight)+'%)</span></div>'+
-        '<span class="qi-answer-badge '+badgeCls+'">'+esc(a||'—')+'</span></div>';
+        '<div class="qi-label">'+(it.critico?'<span class="qi-crit">&#9888;</span>':'')+esc(it.n)+'. '+esc(it.label)+'<span class="qi-weight">('+esc(desc ? cc2SubItem(it, 'descuento') : it.weight+'%')+')</span></div>'+
+        '<span class="qi-answer-badge '+badgeCls+'">'+esc(textoResp)+'</span></div>';
     });
   });
-  var motivoM = m.extras && m.extras.motivo;
+  var motivoM = m.extras && (m.extras.motivo || m.extras.motivoTexto); // Fase 322: + motivo en texto libre (SURA)
   document.getElementById('dm-items-wrap').innerHTML = (motivoM ? '<p class="mr-motivo"><strong>Motivo de afectación:</strong> '+esc(motivoM)+'</p>' : '') + html;
 
   document.getElementById('detalle-monitoreo-overlay').classList.add('show');

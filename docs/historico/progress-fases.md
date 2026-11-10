@@ -20426,3 +20426,23 @@ Falta: importar la plantilla de SURA (Calidad › Plantillas) para calificar en 
 Prueba `fase321-sura-calidad-asesores` (2): el ASESOR de SURA ve solo sus monitoreos, 403 en
 Televentas y en los monitoreos de la campaña. Los usuarios se crean después en producción por la
 pantalla (sus datos nunca van al repo).
+
+## Fase 322 — Calidad: motor «descuento» para Televentas SURA (plan C1) (v1.161.0, 2026-11-10)
+
+- **Motor** `descuento` (`server/calidad-logic.js`, `computeScoreDescuento`): crítico en NO → 0 %;
+  no crítico en NO → resta `descuento`; ítem con `opciones` [{v: SI|OP1..OP3, t, descuento}] →
+  resta el de la opción. Copias exactas en el navegador (`calComputeScore`, `cc2Nota`); la prueba
+  recorre las 2.048 combinaciones de la plantilla de SURA y las tres dan lo mismo. `standard` y
+  `sura` sin cambios.
+- **Respuestas** `OP1..OP3` (solo en ítems con esa opción; 400 si no), sin N/A en `descuento`.
+- **Importador**: acepta `motor: 'descuento'` (crítico, `descuento` o `opciones`; la primera
+  opción cumple con 0; peor caso sin críticos en el resumen).
+- **Campos** (`calidad-campos.js`): `idContacto`, `tipificacionSistema`, `estrategia`, `causa`,
+  `motivoTexto` (texto libre; el `motivo` automático de Mobilize no cambia) y `cedula`, guardada
+  como `••••` + últimos 4 dígitos. Los textos libres pasan el filtro de datos de pacientes; la
+  cuenta cliente no recibe cédula ni textos libres.
+- **Formulario** común: botones por opción, subtítulos e impacto según el motor, «Crítico en NO:
+  nota 0 %». Diccionario, detalle de Mis resultados y Resultados del equipo (modelo `deduct`)
+  entienden el motor. ORLANT y Mobilize: formulario idéntico a `main` (comparado en local).
+- Prueba `fase322-calidad-motor-descuento` (7). Falta: importar la plantilla en producción y el
+  resumen por asesor de SURA (PR siguiente).

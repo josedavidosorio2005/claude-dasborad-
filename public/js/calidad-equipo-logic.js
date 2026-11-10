@@ -41,7 +41,7 @@ function ceMesDesc(meses) {
 // motor de SINCO -> modelo del HTML ('sura' = descuento, como SURA en el HTML).
 function ceModelo(plantilla) {
   var m = plantilla && (plantilla.motor || plantilla.engine);
-  return m === 'sura' || m === 'deduct' ? 'deduct' : 'weighted';
+  return m === 'sura' || m === 'deduct' || m === 'descuento' ? 'deduct' : 'weighted'; // Fase 322: + motor descuento
 }
 function _ceNota(m) {
   if (m.puntaje === null || m.puntaje === undefined || m.puntaje === '') return null;
@@ -57,7 +57,12 @@ function ceFallos(m, items) {
 }
 // keyName() del HTML: normName (guion bajo = espacio, espacios simples) en minusculas.
 function ceKey(s) { return String(s || '').replace(/_/g, ' ').replace(/s+/g, ' ').trim().toLowerCase(); }
-function _ceFalla(m, it) { return (m.answers || {})[it.n] === 'NO'; }
+// Fase 322: con opciones, falla la opcion con descuento > 0.
+function _ceFalla(m, it) {
+  var a = (m.answers || {})[it.n];
+  if (it.opciones && it.opciones.length) { var o = it.opciones.filter(function (x) { return x.v === a; })[0]; return !!(o && o.descuento > 0); }
+  return a === 'NO';
+}
 
 // Meses con monitoreos calificados, del mas nuevo al mas viejo (monthsWithData).
 function ceMesesConDatos(monitoreos) {

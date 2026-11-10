@@ -43,6 +43,8 @@ function monitoreosParaCliente(lista, ocultarAsesor) {
     if (out.extras && typeof out.extras === 'object') {
       out.extras = { ...out.extras };
       delete out.extras.motivo;
+      // Fase 322 (SURA): ni la cedula (aunque vaya enmascarada) ni los textos libres del equipo.
+      for (const k of ['cedula', 'motivoTexto', 'estrategia', 'causa']) delete out.extras[k];
     }
     if (alias) { out.asesor = alias(m.asesor); out.asesorUserId = null; }
     return out;

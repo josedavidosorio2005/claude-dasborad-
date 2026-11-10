@@ -218,7 +218,9 @@ const borradoRangoBody = z
   })
   .refine((b) => b.mesDesde <= b.mesHasta, { message: 'mesDesde debe ser <= mesHasta', path: ['mesDesde'] });
 
-const respuestaSchema = z.enum(['SI', 'NO', 'N/A', '']);
+// Fase 322: OP1..OP3 = opciones de descuento parcial (motor descuento); el servidor
+// revisa que el item tenga esa opcion (camposLib.respuestasInvalidas).
+const respuestaSchema = z.enum(['SI', 'NO', 'N/A', '', 'OP1', 'OP2', 'OP3']);
 
 // answers: { "1": "SI", "2": "NO", ... } — claves numericas, valores acotados.
 const answersSchema = z

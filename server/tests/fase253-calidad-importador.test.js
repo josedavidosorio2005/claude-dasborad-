@@ -54,15 +54,16 @@ test('validacion del archivo: formato, campaña, motor, pesos, items y campos', 
     [[1, 'Apertura', 'Saluda', 30, false, true], [2, 'Gestion', 'Valida datos', 40, true, true], [3, 'Cierre', 'Despide', 30, false, false]]);
   assert.deepEqual(ok.plantilla.campos.map((c) => c.k), ['asesor', 'idAgente', 'fecha', 'placa', 'tipoLlamada', 'idLlamada', 'codificacion', 'evaluador', 'motivo', 'observaciones']);
   assert.equal(ok.plantilla.campos.find((c) => c.k === 'codificacion').etiqueta, 'Tipificación');
-  assert.deepEqual(ok.resumen, { items: 3, criticos: 1, sumaPesos: 100, categorias: ['Apertura', 'Gestion', 'Cierre'] });
+  assert.deepEqual(ok.resumen, { items: 3, criticos: 1, sumaPesos: 100, categorias: ['Apertura', 'Gestion', 'Cierre'], motor: 'standard', peorSinCriticos: null }); // Fase 322: + motor y peor caso
   assert.ok(ok.avisos.some((a) => /Ítem 3: sin descripción/.test(a)));
   const mal = (x, re) => assert.match(imp.validarPlantillaImport(archivo(x), C).error, re, JSON.stringify(x).slice(0, 80));
   mal({ formato: 'otro' }, /no es una plantilla/);
   mal({ version: 2 }, /Versión/);
   mal({ campana: 'SURA' }, /no tiene Calidad/);
-  mal({ motor: 'descuento' }, /no soportado/);
+  mal({ motor: 'otro' }, /no soportado/); // Fase 322: 'descuento' ya se importa (prueba fase322)
+  mal({ motor: 'descuento' }, /falta el descuento del NO/);
   mal({ nombre: ' ' }, /nombre/);
-  mal({ campos: ['asesor', 'fecha', 'cedula'] }, /no permitido/);
+  mal({ campos: ['asesor', 'fecha', 'documentoPaciente'] }, /no permitido/); // Fase 322: 'cedula' ya es un campo permitido (enmascarado)
   mal({ items: [] }, /ítems/);
   mal({ items: [{ n: 1, nombre: 'a', peso: 50 }, { n: 1, nombre: 'b', peso: 50 }] }, /repetido/);
   mal({ items: [{ n: 1, nombre: 'a', peso: 50 }, { n: 2, nombre: 'b', peso: 40 }] }, /sumar 100 \(suman 90\)/);

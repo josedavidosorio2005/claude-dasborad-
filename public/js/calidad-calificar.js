@@ -6,6 +6,8 @@
 // de siempre (ORLANT, la generica) siguen con el formulario de antes.
 // El servidor vuelve a calcular y a validar todo al guardar.
 var _cc2 = { answers: {}, editId: null, plantilla: null };
+// Fase 322: campos que van en `extras` (lista cerrada del servidor, calidad-campos.js).
+var CC2_EXTRAS = ['placa', 'tipoLlamada', 'idAgente', 'idContacto', 'tipificacionSistema', 'estrategia', 'causa', 'motivoTexto', 'cedula'];
 
 // Plantilla que usa el formulario: la elegida o, sin elegir, la principal
 // usable (o la primera usable) de la campaña.
@@ -66,16 +68,21 @@ function _cc2Campo(c) {
     return '<label class="cc2-f">' + lbl + '<input type="text" id="' + id + '" maxlength="200" placeholder="Escribe el código" spellcheck="false"></label>';
   }
   if (c.k === 'motivo') return '<label class="cc2-f cc2-wide">' + '<span class="cc2-lt">' + esc(c.etiqueta) + ' (automático)</span><input type="text" id="' + id + '" readonly></label>';
+  // Fase 322 (SURA): cedula del cliente (se guarda enmascarada) y textos libres.
+  if (c.k === 'cedula') return '<label class="cc2-f">' + lbl + '<input type="text" id="' + id + '" inputmode="numeric" maxlength="20" autocomplete="off" spellcheck="false"><small class="cc2-hint">Se guarda solo con los últimos 4 dígitos.</small></label>';
+  if (c.k === 'motivoTexto' || c.k === 'estrategia' || c.k === 'causa') return '<label class="cc2-f cc2-wide">' + lbl + '<textarea id="' + id + '" maxlength="' + (c.k === 'estrategia' ? 200 : 300) + '" rows="2"></textarea></label>';
   if (c.k === 'observaciones') return '<label class="cc2-f cc2-wide">' + lbl + '<textarea id="' + id + '" maxlength="500" rows="3"></textarea></label>';
   var extra = c.k === 'placa' ? ' maxlength="20" autocapitalize="characters" spellcheck="false"' : (c.k === 'telefono' ? ' inputmode="tel" maxlength="40"' : ' maxlength="60"');
   return '<label class="cc2-f">' + lbl + '<input type="text" id="' + id + '"' + extra + '></label>';
 }
 
+function _cc2Eng() { return _cc2.plantilla ? _cc2.plantilla.engine : 'standard'; }
 function _cc2Seg(it) {
-  var ops = [['SI', 'y'], ['NO', 'n']];
-  if (it.admiteNA !== false) ops.push(['N/A', 'x']);
-  return '<div class="cc2-seg" role="group" aria-label="' + esc(it.n + '. ' + it.label) + '">' + ops.map(function (o) {
-    return '<button type="button" class="cc2-' + o[1] + '" data-n="' + esc(it.n) + '" data-v="' + o[0] + '" aria-pressed="false">' + o[0] + '</button>';
+  // Fase 322: los botones salen de cc2Opciones (SI/NO/N/A, o las opciones del item en el
+  // motor descuento). Clase de color: SI verde, NO rojo, N/A gris, opcion parcial ambar.
+  var cls = function (v) { return v === 'SI' ? 'y' : v === 'NO' ? 'n' : v === 'N/A' ? 'x' : 'o'; };
+  return '<div class="cc2-seg' + (it.opciones && it.opciones.length ? ' cc2-seg-op' : '') + '" role="group" aria-label="' + esc(it.n + '. ' + it.label) + '">' + cc2Opciones(it, _cc2Eng()).map(function (o) {
+    return '<button type="button" class="cc2-' + cls(o.v) + '" data-n="' + esc(it.n) + '" data-v="' + esc(o.v) + '" aria-pressed="false">' + esc(o.t) + '</button>';
   }).join('') + '</div>';
 }
 
@@ -85,7 +92,7 @@ function cc2Render() {
   var itemsHtml = cc2PorCategoria(p.items).map(function (g) {
     return '<div class="cc2-cat">' + esc(g.cat) + '</div>' + g.items.map(function (it) {
       return '<div class="cc2-item" data-item="' + esc(it.n) + '"><span class="cc2-num">' + esc(it.n) + '</span>' +
-        '<div class="cc2-iname"><b>' + esc(it.label) + '</b><small>' + esc(cc2SubItem(it)) +
+        '<div class="cc2-iname"><b>' + esc(it.label) + '</b><small>' + esc(cc2SubItem(it, _cc2Eng())) +
         (it.descripcion || (it.vinetas && it.vinetas.length) ? ' · <button type="button" class="cc2-qbtn" onclick="cc2VerCriterio(' + Number(it.n) + ')">Ver criterio</button>' : '') +
         '</small></div>' + _cc2Seg(it) + '</div>';
     }).join('');
@@ -96,7 +103,7 @@ function cc2Render() {
         calPlantillaSelectorHtml(_ccampana, !!_cc2.editId) +
         '<section class="cc2-sec"><div class="cc2-sec-h"><h3>Información general</h3><span class="cc2-tag">Datos de la llamada</span></div>' +
           '<div class="cc2-fields">' + b.generales.map(_cc2Campo).join('') + '</div></section>' +
-        '<section class="cc2-sec"><div class="cc2-sec-h"><h3>Ítems de la plantilla</h3><span class="cc2-tag">⚠ Crítico: NO resta 20 pts · N/A = no aplica</span></div>' +
+        '<section class="cc2-sec"><div class="cc2-sec-h"><h3>Ítems de la plantilla</h3><span class="cc2-tag">' + (cc2EsDescuento(_cc2Eng()) ? '⚠ Crítico en NO: nota 0 % · sin N/A' : '⚠ Crítico: NO resta 20 pts · N/A = no aplica') + '</span></div>' +
           '<div class="cc2-items" id="cc2-items">' + itemsHtml + '</div></section>' +
         '<section class="cc2-sec"><div class="cc2-sec-h"><h3>Detalles adicionales</h3></div>' +
           '<div class="cc2-fields">' + b.detalle.map(_cc2Campo).join('') + '</div>' +
@@ -132,8 +139,9 @@ function cc2Pintar() {
   var p = _cc2.plantilla; if (!p) return;
   var a = _cc2.answers;
   document.querySelectorAll('#cf2 .cc2-seg button').forEach(function (b) { b.setAttribute('aria-pressed', String(a[b.dataset.n] === b.dataset.v)); });
-  var nota = cc2Nota(p.items, a);
-  var falt = cc2Faltantes(p.items, a);
+  var eng = p.engine;
+  var nota = cc2Nota(p.items, a, eng);
+  var falt = cc2Faltantes(p.items, a, eng);
   var completo = !falt.length;
   var cls = completo ? cc2Clase(nota) : (nota === null ? cc2Clase(null) : { k: cc2Clase(nota).k, t: 'Parcial · faltan ' + falt.length + ' ítem' + (falt.length === 1 ? '' : 's') });
   var big = document.getElementById('cc2-big');
@@ -143,13 +151,13 @@ function cc2Pintar() {
   pill.className = 'cc2-pill cc2-' + (completo ? cls.k : 'na');
   pill.textContent = cls.t;
   document.getElementById('cc2-prog').textContent = (p.items.length - falt.length) + ' de ' + p.items.length + ' ítems calificados';
-  var ded = cc2Deducciones(p.items, a);
-  var h = ded.map(function (d) { return '<div' + (d.critico ? ' class="cc2-crit"' : '') + '><span>' + esc(d.it.n + '. ' + d.it.label) + (d.critico ? ' ⚠' : '') + '</span><span>−' + d.puntos + '</span></div>'; }).join('');
-  var al = cc2Alerta(ded.filter(function (d) { return d.critico; }).length);
+  var ded = cc2Deducciones(p.items, a, eng);
+  var h = ded.map(function (d) { return '<div' + (d.critico ? ' class="cc2-crit"' : '') + '><span>' + esc(d.it.n + '. ' + d.it.label) + (d.critico ? ' ⚠' : '') + '</span><span>' + (d.puntos === null ? 'nota 0 %' : '−' + d.puntos) + '</span></div>'; }).join('');
+  var al = cc2Alerta(ded.filter(function (d) { return d.critico; }).length, eng);
   if (al) h += '<div class="cc2-crit"><span class="cc2-pill cc2-' + al.k + '">' + esc(al.t) + '</span></div>';
   if (!h && completo) h = '<div><span>Sin afectaciones</span><span>100%</span></div>';
   var dEl = document.getElementById('cc2-ded'); dEl.innerHTML = h; dEl.hidden = !h;
-  var mot = document.getElementById('cc2-f-motivo'); if (mot) mot.value = cc2Motivo(p.items, a);
+  var mot = document.getElementById('cc2-f-motivo'); if (mot) mot.value = cc2Motivo(p.items, a, eng);
 }
 
 // Fase 270: al elegir el asesor se llenan sus datos (lo que la plataforma sabe
@@ -171,7 +179,7 @@ function _cc2Val(k) { var el = document.getElementById('cc2-f-' + k); return el 
 
 function cc2Sugerir() {
   var p = _cc2.plantilla; if (!p) return;
-  var t = cc2SugerirObs(p.items, _cc2.answers);
+  var t = cc2SugerirObs(p.items, _cc2.answers, p.engine);
   if (t === null) { showToast('Califica los ' + p.items.length + ' ítems para sugerir la observación'); return; }
   var el = document.getElementById('cc2-f-observaciones'); if (el) { el.value = t.slice(0, 500); el.classList.remove('cc2-invalid'); }
 }
@@ -180,7 +188,7 @@ function cc2VerCriterio(n) {
   var p = _cc2.plantilla; if (!p) return;
   var it = p.items.find(function (x) { return Number(x.n) === Number(n); }); if (!it) return;
   document.getElementById('cc2-criterio-t').textContent = it.n + '. ' + it.label;
-  document.getElementById('cc2-criterio-b').innerHTML = '<p class="cc2-crit-sub">' + esc(cc2SubItem(it)) + '</p>' +
+  document.getElementById('cc2-criterio-b').innerHTML = '<p class="cc2-crit-sub">' + esc(cc2SubItem(it, _cc2Eng())) + '</p>' +
     (it.descripcion ? '<p>' + esc(it.descripcion) + '</p>' : '') +
     (it.vinetas && it.vinetas.length ? '<ul>' + it.vinetas.map(function (v) { return '<li>' + esc(v) + '</li>'; }).join('') + '</ul>' : '');
   _cc2AbrirDialogo('cc2-ov-criterio');
@@ -220,7 +228,7 @@ async function cc2Guardar() {
   if (asesorSel) asesorSel.classList.toggle('cc2-invalid', !asesor);
   if (!asesor) { showToast(asesorSel && asesorSel.disabled ? 'Esta campaña no tiene usuarios ASESOR: créalos en Usuarios' : 'Selecciona el asesor'); if (asesorSel) asesorSel.focus(); return; }
   document.querySelectorAll('#cf2 .cc2-item.cc2-missing').forEach(function (x) { x.classList.remove('cc2-missing'); });
-  var falt = cc2Faltantes(p.items, _cc2.answers);
+  var falt = cc2Faltantes(p.items, _cc2.answers, p.engine);
   var pideObs = cc2CamposDe(p).some(function (c) { return c.k === 'observaciones'; });
   var obsEl = document.getElementById('cc2-f-observaciones');
   var sinObs = pideObs && !_cc2Val('observaciones');
@@ -243,7 +251,8 @@ async function cc2Guardar() {
   var answers = {};
   p.items.forEach(function (it) { answers[it.n] = _cc2.answers[it.n] || ''; });
   var extras = {};
-  ['placa', 'tipoLlamada', 'idAgente'].forEach(function (k) { var v = _cc2Val(k); if (v) extras[k] = k === 'placa' ? v.toUpperCase() : v; });
+  // Fase 322: + campos de SURA (el servidor guarda la cedula solo con sus ultimos 4 digitos).
+  CC2_EXTRAS.forEach(function (k) { var v = _cc2Val(k); if (v) extras[k] = k === 'placa' ? v.toUpperCase() : v; });
   var body = {
     asesor: asesor,
     asesorUserId: uid ? Number(uid) : undefined,
@@ -307,7 +316,7 @@ function cc2Editar(m) {
   set('codificacion', m.codificacion); set('observaciones', m.observaciones); set('evaluador', m.evaluador);
   set('canal', m.canal || 'LLAMADA'); // Fase 318
   var ex = m.extras || {};
-  set('placa', ex.placa); set('tipoLlamada', ex.tipoLlamada); set('idAgente', ex.idAgente);
+  CC2_EXTRAS.forEach(function (k) { set(k, ex[k]); }); // Fase 322
   cc2Pintar();
   showToast('Editando el monitoreo de ' + textoFormatoNombre(m.asesor) + ' (' + (m.fecha || '-') + ')');
   return true;

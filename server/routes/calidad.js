@@ -29,6 +29,11 @@ function textoMonitoreoConDatoPaciente(observaciones, extras) {
   if (pareceDatoPaciente(observaciones)) return mensajeDatoPaciente('La observación', observaciones);
   const motivo = extras && extras.motivo;
   if (pareceDatoPaciente(motivo)) return mensajeDatoPaciente('El motivo de afectación', motivo);
+  // Fase 322: los textos libres nuevos (SURA), con el mismo filtro.
+  for (const [k, nombre] of [['motivoTexto', 'El motivo de afectación'], ['estrategia', 'La estrategia'], ['causa', 'La causa'], ['tipificacionSistema', 'La tipificación del sistema']]) {
+    const v = extras && extras[k];
+    if (pareceDatoPaciente(v)) return mensajeDatoPaciente(nombre, v);
+  }
   return null;
 }
 
@@ -237,6 +242,9 @@ function alertaAsesorDesdeId() {
 // completo si la plantilla lo pide y los campos extra de su lista cerrada.
 // Devuelve { error, faltantes } o { extras } (JSON listo o null).
 function reglasDePlantilla(plantilla, answers, extrasBody) {
+  // Fase 322: una opcion de descuento (OP1..) solo en un item que la tenga.
+  const invalidas = camposLib.respuestasInvalidas(plantilla.items, answers);
+  if (invalidas.length) return { error: 'Respuesta no válida en el ítem ' + invalidas.join(', ') };
   if (plantilla.completoObligatorio) {
     const faltantes = camposLib.itemsFaltantes(plantilla.items, answers);
     if (faltantes.length) return { error: 'Faltan ítems por calificar: ' + faltantes.join(', '), faltantes };
