@@ -17,9 +17,14 @@ function cplLeerArchivo(texto, tamano) {
 }
 
 // plan (respuesta de la vista previa) -> frases para mostrar.
+// Fase 324: plan «reemplazar» (misma id, sin monitoreos).
+function _cplPlanReemplazo(plan, nombre) {
+  return ['Se reemplazan EN SU LUGAR los ítems y campos de "' + (plan.reemplaza.nombre || nombre) + '" (misma plantilla, versión ' + plan.version + '). No tiene monitoreos, así que ninguna nota cambia.'];
+}
 function cplPlanTexto(plan, nombre, campana) {
   var out = [];
   if (!plan) return out;
+  if (plan.accion === 'reemplazar' && plan.reemplaza) return _cplPlanReemplazo(plan, nombre); // Fase 324
   if (plan.accion === 'version' && plan.reemplaza) {
     out.push('Se crea la versión ' + plan.version + ' de "' + nombre + '" en ' + campana + '. La versión ' + plan.reemplaza.version +
       ' queda desactivada y sus ' + plan.reemplaza.monitoreos + ' monitoreo(s) siguen con ella, sin recalcularse.');

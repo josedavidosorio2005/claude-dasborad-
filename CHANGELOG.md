@@ -4,6 +4,16 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.163.0 — Noviembre 2026
+
+**Fase 324: corregir una plantilla de Calidad que aún no tiene monitoreos.**
+
+- En Calidad › Plantillas, una plantilla sin monitoreos tiene el botón «Reemplazar»: se elige el
+  archivo corregido, se revisa la vista previa y la plantilla se actualiza en su lugar (la misma).
+  Con monitoreos no se puede: se importa una versión nueva, como siempre, y ninguna nota cambia.
+- En el Diccionario de SURA cada criterio muestra su afectación máxima y la descripción respeta sus
+  líneas y viñetas, como en la matriz del supervisor.
+
 ## v1.162.0 — Noviembre 2026
 
 **Fase 323: resumen por asesor de SURA.**

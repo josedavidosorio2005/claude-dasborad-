@@ -189,7 +189,7 @@ function cc2VerCriterio(n) {
   var it = p.items.find(function (x) { return Number(x.n) === Number(n); }); if (!it) return;
   document.getElementById('cc2-criterio-t').textContent = it.n + '. ' + it.label;
   document.getElementById('cc2-criterio-b').innerHTML = '<p class="cc2-crit-sub">' + esc(cc2SubItem(it, _cc2Eng())) + '</p>' +
-    (it.descripcion ? '<p>' + esc(it.descripcion) + '</p>' : '') +
+    (it.descripcion ? '<p' + (cc2EsDescuento(p.engine) ? ' class="ca-desc-lineas"' : '') + '>' + esc(it.descripcion) + '</p>' : '') + // Fase 324: saltos de linea en el motor descuento
     (it.vinetas && it.vinetas.length ? '<ul>' + it.vinetas.map(function (v) { return '<li>' + esc(v) + '</li>'; }).join('') + '</ul>' : '');
   _cc2AbrirDialogo('cc2-ov-criterio');
 }

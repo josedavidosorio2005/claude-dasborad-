@@ -1879,6 +1879,8 @@ html[data-motion="off"] #gd-panels .aurora-kpi,html[data-motion="off"] #gd-panel
 .cc2-seg button.cc2-y[aria-pressed="true"]{background:var(--c-success-dark);color:var(--c-bg)}
 .cc2-seg button.cc2-n[aria-pressed="true"]{background:var(--c-danger-dark);color:var(--c-bg)}
 .cc2-seg button.cc2-x[aria-pressed="true"]{background:var(--c-text-muted);color:var(--c-bg)}
+/* Fase 324: descripciones del motor descuento (SURA) con sus saltos de linea, como la matriz */
+.ca-desc-lineas{white-space:pre-line}
 /* Fase 322: opcion de descuento parcial (motor descuento) */
 .cc2-seg button.cc2-o[aria-pressed="true"]{background:var(--c-warning-text);color:var(--c-bg)}
 .cc2-seg-op{flex-wrap:wrap}

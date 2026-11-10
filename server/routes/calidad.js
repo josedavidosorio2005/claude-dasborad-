@@ -364,6 +364,25 @@ router.post(
     const v = importLib.validarPlantillaImport(req.body.archivo, { campanas: clientesRegistro.campanasCalidad(db) });
     if (v.error) return res.status(400).json({ error: v.error });
     const p = v.plantilla;
+    // Fase 324: reemplazar en su lugar (misma id, version y principal) una plantilla SIN
+    // monitoreos -- ninguna nota cambia porque no hay ninguna. Con monitoreos: 400 (se importa
+    // una version nueva, como siempre).
+    if (req.body.reemplazarId) {
+      const destino = db.prepare('SELECT * FROM calidad_plantillas WHERE id = ?').get(req.body.reemplazarId);
+      if (!destino) return res.status(404).json({ error: 'Plantilla no encontrada' });
+      if (destino.campana !== p.campana) return res.status(400).json({ error: 'El archivo es de otra campaña (' + p.campana + ') que la plantilla a reemplazar (' + destino.campana + ')' });
+      if (!destino.activo) return res.status(400).json({ error: 'Solo se puede reemplazar una plantilla activa' });
+      const nMon = monitoreosDePlantilla(destino);
+      if (nMon > 0) return res.status(400).json({ error: 'La plantilla ya tiene ' + nMon + ' monitoreo(s): no se reemplaza. Importa una versión nueva.' });
+      const planR = { accion: 'reemplazar', version: destino.version || 1, reemplaza: { id: destino.id, nombre: destino.nombre, version: destino.version || 1, monitoreos: 0 }, principal: !!destino.principal, principalAnterior: null };
+      const vistaR = { nombre: p.nombre, campana: p.campana, engine: p.engine, campos: p.campos, items: p.items, completoObligatorio: true };
+      if (!req.body.confirmar) return res.json({ ok: true, confirmado: false, plantilla: vistaR, resumen: v.resumen, avisos: v.avisos, plan: planR });
+      db.prepare('UPDATE calidad_plantillas SET nombre = ?, engine = ?, items = ?, campos = ?, completoObligatorio = 1, updatedAt = ? WHERE id = ?')
+        .run(p.nombre, p.engine, JSON.stringify(p.items), JSON.stringify(p.campos), nowStr(), destino.id);
+      const rowR = db.prepare('SELECT * FROM calidad_plantillas WHERE id = ?').get(destino.id);
+      logCalEvent('PLANTILLA_REEMPLAZADA', p.nombre, p.campana, req.actor, `Plantilla ${destino.id} sin monitoreos, ${p.items.length} ítems`);
+      return res.json({ ok: true, confirmado: true, plantilla: Object.assign(toPlantilla(rowR), { monitoreos: 0 }), plan: planR });
+    }
     const anterior = db
       .prepare('SELECT * FROM calidad_plantillas WHERE campana = ? AND activo = 1 AND lower(trim(nombre)) = lower(trim(?)) ORDER BY version DESC, id DESC LIMIT 1')
       .get(p.campana, p.nombre);

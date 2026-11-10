@@ -151,8 +151,11 @@ function caDiccionarioHtml(p) {
   return '<div class="ca-reglas">' + caReglasDiccionario(p).map(function (r) { return '<span>' + esc(r) + '</span>'; }).join('') + '</div>' +
     cc2PorCategoria(p.items).map(function (g) {
       return '<h4 class="cc2-cat">' + esc(g.cat) + '</h4>' + g.items.map(function (it) {
-        return '<article class="ca-dcard"><div><h5><span class="cc2-num">' + esc(it.n) + '</span> ' + esc(it.label) + (it.critico ? ' <span class="cc2-pill cc2-bad">⚠ Crítico</span>' : '') + '</h5>' +
-          (it.descripcion ? '<p>' + esc(it.descripcion) + '</p>' : '<p class="ca-vacio">Sin descripción.</p>') +
+        // Fase 324 (motor descuento): afectacion maxima, como la matriz de SURA, y la descripcion con sus saltos de linea.
+        var desc = p.engine === 'descuento';
+        var afecta = desc ? ' <span class="cc2-pill' + (it.critico ? ' cc2-bad' : '') + '">Afectación máxima ' + (it.critico ? '100' : esc(it.weight)) + ' %</span>' : '';
+        return '<article class="ca-dcard"><div><h5><span class="cc2-num">' + esc(it.n) + '</span> ' + esc(it.label) + (it.critico ? ' <span class="cc2-pill cc2-bad">⚠ Crítico</span>' : '') + afecta + '</h5>' +
+          (it.descripcion ? '<p' + (desc ? ' class="ca-desc-lineas"' : '') + '>' + esc(it.descripcion) + '</p>' : '<p class="ca-vacio">Sin descripción.</p>') +
           (it.vinetas && it.vinetas.length ? '<ul>' + it.vinetas.map(function (v) { return '<li>' + esc(v) + '</li>'; }).join('') + '</ul>' : '') + '</div>' +
           '<div class="ca-imp"><span class="cc2-tag">Impacto en la nota</span>' + caImpacto(it, p.engine).map(function (x) { return '<div><span>' + x[0] + '</span><span>' + esc(x[1]) + '</span></div>'; }).join('') + '</div></article>';
       }).join('');
