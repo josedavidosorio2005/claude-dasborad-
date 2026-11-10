@@ -20339,3 +20339,16 @@ cuenta cliente de Aurora recibía los nombres de agentes en `/calidad/aurora-li-
 HistCDR en la casilla de WhatsApp (o al revés) se rechaza. Barrido en producción: 0 errores de
 consola y 0 peticiones fallidas en ORLANT, Mobilize, Aurora, HLM y SURA. Prueba
 `fase315-li-privacidad-cliente` (4). Suite 2854/2854.
+
+## Fase 316 — Calidad: editar descripciones de una plantilla (v1.157.0, 2026-11-10)
+
+Pedido del supervisor: el Diccionario de ORLANT sale con «Sin descripción» en sus 17 ítems. Las
+plantillas de Mobilize (id 9) y Aurora (id 10) trajeron la descripción en su archivo al
+importarlas por Calidad › Plantillas; ese importador siempre crea una plantilla NUEVA (versión
+siguiente, otra id) y fija «completar todo» obligatorio, así que no sirve para tocar solo la id 1
+de ORLANT. Con OK del usuario: `PUT /calidad/plantillas/:id/descripciones` (solo admin) cambia
+únicamente `descripcion` de los ítems de una plantilla existente (ítem inexistente o campo de
+más → 400 sin guardar; vacío = quitar) y la pantalla de Plantillas tiene el botón
+«Descripciones». El texto no queda en el repo: se carga en producción por la pantalla. Prueba
+`fase316-calidad-descripciones` (3): id, versión, pesos, críticos, orden, categorías, campos y
+monitoreos idénticos.

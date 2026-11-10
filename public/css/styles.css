@@ -2292,3 +2292,6 @@ div.ca-bar-fila{cursor:default}
   .err-lista-tabla tbody tr:nth-child(even){background:var(--c-surface-subtle)}
 }
 @media (max-width:600px){.err-form .ca-filtro{flex:1 1 100%}.err-form .ca-filtro select,.err-form .ca-filtro input{min-width:0;width:100%}}
+/* Fase 316: editor de descripciones de una plantilla (Calidad › Plantillas) */
+.cpl-desc-edit textarea{width:100%;min-width:260px;min-height:64px;padding:6px 8px;border:1px solid var(--c-border-control);border-radius:var(--r-sm);background:var(--c-surface);color:var(--c-text);font:inherit;font-size:var(--fs-small);resize:vertical}
+.cpl-desc-edit td:last-child{min-width:280px}

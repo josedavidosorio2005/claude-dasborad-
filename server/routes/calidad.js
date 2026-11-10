@@ -391,6 +391,40 @@ router.post(
   })
 );
 
+// Fase 316 (pedido del supervisor, Diccionario de ORLANT): cambia SOLO el texto de
+// `descripcion` de los items de una plantilla existente (misma id, misma version).
+// Pesos, criticos, orden, categorias, nombres, campos y monitoreos no se tocan: las
+// notas no dependen de la descripcion. Un numero de item que no exista -> 400 (no
+// se guarda nada). Texto vacio = quitar la descripcion. Solo el administrador.
+router.put(
+  '/calidad/plantillas/:id/descripciones',
+  requireActor,
+  soloAdmin,
+  validate(schemas.idParamSchema, 'params'),
+  validate(schemas.plantillaDescripcionesBody),
+  wrap((req, res) => {
+    const row = db.prepare('SELECT * FROM calidad_plantillas WHERE id = ?').get(req.params.id);
+    if (!row) return res.status(404).json({ error: 'Plantilla no encontrada' });
+    let items;
+    try { items = JSON.parse(row.items) || []; } catch (e) { return res.status(500).json({ error: 'La plantilla tiene ítems ilegibles' }); }
+    const porN = new Map(items.map((it) => [Number(it.n), it]));
+    const faltan = req.body.descripciones.filter((d) => !porN.has(d.n)).map((d) => d.n);
+    if (faltan.length) return res.status(400).json({ error: 'Ítem(s) que no existen en esta plantilla: ' + faltan.join(', ') });
+    let cambiadas = 0;
+    for (const d of req.body.descripciones) {
+      const it = porN.get(d.n);
+      const antes = it.descripcion || '';
+      if (antes === d.descripcion) continue;
+      if (d.descripcion) it.descripcion = d.descripcion; else delete it.descripcion;
+      cambiadas++;
+    }
+    if (cambiadas) db.prepare('UPDATE calidad_plantillas SET items = ?, updatedAt = ? WHERE id = ?').run(JSON.stringify(items), nowStr(), row.id);
+    logCalEvent('PLANTILLA_DESCRIPCIONES', row.nombre || row.campana, row.campana, req.actor, `${cambiadas} descripción(es) de ${items.length} ítems`);
+    const r2 = db.prepare('SELECT * FROM calidad_plantillas WHERE id = ?').get(row.id);
+    res.json(Object.assign(toPlantilla(r2), { monitoreos: monitoreosDePlantilla(r2), cambiadas }));
+  })
+);
+
 // Activar / desactivar una plantilla (no se borra nunca: sus monitoreos la
 // siguen usando). La principal no se desactiva: primero se importa o marca otra.
 router.put(
