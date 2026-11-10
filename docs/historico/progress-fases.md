@@ -20515,3 +20515,21 @@ los botones quedaban 3+1, «Ver criterio» en dos líneas y «nota 0 %» partido
   teclado (Tab, Espacio, Enter) y Limpiar bien; nota en vivo 100 / 91 / 94 / 85 / 93 / 90 / 88 /
   72 / 90 / 70 y crítico en NO = 0. ORLANT y Mobilize: HTML y posiciones idénticos a main a 375 y
   1440. Prueba `fase328` (2). Sin cambio de regla ni de plantilla.
+
+## Fase 329 — Calidad: CALIDAD ve todos los monitoreos de su campaña (v1.164.1, 2026-11-10)
+
+Reporte del supervisor: una usuaria de calidad (no asesora) solo veía sus propios monitoreos en
+Monitoreos, Resumen por asesor y Detalle por mes.
+
+- **Causa**: `GET /monitoreos` (Fase 254, «como el HTML de Edwin») filtraba al rol CALIDAD por
+  `evaluadorUserId` (o por el nombre del evaluador en los viejos). Todas las vistas, tarjetas y
+  exportaciones de Calidad salen de esa misma lista; el frontend no filtra por usuario. Los permisos
+  por plantilla solo deciden con cuál se califica (`usable`), no qué se ve.
+- **Producción (solo lectura, sin nombres)**: 2 cuentas CALIDAD activas, con el módulo y las 5
+  campañas; las dos veían 0 de 153 monitoreos de ORLANT y 0 de 13 de Mobilize (ninguno calificado
+  por ellas). Se reproducía; no era caché ni filtro de mes o campaña.
+- **Cambio**: se quita ese filtro; todos los roles con acceso a la campaña ven todos sus monitoreos.
+  Editar sigue igual (`puedeEditarMonitoreo`), el asesor sigue en `/monitoreos/mios` (403 en la
+  lista de campaña) y el cliente sigue con `monitoreosParaCliente`. Sin cambios de puntajes,
+  plantillas ni datos.
+- Pruebas: `fase329` (5) y `fase254` ajustada a la regla nueva.
