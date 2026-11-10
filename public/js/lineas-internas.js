@@ -70,8 +70,8 @@ function _liRenderFlujo(el, p, i, datos) {
   } else {
     var alto = (typeof window !== 'undefined' && window.innerWidth < 600) ? 380 : 360;
     cuerpo = '<div class="aurora-kpis li-kpis">' + kpi(_liFmtN(r.total), 'Total de llamadas') + kpi(_liFmtN(r.contestadas), 'Contestadas') +
-      kpi(_liFmtN(r.abandonadas), 'Abandonadas') + kpi(r.nivelServicio === null ? '—' : _liFmtPct(r.nivelServicio), 'Nivel de servicio') + '</div>' +
-      '<p class="ab-nota">' + (serie.porArea ? 'Una barra por área.' : 'Una barra por día.') + ' Nivel de servicio: promedio simple de SERVICE_LEVEL_20SEC de Wolkvox (llamadas contestadas en los primeros 20 segundos), igual que en Tráfico de Llamadas.</p>' +
+      kpi(_liFmtN(r.abandonadas), 'Abandonadas') + kpi(r.nivelAtencion === null ? '—' : _liFmtPct(r.nivelAtencion), 'Nivel de atención') + '</div>' +
+      '<p class="ab-nota">' + (serie.porArea ? 'Una barra por área.' : 'Una barra por día.') + ' Nivel de atención = contestadas ÷ total de llamadas × 100 (con «Todas», sobre la suma de las áreas), igual que en las otras pestañas.</p>' +
       '<div class="aurora-chart-wrap" style="height:' + alto + 'px"><canvas id="gd-c' + i + '-li-flujo"></canvas></div>';
   }
   el.innerHTML = gdGraficaHtml(esc(p.titulo || 'Flujo de llamadas'), '<div class="li-botones">' + _liBotones(botones, st.skill, i) + '</div>' + cuerpo, { destacado: true });
@@ -84,20 +84,25 @@ function _liRenderFlujo(el, p, i, datos) {
   if (serie.porArea && typeof auPartirEtiqueta === 'function') etiquetas = etiquetas.map(function (t) { return auPartirEtiqueta(t, 14); });
   var o = loBar(null);
   o.plugins.legend = { position: 'bottom', labels: { font: { size: 12 }, boxWidth: 10, padding: 8 } };
-  o.plugins.datalabels = Object.assign({}, o.plugins.datalabels, { display: serie.puntos.length <= 12 ? 'auto' : false,
-    formatter: function (v, ctx) { return ctx.dataset.yAxisID === 'y2' ? _liFmtPct(v) : _liFmtN(v); },
+  // Fase 314: la cantidad se ve SIEMPRE (antes se apagaba con mas de 12 barras), tambien el 0.
+  var et = liEtiquetasBarras(serie.puntos.length, (document.getElementById('gd-c' + i + '-li-flujo') || {}).clientWidth || window.innerWidth);
+  o.plugins.datalabels = Object.assign({}, o.plugins.datalabels, { display: et.display, clamp: true, clip: false,
+    font: { size: et.tamano, weight: 'bold' },
+    rotation: function (ctx) { return ctx.dataset.yAxisID === 'y2' ? 0 : et.rotacion; },
+    anchor: 'end', align: function (ctx) { return ctx.dataset.yAxisID === 'y2' ? 'top' : 'end'; }, offset: 2,
+    formatter: function (v, ctx) { return ctx.dataset.yAxisID === 'y2' ? _liFmtPct(v) : liCantidadTexto(v); },
     color: function (ctx) { return ctx.dataset.borderColor; } });
   o.plugins.tooltip = { callbacks: { label: function (ctx) { return ctx.dataset.label + ': ' + (ctx.dataset.yAxisID === 'y2' ? _liFmtPct(ctx.parsed.y) : _liFmtN(ctx.parsed.y)); } } };
-  o.scales.y = Object.assign({}, o.scales.y, { beginAtZero: true, grace: '12%', title: { display: true, text: 'Llamadas', color: o.scales.y.ticks.color } });
+  o.scales.y = Object.assign({}, o.scales.y, { beginAtZero: true, grace: et.rotacion ? '30%' : '15%', title: { display: true, text: 'Llamadas', color: o.scales.y.ticks.color } });
   o.scales.y2 = { position: 'right', beginAtZero: true, min: 0, max: 100, grid: { display: false },
     ticks: { font: { size: 12 }, color: o.scales.y.ticks.color, callback: function (v) { return v + ' %'; } },
-    title: { display: true, text: 'Nivel de servicio', color: o.scales.y.ticks.color } };
+    title: { display: true, text: 'Nivel de atención', color: o.scales.y.ticks.color } };
   o.layout = { padding: { top: 22, left: 4, right: 4 } };
   _gdChart('gd-c' + i + '-li-flujo', { type: 'bar', data: { labels: etiquetas, datasets: [
     { label: 'Total de llamadas', data: serie.puntos.map(function (x) { return x.total; }), backgroundColor: cTotal, borderColor: cTotal, maxBarThickness: 36, order: 2 },
     { label: 'Contestadas', data: serie.puntos.map(function (x) { return x.contestadas; }), backgroundColor: cCont, borderColor: cCont, maxBarThickness: 36, order: 2 },
     { label: 'Abandonadas', data: serie.puntos.map(function (x) { return x.abandonadas; }), backgroundColor: cAb, borderColor: cAb, maxBarThickness: 36, order: 2 },
-    { label: 'Nivel de servicio (%)', type: 'line', yAxisID: 'y2', data: serie.puntos.map(function (x) { return x.nivelServicio; }), borderColor: cNs, backgroundColor: cNs, pointBackgroundColor: cNs, pointStyle: 'rectRot', pointRadius: 6, borderWidth: 2.5, tension: 0.2, spanGaps: true, order: 1 },
+    { label: 'Nivel de atención (%)', type: 'line', yAxisID: 'y2', data: serie.puntos.map(function (x) { return x.nivelAtencion; }), borderColor: cNs, backgroundColor: cNs, pointBackgroundColor: cNs, pointStyle: 'rectRot', pointRadius: 6, borderWidth: 2.5, tension: 0.2, spanGaps: true, order: 1 },
   ] }, options: o });
 }
 
@@ -169,7 +174,7 @@ function _liFilasExport(i) {
   var st = _liEstadoDe(i), meses = _liMeses();
   if (tipo === 'flujo_li') {
     return liFlujoSerie(d.filas, meses, st.skill).puntos.map(function (x) {
-      return { 'Área / día': x.etiqueta, 'Total de llamadas': x.total, Contestadas: x.contestadas, Abandonadas: x.abandonadas, 'Nivel de servicio (%)': x.nivelServicio };
+      return { 'Área / día': x.etiqueta, 'Total de llamadas': x.total, Contestadas: x.contestadas, Abandonadas: x.abandonadas, 'Nivel de atención (%)': x.nivelAtencion };
     });
   }
   return liTorta(d.filas, meses, { agente: st.agente, skill: st.skill, tipo: tipo === 'cdr_li' ? st.tipo : '' }).todas

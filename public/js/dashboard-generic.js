@@ -1742,8 +1742,23 @@ function _gdTabsVisibles(){
   // Fase 297: Aurora y HLM, orden pedido por el supervisor (solo al mostrar; la base no cambia).
   return typeof pestanasOrdenCliente === 'function' ? pestanasOrdenCliente(tabs, _gd.cliente) : tabs;
 }
+// Fase 314 (Clinica Aurora): vistas que no van en la fila de pestañas sino como boton
+// aparte en la esquina superior derecha (#gd-li-btn). Mismo acceso: solo si la
+// pestaña existe y no esta oculta para quien mira (_gdTabsVisibles).
+var GD_TABS_BOTON_APARTE = ['lineas_internas'];
+function _gdActualizarBotonAparte(){
+  var wrap = document.getElementById('gd-li-wrap'), btn = document.getElementById('gd-li-btn');
+  if(!wrap || !btn) return;
+  var hay = _gdTabsVisibles().some(function(t){ return GD_TABS_BOTON_APARTE.indexOf(t.key) !== -1; });
+  wrap.classList.toggle('hidden', !hay);
+  var on = hay && GD_TABS_BOTON_APARTE.indexOf(_gd.tab) !== -1;
+  btn.classList.toggle('on', on);
+  btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+}
+function gdAbrirVistaAparte(key){ switchGenericTab(key); }
 function renderGenericTabs(){
-  document.getElementById('gd-tabs').innerHTML = _gdTabsVisibles().map(function(t){
+  _gdActualizarBotonAparte();
+  document.getElementById('gd-tabs').innerHTML = _gdTabsVisibles().filter(function(t){ return GD_TABS_BOTON_APARTE.indexOf(t.key) === -1; }).map(function(t){
     // Fase 163: la pestana lleva el color de su seccion (Llamadas/WhatsApp/Salida).
     var sec = gdSeccionDeTipo(t.panels && t.panels[0] && t.panels[0].tipo);
     return '<button class="atab'+(sec ? ' gd-tab-sec-'+sec : '')+'" data-gdtab="'+esc(t.key)+'">'+esc(t.label)+'</button>';
@@ -1778,6 +1793,7 @@ function switchGenericTab(key){
   _gd.tab = key;
   _gd.subtab = null; // cada pestana nueva empieza en su primera sub-pestana (si tiene)
   document.querySelectorAll('#gd-tabs .atab').forEach(function(el){ el.classList.toggle('atab-active', el.dataset.gdtab===key); });
+  _gdActualizarBotonAparte(); // Fase 314
   Object.keys(_gd.charts).forEach(function(k){ try{_gd.charts[k].destroy();}catch(e){} delete _gd.charts[k]; });
   renderGenericTab(key);
   if (typeof motionEnter === 'function') motionEnter(document.getElementById('gd-panels'));
@@ -1837,8 +1853,10 @@ function renderGenericTab(key){
   // (Mobilize, Aurora, HLM) queda donde siempre.
   var tieneRejilla = panels.some(function(p, i){ return indicesVisibles.indexOf(i) !== -1 && GD_TIPOS_SIN_LIENZO.indexOf(p.tipo) === -1; });
   var htmlAlFinal = '';
+  var liTortasAbierto = false; // Fase 314
   panels.forEach(function(p, i){
     if(indicesVisibles.indexOf(i) === -1) return;
+    if(liTortasAbierto && p.tipo !== 'aurora_li_cdr_panel' && p.tipo !== 'aurora_li_whatsapp_panel'){ html += '</div>'; liTortasAbierto = false; }
     if(p.tipo === 'calidad_monitoreos_panel' && tieneRejilla){ var secAlFinal = gdClaseSeccion(gdSeccionDeTipo(p.tipo)); htmlAlFinal += '<div id="gd-p'+i+'"'+(secAlFinal ? ' class="'+secAlFinal+'"' : '')+'></div>'; return; }
     if(p.tipo === 'kpi_row' || p.tipo === 'calidad_kpis'){
       // El filtro de asesor/fecha de Calidad (_gdRenderCalidad) va ANTES de
@@ -1859,6 +1877,11 @@ function renderGenericTab(key){
       // llamadas_unicas_panel (Fase 138, PR3, Mobilize) siguen el mismo
       // criterio. Fase 163: el contenedor lleva el color de su seccion.
       var claseSec = gdClaseSeccion(gdSeccionDeTipo(p.tipo));
+      // Fase 314 (Aurora, Gestión líneas internas): las tortas de llamadas y de
+      // WhatsApp van lado a lado (llamadas a la izquierda), una debajo de otra en pantallas angostas.
+      var liTorta = (p.tipo === 'aurora_li_cdr_panel' || p.tipo === 'aurora_li_whatsapp_panel');
+      if(liTorta && !liTortasAbierto){ html += '<div class="li-tortas">'; liTortasAbierto = true; }
+      if(!liTorta && liTortasAbierto){ html += '</div>'; liTortasAbierto = false; }
       html += '<div id="gd-p'+i+'"'+(claseSec ? ' class="'+claseSec+'"' : '')+'></div>';
     } else if(p.tipo === 'nota_kpi'){
       // KPI anual con texto explicativo (ej. efectividad de ordenamiento
@@ -1867,6 +1890,7 @@ function renderGenericTab(key){
       html += '<div id="gd-p'+i+'"></div>';
     }
   });
+  if(liTortasAbierto) html += '</div>'; // Fase 314
   // Fase 276: los paneles que se dibujan solos (GD_TIPOS_PANEL_PROPIO) y los de
   // texto/tabla/KPI nunca llevan la tarjeta con <canvas> de la rejilla (antes
   // esta lista era una copia a mano y le faltaba flujo_hora_panel: Mobilize ›
