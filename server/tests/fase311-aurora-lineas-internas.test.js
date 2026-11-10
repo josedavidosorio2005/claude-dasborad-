@@ -77,7 +77,8 @@ test('mapa de skills: codigo -> nombre del supervisor; fuera del mapa «Skill <c
   assert.deepEqual(L.LI_SKILLS.map((s) => s.codigo + '=' + s.nombre), ['4170=Área Enfermería', '4165=Área Farmacia', '4169=Área Patología', '4166=Área Programación', '4171=Área Reportes Médicos']);
   assert.equal(L.liNombreSkill(L.liClaveSkill('', 'AREA REPORTES MEDICOS')), 'Área Reportes Médicos');
   assert.equal(L.liNombreSkill(L.liClaveSkill('4166', 'AREA PROGRAMACION')), 'Área Programación');
-  assert.equal(L.liNombreSkill(L.liClaveSkill(0, '')), 'Skill 0');
+  assert.equal(L.liNombreSkill(L.liClaveSkill(0, '')), 'WhatsApp de salida'); // Fase 312
+  assert.equal(L.liNombreSkill(L.liClaveSkill(9999, '')), 'Skill 9999');
   assert.equal(L.liNombreSkill(L.LI_SKILL_SALIDA), 'Llamadas de salida');
   assert.equal(L.liEtiquetaTipificacion('---'), 'Sin tipificación');
   assert.equal(L.liEtiquetaTipificacion('CONFIRMACION_CITA'), 'Confirmacion Cita');
@@ -134,8 +135,10 @@ test('WhatsApp: skill solo con codigo (nombre del mapa o «Skill <codigo>»), me
   assert.equal(r.registros, 5); assert.equal(r.excluidas, 1);
   assert.deepEqual(r.porSkill, { 0: 2, 4171: 1, 4165: 1, 4170: 1 });
   assert.deepEqual([...new Set(r.filas.map((f) => f.mes))], ['2026-10'], 'abierto en septiembre, cerrado en octubre -> octubre');
-  assert.ok(r.avisos.some((a) => /Skill 0 \(2\)/.test(a)));
-  assert.deepEqual(L.liOpciones(r.filas, [], {}, 'skill').map((o) => o.t), ['Área Enfermería', 'Área Farmacia', 'Área Reportes Médicos', 'Skill 0']);
+  assert.ok(!r.avisos.some((a) => /fuera del mapa/.test(a)), 'Fase 312: el 0 ya tiene nombre');
+  assert.deepEqual(L.liOpciones(r.filas, [], {}, 'skill').map((o) => o.t), ['Área Enfermería', 'Área Farmacia', 'Área Reportes Médicos', 'WhatsApp de salida']); // Fase 312
+  assert.equal(L.liOpciones(r.filas, [], {}, 'skill').find((o) => o.t === 'WhatsApp de salida').v, '0', 'el valor guardado sigue siendo el codigo');
+  assert.ok(!L.liBotonesFlujo([], []).some((b) => b.t === 'WhatsApp de salida'), 'no es un boton del flujo');
   assert.equal(L.liTorta(r.filas, [], { skill: '0' }).total, 2);
   const p = JSON.stringify(r.filas);
   for (const x of ['99999', '12345', 'comentario', '777']) assert.ok(!p.includes(x), x);

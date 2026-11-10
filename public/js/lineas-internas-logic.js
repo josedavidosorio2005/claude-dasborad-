@@ -106,10 +106,14 @@ function liClaveSkill(codigo, nombre) {
   if (c && c !== '-') return c;
   return n;
 }
+// Fase 312 (supervisor, 10/11): nombres de skills que NO son areas -- solo cambian el
+// texto visible (torta y filtro de skill); no son botones del flujo ni cambian conteos.
+var LI_SKILLS_OTROS = { '0': 'WhatsApp de salida' };
 function liNombreSkill(clave) {
   var v = _liTexto(clave);
   if (v === LI_SKILL_SALIDA) return LI_NOMBRE_SALIDA;
   for (var k = 0; k < LI_SKILLS.length; k++) if (LI_SKILLS[k].codigo === v) return LI_SKILLS[k].nombre;
+  if (Object.prototype.hasOwnProperty.call(LI_SKILLS_OTROS, v)) return LI_SKILLS_OTROS[v];
   if (/^\d+$/.test(v)) return 'Skill ' + v;
   return v || 'Sin skill';
 }
@@ -203,7 +207,7 @@ function _liTipifParse(hojas, archivo, canal) {
   if (!out.hojasLeidas) return { error: errores[0] || 'El archivo no trae hojas con datos.', filas: [] };
   if (sinFecha) out.avisos.push(sinFecha + ' fila(s) sin fecha válida: no se cuentan.');
   if (out.excluidas) out.avisos.push(out.excluidas + ' fila(s) de prueba (' + LI_EXCLUIR.join(', ') + '): no se cuentan.');
-  var raros = Object.keys(out.porSkill).filter(function (s) { return s !== LI_SKILL_SALIDA && !liSkillConocido(s); });
+  var raros = Object.keys(out.porSkill).filter(function (s) { return s !== LI_SKILL_SALIDA && !liSkillConocido(s) && !Object.prototype.hasOwnProperty.call(LI_SKILLS_OTROS, s); });
   if (raros.length) out.avisos.push('Skill(s) fuera del mapa de nombres: ' + raros.map(function (s) { return liNombreSkill(s) + ' (' + out.porSkill[s] + ')'; }).join(', ') + '.');
   out.filas = Object.keys(agg).map(function (k) { return agg[k]; });
   return out;
