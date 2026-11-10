@@ -146,7 +146,8 @@ test('migracion: modulos y pestañas «Inasistencia» y «Encuestas» SOLO en Au
   assert.equal(enc.label, 'Encuestas'); assert.ok(!enc.oculta);
   // Al mostrar: Errores de ultima, aunque haya pestañas fuera de la lista.
   const visibles = G.pestanasOrdenCliente(tabs.concat([{ key: 'otra_futura' }]), AURORA).map((t) => t.key);
-  assert.equal(visibles[visibles.length - 1], 'errores');
+  // Fase 311: «Gestión líneas internas» va despues de Errores; Errores sigue de ultima entre las demas.
+  assert.deepEqual(visibles.slice(-2), ['errores', 'lineas_internas']);
   assert.deepEqual(visibles.slice(visibles.indexOf('tipificacion'), visibles.indexOf('tipificacion') + 3), ['tipificacion', 'inasistencia_au', 'encuestas_au']);
   for (const c of ['ORLANT', 'MOBILIZE', 'HOSPITAL LA MARIA']) {
     const row = db.prepare('SELECT layout FROM dashboards_config WHERE cliente = ?').get(c);
@@ -157,7 +158,7 @@ test('migracion: modulos y pestañas «Inasistencia» y «Encuestas» SOLO en Au
 
 test('front: el Centro abre la ventana propia, el panel usa la paleta de Aurora y los nombres completos', () => {
   const pub = (f) => fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'js', f), 'utf8');
-  assert.match(pub('centro-cargas.js'), /if \(\(c\.id === 'inasistencia_au' \|\| c\.id === 'encuestas_au'\) && typeof abAbrirCarga === 'function'\)/);
+  assert.match(pub('centro-cargas.js'), /if \(\(c\.id === 'inasistencia_au' \|\| c\.id === 'encuestas_au' \|\| c\.id === 'flujo_li'[^)]*\) && typeof abAbrirCarga === 'function'\)/); // Fase 311: + líneas internas
   const ab = pub('aurora-bases.js');
   assert.match(ab, /auColorAgendas\(id, _abOscuro\(\)\)/);
   assert.match(ab, /auPartirEtiqueta\(t, angosta \? 14 : 24\)/, 'nombres completos, en trozos mas cortos en pantalla angosta');

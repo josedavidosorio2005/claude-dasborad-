@@ -27,6 +27,9 @@ var CENTRO_PANEL_A_MODULO = {
   agendas_usuaria_panel: 'agendas_usuaria', // Fase 259
   aurora_inasistencia_panel: 'inasistencia_au', // Fase 306
   aurora_encuestas_panel: 'encuestas_au', // Fase 306
+  aurora_li_flujo_panel: 'flujo_li', // Fase 311
+  aurora_li_cdr_panel: 'cdr_li', // Fase 311
+  aurora_li_whatsapp_panel: 'whatsapp_li', // Fase 311
   flujo_hora_panel: 'flujo_hora', // Fase 196
 };
 
@@ -48,6 +51,9 @@ var CENTRO_MODULOS_PERMISO = [
   { id: 'encuesta', nombre: 'Encuesta' },
   { id: 'inasistencia_au', nombre: 'Inasistencia (Aurora)' }, // Fase 306
   { id: 'encuestas_au', nombre: 'Encuestas (Aurora)' }, // Fase 306
+  { id: 'flujo_li', nombre: 'Flujo líneas internas (Aurora)' }, // Fase 311
+  { id: 'cdr_li', nombre: 'CDR líneas internas (Aurora)' }, // Fase 311
+  { id: 'whatsapp_li', nombre: 'WhatsApp líneas internas (Aurora)' }, // Fase 311
   { id: 'agendas_usuaria', nombre: 'Agendas (3 bases)' }, // Fase 259; Fase 303 (no confundir con «Agendas» de ORLANT)
   { id: 'calidad_resumen', nombre: 'Calidad: resumen por asesor' }, // Fase 172
 ];
@@ -190,6 +196,10 @@ var CENTRO_CARGA_PLAN = {
   // Fase 306 (Aurora): las sube su propia ventana (aurora-bases.js, abAbrirCarga).
   inasistencia_au: { tipo: 'inasistencia_au', mensual: true },
   encuestas_au: { tipo: 'encuestas_au', mensual: true },
+  // Fase 311 (Aurora, «Gestión líneas internas»): misma ventana propia (abAbrirCarga).
+  flujo_li: { tipo: 'flujo_li', mensual: true },
+  cdr_li: { tipo: 'cdr_li', mensual: true },
+  whatsapp_li: { tipo: 'whatsapp_li', mensual: true },
 };
 
 function centroSubeDesdeMes(cargaId) { return Object.prototype.hasOwnProperty.call(CENTRO_CARGA_PLAN, cargaId); }

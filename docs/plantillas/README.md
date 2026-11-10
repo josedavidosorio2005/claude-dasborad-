@@ -32,6 +32,9 @@ Las plantillas viejas (`PLANTILLA_TRAFICO_INCONEXION_VACIA.xlsx`, `PLANTILLA_TRA
 | Agendas (3 bases) | [agendas_usuaria](agendas_usuaria.md) | Sin plantilla: las 3 bases de la clínica tal cual (citas, cancelaciones, inasistencias) | CLINICA AURORA |
 | Inasistencia (Aurora) | [inasistencia_au](inasistencia_au.md) | Sin plantilla: la base de inasistencias de la clínica tal cual | CLINICA AURORA |
 | Encuestas (Aurora) | [encuestas_au](encuestas_au.md) | Sin plantilla: el compilado de encuestas de la clínica tal cual | CLINICA AURORA |
+| Flujo líneas internas | [flujo_li](flujo_li.md) | Sin plantilla: el HistQueue de Wolkvox de las líneas internas tal cual | CLINICA AURORA |
+| CDR líneas internas | [cdr_li](cdr_li.md) | Sin plantilla: el HistCDR de Wolkvox de las líneas internas tal cual | CLINICA AURORA |
+| WhatsApp líneas internas | [whatsapp_li](whatsapp_li.md) | Sin plantilla: el HistChat de Wolkvox de las líneas internas tal cual | CLINICA AURORA |
 | Errores | [errores](errores.md) | Sin plantilla: se registran en la plataforma (supervisor o administrador) | CLINICA AURORA |
 | Llamadas Únicas y de Salida | [llamadas_unicas](llamadas_unicas.md) | `PLANTILLA_LLAMADAS_ABANDONADAS.xlsx`, `PLANTILLA_LLAMADAS_NO_CONECTADAS.xlsx` | MOBILIZE |
 | Tipificación | [tipificacion](tipificacion.md) | `PLANTILLA_TIPIFICACION_LLAMADAS.xlsx`, `PLANTILLA_TIPIFICACION_WHATSAPP.xlsx` | ORLANT, MOBILIZE |

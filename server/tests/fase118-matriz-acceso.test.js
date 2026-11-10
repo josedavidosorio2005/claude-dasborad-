@@ -262,6 +262,9 @@ declarar(['GET /calidad/calidad-resumen/opciones', 'GET /calidad/calidad-resumen
 declarar(['POST /calidad/calidad-resumen/carga/impacto', 'POST /calidad/calidad-resumen/carga'], 'cargaManual');
 // Fase 259: Agendas por usuaria (Clinica Aurora).
 declarar(['GET /calidad/agendas-usuaria/opciones', 'GET /calidad/agendas-usuaria/datos'], 'scopedRead');
+// Fase 311: «Gestión líneas internas» de Aurora (mismo criterio; ejecutado en fase311-aurora-lineas-internas.test.js).
+declarar(['GET /calidad/aurora-li-flujo/opciones', 'GET /calidad/aurora-li-flujo/datos', 'GET /calidad/aurora-li-cdr/opciones', 'GET /calidad/aurora-li-cdr/datos', 'GET /calidad/aurora-li-whatsapp/opciones', 'GET /calidad/aurora-li-whatsapp/datos'], 'scopedRead');
+declarar(['POST /calidad/aurora-li-flujo/carga/impacto', 'POST /calidad/aurora-li-flujo/carga', 'POST /calidad/aurora-li-cdr/carga/impacto', 'POST /calidad/aurora-li-cdr/carga', 'POST /calidad/aurora-li-whatsapp/carga/impacto', 'POST /calidad/aurora-li-whatsapp/carga'], 'cargaManual');
 // Fase 306: Inasistencia y Encuestas de Aurora. Leer = acceso a la campaña; cargar = permiso del modulo + campaña
 // (ejecutado en fase306-aurora-inasistencia-encuestas.test.js).
 declarar(['GET /calidad/aurora-inasistencia/opciones', 'GET /calidad/aurora-inasistencia/datos', 'GET /calidad/aurora-encuestas/opciones', 'GET /calidad/aurora-encuestas/datos'], 'scopedRead');

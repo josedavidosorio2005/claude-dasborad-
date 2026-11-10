@@ -113,6 +113,7 @@ function pestanasOrdenCliente(tabs, cliente) {
   if (_glNorm(cliente) === 'ORLANT') return _glMoverTotalTrafico(lista);
   if (!graficasLineasAplica(cliente)) return lista;
   var pos = function (t) {
+    if (t && t.key === 'lineas_internas') return PESTANAS_ORDEN_AURORA_HLM.length + 2; // Fase 311: «Gestión líneas internas» despues de Errores
     if (t && t.key === 'errores') return PESTANAS_ORDEN_AURORA_HLM.length + 1; // Fase 306: Errores SIEMPRE de ultima
     var k = PESTANAS_ORDEN_AURORA_HLM.indexOf(t && t.key); return k === -1 ? PESTANAS_ORDEN_AURORA_HLM.length : k;
   };

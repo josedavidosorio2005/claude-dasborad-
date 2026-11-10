@@ -4,6 +4,24 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.155.0 — Noviembre 2026
+
+**Fase 311: Clínica Aurora — pestaña nueva «Gestión líneas internas» (la operación interna en Wolkvox).**
+
+- Es la última pestaña de Clínica Aurora (después de Errores) y va aparte: las demás pestañas
+  de Aurora y sus cifras no cambian. ORLANT no cambia.
+- **Flujo de llamadas:** barras con el total de llamadas, las contestadas, las abandonadas y el
+  nivel de servicio (%). Botones Todas / Área Enfermería / Área Farmacia / Área Patología /
+  Área Programación / Área Reportes Médicos (si un área no trae datos, lo dice).
+- **CDR llamadas:** torta de tipificación con filtros de agente, skill y tipo (entrada / salida).
+  Las llamadas con skill «-» son de salida.
+- **WhatsApp:** torta de tipificación con filtros de agente y skill.
+- Los skills se ven siempre con su nombre (el mapa código → nombre del supervisor). Un código
+  que todavía no tiene nombre se ve como «Skill <código>».
+- **Cargar datos › Clínica Aurora:** 3 tipos de base nuevos y separados (Flujo líneas internas,
+  CDR líneas internas, WhatsApp líneas internas). Las filas PRUEBA no se cuentan. Del archivo
+  solo se guardan conteos: nada de teléfonos, cédulas ni comentarios.
+
 ## v1.154.2 — Noviembre 2026
 
 **Fase 310: dos arreglos de la revisión de seguridad.**

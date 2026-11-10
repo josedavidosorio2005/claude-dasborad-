@@ -251,7 +251,8 @@ function ccSubir(ci, mi) {
   // Fase 301: Agendas por usuaria (solo Aurora) sube sus 1 a 3 bases en su propia ventana.
   if (c.id === 'agendas_usuaria' && typeof auAbrirCargaBases === 'function') { auAbrirCargaBases(_cc.cliente, x.mes); return; }
   // Fase 306: Inasistencia y Encuestas de Aurora, en su propia ventana.
-  if ((c.id === 'inasistencia_au' || c.id === 'encuestas_au') && typeof abAbrirCarga === 'function') { abAbrirCarga(c.id, _cc.cliente, x.mes); return; }
+  // Fase 311: las 3 bases de «Gestión líneas internas», en la misma ventana.
+  if ((c.id === 'inasistencia_au' || c.id === 'encuestas_au' || c.id === 'flujo_li' || c.id === 'cdr_li' || c.id === 'whatsapp_li') && typeof abAbrirCarga === 'function') { abAbrirCarga(c.id, _cc.cliente, x.mes); return; }
   _ccVolverA = { cliente: _cc.cliente, modulo: _cc.modulo };
   var cliente = _cc.cliente;
   // PR 4: las cargas de CENTRO_CARGA_PLAN suben con el plan de ese modulo y

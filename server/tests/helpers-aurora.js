@@ -10,7 +10,7 @@ const AURORA = 'CLINICA AURORA';
 // Fase 259: + agendas_usuaria (pestaña "Agendas por usuaria", oculta hasta tener datos).
 // Fase 284: + errores (pestaña "Errores", visible aunque no haya errores).
 // Fase 306: + inasistencia_au y encuestas_au (pestañas Inasistencia y Encuestas, visibles).
-const AURORA_MODULOS = ['flujo_llamadas', 'flujo_whatsapp', 'whatsapp_tiempos', 'salida', 'agendas_usuaria', 'inasistencia_au', 'encuestas_au', 'errores', 'tipificacion', 'calidad'];
+const AURORA_MODULOS = ['flujo_llamadas', 'flujo_whatsapp', 'whatsapp_tiempos', 'salida', 'agendas_usuaria', 'inasistencia_au', 'encuestas_au', 'errores', 'tipificacion', 'flujo_li', 'cdr_li', 'whatsapp_li', 'calidad']; // Fase 311: + líneas internas (orden del catalogo, Calidad al final)
 
 // Plantilla con los modulos de hoy, Trafico visible (Fase 220) y "Total tráfico" despues de Salida.
 function auroraEsperada() {

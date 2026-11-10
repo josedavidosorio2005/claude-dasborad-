@@ -33,7 +33,7 @@ test('las pestañas de Aurora son las mismas de la Fase 220 (la sub-vista no agr
   antes.layout.tabs.splice(i + 1, 0, TABS_EXTRA.total_trafico.crear(AURORA));
   // Fase 259: "Agendas por usuaria" SI agrega una pestaña (aparte de esta fase).
   // Fase 284: tambien sin "Errores" (las dos pestañas son posteriores a esta migracion).
-  const sinFase259 = (l) => Object.assign({}, l, { tabs: l.tabs.filter((x) => !['agendas_usuaria', 'errores', 'inasistencia_au', 'encuestas_au'].includes(x.key)) }); // Fase 306: + Inasistencia y Encuestas
+  const sinFase259 = (l) => Object.assign({}, l, { tabs: l.tabs.filter((x) => !['agendas_usuaria', 'errores', 'inasistencia_au', 'encuestas_au', 'lineas_internas'].includes(x.key)) }); // Fase 311 // Fase 306: + Inasistencia y Encuestas
   assert.deepEqual(sinFase259(layoutDe(AURORA)), antes.layout);
   assert.deepEqual(layoutDe(AURORA), auroraEsperada().layout);
 });

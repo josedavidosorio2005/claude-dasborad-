@@ -77,8 +77,10 @@ test('migracion: idempotente, solo ORLANT; una Calidad de forma distinta se deja
 test('Aurora: Calidad antes de Errores (Errores siempre de ultima)', () => {
   const tabs = layoutDe(AURORA).tabs.map((t) => Object.assign({}, t, { oculta: false }));
   const orden = G.pestanasOrdenCliente(tabs, AURORA).map((t) => t.key);
-  assert.equal(orden[orden.length - 1], 'errores');
-  assert.equal(orden[orden.length - 2], 'calidad');
+  // Fase 311: «Gestión líneas internas» (aparte) va despues de Errores.
+  assert.equal(orden[orden.length - 1], 'lineas_internas');
+  assert.equal(orden[orden.length - 2], 'errores');
+  assert.equal(orden[orden.length - 3], 'calidad');
 });
 
 test('permisos como Mobilize: el lider (SUPERVISOR/CALIDAD) de la campaña evalua; de otra campaña, cliente o asesor -> 403', async () => {
