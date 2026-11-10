@@ -991,6 +991,8 @@
         <button class="aurora-close hidden" id="gd-fullscreen-btn" onclick="toggleGdFullscreen()" aria-label="Pantalla completa" title="Pantalla completa"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-maximize"></use></svg></button>
         <button class="aurora-close" id="gd-cerrar-btn" onclick="closeGenericDashboard()">X Cerrar</button>
       </div>
+      <!-- Fase 314 (Clinica Aurora): «Gestión líneas internas» sale como boton aparte, debajo de los botones (no en la fila de pestañas). Solo se muestra si el tablero trae esa vista. -->
+      <div class="gd-li-wrap hidden" id="gd-li-wrap"><button type="button" class="gd-li-btn" id="gd-li-btn" aria-pressed="false" onclick="gdAbrirVistaAparte('lineas_internas')">Gestión líneas internas</button></div>
       </div>
     </div>
     <div class="aurora-kpis" id="gd-kpis"></div>

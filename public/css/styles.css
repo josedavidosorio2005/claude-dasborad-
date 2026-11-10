@@ -2067,6 +2067,18 @@ div.ca-bar-fila{cursor:default}
 .li-sin-datos{font-weight:400;font-size:var(--fs-small);opacity:.8}
 .li-kpis{border-bottom:0;padding:0 0 10px;background:transparent}
 .li-filtros{margin:0 0 12px}
+/* Fase 314: tortas de llamadas (izq.) y WhatsApp (der.) lado a lado; apiladas en pantallas angostas. */
+.li-tortas{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}
+.li-tortas > div{min-width:0}
+@media (max-width:700px){.li-tortas{grid-template-columns:1fr}}
+/* Fase 314: boton aparte «Gestión líneas internas», discreto, debajo de los botones del encabezado (barra --c-brand en los 2 temas: texto blanco). */
+.gd-li-wrap{display:flex;justify-content:flex-end}
+.gd-li-wrap.hidden{display:none}
+.gd-li-btn{min-height:40px;padding:6px 14px;border:1px solid rgba(255,255,255,0.45);border-radius:var(--r-sm);background:transparent;color:#fff;font:inherit;font-size:var(--fs-small);font-weight:600;cursor:pointer;white-space:nowrap}
+.gd-li-btn:hover{background:rgba(255,255,255,0.12)}
+.gd-li-btn.on{background:rgba(255,255,255,0.24);border-color:#fff}
+.gd-li-btn:focus-visible{outline:2px solid #fff;outline-offset:2px}
+@media(max-width:768px){#gd-modal .gd-li-wrap{order:4;flex:1 1 100%;min-width:0}#gd-modal .gd-li-btn{min-height:44px}}
 @media (max-width:600px){.li-kpis .aurora-kpi{flex:1 1 calc(50% - 10px);min-width:0}}
 .au-ag-nota{margin:8px 0 0;color:var(--c-text-muted);font-size:var(--fs-small);text-align:center}
 .au-tabla .au-total th,.au-tabla .au-total td{font-weight:700;border-top:2px solid var(--c-border)}

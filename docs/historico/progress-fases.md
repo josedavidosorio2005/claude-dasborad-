@@ -20311,3 +20311,20 @@ del mapa único `LI_SKILLS` (`public/js/lineas-internas-logic.js`) — sin dupli
 solo para CLINICA AURORA. Solo el texto: el valor guardado y del filtro sigue siendo «Skill
 <código>»; los conteos por opción son los mismos (prueba `fase275-nombres-skill-aurora`). Un
 código sin nombre sigue mostrando «(nombre pendiente)». ORLANT y demás campañas sin cambios.
+
+## Fase 314 — Líneas internas: nivel de atención, etiquetas, tortas y botón aparte (v1.156.0, 2026-11-10)
+
+- **Nivel de atención** (en vez del nivel de servicio) en tarjeta, línea, eje y exportar del flujo,
+  con `traficoPctAtencionAbandono` (la misma función de Tráfico): suma de contestadas / suma del
+  total. «Todas» suma las áreas: octubre 181 / 230 = 78,7 %.
+- **Bug de cantidades:** `datalabels.display` era `puntos <= 12 ? 'auto' : false`: con un área
+  elegida (una barra por día) Patología (19 días), Farmacia (17), Programación (21) y Reportes
+  (19) apagaban las etiquetas; Enfermería (12) sí salía. Ahora `liEtiquetasBarras` las deja
+  siempre visibles (letra más chica y girada si no caben) y `liCantidadTexto` escribe también el 0.
+- **Tortas** de llamadas (izq.) y WhatsApp (der.) en `.li-tortas` (2 columnas; 1 columna a ≤700 px).
+- **Botón aparte** `#gd-li-btn` debajo de los botones del encabezado: `GD_TABS_BOTON_APARTE`
+  saca `lineas_internas` de la fila (Errores vuelve a ser la última); el botón solo aparece si la
+  vista está en `_gdTabsVisibles()` (mismo acceso; solo Aurora la tiene).
+
+Verificación local (Brave): 375/768/1440 claro y oscuro sin scroll horizontal ni choques; ORLANT
+sin el botón y con sus mismas pestañas. Prueba nueva `fase314-lineas-internas-ajustes` (5).

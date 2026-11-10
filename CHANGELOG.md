@@ -4,6 +4,21 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.156.0 — Noviembre 2026
+
+**Fase 314: Clínica Aurora › Gestión líneas internas — ajustes del supervisor.**
+
+- **Nivel de atención** en vez de nivel de servicio en el flujo de llamadas: contestadas ÷ total
+  de llamadas × 100, igual que en las otras pestañas. Con «Todas» se calcula sobre la suma de las
+  áreas (octubre: 181 ÷ 230 = 78,7 %).
+- **Arreglo:** en algunas áreas (por ejemplo Área Patología) no salía la cantidad sobre las
+  barras. Ahora se ve siempre, también cuando es 0.
+- Las tortas de llamadas (izquierda) y de WhatsApp (derecha) van lado a lado; en el celular, una
+  debajo de la otra.
+- «Gestión líneas internas» ya no está en la fila de pestañas: es un botón aparte arriba a la
+  derecha, debajo de los botones del tablero. Errores vuelve a ser la última pestaña. Las demás
+  pestañas de Aurora y ORLANT no cambian.
+
 ## v1.155.2 — Noviembre 2026
 
 **Fase 313: Clínica Aurora — los skills 4166 y 4169 ya salen con su nombre.**

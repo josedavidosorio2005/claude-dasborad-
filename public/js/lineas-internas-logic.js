@@ -14,6 +14,10 @@
 var _liAu = (typeof module !== 'undefined' && module.exports && typeof auNormEncabezado === 'undefined')
   ? require('./agendas-usuaria-logic.js')
   : { auNormEncabezado: auNormEncabezado, auFecha: auFecha };
+// Fase 314: nivel de atencion con la MISMA funcion de las otras pestañas (trafico-logic.js).
+var _liTr = (typeof module !== 'undefined' && module.exports && typeof traficoPctAtencionAbandono === 'undefined')
+  ? require('./trafico-logic.js')
+  : { traficoPctAtencionAbandono: (typeof traficoPctAtencionAbandono === 'function') ? traficoPctAtencionAbandono : null };
 
 // ── MAPA CODIGO DE SKILL -> NOMBRE (lo unico que se toca si el supervisor
 // cambia o agrega un skill). `alias`: como lo escribe la base de flujo
@@ -235,6 +239,8 @@ function _liResumir(arr) {
   var r = { total: 0, contestadas: 0, abandonadas: 0, nivelServicio: null }, ns = [];
   arr.forEach(function (x) { r.total += x.total; r.contestadas += x.contestadas; r.abandonadas += x.abandonadas; if (x.nivelServicio !== null && x.nivelServicio !== undefined) ns.push(x.nivelServicio); });
   if (ns.length) r.nivelServicio = Math.round(ns.reduce(function (s, x) { return s + x; }, 0) / ns.length * 100) / 100;
+  // Fase 314: nivel de atencion = suma de contestadas / suma del total x 100 (nunca promedio de %).
+  r.nivelAtencion = _liTr.traficoPctAtencionAbandono ? _liTr.traficoPctAtencionAbandono(r.total, r.contestadas, r.abandonadas).nivelAtencionPct : (r.total ? Math.round(r.contestadas / r.total * 10000) / 100 : null);
   return r;
 }
 // skill '' = Todas: una barra por area; un skill: una barra por dia.
@@ -276,6 +282,18 @@ function liOpciones(filas, meses, filtro, campo) {
   return l.map(function (v) { return { v: v, t: v }; }).sort(cmp);
 }
 
+// Fase 314 (bug del supervisor): las cantidades sobre las barras se ven SIEMPRE --
+// antes se apagaban con mas de 12 puntos (Área Patología: 19 dias) y Chart.js
+// escondia las que se tocaban ('auto'). Con muchas barras o pantalla angosta, letra
+// mas chica y girada, pero visibles. -> { display, tamano, rotacion }
+function liEtiquetasBarras(nPuntos, ancho) {
+  var n = Math.max(1, Number(nPuntos) || 1), a = Number(ancho) || 1440;
+  var porBarra = a / (n * 3); // 3 barras por punto
+  return { display: true, tamano: porBarra < 14 ? 9 : (porBarra < 22 ? 10 : 12), rotacion: porBarra < 18 ? -90 : 0 };
+}
+// Texto de la cantidad sobre la barra: siempre un numero, tambien el 0.
+function liCantidadTexto(v) { var n = Number(v); return isFinite(n) ? n.toLocaleString('es-CO') : '0'; }
+
 // Texto de la confirmacion de carga (lo que se leyo del archivo).
 function liResumenCarga(tipo, r) {
   var skills = function (m, f) { return Object.keys(m).map(function (k) { return liNombreSkill(k) + ' ' + f(m[k]); }).join(', '); };
@@ -288,5 +306,6 @@ if (typeof module !== 'undefined' && module.exports) {
     LI_MAPA_FLUJO: LI_MAPA_FLUJO, LI_MAPA_CDR: LI_MAPA_CDR, LI_MAPA_WHATSAPP: LI_MAPA_WHATSAPP,
     liClaveSkill: liClaveSkill, liNombreSkill: liNombreSkill, liEtiquetaTipificacion: liEtiquetaTipificacion,
     liFlujoParse: liFlujoParse, liCdrParse: liCdrParse, liWhatsappParse: liWhatsappParse,
-    liBotonesFlujo: liBotonesFlujo, liFlujoSerie: liFlujoSerie, liTorta: liTorta, liOpciones: liOpciones, liResumenCarga: liResumenCarga };
+    liBotonesFlujo: liBotonesFlujo, liFlujoSerie: liFlujoSerie, liTorta: liTorta, liOpciones: liOpciones, liResumenCarga: liResumenCarga,
+    liEtiquetasBarras: liEtiquetasBarras, liCantidadTexto: liCantidadTexto };
 }
