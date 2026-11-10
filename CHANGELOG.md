@@ -4,6 +4,13 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.163.1 — Noviembre 2026
+
+**Fase 325: Diccionario de SURA — el número y el «%» ya no se separan.**
+
+- En «Impacto en la nota» cada valor (por ejemplo «−15 %») queda siempre en una sola línea, en
+  computador, tablet y celular. Nada más cambia.
+
 ## v1.163.0 — Noviembre 2026
 
 **Fase 324: corregir una plantilla de Calidad que aún no tiene monitoreos.**

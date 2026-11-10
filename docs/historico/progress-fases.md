@@ -20471,3 +20471,10 @@ pantalla (sus datos nunca van al repo).
 - Fuente oficial: el Excel «Diccionario Sura» del supervisor (fuera del repo). Coincide con el pedido
   en orden, nombres, opciones y porcentajes; las descripciones se toman del Excel (saltos de línea y
   comillas simples en el ítem 2). Prueba `fase322` con el orden oficial y `fase324` (3).
+
+## Fase 325 — Diccionario de SURA: número y % juntos (v1.163.1, 2026-11-10)
+
+`caImpacto` (motor descuento) une el número y el «%» con un espacio duro (U+00A0). Solo la rama
+`descuento`: las demás plantillas no cambian. Medido en local con las líneas reales del texto
+(`Range.getClientRects`): antes 6 valores partidos a 768 y 1440 px; ahora 0 en 375/768/1440, claro y
+oscuro. Prueba `fase322` ajustada.

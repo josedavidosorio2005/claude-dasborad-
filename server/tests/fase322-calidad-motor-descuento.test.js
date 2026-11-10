@@ -98,8 +98,10 @@ test('diccionario: reglas del motor e impacto de cada respuesta', () => {
   const p = { engine: 'descuento', items: ITEMS };
   const reglas = CA.caReglasDiccionario(p);
   assert.ok(reglas.some((r) => /deja la nota en 0 %/.test(r)) && reglas.some((r) => /Peor nota sin fallar críticos: 5 %/.test(r)));
-  assert.deepEqual(CA.caImpacto(ITEMS[0], 'descuento'), [['Cumple saludo y despedida', '0 %'], ['No realiza saludo', '−9 %'], ['No realiza despedida', '−6 %'], ['No realiza saludo ni despedida', '−15 %']]);
-  assert.deepEqual(CA.caImpacto(ITEMS[1], 'descuento'), [['SI', '0 %'], ['NO', 'nota 0 %']]);
+  // Fase 325: numero y % unidos con espacio duro (no se separan en dos lineas).
+  assert.deepEqual(CA.caImpacto(ITEMS[0], 'descuento'), [['Cumple saludo y despedida', '0 %'], ['No realiza saludo', '−9 %'], ['No realiza despedida', '−6 %'], ['No realiza saludo ni despedida', '−15 %']]);
+  assert.deepEqual(CA.caImpacto(ITEMS[1], 'descuento'), [['SI', '0 %'], ['NO', 'nota 0 %']]);
+  assert.ok(CA.caImpacto(ITEMS[4], 'descuento').every((x) => !/d %/.test(x[1])), 'sin espacio normal entre número y %');
   assert.deepEqual(CA.caImpacto({ weight: 5, critico: false }), [['SI', '+5'], ['N/A', '+5'], ['NO', '0']], 'standard igual');
 });
 
