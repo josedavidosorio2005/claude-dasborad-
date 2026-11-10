@@ -20486,3 +20486,12 @@ Cambiado en el archivo generado y en el generador (`M()` del markup y `X()` del 
 al regenerar. Regenerado desde el HTML de Edwin en una carpeta temporal: los reemplazos aplican y
 no agregan diferencias (el HTML local ya difería en 6 líneas de otra versión). Pendiente de
 aprobación de Edwin: el encabezado de sección «📅 Agendas» (misma pestaña). Prueba `fase326` (2).
+
+## Fase 327 — Televentas SURA: encabezado «📅 Ventas por mes» (v1.163.3, 2026-11-10)
+
+Pedido de Edwin (el pendiente de la Fase 326): el encabezado de sección de Cumplimiento decía
+«📅 Agendas». Ahora «📅 Ventas por mes»; los dos comentarios internos que decían «Agendas» también
+(«Página 4: Ventas por mes», «Filtro por ciudades y departamentos (Ventas por mes)»). Ya no queda
+«Agendas» en el tablero. Mismo cambio en el generador (`M()` del markup y `X()` del JS);
+regenerado desde el HTML de Edwin en una carpeta temporal (borrada): los tres cambios aplican. Sin
+cambios de cálculo ni de datos; ningún otro cliente. Prueba `fase327` (2).
