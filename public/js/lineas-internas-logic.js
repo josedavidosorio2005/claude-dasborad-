@@ -303,6 +303,32 @@ function liEtiquetasBarras(nPuntos, ancho) {
 // Texto de la cantidad sobre la barra: siempre un numero, tambien el 0.
 function liCantidadTexto(v) { var n = Number(v); return isFinite(n) ? n.toLocaleString('es-CO') : '0'; }
 
+// Fase 319: texto del aviso antes de guardar una base de líneas internas. Dice cuántos meses
+// trae el archivo, cuáles se REEMPLAZAN (con cuántos registros había) y cuáles son nuevos, y
+// avisa si el archivo trae otros meses ademas del elegido con «Subir». Pide confirmacion.
+// o = { archivo, resumen, meses:[{mes,existentes,nuevas}], mesElegido, avisos:[], nombreMes(fn) }
+function liTextoConfirmacion(o) {
+  var nm = typeof o.nombreMes === 'function' ? o.nombreMes : function (m) { return m; };
+  var meses = (o.meses || []).slice().sort(function (a, b) { return a.mes < b.mes ? -1 : 1; });
+  var fmt = function (n) { return Number(n || 0).toLocaleString('es-CO'); };
+  var lista = function (arr) { var t = arr.map(function (m) { return nm(m.mes); }); return t.length < 2 ? t.join('') : t.slice(0, -1).join(', ') + ' y ' + t[t.length - 1]; };
+  var reemplaza = meses.filter(function (m) { return m.existentes > 0; });
+  var lineas = meses.map(function (m) {
+    return '• ' + nm(m.mes) + ': ' + fmt(m.nuevas) + ' registro(s) — ' + (m.existentes > 0 ? 'REEMPLAZA los ' + fmt(m.existentes) + ' que ya están cargados' : 'mes nuevo (no había datos)');
+  });
+  var t = '«' + (o.archivo || 'archivo') + '»: ' + o.resumen + '\n\n' +
+    'Este archivo trae ' + meses.length + (meses.length === 1 ? ' mes: ' : ' meses: ') + lista(meses) + '.\n' + lineas.join('\n');
+  var otros = o.mesElegido ? meses.filter(function (m) { return m.mes !== o.mesElegido; }) : [];
+  if (otros.length) {
+    var otrosReemplaza = otros.some(function (m) { return m.existentes > 0; });
+    t += '\n\n⚠ Elegiste «Subir» en ' + nm(o.mesElegido) + ', pero el archivo también trae ' + lista(otros) +
+      (otros.length === 1 ? ': ese mes también se guarda' : ': esos meses también se guardan') + (otrosReemplaza ? ' y reemplaza lo que ya estaba cargado.' : '.');
+  }
+  if (reemplaza.length) t += '\n\n' + (reemplaza.length === 1 ? 'Se va a reemplazar ' : 'Se van a reemplazar ') + lista(reemplaza) + '. Lo reemplazado se puede recuperar con «Deshacer» (30 días).';
+  if (o.avisos && o.avisos.length) t += '\n\nAvisos:\n' + o.avisos.join('\n');
+  return t + '\n\n¿Guardar?';
+}
+
 // Texto de la confirmacion de carga (lo que se leyo del archivo).
 function liResumenCarga(tipo, r) {
   var skills = function (m, f) { return Object.keys(m).map(function (k) { return liNombreSkill(k) + ' ' + f(m[k]); }).join(', '); };
@@ -316,5 +342,5 @@ if (typeof module !== 'undefined' && module.exports) {
     liClaveSkill: liClaveSkill, liNombreSkill: liNombreSkill, liEtiquetaTipificacion: liEtiquetaTipificacion,
     liFlujoParse: liFlujoParse, liCdrParse: liCdrParse, liWhatsappParse: liWhatsappParse,
     liBotonesFlujo: liBotonesFlujo, liFlujoSerie: liFlujoSerie, liTorta: liTorta, liOpciones: liOpciones, liResumenCarga: liResumenCarga,
-    liEtiquetasBarras: liEtiquetasBarras, liCantidadTexto: liCantidadTexto };
+    liEtiquetasBarras: liEtiquetasBarras, liCantidadTexto: liCantidadTexto, liTextoConfirmacion: liTextoConfirmacion };
 }

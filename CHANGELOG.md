@@ -4,6 +4,17 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.158.1 — Noviembre 2026
+
+**Fase 319: tres arreglos menores.**
+
+- **Módulo de Calidad en el celular:** las tarjetas de arriba (Monitoreos Totales, Promedio
+  Puntaje…) ya no se montan sobre el formulario: van de 2 en 2. En computador se ve igual que antes.
+- **Clínica Aurora › Gestión líneas internas en el celular:** las 4 tarjetas del flujo van de 2 en 2.
+- **Clínica Aurora › Gestión líneas internas, carga de bases:** antes de guardar, el aviso dice
+  cuántos meses trae el archivo, cuáles se reemplazan (y cuántos registros había) y cuáles son
+  nuevos, y avisa si el archivo trae otro mes además del elegido. Se guarda solo si se confirma.
+
 ## v1.158.0 — Noviembre 2026
 
 **Fase 318: Calidad › Calificar de ORLANT con el mismo formulario de Mobilize.**

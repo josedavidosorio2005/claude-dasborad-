@@ -20385,3 +20385,18 @@ escribir observaciones (antes: al menos 1 ítem, observaciones opcionales); en p
 monitoreos ya estaban completos. Todos los ítems de ORLANT ya admitían N/A. Hallazgo previo, no
 tocado: a 375 px las tarjetas del módulo de Calidad se montan sobre el contenido (pasa igual en
 `main`, todas las campañas). Prueba `fase318-calificar-orlant-comun` (5).
+
+## Fase 319 — Arreglos menores del 10/11 (v1.158.1, 2026-11-10)
+
+- **Calidad a 375 px:** `#calidad-modal` es una columna flex de alto fijo y `#cal-kpis-strip` se
+  encogía hasta su `min-height` (108 px): 5 tarjetas apiladas de 32 px montadas sobre el
+  formulario (todas las campañas). Ahora `flex-shrink:0` solo a ≤768 px y 2 columnas a ≤600 px. En
+  1440 px la geometría es idéntica a `main` (medida: en `main` las tarjetas ya iban algo
+  encogidas, 87 px; se dejó así para no cambiar el escritorio).
+- **Flujo de líneas internas:** `.aurora-kpis` es una grilla (minmax 160 px), la regla flex de la
+  Fase 311 no aplicaba; ahora `#gd-panels .aurora-kpis.li-kpis` 2 columnas a ≤600 px.
+- **Aviso de carga de líneas internas:** `liTextoConfirmacion` (meses del archivo, cuáles
+  reemplaza y con cuántos registros, cuáles son nuevos, aviso si trae otro mes además del elegido
+  con «Subir», Deshacer). Solo en las 3 bases de líneas internas; la lógica de reemplazo no cambia.
+- Prueba `fase319-arreglos-menores` (4). Verificación local main vs rama a 375/768/1440, claro y
+  oscuro: sin solapes ni recortes, 1440 igual a `main`, 0 errores.

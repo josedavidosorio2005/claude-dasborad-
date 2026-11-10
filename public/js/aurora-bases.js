@@ -125,7 +125,7 @@ function abAbrirCarga(moduloId, cliente, mes) {
     '<div class="ig"><label for="ab-archivo">Archivo</label><input type="file" id="ab-archivo" accept=".xls,.xlsx"></div>' +
     '<div id="ab-estado" class="au-bases-estado" role="status" aria-live="polite"></div>',
     '<button type="button" class="btn-cancel" onclick="_ccCerrarDialogo()">Cancelar</button>' +
-    '<button type="button" class="btn-primary" id="ab-guardar" data-ab-tipo="' + tipo + '" data-ab-cliente="' + esc(cliente) + '" onclick="abGuardarCarga(this)">Revisar y guardar</button>');
+    '<button type="button" class="btn-primary" id="ab-guardar" data-ab-tipo="' + tipo + '" data-ab-cliente="' + esc(cliente) + '" data-ab-mes="' + esc(mes || '') + '" onclick="abGuardarCarga(this)">Revisar y guardar</button>');
 }
 
 async function abGuardarCarga(btn) {
@@ -158,7 +158,12 @@ async function abGuardarCarga(btn) {
       : r.encuestas + ' encuesta(s) con entidad, ' + Object.keys(r.entidades).length + ' entidad(es)';
     var lineas = (imp.meses || []).map(function (m) { return '• ' + mesNombreLargo(m.mes) + ': ' + m.nuevas + (m.existentes > 0 ? ' — REEMPLAZA ' + m.existentes + ' ya cargada(s)' : ' — mes nuevo'); });
     var avisos = r.avisos.length ? '\n\nAvisos:\n' + r.avisos.join('\n') : '';
-    if (!confirm('«' + f.name + '»: ' + resumen + '\n\nSe va a guardar:\n' + lineas.join('\n') + avisos + '\n\n¿Continuar?')) { decir('No se guardó nada.'); return; }
+    // Fase 319: en líneas internas, aviso claro de QUÉ meses se reemplazan (y si el archivo trae
+    // otros meses ademas del elegido). La logica de reemplazo no cambia.
+    var textoConfirmar = (AB_LI[tipo] && typeof liTextoConfirmacion === 'function')
+      ? liTextoConfirmacion({ archivo: f.name, resumen: resumen, meses: imp.meses || [], mesElegido: btn.getAttribute('data-ab-mes') || '', avisos: r.avisos, nombreMes: mesNombreLargo })
+      : '«' + f.name + '»: ' + resumen + '\n\nSe va a guardar:\n' + lineas.join('\n') + avisos + '\n\n¿Continuar?';
+    if (!confirm(textoConfirmar)) { decir('No se guardó nada.'); return; }
     var resp = await apiRequest('POST', AB_RUTA[tipo] + '/carga', cuerpo);
     Object.keys(_abCache).forEach(function (c) { delete _abCache[c]; });
     if (typeof _liCache !== 'undefined') Object.keys(_liCache).forEach(function (c) { delete _liCache[c]; });

@@ -1202,6 +1202,12 @@ td.kpi-red{background:rgba(231,76,60,.14);color:var(--c-danger-text);font-weight
    cliente): ORLANT y Mobilize hoy no usan esa franja (kpis:[], Fase 68)
    -- nada que reservar ahi todavia. */
 #cal-kpis-strip{min-height:108px;}
+/* Fase 319: #calidad-modal es una columna flex de alto fijo y la franja se encogia hasta
+   su min-height (108px): en el celular las 5 tarjetas apiladas quedaban de 32px y se
+   montaban sobre el formulario. A 768px o menos la franja ya no se encoge y a 600px o menos
+   va en 2 columnas. En escritorio no cambia nada (se deja igual que antes). */
+@media(max-width:768px){#cal-kpis-strip{flex-shrink:0;}}
+@media(max-width:600px){#cal-kpis-strip{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:14px 14px 0;}#cal-kpis-strip .aurora-kpi{min-width:0;padding:12px 10px;}}
 .aurora-kpi{background:var(--c-surface);border-radius:var(--r-md);padding:16px 14px;box-shadow:var(--shadow-sm);border-left:3px solid var(--c-primary-mid);position:relative;overflow:hidden;}
 .aurora-kpi .kpi-val{font-size:var(--fs-kpi);font-weight:700;color:var(--c-primary);line-height:1;}
 .aurora-kpi .kpi-lbl{font-size:var(--fs-note);color:var(--c-text-muted);margin-top:5px;text-transform:none;letter-spacing:0;}
@@ -2079,7 +2085,8 @@ div.ca-bar-fila{cursor:default}
 .gd-li-btn.on{background:rgba(255,255,255,0.24);border-color:#fff}
 .gd-li-btn:focus-visible{outline:2px solid #fff;outline-offset:2px}
 @media(max-width:768px){#gd-modal .gd-li-wrap{order:4;flex:1 1 100%;min-width:0}#gd-modal .gd-li-btn{min-height:44px}}
-@media (max-width:600px){.li-kpis .aurora-kpi{flex:1 1 calc(50% - 10px);min-width:0}}
+/* Fase 319: .aurora-kpis es una grilla (minmax 160px): a 375 cabia 1 columna. 2 columnas a 600px o menos. */
+@media (max-width:600px){#gd-panels .aurora-kpis.li-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}#gd-panels .li-kpis .aurora-kpi{min-width:0;padding:12px 10px}}
 .au-ag-nota{margin:8px 0 0;color:var(--c-text-muted);font-size:var(--fs-small);text-align:center}
 .au-tabla .au-total th,.au-tabla .au-total td{font-weight:700;border-top:2px solid var(--c-border)}
 .aurora-rank-table.alias-tabla input{min-height:40px;width:100%;padding:6px 8px;border:1px solid var(--c-border-control);border-radius:var(--r-sm);background:var(--c-surface);color:var(--c-text);font:inherit}
