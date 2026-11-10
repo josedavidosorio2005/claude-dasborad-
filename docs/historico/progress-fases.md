@@ -20495,3 +20495,23 @@ Pedido de Edwin (el pendiente de la Fase 326): el encabezado de sección de Cump
 «Agendas» en el tablero. Mismo cambio en el generador (`M()` del markup y `X()` del JS);
 regenerado desde el HTML de Edwin en una carpeta temporal (borrada): los tres cambios aplican. Sin
 cambios de cálculo ni de datos; ningún otro cliente. Prueba `fase327` (2).
+
+## Fase 328 — Calificar SURA: ítems con varias opciones ordenados (v1.164.0, 2026-11-10)
+
+En Calidad › SURA › Calificar (formulario común cc2, motor descuento), a 1440 px el grupo de 4 botones
+de «Saludo y despedida» y «Manejo de objeciones» aplastaba el texto (una palabra por línea, tapado),
+los botones quedaban 3+1, «Ver criterio» en dos líneas y «nota 0 %» partido en el panel.
+
+- `cc2ItemApilado(it)` (más de dos opciones propias) agrega `.cc2-item-op`: texto arriba a todo el
+  ancho y botones debajo en cuadrícula (`container-type` en `.cc2-items`: 4 columnas, 2 por debajo
+  de 720 px de lista, 1 por debajo de 420 px), mismo alto, texto completo, seleccionado con ✓ y
+  anillo, foco con contorno de 2 px. Los SI/NO y SI/NO/N/A no cambian.
+- `cc2PctJunto` pone espacio duro entre número y «%» en la ayuda y en «Ver criterio»; «nota 0 %»
+  del panel y la etiqueta de la sección también. «Ver criterio» con `nowrap`; el monto del panel
+  no se parte.
+- Local (base demo, plantilla SURA importada solo en local con descripciones ficticias), Brave
+  375/768/1024/1440 claro y oscuro: 9 ítems sin solapes, sin palabras sueltas, sin % partido, sin
+  scroll horizontal; botones 1+1+1+1 / 2+2 / 2+2 / 4 de mismo alto. Clic, cambiar, deseleccionar,
+  teclado (Tab, Espacio, Enter) y Limpiar bien; nota en vivo 100 / 91 / 94 / 85 / 93 / 90 / 88 /
+  72 / 90 / 70 y crítico en NO = 0. ORLANT y Mobilize: HTML y posiciones idénticos a main a 375 y
+  1440. Prueba `fase328` (2). Sin cambio de regla ni de plantilla.

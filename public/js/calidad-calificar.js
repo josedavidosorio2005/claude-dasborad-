@@ -86,13 +86,20 @@ function _cc2Seg(it) {
   }).join('') + '</div>';
 }
 
+// Fase 328: un item con mas de dos opciones propias (SURA: «Saludo y despedida», «Manejo de
+// objeciones») se apila: texto arriba a todo el ancho, botones debajo en cuadricula. Los SI/NO
+// (y SI/NO/N/A de ORLANT, Mobilize, Aurora y HLM) siguen con los botones a la derecha.
+function cc2ItemApilado(it) { return !!(it && it.opciones && it.opciones.length > 2); }
+// Fase 328: el numero y el «%» nunca quedan en lineas distintas (espacio duro U+00A0).
+function cc2PctJunto(t) { return String(t).replace(/(\d) %/g, '$1\u00a0%'); }
+
 function cc2Render() {
   var p = _cc2.plantilla;
   var b = cc2Bloques(cc2CamposDe(p));
   var itemsHtml = cc2PorCategoria(p.items).map(function (g) {
     return '<div class="cc2-cat">' + esc(g.cat) + '</div>' + g.items.map(function (it) {
-      return '<div class="cc2-item" data-item="' + esc(it.n) + '"><span class="cc2-num">' + esc(it.n) + '</span>' +
-        '<div class="cc2-iname"><b>' + esc(it.label) + '</b><small>' + esc(cc2SubItem(it, _cc2Eng())) +
+      return '<div class="cc2-item' + (cc2ItemApilado(it) ? ' cc2-item-op' : '') + '" data-item="' + esc(it.n) + '"><span class="cc2-num">' + esc(it.n) + '</span>' +
+        '<div class="cc2-iname"><b>' + esc(it.label) + '</b><small>' + esc(cc2PctJunto(cc2SubItem(it, _cc2Eng()))) +
         (it.descripcion || (it.vinetas && it.vinetas.length) ? ' · <button type="button" class="cc2-qbtn" onclick="cc2VerCriterio(' + Number(it.n) + ')">Ver criterio</button>' : '') +
         '</small></div>' + _cc2Seg(it) + '</div>';
     }).join('');
@@ -103,7 +110,7 @@ function cc2Render() {
         calPlantillaSelectorHtml(_ccampana, !!_cc2.editId) +
         '<section class="cc2-sec"><div class="cc2-sec-h"><h3>Información general</h3><span class="cc2-tag">Datos de la llamada</span></div>' +
           '<div class="cc2-fields">' + b.generales.map(_cc2Campo).join('') + '</div></section>' +
-        '<section class="cc2-sec"><div class="cc2-sec-h"><h3>Ítems de la plantilla</h3><span class="cc2-tag">' + (cc2EsDescuento(_cc2Eng()) ? '⚠ Crítico en NO: nota 0 % · sin N/A' : '⚠ Crítico: NO resta 20 pts · N/A = no aplica') + '</span></div>' +
+        '<section class="cc2-sec"><div class="cc2-sec-h"><h3>Ítems de la plantilla</h3><span class="cc2-tag">' + (cc2EsDescuento(_cc2Eng()) ? '⚠ Crítico en NO: nota 0\u00a0% · sin N/A' : '⚠ Crítico: NO resta 20 pts · N/A = no aplica') + '</span></div>' +
           '<div class="cc2-items" id="cc2-items">' + itemsHtml + '</div></section>' +
         '<section class="cc2-sec"><div class="cc2-sec-h"><h3>Detalles adicionales</h3></div>' +
           '<div class="cc2-fields">' + b.detalle.map(_cc2Campo).join('') + '</div>' +
@@ -152,9 +159,9 @@ function cc2Pintar() {
   pill.textContent = cls.t;
   document.getElementById('cc2-prog').textContent = (p.items.length - falt.length) + ' de ' + p.items.length + ' ítems calificados';
   var ded = cc2Deducciones(p.items, a, eng);
-  var h = ded.map(function (d) { return '<div' + (d.critico ? ' class="cc2-crit"' : '') + '><span>' + esc(d.it.n + '. ' + d.it.label) + (d.critico ? ' ⚠' : '') + '</span><span>' + (d.puntos === null ? 'nota 0 %' : '−' + d.puntos) + '</span></div>'; }).join('');
+  var h = ded.map(function (d) { return '<div' + (d.critico ? ' class="cc2-crit"' : '') + '><span>' + esc(d.it.n + '. ' + d.it.label) + (d.critico ? ' ⚠' : '') + '</span><span>' + (d.puntos === null ? 'nota\u00a00\u00a0%' : '−' + d.puntos) + '</span></div>'; }).join('');
   var al = cc2Alerta(ded.filter(function (d) { return d.critico; }).length, eng);
-  if (al) h += '<div class="cc2-crit"><span class="cc2-pill cc2-' + al.k + '">' + esc(al.t) + '</span></div>';
+  if (al) h += '<div class="cc2-crit"><span class="cc2-pill cc2-' + al.k + '">' + esc(cc2PctJunto(al.t)) + '</span></div>';
   if (!h && completo) h = '<div><span>Sin afectaciones</span><span>100%</span></div>';
   var dEl = document.getElementById('cc2-ded'); dEl.innerHTML = h; dEl.hidden = !h;
   var mot = document.getElementById('cc2-f-motivo'); if (mot) mot.value = cc2Motivo(p.items, a, eng);
@@ -188,7 +195,7 @@ function cc2VerCriterio(n) {
   var p = _cc2.plantilla; if (!p) return;
   var it = p.items.find(function (x) { return Number(x.n) === Number(n); }); if (!it) return;
   document.getElementById('cc2-criterio-t').textContent = it.n + '. ' + it.label;
-  document.getElementById('cc2-criterio-b').innerHTML = '<p class="cc2-crit-sub">' + esc(cc2SubItem(it, _cc2Eng())) + '</p>' +
+  document.getElementById('cc2-criterio-b').innerHTML = '<p class="cc2-crit-sub">' + esc(cc2PctJunto(cc2SubItem(it, _cc2Eng()))) + '</p>' +
     (it.descripcion ? '<p' + (cc2EsDescuento(p.engine) ? ' class="ca-desc-lineas"' : '') + '>' + esc(it.descripcion) + '</p>' : '') + // Fase 324: saltos de linea en el motor descuento
     (it.vinetas && it.vinetas.length ? '<ul>' + it.vinetas.map(function (v) { return '<li>' + esc(v) + '</li>'; }).join('') + '</ul>' : '');
   _cc2AbrirDialogo('cc2-ov-criterio');

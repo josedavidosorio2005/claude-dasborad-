@@ -81,5 +81,5 @@ test('front: el formulario comun se elige con cc2CamposDe, tiene canal, y editar
   assert.match(src, /if \(p\.campos \|\| !p\.principal\) body\.plantillaId = p\.id;/);
   assert.match(src, /m\.plantillaId == null \? CAL_PLANTILLAS_TODAS\.find\(function \(x\) \{ return x\.campana === m\.campana && x\.principal; \}\)/);
   assert.match(src, /set\('canal', m\.canal \|\| 'LLAMADA'\)/);
-  assert.match(src, /Ítems de la plantilla<\/h3><span class="cc2-tag">' \+ \(cc2EsDescuento\(_cc2Eng\(\)\) \? '⚠ Crítico en NO: nota 0 % · sin N\/A' : '⚠ Crítico: NO resta 20 pts · N\/A = no aplica'\)/); // Fase 322
+  assert.match(src, /Ítems de la plantilla<\/h3><span class="cc2-tag">' \+ \(cc2EsDescuento\(_cc2Eng\(\)\) \? '⚠ Crítico en NO: nota 0\\u00a0% · sin N\/A' : '⚠ Crítico: NO resta 20 pts · N\/A = no aplica'\)/); // Fase 322 (Fase 328: espacio duro antes del %)
 });

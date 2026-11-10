@@ -1919,6 +1919,27 @@ html[data-motion="off"] #gd-panels .aurora-kpi,html[data-motion="off"] #gd-panel
   .cc2-item .cc2-seg{grid-column:2;justify-self:start}
   .cc2-sec{padding:14px 12px}
 }
+/* Fase 328: «Ver criterio» en una sola linea; el monto del panel nunca se parte */
+.cc2-qbtn{white-space:nowrap}
+.cc2-ded>div>span:first-child{min-width:0}
+.cc2-ded>div>span:last-child{white-space:nowrap;flex-shrink:0}
+/* Fase 328: item con mas de dos opciones (motor descuento): texto arriba a todo el ancho y botones
+   debajo en una cuadricula pareja: 4 en linea si caben, 2x2 en anchos medios, 1 por fila en movil
+   (segun el ancho real de la lista de items, no de la ventana). */
+.cc2-items{container-type:inline-size}
+.cc2-item.cc2-item-op{grid-template-columns:28px minmax(0,1fr);align-items:start}
+.cc2-item.cc2-item-op .cc2-seg{grid-column:1/-1;justify-self:stretch;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;border:0;border-radius:0;overflow:visible}
+.cc2-item.cc2-item-op .cc2-seg button{min-width:0;min-height:44px;height:100%;padding:8px 10px;border:1px solid var(--c-border-control);border-radius:var(--r-sm);line-height:1.25;text-align:center;white-space:normal;overflow-wrap:normal;hyphens:none}
+.cc2-item.cc2-item-op .cc2-seg button:first-child{border-left:1px solid var(--c-border-control)}
+.cc2-item.cc2-item-op .cc2-seg button:hover{border-color:var(--c-text-link)}
+.cc2-item.cc2-item-op .cc2-seg button:focus-visible{outline:2px solid var(--c-focus);outline-offset:2px}
+.cc2-item.cc2-item-op .cc2-seg button[aria-pressed="true"]{border-color:transparent;box-shadow:0 0 0 2px var(--c-surface),0 0 0 4px currentColor}
+.cc2-item.cc2-item-op .cc2-seg button.cc2-y[aria-pressed="true"]{box-shadow:0 0 0 2px var(--c-surface),0 0 0 4px var(--c-success-dark)}
+.cc2-item.cc2-item-op .cc2-seg button.cc2-o[aria-pressed="true"]{box-shadow:0 0 0 2px var(--c-surface),0 0 0 4px var(--c-warning-text)}
+.cc2-item.cc2-item-op .cc2-seg button[aria-pressed="true"]::before{content:"✓\00a0"}
+@container (max-width:719px){.cc2-item.cc2-item-op .cc2-seg{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@container (max-width:419px){.cc2-item.cc2-item-op .cc2-seg{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:520px){.cc2-item.cc2-item-op{grid-template-columns:24px minmax(0,1fr)}}
 
 /* Fase 255: Calidad › Resumen por asesor, Detalle por mes y Diccionario */
 .ca-filtros{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:flex-end;margin-bottom:12px}
