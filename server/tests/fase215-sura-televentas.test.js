@@ -61,7 +61,7 @@ test('la migracion crea SURA (tablero propio, sin modulos genericos) y es idempo
   const row = db.prepare("SELECT dashboard, modulos, parametros FROM clientes_registro WHERE nombre = 'SURA'").get();
   assert.ok(row, 'SURA en el registro de clientes');
   assert.equal(row.dashboard, 1);
-  assert.deepEqual(JSON.parse(row.modulos), []);
+  assert.deepEqual(JSON.parse(row.modulos), ['calidad'], 'Fase 321: solo Calidad (para Mis resultados); el tablero sigue siendo Televentas');
   assert.deepEqual(JSON.parse(row.parametros).especificos, ['sura_televentas']);
   db.crearSuraTeleventas();
   assert.equal(db.prepare("SELECT COUNT(*) AS n FROM clientes_registro WHERE nombre = 'SURA'").get().n, 1);

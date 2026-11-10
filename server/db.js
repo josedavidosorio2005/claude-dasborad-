@@ -4908,6 +4908,23 @@ function tituloFlujoLineasInternas() {
 }
 runOnceMigration('fase320_titulo_flujo_li_v1', tituloFlujoLineasInternas);
 
+// Fase 321 (pedido del usuario, 10/11): SURA con el modulo de Calidad en el registro, para
+// que sus asesores tengan usuario ASESOR (la pantalla de Usuarios ofrece las campañas con
+// Calidad) y vean «Mis resultados» (solo sus monitoreos). Solo agrega 'calidad' a los
+// modulos de SURA: no toca su tablero Televentas, ni el layout, ni plantillas ni monitoreos.
+// Para calificar, el administrador importa la plantilla de SURA en Calidad › Plantillas.
+function suraModuloCalidad() {
+  const reg = db.prepare("SELECT modulos FROM clientes_registro WHERE nombre = 'SURA'").get();
+  if (!reg) return;
+  let modulos = [];
+  try { modulos = JSON.parse(reg.modulos) || []; } catch (e) { modulos = []; }
+  if (modulos.includes('calidad')) return;
+  modulos.push('calidad');
+  db.prepare("UPDATE clientes_registro SET modulos = ?, updatedAt = ? WHERE nombre = 'SURA'").run(JSON.stringify(modulos), new Date().toISOString());
+  if (!config.isTest) console.log('[db] Migracion fase321_sura_modulo_calidad_v1 aplicada.');
+}
+runOnceMigration('fase321_sura_modulo_calidad_v1', suraModuloCalidad);
+
 // Fase 307 (pedido del supervisor, 10/11): Calidad de ORLANT como Mobilize para
 // que los lideres evaluen. Decision del usuario: se CONSERVA lo que ORLANT ya
 // muestra (indicadores, torta y barras de la base de Cargar datos) y se agrega
@@ -5043,6 +5060,7 @@ module.exports.auroraInasistenciaEncuestas = auroraInasistenciaEncuestas; // Fas
 module.exports.auroraLineasInternas = auroraLineasInternas; // Fase 311
 module.exports.agendasNombresClienteAurora = agendasNombresClienteAurora; // Fase 317
 module.exports.tituloFlujoLineasInternas = tituloFlujoLineasInternas; // Fase 320
+module.exports.suraModuloCalidad = suraModuloCalidad; // Fase 321
 module.exports.orlantCalidadMonitoreos = orlantCalidadMonitoreos; // Fase 307
 module.exports.migrarMobilizeResumenSoloTitulos = migrarMobilizeResumenSoloTitulos;
 module.exports.migrarMobilizeResumenOrdenComoOrlant = migrarMobilizeResumenOrdenComoOrlant;

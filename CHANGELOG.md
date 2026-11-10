@@ -4,6 +4,15 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.160.0 — Noviembre 2026
+
+**Fase 321: SURA entra al módulo de Calidad.**
+
+- SURA aparece como campaña en Calidad y en Usuarios (para crear sus asesores). Cada asesor de
+  SURA ve en «Mis resultados» solo sus propios monitoreos; no ve el tablero Televentas.
+- Para calificar SURA dentro de la plataforma falta importar su plantilla en Calidad › Plantillas.
+  El tablero Televentas de SURA no cambia. ORLANT y las demás campañas siguen igual.
+
 ## v1.159.0 — Noviembre 2026
 
 **Fase 320: cambios de Edwin en Clínica Aurora (reunión del 10/11).**

@@ -95,7 +95,8 @@ test('una base nueva termina todas las migraciones con HLM, creada despues de la
     'fase307_orlant_calidad_monitoreos_v1', // Fase 307: monitoreos al final de Calidad de ORLANT (no toca Aurora/HLM)
     'fase311_aurora_lineas_internas_v1', // Fase 311: tablas y pestaña «Gestión líneas internas» (solo Aurora)
     'fase317_agendas_nombres_cliente_aurora_v1', // Fase 317: el cliente de Aurora ve nombres en Agendas
-    'fase320_titulo_flujo_li_v1']; // Fase 320: titulo del flujo de líneas internas (WhatsApp)
+    'fase320_titulo_flujo_li_v1', // Fase 320: titulo del flujo de líneas internas (WhatsApp)
+    'fase321_sura_modulo_calidad_v1']; // Fase 321: SURA con modulo de Calidad
   assert.deepEqual(orden.slice(iHlm + 1).filter((n) => !POSTERIORES.includes(n)), [], 'ninguna migracion vieja corre despues de crear HLM');
   const r = reg.leerRegistro(db).find((c) => c.nombre === HLM);
   assert.ok(r, 'HLM en el registro de clientes');

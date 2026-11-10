@@ -20414,3 +20414,15 @@ tocado: a 375 px las tarjetas del módulo de Calidad se montan sobre el contenid
 - `docs/pendientes-2026-11-10.md`: el usuario en mayúsculas, resuelto desde la Fase 310.
 - Prueba `fase320-aurora-ajustes-edwin` (6). Local con las bases reales (solo local): 4.232 citas
   (3,9 %) y 2.941 encuestas, iguales a lo cargado; 375/768/1440, claro y oscuro, 0 errores.
+
+## Fase 321 — SURA con el módulo de Calidad (v1.160.0, 2026-11-10)
+
+Para crear los usuarios ASESOR de SURA como los de ORLANT (rol ASESOR, `asesorCampana`, sin
+permisos de tableros) la pantalla de Usuarios solo ofrece las campañas con Calidad, y SURA no lo
+tenía: su plantilla se quitó en la Fase 134 y en producción tenía 0 plantillas y 0 monitoreos.
+Migración `fase321_sura_modulo_calidad_v1`: agrega solo `calidad` a los módulos de SURA (sin tocar
+Televentas, layout, plantillas ni monitoreos). «Mis resultados» (`/monitoreos/mios`) ya era genérico.
+Falta: importar la plantilla de SURA (Calidad › Plantillas) para calificar en la plataforma.
+Prueba `fase321-sura-calidad-asesores` (2): el ASESOR de SURA ve solo sus monitoreos, 403 en
+Televentas y en los monitoreos de la campaña. Los usuarios se crean después en producción por la
+pantalla (sus datos nunca van al repo).
