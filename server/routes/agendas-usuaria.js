@@ -26,7 +26,8 @@ router.get('/calidad/agendas-usuaria/datos', requireActor, validate(schemas.agen
   if (!campaignAccess(req.actor, req.query.campana)) return sinAcceso(res);
   const d = agendasUsuariaDatos(db, req.query.campana);
   // Fase 287 (#5): el cliente que oculta nombres (Aurora, HLM) recibe "Asesor 1, 2..." y sin el usuario del sistema.
-  if (ocultaAsesores(db, req.actor, req.query.campana)) {
+  // Fase 317: en Aurora el modulo agendas_usuaria esta en asesorVisibleClienteModulos -> nombres reales.
+  if (ocultaAsesores(db, req.actor, req.query.campana, 'agendas_usuaria')) {
     const alias = seudonimos(d.filas.map((f) => f.asesora));
     return res.json({ ...d, filas: d.filas.map((f) => ({ ...f, asesora: alias(f.asesora), usuario: '' })) });
   }

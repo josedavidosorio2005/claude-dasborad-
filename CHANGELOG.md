@@ -4,6 +4,17 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.157.1 — Noviembre 2026
+
+**Fase 317: Clínica Aurora › Agendas — la cuenta del cliente ve los nombres reales.**
+
+- En «Usuario que registra» (gráfica, filtro, Ver datos y exportación) el cliente ve el nombre de
+  cada persona, igual que el administrador y el supervisor (antes veía «Asesor 1, Asesor 2…»).
+  Las cifras y el orden no cambian.
+- Es una opción por pestaña: las demás pestañas de Aurora siguen sin mostrar nombres al cliente
+  (Calidad sin evaluador ni observaciones, Gestión líneas internas sin agente). ORLANT y las
+  demás campañas no cambian.
+
 ## v1.157.0 — Noviembre 2026
 
 **Fase 316: Calidad › Plantillas — editar las descripciones de una plantilla.**

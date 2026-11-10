@@ -20352,3 +20352,20 @@ más → 400 sin guardar; vacío = quitar) y la pantalla de Plantillas tiene el 
 «Descripciones». El texto no queda en el repo: se carga en producción por la pantalla. Prueba
 `fase316-calidad-descripciones` (3): id, versión, pesos, críticos, orden, categorías, campos y
 monitoreos idénticos.
+
+## Fase 317 — Aurora › Agendas con nombres reales para el cliente (v1.157.1, 2026-11-10)
+
+Pedido del supervisor: en Agendas («Usuario que registra») la cuenta cliente de Aurora veía
+«Asesor N» por `asesorOcultoCliente` (Fase 287). Ahora hay una excepción **por módulo** en el
+registro de clientes: `parametros.asesorVisibleClienteModulos` (`clientes-registro.js`,
+`asesorVisibleClienteEnModulo`); `ocultaAsesores(db, actor, campana, modulo)` no oculta en los
+módulos de esa lista. Migración `fase317_agendas_nombres_cliente_aurora_v1`: Aurora =
+`['agendas_usuaria']`. Solo la ruta de Agendas pasa su módulo; Tipificación, Salida, Calidad
+(monitoreos sin evaluador ni observaciones, resumen) y Gestión líneas internas siguen igual. Para
+abrir otra pestaña: agregar su módulo a la lista (migración) y pasar el módulo en su ruta.
+Pruebas: `fase317-agendas-nombres-cliente` (3) y `fase287` ajustada.
+
+**Fase 316 en producción** (escritura autorizada, por Calidad › Plantillas › Descripciones):
+las 17 descripciones del supervisor en la plantilla id 1 de ORLANT; el resto de la plantilla, sus
+153 monitoreos y las demás plantillas, idénticos; Diccionario con 17 tarjetas y 0 «Sin
+descripción».

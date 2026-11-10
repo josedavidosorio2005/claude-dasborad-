@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.157.0` (ver `server/package.json`, expuesta en
+- **Versión**: `1.157.1` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -493,6 +493,7 @@ mismo orden):
 - Fase 314 — Aurora › Gestión líneas internas: nivel de atención, cantidades siempre visibles, tortas lado a lado y botón aparte (v1.156.0, 2026-11-10)
 - Fase 315 — Revisión del 10/11: líneas internas sin agentes para el cliente, cachés frescas, base equivocada (v1.156.1, 2026-11-10)
 - Fase 316 — Calidad › Plantillas: editar solo las descripciones de una plantilla (para el Diccionario de ORLANT) (v1.157.0, 2026-11-10)
+- Fase 317 — Aurora › Agendas: el cliente ve los nombres reales (opción por módulo asesorVisibleClienteModulos) (v1.157.1, 2026-11-10)
 - Fase 309 — Revisión de seguridad: el cliente ya no recibe el nombre de los líderes en `GET /metas`; resto en `docs/revision-seguridad-2026-11-09.md` (v1.154.1, 2026-11-10)
 - Fase 308 — Revisión antes de la reunión con clientes y pendientes del supervisor (solo docs, 2026-11-10)
 - Fase 307 — Calidad para que los líderes evalúen: ORLANT conserva su Calidad y suma «Resultado de los monitoreos» al final; Aurora ya lo tenía (se muestra con el primer monitoreo) (v1.154.0, 2026-11-10)

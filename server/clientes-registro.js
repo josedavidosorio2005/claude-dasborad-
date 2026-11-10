@@ -172,6 +172,17 @@ function asesorOcultoCliente(db, campana) {
   return !!c && c.parametros.asesorOcultoCliente === true;
 }
 
+// Fase 317 (pedido del supervisor, 10/11): excepcion POR MODULO a asesorOcultoCliente.
+// parametros.asesorVisibleClienteModulos = ['agendas_usuaria', ...]: en esos modulos el
+// cliente SI ve el nombre real del asesor (como el administrador y el supervisor); en
+// todos los demas sigue «Asesor N» / sin agente. Para abrirlo en otra pestaña, agregar
+// su id de modulo a la lista (por migracion). Hoy: Clinica Aurora, solo Agendas.
+function asesorVisibleClienteEnModulo(db, campana, modulo) {
+  const c = leerRegistro(db).find((x) => x.nombre === campana);
+  const lista = c && Array.isArray(c.parametros.asesorVisibleClienteModulos) ? c.parametros.asesorVisibleClienteModulos : [];
+  return !!modulo && lista.includes(modulo);
+}
+
 // Lo que el navegador necesita para armar sus listas por modulo
 // (public/js/registro-clientes.js): sin fechas ni orden interno.
 function registroParaNavegador(db) {
@@ -196,6 +207,7 @@ module.exports = {
   LOGO_AURORA,
   asesorVisibleCliente,
   asesorOcultoCliente,
+  asesorVisibleClienteEnModulo, // Fase 317
   registroParaNavegador,
   crearTablaRegistro,
   sembrarRegistro,
