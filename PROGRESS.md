@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.158.1` (ver `server/package.json`, expuesta en
+- **Versión**: `1.159.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -496,6 +496,7 @@ mismo orden):
 - Fase 317 — Aurora › Agendas: el cliente ve los nombres reales (opción por módulo asesorVisibleClienteModulos) (v1.157.1, 2026-11-10)
 - Fase 318 — Calidad › Calificar de ORLANT con el formulario común (el de Mobilize), sin tocar plantilla ni cálculo (v1.158.0, 2026-11-10)
 - Fase 319 — Arreglos menores: tarjetas de Calidad y del flujo de líneas internas en el celular; aviso claro de meses al cargar líneas internas (v1.158.1, 2026-11-10)
+- Fase 320 — Aurora (Edwin): flujo de líneas internas = WhatsApp; Inasistencia y Encuestas por mes en línea con botones de vista (v1.159.0, 2026-11-10)
 - Fase 309 — Revisión de seguridad: el cliente ya no recibe el nombre de los líderes en `GET /metas`; resto en `docs/revision-seguridad-2026-11-09.md` (v1.154.1, 2026-11-10)
 - Fase 308 — Revisión antes de la reunión con clientes y pendientes del supervisor (solo docs, 2026-11-10)
 - Fase 307 — Calidad para que los líderes evalúen: ORLANT conserva su Calidad y suma «Resultado de los monitoreos» al final; Aurora ya lo tenía (se muestra con el primer monitoreo) (v1.154.0, 2026-11-10)

@@ -91,7 +91,8 @@ test('una base nueva termina todas las migraciones con Aurora, creada despues de
     'fase306_aurora_inasistencia_encuestas_v1', // Fase 306: tablas y pestañas Inasistencia y Encuestas (solo Aurora)
     'fase307_orlant_calidad_monitoreos_v1', // Fase 307: monitoreos al final de Calidad de ORLANT (no toca Aurora/HLM)
     'fase311_aurora_lineas_internas_v1', // Fase 311: tablas y pestaña «Gestión líneas internas» (solo Aurora)
-    'fase317_agendas_nombres_cliente_aurora_v1']; // Fase 317: el cliente de Aurora ve nombres en Agendas
+    'fase317_agendas_nombres_cliente_aurora_v1', // Fase 317: el cliente de Aurora ve nombres en Agendas
+    'fase320_titulo_flujo_li_v1']; // Fase 320: titulo del flujo de líneas internas (WhatsApp)
   assert.deepEqual(orden.slice(iAur + 1).filter((n) => !POSTERIORES.includes(n)), [], 'ninguna migracion vieja corre despues de crear Aurora');
   assert.ok(fila(), 'Aurora sigue ahi al final');
   const r = reg.leerRegistro(db).find((c) => c.nombre === AURORA);

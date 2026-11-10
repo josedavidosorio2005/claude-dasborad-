@@ -12,10 +12,9 @@ supervisor**. El resto sigue en [`pendientes.md`](pendientes.md). Sin nombres re
 - **Errores de consola al cargar Inasistencia y Encuestas de Aurora (21):** todos de la
   librería de Excel al leer el `.xls` viejo («Missing Info for XLS Record 0x27d»). Ninguno de
   la plataforma; los datos se leyeron completos. No requiere arreglo.
-- **Un asesor de Aurora:** existe y está activo, pero en el bloc de notas de credenciales de Aurora
-  (fuera del repo) su usuario está escrito en mayúsculas, y el inicio de sesión **distingue
-  mayúsculas**: con esa forma no entra. Hay que entregarle el usuario tal como está en la
-  plataforma (corregir el bloc).
+- ~~**Un asesor de Aurora:** su usuario está escrito en mayúsculas en el bloc de credenciales y el
+  inicio de sesión distinguía mayúsculas.~~ **Resuelto desde la Fase 310 (v1.154.2):** el usuario
+  ya no distingue mayúsculas al iniciar sesión, así que entra con cualquier forma.
 
 ## Lo que falta y depende del supervisor
 

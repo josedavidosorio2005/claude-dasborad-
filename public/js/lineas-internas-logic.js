@@ -332,7 +332,7 @@ function liTextoConfirmacion(o) {
 // Texto de la confirmacion de carga (lo que se leyo del archivo).
 function liResumenCarga(tipo, r) {
   var skills = function (m, f) { return Object.keys(m).map(function (k) { return liNombreSkill(k) + ' ' + f(m[k]); }).join(', '); };
-  if (tipo === 'flujo_li') return r.total + ' llamada(s): ' + r.contestadas + ' contestada(s), ' + r.abandonadas + ' abandonada(s). Por área: ' + skills(r.porSkill, function (x) { return x.total; });
+  if (tipo === 'flujo_li') return r.total + ' WhatsApp de entrada: ' + r.contestadas + ' contestada(s), ' + r.abandonadas + ' abandonada(s). Por área: ' + skills(r.porSkill, function (x) { return x.total; });
   return r.registros + ' registro(s)' + (tipo === 'cdr_li' ? ' (' + r.porTipo.entrada + ' de entrada, ' + r.porTipo.salida + ' de salida)' : '') + '. Por skill: ' + skills(r.porSkill, function (x) { return x; });
 }
 

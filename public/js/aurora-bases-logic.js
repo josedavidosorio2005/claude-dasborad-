@@ -148,11 +148,46 @@ function encPorFecha(filas, meses) {
   _abDelMes(filas, meses).forEach(function (r) { acc[r.fecha] = (acc[r.fecha] || 0) + r.n; });
   return Object.keys(acc).sort().map(function (k) { return { fecha: k, n: acc[k] }; });
 }
+// ── Fase 320 (pedido de Edwin, 10/11): vistas por mes ──
+// Meses que se muestran: los elegidos en MESES que tienen datos; sin eleccion, todos.
+function abMesesConDatos(filas, meses) {
+  var con = {};
+  _abDelMes(filas, meses).forEach(function (r) { con[r.mes] = true; });
+  return Object.keys(con).sort();
+}
+// % de inasistencia por mes = «No asistió» del mes ÷ total de citas del mes (la misma
+// formula de siempre, aplicada a cada mes). -> [{ mes, total, noAsistio, pct }]
+function inaPorMes(filas, meses) {
+  var acc = {};
+  _abDelMes(filas, meses).forEach(function (r) {
+    var a = acc[r.mes] || (acc[r.mes] = { mes: r.mes, total: 0, noAsistio: 0 });
+    a.total += r.total; a.noAsistio += r.noAsistio;
+  });
+  return Object.keys(acc).sort().map(function (k) {
+    var a = acc[k];
+    a.pct = a.total ? Math.round(a.noAsistio / a.total * 1000) / 10 : 0;
+    return a;
+  });
+}
+// Promedio de los meses (promedio simple de los % mensuales), 1 decimal; null sin meses.
+function abPromedio(valores) {
+  var v = (valores || []).filter(function (x) { return x !== null && x !== undefined && isFinite(x); });
+  if (!v.length) return null;
+  return Math.round(v.reduce(function (s, x) { return s + x; }, 0) / v.length * 10) / 10;
+}
+// Encuestas por mes. -> [{ mes, n }]
+function encPorMes(filas, meses) {
+  var acc = {};
+  _abDelMes(filas, meses).forEach(function (r) { acc[r.mes] = (acc[r.mes] || 0) + r.n; });
+  return Object.keys(acc).sort().map(function (k) { return { mes: k, n: acc[k] }; });
+}
+
 // "5,7 %"
 function abPct(v) { return (Math.round(v * 10) / 10).toLocaleString('es-CO', { maximumFractionDigits: 1, minimumFractionDigits: 1 }) + ' %'; }
 
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { INA_MAPA_ENCABEZADOS: INA_MAPA_ENCABEZADOS, ENC_MAPA_ENCABEZADOS: ENC_MAPA_ENCABEZADOS, INA_ESTADOS_NO_ASISTIO: INA_ESTADOS_NO_ASISTIO,
     inaEsNoAsistio: inaEsNoAsistio, inaParse: inaParse, encParse: encParse, inaPorEspecialidad: inaPorEspecialidad,
-    encPorEntidad: encPorEntidad, encPorFecha: encPorFecha, abPct: abPct };
+    encPorEntidad: encPorEntidad, encPorFecha: encPorFecha, abPct: abPct,
+    abMesesConDatos: abMesesConDatos, inaPorMes: inaPorMes, abPromedio: abPromedio, encPorMes: encPorMes }; // Fase 320
 }
