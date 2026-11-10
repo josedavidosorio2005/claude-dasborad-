@@ -4,6 +4,17 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.164.0 — Noviembre 2026
+
+**Fase 328: Calificar SURA — los ítems con varias opciones se ven ordenados.**
+
+- En «Saludo y despedida» y «Manejo de objeciones» el nombre del ítem y su ayuda van arriba, a todo
+  el ancho, y las cuatro opciones debajo en botones parejos: 4 en una fila en computador, 2 y 2 en
+  tablet y una por fila en celular. La opción elegida se marca con ✓ y un borde.
+- El número y el «%» ya no se separan (también en «nota 0 %» de la Calificación definitiva), y
+  «Ver criterio» queda en una sola línea.
+- El cálculo de la nota no cambia. ORLANT, Mobilize, Aurora y HLM se ven igual que antes.
+
 ## v1.163.3 — Noviembre 2026
 
 **Fase 327: Televentas SURA — encabezado «Ventas por mes».**
