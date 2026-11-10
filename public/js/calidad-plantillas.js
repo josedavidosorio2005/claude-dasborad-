@@ -153,9 +153,7 @@ async function calPlantillaGuardarDescripciones(id) {
   var campos = document.querySelectorAll('#cpl-preview textarea[data-cpl-n]');
   var desc = [].map.call(campos, function (t) { return { n: Number(t.getAttribute('data-cpl-n')), descripcion: t.value.trim() }; });
   var conTexto = desc.filter(function (d) { return d.descripcion; }).length;
-  if (!confirm('Guardar las descripciones de «' + (p ? (p.nombre || p.campana) : id) + '»: ' + conTexto + ' de ' + desc.length + ' ítems con descripción.
-
-No cambian pesos, críticos, orden, categorías ni monitoreos.')) return;
+  if (!confirm('Guardar las descripciones de «' + (p ? (p.nombre || p.campana) : id) + '»: ' + conTexto + ' de ' + desc.length + ' ítems con descripción.\n\nNo cambian pesos, críticos, orden, categorías ni monitoreos.')) return;
   var btn = document.getElementById('cpl-desc-guardar');
   try {
     var r = await withButtonLoading(btn, 'Guardando...', function () { return apiRequest('PUT', '/calidad/plantillas/' + id + '/descripciones', { descripciones: desc }); });

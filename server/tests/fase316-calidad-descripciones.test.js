@@ -67,6 +67,7 @@ test('item que no existe, campos de mas o texto muy largo -> 400 sin guardar; no
 
 test('front: boton «Descripciones» por plantilla y editor que solo manda {n, descripcion}', () => {
   const src = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'js', 'calidad-plantillas.js'), 'utf8');
+  assert.doesNotThrow(() => new (require('vm').Script)(src), 'el archivo del navegador no tiene errores de sintaxis');
   assert.match(src, /onclick="calPlantillaDescripciones\(' \+ p\.id \+ '\)">Descripciones<\/button>/);
   assert.match(src, /return \{ n: Number\(t\.getAttribute\('data-cpl-n'\)\), descripcion: t\.value\.trim\(\) \};/);
   assert.match(src, /apiRequest\('PUT', '\/calidad\/plantillas\/' \+ id \+ '\/descripciones'/);
