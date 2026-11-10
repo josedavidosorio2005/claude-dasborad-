@@ -561,14 +561,14 @@ router.get(
     if (!campaignAccess(req.actor, campana)) {
       return res.status(403).json({ error: 'Sin acceso a los datos de esta campana' });
     }
-    // Fase 254 (pedido de Edwin, como su HTML): el rol CALIDAD ve solo los
-    // monitoreos que el mismo califico (por su id; los viejos sin id, por el
-    // nombre del evaluador). Supervisor, Reportes, Gerencia y admin, igual que antes.
-    const soloMios = !!req.actor && req.actor.rol === 'CALIDAD' && !isFullAdmin(req.actor);
-    const filtroMios = soloMios ? ' AND (evaluadorUserId = @uid OR (evaluadorUserId IS NULL AND lower(trim(evaluador)) = lower(trim(@nombre))))' : '';
+    // Fase 329 (regla del supervisor): todo el que tiene acceso a Calidad de la campaña
+    // (admin, supervisor, CALIDAD, Reportes, Gerencia) ve TODOS sus monitoreos, sin
+    // importar quien los califico. Se quita el filtro "solo los mios" del rol CALIDAD
+    // (Fase 254). Editar sigue siendo solo lo propio (puedeEditarMonitoreo). El asesor
+    // usa /monitoreos/mios y el cliente recibe la version sin evaluador ni observaciones.
     const rows = db
-      .prepare('SELECT * FROM monitoreos WHERE campana = @campana' + (mes ? ' AND mes = @mes' : '') + filtroMios + ' ORDER BY id DESC')
-      .all({ campana, mes: mes || null, uid: (req.actor && req.actor.id) || 0, nombre: (req.actor && req.actor.nombre) || '' });
+      .prepare('SELECT * FROM monitoreos WHERE campana = @campana' + (mes ? ' AND mes = @mes' : '') + ' ORDER BY id DESC')
+      .all({ campana, mes: mes || null });
     const lista = rows.map((r) => monitoreoPara(req.actor, r));
     // Fase 287: la cuenta de cliente, sin evaluador ni observaciones (y sin nombre de asesor si el cliente los oculta).
     res.json(privacidad.esCuentaCliente(req.actor) ? privacidad.monitoreosParaCliente(lista, privacidad.ocultaAsesores(db, req.actor, campana)) : lista);

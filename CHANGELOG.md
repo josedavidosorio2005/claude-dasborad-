@@ -4,6 +4,18 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.164.1 — Noviembre 2026
+
+**Fase 329: Calidad — el equipo de calidad ve todos los monitoreos de su campaña.**
+
+- Un usuario de calidad (el que califica) solo veía los monitoreos que él mismo había hecho. Ahora,
+  igual que el supervisor y el administrador, ve todos los de sus campañas, sin importar quién
+  calificó: en Monitoreos, Resumen por asesor, Detalle por mes, las tarjetas de arriba y las
+  exportaciones.
+- Editar un monitoreo sigue igual (cada quien los suyos; el supervisor y Reportes, como antes). El
+  asesor sigue viendo solo los suyos en «Mis resultados» y el cliente sigue sin ver evaluador ni
+  observaciones. Ningún puntaje cambia.
+
 ## v1.164.0 — Noviembre 2026
 
 **Fase 328: Calificar SURA — los ítems con varias opciones se ven ordenados.**

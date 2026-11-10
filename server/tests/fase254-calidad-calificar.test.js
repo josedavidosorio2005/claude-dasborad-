@@ -61,26 +61,20 @@ test('formulario: nota en vivo igual al servidor, faltantes, motivo, alerta y ob
   assert.deepEqual([b.generales.map((c) => c.k), b.detalle.map((c) => c.k)], [['asesor', 'fecha'], ['motivo', 'observaciones']]);
 });
 
-test('CALIDAD ve solo los monitoreos que ella califico; supervisor y admin ven todos', async () => {
+// Fase 329: la regla cambio -- CALIDAD ve TODOS los monitoreos de su campaña (antes solo los suyos).
+test('CALIDAD, supervisor y admin ven todos los monitoreos de la campaña (Fase 329)', async () => {
   const a = await mon(calA.token); assert.equal(a.status, 201, JSON.stringify(a.body));
   const b = await mon(calB.token); assert.equal(b.status, 201);
-  // monitoreo viejo sin evaluadorUserId con el nombre de calA (cuenta como suyo)
   db.prepare("UPDATE monitoreos SET evaluadorUserId = NULL, evaluador = 'Persona cal254a' WHERE id = ?").run(b.body.id);
   const c = await mon(calB.token); assert.equal(c.status, 201);
   const ids = async (tok) => (await request(app).get('/api/monitoreos?campana=MOBILIZE').set(auth(tok))).body.map((m) => m.id);
-  const deA = await ids(calA.token);
-  assert.ok(deA.includes(a.body.id) && deA.includes(b.body.id), 'los suyos (por id y por nombre)');
-  assert.ok(!deA.includes(c.body.id), 'no el de otra persona');
-  const deB = await ids(calB.token);
-  assert.ok(deB.includes(c.body.id) && !deB.includes(a.body.id));
-  for (const tok of [sup.token, admin]) {
+  for (const tok of [calA.token, calB.token, sup.token, admin]) {
     const todos = await ids(tok);
-    assert.ok([a, b, c].every((x) => todos.includes(x.body.id)), 'supervisor/admin: todos');
+    assert.ok([a, b, c].every((x) => todos.includes(x.body.id)), 'todos, sin importar quién calificó');
   }
-  // con mes, el mismo filtro
   const mes = hoy.slice(0, 7);
   const conMes = (await request(app).get('/api/monitoreos?campana=MOBILIZE&mes=' + mes).set(auth(calA.token))).body.map((m) => m.id);
-  assert.ok(conMes.includes(a.body.id) && !conMes.includes(c.body.id));
+  assert.ok(conMes.includes(a.body.id) && conMes.includes(c.body.id), 'con mes, también los de otra persona');
 });
 
 test('/calidad/plantillas/todas?inactivas=1 trae las versiones viejas, nunca usables', async () => {
