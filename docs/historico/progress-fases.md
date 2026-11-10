@@ -20369,3 +20369,19 @@ Pruebas: `fase317-agendas-nombres-cliente` (3) y `fase287` ajustada.
 las 17 descripciones del supervisor en la plantilla id 1 de ORLANT; el resto de la plantilla, sus
 153 monitoreos y las demás plantillas, idénticos; Diccionario con 17 tarjetas y 0 «Sin
 descripción».
+
+## Fase 318 — Calidad › Calificar de ORLANT como el de Mobilize (v1.158.0, 2026-11-10)
+
+Pedido de Edwin. El formulario común `cc2` (`calidad-calificar.js`) se usaba solo si la plantilla
+trae `campos`; la de ORLANT (id 1) no los trae y caía al formulario viejo (listas desplegables).
+Sin tocar la plantilla: `CC2_CAMPOS_POR_CAMPANA.ORLANT` (`calidad-calificar-logic.js`,
+`cc2CamposDe`) da los campos de siempre de ORLANT, incluido el **canal auditado** (campo nuevo
+`canal` del formulario común: Llamada / WhatsApp-Chat). Como el formulario viejo: con la principal
+sin campos propios no se manda `plantillaId`. Editar un monitoreo viejo sin `plantillaId` abre la
+principal con sus respuestas y canal. Motor de descuento (SURA) y campañas sin entrada, igual que
+antes. Nota en vivo = cálculo del servidor para un monitoreo completo (400 combinaciones en la
+prueba). Diferencias de comportamiento (como Mobilize): obligatorio calificar los 17 ítems y
+escribir observaciones (antes: al menos 1 ítem, observaciones opcionales); en producción los 153
+monitoreos ya estaban completos. Todos los ítems de ORLANT ya admitían N/A. Hallazgo previo, no
+tocado: a 375 px las tarjetas del módulo de Calidad se montan sobre el contenido (pasa igual en
+`main`, todas las campañas). Prueba `fase318-calificar-orlant-comun` (5).
