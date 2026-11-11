@@ -20623,3 +20623,11 @@ Decisión del usuario: se resuelve con lo que hay en su equipo, sin pedir archiv
   diálogos y exportaciones); al final de las listas (bloque nuevo y Módulo de Calidad), sin ▲/▼, fuera
   de «Asesores evaluados» y de por encima/por debajo; dentro del total y del promedio general.
 - Pruebas `fase333` (5) y la matriz de acceso; suite completa en verde.
+- **Resultado en producción (11/11, con el OK escrito del usuario)**: aplicada la corrección a los
+  **16** que cruzaban (además, respuestas iguales ítem por ítem con la fila del Excel), con la ruta
+  acotada desde la sesión del administrador; en cada uno se comprobó después que nota, fecha,
+  evaluador, observaciones y respuestas quedaron iguales. Después: 153 monitoreos, promedio 95,52,
+  16 «Sin asesor» (los de septiembre). Verificado en pantalla (solo lectura, claro y oscuro,
+  375/768/1440): «Sin asesor» última fila, sin flecha; «Asesores evaluados» 21; ▲ 14 / ▼ 7; sin textos
+  cortados ni errores. Ningún mes se volvió a subir; las copias temporales (bases y capturas) se
+  borraron.
