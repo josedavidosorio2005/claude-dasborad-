@@ -643,9 +643,21 @@ function _gdTituloGrafica(el){
   var txt = t ? t.textContent.trim() : '';
   return txt || 'la gráfica';
 }
+// Fase 341: el boton «Ver datos» va siempre debajo de la grafica Y de su leyenda, a la derecha.
+// Una torta con la leyenda al lado (.cmp-torta) lo ponia en medio; la banda de colores de
+// «Calificación definitiva por asesor» (.cmp-banda) quedaba debajo del boton.
+var GD_VER_DATOS_CONTENEDOR = '.cmp-torta';
+var GD_VER_DATOS_LEYENDA = '.cmp-banda, .cmp-pie-leg';
+function _gdVerDatosAncla(wrap){
+  var a = wrap;
+  if(a.parentElement && a.parentElement.matches && a.parentElement.matches(GD_VER_DATOS_CONTENEDOR) && a.parentElement.parentElement) a = a.parentElement;
+  while(a.nextElementSibling && a.nextElementSibling.matches && a.nextElementSibling.matches(GD_VER_DATOS_LEYENDA)) a = a.nextElementSibling;
+  return a;
+}
 function _gdVerDatosBoton(el, canvasId, vacio){
   var wrap = (el.closest && el.closest('.aurora-chart-wrap')) || el.parentElement;
   if(!wrap || !wrap.parentElement) return;
+  wrap = _gdVerDatosAncla(wrap);
   var btn = wrap.parentElement.querySelector('.btn-ver-datos[data-canvas="' + canvasId + '"]');
   if(!btn){
     btn = document.createElement('button');

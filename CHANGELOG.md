@@ -4,6 +4,16 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.174.3 — Noviembre 2026
+
+**Fase 341: el botón «Ver datos» siempre en el mismo lugar.**
+
+- En los dashboards, «Ver datos» queda siempre debajo de la gráfica y de su leyenda, a la derecha.
+- Se corrigieron los dos casos que lo ponían en otro sitio (pestaña Calidad): en «Monitoreos por
+  clasificación» estaba entre la torta y su leyenda, y en «Calificación definitiva por asesor» quedaba
+  encima de la franja de colores.
+- No cambian los colores ni lo que muestra la tabla.
+
 ## v1.174.2 — Noviembre 2026
 
 **Fase 340: Calidad — un solo formulario «Calificar» para todos.**

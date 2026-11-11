@@ -20722,3 +20722,12 @@ Crítico: un supervisor veía en SURA el formulario viejo de Calificar (con los 
 - **Regla «sin teléfono»**: ningún formulario muestra el campo (aunque la plantilla lo traiga); `POST /monitoreos` guarda `telefono` en null y `PUT` conserva lo ya guardado sin aceptar uno nuevo. Los teléfonos ya guardados (cargas masivas viejas de ORLANT y un monitoreo de Aurora) no se tocaron: limpiarlos solo con OK. La carga masiva por Excel todavía lee la columna TELEFONO (pendiente de decidir).
 - **Pendiente del administrador**: marcarle al supervisor la plantilla «Televentas SURA» en Usuarios (o decidir si `supervisa_<C>` debe habilitar sola la plantilla de su campaña).
 - Pruebas `fase340` (4) y `fase118`, `fase318`, `fase331`, `fase337` ajustadas. Local (Brave, copia de la base demo, plantilla SURA importada, datos sintéticos), claro y oscuro, 375/768/1440: CALIDAD (ORLANT y Mobilize con el formulario común, guarda), SUPERVISOR sin la plantilla (aviso), SUPERVISOR con la plantilla (formulario de SURA), Reportes (edita y actualiza); sin formulario viejo, sin teléfono, 0 errores de consola, sin scroll horizontal.
+
+## Fase 341 — «Ver datos» en el mismo lugar en todas las gráficas (v1.174.3, 2026-11-11)
+
+Barrido local (Brave, copia de la base demo, administrador, todas las pestañas y sub-pestañas de los dashboards, 1440/768/375): 72 botones «Ver datos». Regla que siguen casi todos: justo debajo de su gráfica, a la derecha (`_gdVerDatosBoton` lo inserta después de `.aurora-chart-wrap`). Dos excepciones, ambas en la pestaña Calidad (`calidad-panel.js`):
+
+- «Monitoreos por clasificación»: la torta y su leyenda están en una fila flex (`.cmp-torta`) y el botón quedaba entre las dos.
+- «Calificación definitiva por asesor»: el botón quedaba encima de la banda de colores (`.cmp-banda`).
+
+Arreglo: `_gdVerDatosAncla` sube a la fila `.cmp-torta` y salta la leyenda (`.cmp-banda`, `.cmp-pie-leg`) antes de insertar; el resto de gráficas queda igual. Las tarjetas con dos gráficas (salida de ORLANT) siguen con un botón debajo de cada una, y las que tienen tabla debajo (Inasistencia, Efectividad, Ranking) lo tienen entre la gráfica y la tabla, que es la regla. Prueba `fase341` (4, la función real con un DOM mínimo). Capturas de las tarjetas en claro y oscuro, 375/768/1440, fuera del repo. Las 3 propuestas de paleta van aparte en un documento, sin cambiar colores.
