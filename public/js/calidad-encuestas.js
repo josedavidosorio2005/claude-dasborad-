@@ -24,6 +24,7 @@ async function cenActualizarTab() {
   try { r = camp ? await apiRequest('GET', '/calidad/encuestas/monitoreo/conteo?campana=' + encodeURIComponent(camp)) : null; } catch (e) { r = null; }
   if (camp !== _ccampana) return; // cambio de campaña mientras tanto
   _cen.activa = !!(r && r.activa);
+  _cen.activaDe = camp; // Fase 331 (PR 3): el estado es de ESTA campaña
   btn.hidden = !_cen.activa;
   var n = _cen.activa ? (r.pendientes || 0) : 0;
   var badge = document.getElementById('cen-badge');
@@ -33,6 +34,7 @@ async function cenActualizarTab() {
   }
   btn.setAttribute('aria-label', 'Calidad de encuestas' + (n ? ', ' + n + ' pendiente' + (n === 1 ? '' : 's') + ' por escuchar' : ''));
   if (!_cen.activa && _ctab === 'encuestas') switchCalTab(calCanEvaluate() ? 'nuevo' : 'resumen');
+  else if (_ctab === 'monitoreos' && typeof renderCalMonitoreosTable === 'function') renderCalMonitoreosTable(); // filtro de origen al dia
 }
 
 function cenElegirEstado(estado) {
@@ -245,3 +247,18 @@ function cenDespuesDeGuardar() {
 
 // Al cerrar el modulo o cambiar de campaña con una llamada abierta: se libera.
 function cenAlSalirDelModulo() { if (_cen.abierta) cenCancelar(true); }
+
+// Fase 331 (PR 3): filtro por origen de la lista de Monitoreos (Calidad › Monitoreos).
+// Solo cambia lo que se LISTA: las tarjetas, el resumen y los promedios no cambian
+// (que los de encuesta salgan del promedio lo decide el supervisor).
+function cenPrepararFiltroOrigen(lista) {
+  var cont = document.getElementById('cal-origen-fil');
+  var sel = document.getElementById('cal-origen-sel');
+  if (!cont || !sel) return null;
+  var mostrar = !!((_cen.activa && _cen.activaDe === _ccampana) || (lista || []).some(function (m) { return cenOrigenDe(m) === 'encuesta'; }));
+  cont.hidden = !mostrar;
+  if (!mostrar) { sel.value = ''; return { lista: lista, origen: '' }; }
+  var nota = document.getElementById('cal-origen-nota');
+  if (nota) nota.textContent = cenNotaOrigen(lista);
+  return { lista: cenFiltrarPorOrigen(lista, sel.value), origen: sel.value };
+}

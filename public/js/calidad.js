@@ -398,7 +398,7 @@ function switchCalTab(t){
   if((t==='nuevo' || t==='carga') && !calCanEvaluate()) t='resumen';
   if(t==='carga' && _calCampanaTieneDashboard(_ccampana)) t='monitoreos';
   if(t==='plantillas' && !isFullAdmin()) t='resumen'; // Fase 253
-  if(t==='encuestas' && !(typeof _cen!=='undefined' && _cen.activa)) t = calCanEvaluate() ? 'nuevo' : 'resumen'; // Fase 331
+  if(t==='encuestas' && !(typeof _cen!=='undefined' && _cen.activa && _cen.activaDe===_ccampana)) t = calCanEvaluate() ? 'nuevo' : 'resumen'; // Fase 331
   _ctab = t;
   document.querySelectorAll('#calidad-modal .atab').forEach(function(el){ el.classList.toggle('atab-active', el.dataset.ctab===t); });
   document.querySelectorAll('#calidad-modal .atab-panel').forEach(function(el){ el.classList.toggle('visible', el.id==='cpanel-'+t); });
@@ -612,16 +612,19 @@ async function calMonitoreosDelete(id){
 
 function renderCalMonitoreosTable(){
   var arr = calFilterByMonth((CAL_DB[_ccampana]||{}).monitoreos, _cmesFiltro).slice().sort(function(a,b){return b.id-a.id;});
+  // Fase 331 (PR 3): filtro por origen y marca de los de Calidad de encuestas (solo esta lista).
+  var conOrigen = typeof cenPrepararFiltroOrigen==='function' ? cenPrepararFiltroOrigen(arr) : null;
+  if(conOrigen) arr = conOrigen.lista;
   var canManage = calCanManageMonitoreos();
   // Fase 254: Calidad edita lo que ella califico con plantillas nuevas.
   var puedeAlguno = !canManage && typeof cc2PuedeEditar==='function' && arr.some(function(m){ return cc2PuedeEditar(m); });
   var html = '<tr><th>Asesor</th><th>Fecha</th><th>Canal</th><th>ID/Llamada</th><th>Codificacion</th><th>Evaluador</th><th>Puntaje</th><th>Clasificacion</th><th>Fallos</th><th>Nivel Critico</th>'+((canManage||puedeAlguno)?'<th></th>':'')+'</tr>';
   if(arr.length===0){
-    html += '<tr><td colspan="11" style="text-align:center;color:var(--c-text-muted)">Sin monitoreos registrados'+(_cmesFiltro?' en '+_cmesFiltro:'')+'</td></tr>';
+    html += '<tr><td colspan="11" style="text-align:center;color:var(--c-text-muted)">Sin monitoreos registrados'+(_cmesFiltro?' en '+_cmesFiltro:'')+(conOrigen&&conOrigen.origen?' con ese origen':'')+'</td></tr>';
   } else {
     arr.forEach(function(m){
       var canalLbl = calEstadoHtml(m.canal==='WPP' ? '💬 WPP' : '📞 Llamada');
-      html += '<tr><td>'+esc(textoFormatoNombre(m.asesor))+'</td><td>'+esc(m.fecha||'-')+'</td><td>'+canalLbl+'</td><td>'+esc(m.idLlamada||'-')+'</td><td>'+esc(m.codificacion||'-')+'</td><td>'+esc(m.evaluador||'-')+'</td>'+
+      html += '<tr><td>'+esc(textoFormatoNombre(m.asesor))+(m.origen==='encuesta'?' <span class="cen-marca" title="Monitoreo originado en una encuesta mal calificada">Encuesta</span>':'')+'</td><td>'+esc(m.fecha||'-')+'</td><td>'+canalLbl+'</td><td>'+esc(m.idLlamada||'-')+'</td><td>'+esc(m.codificacion||'-')+'</td><td>'+esc(m.evaluador||'-')+'</td>'+
         '<td class="peak">'+m.puntaje+'</td><td>'+calEstadoHtml(m.clasificacion)+'</td><td>'+m.fallos+'</td><td>'+calEstadoHtml(m.nivelCritico)+'</td>'+
         (canManage?('<td><button class="btn-sm btn-edit" onclick="editarMonitoreo('+m.id+')">Editar</button> <button class="btn-sm btn-delete" onclick="calMonitoreosDelete('+m.id+')">Eliminar</button></td>'):
           (puedeAlguno?('<td>'+(cc2PuedeEditar(m)?'<button class="btn-sm btn-edit" onclick="editarMonitoreo('+m.id+')">Editar</button>':'')+'</td>'):''))+'</tr>';

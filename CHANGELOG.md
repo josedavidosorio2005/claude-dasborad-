@@ -4,6 +4,17 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.167.0 — Noviembre 2026
+
+**Fase 331 (parte 3): en Monitoreos se distinguen los que vienen de Calidad de encuestas.**
+
+- En Calidad › Monitoreos de Mobilize, cada monitoreo que salió de una encuesta mal calificada lleva
+  la marca «Encuesta» junto al nombre del asesor.
+- Nuevo filtro «Origen» arriba de la lista: Todos, Monitoreos de siempre o Calidad de encuestas.
+- El filtro solo cambia lo que se ve en la lista. Las tarjetas de arriba, el resumen por asesor y los
+  promedios siguen contando todos los monitoreos, igual que antes, hasta que el supervisor decida si
+  los de encuesta deben ir aparte. ORLANT, Aurora, SURA y HLM no ven el filtro.
+
 ## v1.166.0 — Noviembre 2026
 
 **Fase 331 (parte 2): pestaña «Calidad de encuestas» en Calidad › Mobilize.**
