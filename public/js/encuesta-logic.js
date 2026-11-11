@@ -39,7 +39,8 @@ var ENCUESTA_COLUMNAS = [
 ];
 // Orden fijo del payload compacto -- debe coincidir con CAMPOS_FILA
 // (server/encuestas.js) y encuestaFilaArraySchema (validation.js).
-var ENCUESTA_ORDEN_ARRAY = ['fecha', 'agente', 'skill', 'q1', 'q2', 'q3', 'q4', 'comentario', 'connId'];
+// Fase 331: + hora (HH:MM de DATE, '' si no se pudo leer) para ubicar la grabacion.
+var ENCUESTA_ORDEN_ARRAY = ['fecha', 'agente', 'skill', 'q1', 'q2', 'q3', 'q4', 'comentario', 'connId', 'hora'];
 var ENCUESTA_CONN_ID_MAX = 100;
 var ENCUESTA_COMENTARIO_MAX = 1000;
 
@@ -129,6 +130,27 @@ function encuestaParseFecha(v) {
   return null;
 }
 
+// Fase 331: DATE -> 'HH:MM' o '' (sin hora). Mismo criterio que encuestaParseFecha:
+// Date nativo con getters locales; serial de Excel por su fraccion del dia; texto
+// "aaaa-mm-dd hh:mm[:ss]" o "dd/mm/aaaa hh:mm[:ss]". Un archivo sin hora deja ''.
+function encuestaParseHora(v) {
+  if (v instanceof Date) {
+    if (isNaN(v.getTime())) return '';
+    return _pad2(v.getHours()) + ':' + _pad2(v.getMinutes());
+  }
+  if (typeof v === 'number' && isFinite(v)) {
+    var frac = v - Math.floor(v);
+    if (frac <= 0) return '';
+    var min = Math.floor(Math.round(frac * 86400) / 60) % 1440;
+    return _pad2(Math.floor(min / 60)) + ':' + _pad2(min % 60);
+  }
+  if (typeof v === 'string') {
+    var m = /[ T](\d{1,2}):(\d{2})(?::\d{2})?$/.exec(v.trim());
+    if (m && parseInt(m[1], 10) < 24 && parseInt(m[2], 10) < 60) return _pad2(parseInt(m[1], 10)) + ':' + m[2];
+  }
+  return '';
+}
+
 function _encuestaSinRespuesta(v) {
   if (v === null || v === undefined) return true;
   var t = String(v).trim();
@@ -209,7 +231,7 @@ function encuestaParseFilas(aoa) {
     var agente = _encuestaNorm(row[map.agente]).slice(0, 200);
     var skill = _encuestaNorm(row[map.skill]).slice(0, 200);
     var connId = map.connId === undefined || _encuestaSinRespuesta(row[map.connId]) ? '' : _encuestaNorm(row[map.connId]).slice(0, ENCUESTA_CONN_ID_MAX);
-    filas.push([fecha, _encuestaSinRespuesta(agente) ? '' : agente, _encuestaSinRespuesta(skill) ? '' : skill, resp.q1, resp.q2, resp.q3, resp.q4, comentario, connId]);
+    filas.push([fecha, _encuestaSinRespuesta(agente) ? '' : agente, _encuestaSinRespuesta(skill) ? '' : skill, resp.q1, resp.q2, resp.q3, resp.q4, comentario, connId, encuestaParseHora(row[map.fecha])]);
     dias[fecha] = true;
   }
   if (map.connId === undefined && filas.length) avisos.push('El archivo no trae la columna CONN_ID: los comentarios quedan sin ID de llamada.');
@@ -388,6 +410,7 @@ if (typeof module !== 'undefined' && module.exports) {
     encuestaColIndexMap: encuestaColIndexMap,
     encuestaBuscarEncabezado: encuestaBuscarEncabezado,
     encuestaParseFecha: encuestaParseFecha,
+    encuestaParseHora: encuestaParseHora, // Fase 331
     encuestaParseRespuesta: encuestaParseRespuesta,
     encuestaConteos: encuestaConteos,
     encuestaResumenTexto: encuestaResumenTexto,

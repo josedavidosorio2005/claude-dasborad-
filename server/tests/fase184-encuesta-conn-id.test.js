@@ -21,14 +21,14 @@ test('lector: CONN_ID se lee como texto; TELEPHONE sigue sin leerse; sin CONN_ID
     ['Asesor Dos', 'SKILL A', '2026-09-02 10:00', 7, 3, 2, 3, '-', '-', '3000000001'],
   ]);
   assert.deepEqual(con.filas, [
-    ['2026-09-01', 'Asesor Uno', 'SKILL A', 9, 5, 1, 5, 'Excelente', 'ABC-123-XYZ'],
-    ['2026-09-02', 'Asesor Dos', 'SKILL A', 7, 3, 2, 3, '', ''],
+    ['2026-09-01', 'Asesor Uno', 'SKILL A', 9, 5, 1, 5, 'Excelente', 'ABC-123-XYZ', '10:00'], // Fase 331: + hora
+    ['2026-09-02', 'Asesor Dos', 'SKILL A', 7, 3, 2, 3, '', '', '10:00'],
   ]);
   assert.ok(!JSON.stringify(con.filas).includes('3000000000'), 'el telefono nunca viaja');
   assert.ok(!con.avisos.some((a) => /CONN_ID/.test(a)));
 
   const sin = L.encuestaParseFilas([HEADER, ['Asesor Uno', 'SKILL A', '2026-09-01 10:00', 9, 5, 1, 5, 'Excelente']]);
-  assert.deepEqual(sin.filas, [['2026-09-01', 'Asesor Uno', 'SKILL A', 9, 5, 1, 5, 'Excelente', '']]);
+  assert.deepEqual(sin.filas, [['2026-09-01', 'Asesor Uno', 'SKILL A', 9, 5, 1, 5, 'Excelente', '', '10:00']]);
   assert.ok(sin.avisos.includes('El archivo no trae la columna CONN_ID: los comentarios quedan sin ID de llamada.'));
 });
 

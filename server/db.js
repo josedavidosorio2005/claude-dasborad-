@@ -5067,6 +5067,15 @@ function crearEncuestaMonitoreo() {
 }
 runOnceMigration('fase331_encuesta_monitoreo_v1', crearEncuestaMonitoreo);
 
+// Fase 331 (PR 2): hora de la llamada de la encuesta (HH:MM de la columna DATE), para
+// ubicar la grabacion en Wolkvox junto con el CONN_ID. Solo ADD COLUMN con '' por
+// defecto: las encuestas ya cargadas quedan sin hora hasta que se vuelva a subir el mes.
+// Sigue SIN telefono (regla de la Fase 131, confirmada el 11/11/2026).
+runOnceMigration('fase331_encuestas_hora_v1', () => {
+  const cols = db.prepare('PRAGMA table_info(encuestas)').all().map((c) => c.name);
+  if (!cols.includes('hora')) db.exec("ALTER TABLE encuestas ADD COLUMN hora TEXT NOT NULL DEFAULT ''");
+});
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {
