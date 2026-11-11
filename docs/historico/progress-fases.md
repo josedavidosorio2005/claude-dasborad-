@@ -20673,3 +20673,27 @@ nueva, que **reemplaza la de la Fase 329**.
   monitoreos sintéticos), claro y oscuro, 375/768/1440, como administrador y como cliente: pestaña en
   el menú lateral, solo su sección visible, tabla y «Resumen por asesor» (En 0 %, Mejor, Peor) para
   el administrador, sin tabla ni observaciones para el cliente, 0 textos cortados, 0 errores.
+
+## Fase 337 — Calidad: fecha del monitoreo elegida por quien califica (v1.173.0, 2026-11-11)
+
+Pedido urgente: los que hacen calidad necesitan cambiar la fecha del monitoreo.
+
+- **Antes**: «Calificar» ponía la fecha de hoy y el campo estaba bloqueado salvo para el
+  administrador; el servidor ignoraba la fecha si no era administrador (Fase 95). Editar un
+  monitoreo cambiaba la fecha solo como administrador y siempre recalculaba la nota.
+- **Ahora**: `POST /monitoreos` respeta la fecha que elige quien califica; `PUT /monitoreos/:id`
+  deja corregirla a quien puede editar; ruta nueva `PUT /monitoreos/:id/fecha` que cambia SOLO
+  `fecha`, `mes` y `updatedAt` (sin recalcular) para quien lo calificó (CALIDAD o SUPERVISOR con acceso
+  a calificar la campaña), Reportes y el administrador; nunca el asesor ni el cliente. Historial
+  `MONITOREO_FECHA` con fecha anterior y nueva. Validación `errorFechaMonitoreo`: AAAA-MM-DD real (nunca
+  un texto como «Invalid Date»), no futura (hoy en Colombia) y no anterior a 2020.
+- **Pantalla**: «Fecha del monitoreo» editable en los dos formularios (hoy por defecto, `max` = hoy);
+  botón «Cambiar fecha» en Monitoreos con un diálogo propio; al guardar se recarga el módulo y el
+  monitoreo pasa a su mes (Monitoreos, Resumen, Detalle, Reportes, metas). Los cachés del servidor se
+  invalidan solos (`datos_version`); el dashboard lo ve al abrirse o al cambiar de pestaña.
+- **Riesgos avisados**: mover un monitoreo a un mes anterior cambia el cumplimiento de metas de ese
+  mes (aunque ya se haya revisado) y los reportes exportados antes no coinciden; un monitoreo de carga
+  masiva con la fecha cambiada se vuelve a crear si se sube otra vez el mismo Excel (la carga
+  deduplica por asesor, fecha e ID de llamada).
+- Pruebas `fase337` (6, por rol) y `calidad`, `fase95` ajustadas a la regla nueva. Local (Brave, copia de
+  la base demo, datos sintéticos) como CALIDAD, claro y oscuro, 375/768/1440.

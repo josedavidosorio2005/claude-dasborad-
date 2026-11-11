@@ -1086,8 +1086,8 @@
             <select id="cf-asesor"></select>
             <small id="cf-asesor-hint" style="color:var(--c-text-muted);font-size:0.75rem;display:none">No hay asesores registrados para esta campaña. Cree el usuario en Admin &gt; Usuarios (rol ASESOR) primero.</small>
           </div>
-          <div class="ig"><label for="cf-fecha">Fecha</label><input type="date" id="cf-fecha" disabled>
-            <small id="cf-fecha-hint" style="color:var(--c-text-muted);font-size:0.75rem">Se registra automáticamente con la fecha de hoy.</small>
+          <div class="ig"><label for="cf-fecha">Fecha del monitoreo</label><input type="date" id="cf-fecha" min="2020-01-01">
+            <small id="cf-fecha-hint" style="color:var(--c-text-muted);font-size:0.75rem">Hoy por defecto; puedes elegir una fecha pasada (no futura).</small>
           </div>
         </div>
         <div class="form-row">

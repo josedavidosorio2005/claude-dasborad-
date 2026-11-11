@@ -46,7 +46,8 @@ async function asesorUser(adminToken, campana, nombre, sufijo) {
   return { token, id: create.body.id, user };
 }
 
-test('POST /api/monitoreos: la fecha que manda el navegador se ignora, queda hoy (Colombia)', async () => {
+// Fase 337 (pedido urgente): la regla cambio -- quien califica elige la fecha (pasada si, futura no).
+test('POST /api/monitoreos: la fecha que manda quien califica se respeta (Fase 337); sin fecha, hoy en Colombia', async () => {
   const admin = await tokenFor('admin', MASTER_PASSWORD);
   const { token } = await calidadUser(admin, 'ORLANT', 'fecha1');
   const otraFecha = MES === HOY.slice(0, 7) ? `${MES}-01` : `${MES}-15`;
@@ -55,7 +56,7 @@ test('POST /api/monitoreos: la fecha que manda el navegador se ignora, queda hoy
     .set(auth(token))
     .send({ campana: 'ORLANT', asesor: 'Alguien', fecha: otraFecha, answers: RESP_TODO_SI });
   assert.equal(res.status, 201, JSON.stringify(res.body));
-  assert.equal(res.body.fecha, HOY, 'debe quedar hoy en Colombia, ignorando lo que mando el navegador');
+  assert.equal(res.body.fecha, otraFecha > HOY ? HOY : otraFecha, 'la fecha elegida');
 });
 
 test('POST /api/monitoreos: un administrador completo (rol ADMIN) SI puede fijar otra fecha (correccion)', async () => {
@@ -107,7 +108,7 @@ test('PUT /api/monitoreos/:id: el evaluador original NUNCA cambia al editar, ni 
   assert.equal(edit.body.evaluadorUserId, originalEvaluadorUserId);
 });
 
-test('PUT /api/monitoreos/:id: la fecha solo cambia si edita un administrador completo', async () => {
+test('PUT /api/monitoreos/:id: quien puede editar (Reportes, admin) puede corregir la fecha (Fase 337)', async () => {
   const admin = await tokenFor('admin', MASTER_PASSWORD);
   const reportes = 'rep95_' + Math.random().toString(36).slice(2, 7);
   const createRep = await request(app)
@@ -130,13 +131,13 @@ test('PUT /api/monitoreos/:id: la fecha solo cambia si edita un administrador co
     .send({ campana: 'ORLANT', asesor: 'Alguien', fecha: HOY, answers: RESP_TODO_SI });
   assert.equal(create.status, 201);
 
-  // REPORTES (no admin) intenta cambiar la fecha: se ignora, queda igual.
+  // Fase 337: REPORTES (puede editar) ahora SI cambia la fecha.
   const editReportes = await request(app)
     .put('/api/monitoreos/' + create.body.id)
     .set(auth(reportesToken))
     .send({ fecha: '2020-01-01' });
   assert.equal(editReportes.status, 200, JSON.stringify(editReportes.body));
-  assert.equal(editReportes.body.fecha, HOY, 'REPORTES no puede cambiar la fecha');
+  assert.equal(editReportes.body.fecha, '2020-01-01', 'REPORTES puede corregir la fecha');
 
   // Un administrador completo si puede.
   const editAdmin = await request(app)
