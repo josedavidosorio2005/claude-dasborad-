@@ -5076,6 +5076,32 @@ runOnceMigration('fase331_encuestas_hora_v1', () => {
   if (!cols.includes('hora')) db.exec("ALTER TABLE encuestas ADD COLUMN hora TEXT NOT NULL DEFAULT ''");
 });
 
+// Fase 332 (reporte del supervisor, 11/11): en ORLANT › Calidad salian a la vez el
+// bloque de antes (indicadores, torta «Distribucion de clasificacion» y barras
+// «Promedio de calidad por asesor») y «Resultado de los monitoreos». Los dos leen
+// los MISMOS monitoreos de la plataforma. Queda solo el bloque nuevo: los 3 paneles
+// de antes se marcan `oculto: true` (no se borran; su codigo y los datos siguen; se
+// vuelven a ver quitando la marca). Solo si la pestaña ya tiene el panel de
+// monitoreos. Solo ORLANT y solo su pestaña Calidad. Idempotente.
+function orlantCalidadSoloNueva() {
+  const row = db.prepare('SELECT layout FROM dashboards_config WHERE cliente = ?').get('ORLANT');
+  if (!row) return;
+  let layout;
+  try { layout = JSON.parse(row.layout); } catch (e) { return; }
+  const tab = layout && (layout.tabs || []).find((t) => t && t.key === 'calidad');
+  if (!tab || !Array.isArray(tab.panels) || !tab.panels.some((p) => p && p.tipo === 'calidad_monitoreos_panel')) {
+    if (!config.isTest) console.log('[db] Migracion fase332_orlant_calidad_solo_nueva_v1: ORLANT sin panel de monitoreos en Calidad -- se deja intacta.');
+    return;
+  }
+  const OCULTAR = ['calidad_kpis', 'calidad_pie', 'calidad_bar_asesores'];
+  let cambios = 0;
+  tab.panels.forEach((p) => { if (p && OCULTAR.includes(p.tipo) && p.oculto !== true) { p.oculto = true; cambios++; } });
+  if (!cambios) return;
+  db.prepare('UPDATE dashboards_config SET layout = ?, updatedAt = ? WHERE cliente = ?').run(JSON.stringify(layout), new Date().toISOString(), 'ORLANT');
+  if (!config.isTest) console.log('[db] Migracion fase332_orlant_calidad_solo_nueva_v1 aplicada.');
+}
+runOnceMigration('fase332_orlant_calidad_solo_nueva_v1', orlantCalidadSoloNueva);
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {
@@ -5169,3 +5195,4 @@ module.exports.asegurarDatosVersion = asegurarDatosVersion;
 module.exports.TABLAS_SIN_VERSION_DATOS = TABLAS_SIN_VERSION_DATOS;
 // Fase 155: idem (prueba que la migracion es idempotente).
 module.exports.recalcularPctAtencionAbandono = recalcularPctAtencionAbandono;
+module.exports.orlantCalidadSoloNueva = orlantCalidadSoloNueva; // Fase 332: prueba de idempotencia

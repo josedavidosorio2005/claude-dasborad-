@@ -4,6 +4,24 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.169.0 — Noviembre 2026
+
+**Fase 332: Calidad de ORLANT muestra solo «Resultado de los monitoreos».**
+
+- En el dashboard de ORLANT, pestaña Calidad, ya no sale arriba el bloque de antes (tarjetas
+  «Monitoreos realizados», «Puntaje promedio», «Clasificación general», la dona y las barras por
+  asesor). Queda solo «Resultado de los monitoreos», que lee los mismos monitoreos. No se borró
+  nada: el bloque de antes quedó oculto y se puede volver a mostrar.
+- Lo que solo tenía el bloque de antes pasó al nuevo: el promedio del equipo con cuántos asesores
+  están por encima (▲) y por debajo (▼), y el texto de la clasificación junto al promedio general.
+- Los textos ya no se cortan: la clasificación de cada asesor se ve completa, los nombres largos
+  pasan a dos líneas, el filtro «Mes» muestra todos los meses elegidos y en el celular la tabla por
+  asesor se ve como una tarjeta por asesor.
+- 32 monitoreos de ORLANT tienen guardado «Invalid Date» en vez del nombre del asesor (venía así de
+  la carga del Excel). Ahora se muestran como «Sin nombre (revisar carga)» mientras se corrige ese
+  dato, y la carga masiva ya no deja guardar un nombre así: avisa qué fila revisar.
+- Las cifras no cambian: con septiembre y octubre elegidos, 153 monitoreos y 95,52 % de promedio.
+
 ## v1.168.0 — Noviembre 2026
 
 **Fase 331 (parte 4): botón «Monitoreo» en la Encuesta del dashboard de Mobilize.**

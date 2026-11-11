@@ -190,8 +190,26 @@ function ceMesesDetalle(monitoreos) {
   return Object.keys(o).sort().reverse();
 }
 
+// Fase 332: nombre de asesor para mostrar. Un nombre que quedo guardado como "Invalid Date"
+// (celda de nombre leida como fecha en una carga masiva vieja) no es un nombre: se muestra
+// como "Sin nombre (revisar carga)" hasta que se corrija el dato. El resto, como siempre.
+var CE_SIN_NOMBRE = 'Sin nombre (revisar carga)';
+function ceNombreInvalido(n) { return /^\s*invalid date\s*$/i.test(String(n == null ? '' : n)); }
+function ceNombreAsesor(n, formato) {
+  if (ceNombreInvalido(n)) return CE_SIN_NOMBRE;
+  return typeof formato === 'function' ? formato(n) : n;
+}
+// Fase 332: promedio del equipo (el de las tarjetas: todos los monitoreos del periodo) y
+// cada asesor por encima (▲, igual o mas) o por debajo (▼) -- lo que mostraba el bloque de
+// antes de ORLANT («Promedio de calidad por asesor»), mismo criterio (calDashPuntajeVsEquipo).
+function ceVsEquipo(porAsesor, promedioEquipo) {
+  if (promedioEquipo === null || promedioEquipo === undefined || !(porAsesor || []).length) return { equipo: null, encima: 0, debajo: 0 };
+  var encima = porAsesor.filter(function (a) { return a.avg >= promedioEquipo; }).length;
+  return { equipo: promedioEquipo, encima: encima, debajo: porAsesor.length - encima };
+}
+
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { ceClase: ceClase, cePct: cePct, ceMesLabel: ceMesLabel, ceMesDesc: ceMesDesc, ceModelo: ceModelo, ceFallos: ceFallos, ceKey: ceKey,
+  module.exports = { CE_SIN_NOMBRE: CE_SIN_NOMBRE, ceNombreInvalido: ceNombreInvalido, ceNombreAsesor: ceNombreAsesor, ceVsEquipo: ceVsEquipo, ceClase: ceClase, cePct: cePct, ceMesLabel: ceMesLabel, ceMesDesc: ceMesDesc, ceModelo: ceModelo, ceFallos: ceFallos, ceKey: ceKey,
     ceMesesConDatos: ceMesesConDatos, ceMesesEfectivos: ceMesesEfectivos, ceMesFiltroDesc: ceMesFiltroDesc, ceMesPorDefecto: ceMesPorDefecto, ceAsesoresDe: ceAsesoresDe, ceResultado: ceResultado,
     ceResumenAsesores: ceResumenAsesores, ceDetalleMes: ceDetalleMes, ceMesesDetalle: ceMesesDetalle };
 }

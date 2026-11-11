@@ -42,11 +42,11 @@ before(async () => {
   assert.equal(r.status, 201, JSON.stringify(r.body));
 });
 
-test('ORLANT: Calidad conserva sus 3 paneles y suma «Resultado de los monitoreos» al final; el resto de ORLANT igual a su foto', () => {
+test('ORLANT: Calidad conserva sus 3 paneles (ocultos desde la Fase 332) y suma «Resultado de los monitoreos» al final; el resto de ORLANT igual a su foto', () => {
   assert.deepEqual(calidadDe('ORLANT').panels, [
-    { tipo: 'calidad_kpis', campana: 'ORLANT' },
-    { tipo: 'calidad_pie', campana: 'ORLANT', titulo: 'Distribución de clasificación' },
-    { tipo: 'calidad_bar_asesores', campana: 'ORLANT', titulo: 'Promedio de calidad por asesor' },
+    { tipo: 'calidad_kpis', campana: 'ORLANT', oculto: true },
+    { tipo: 'calidad_pie', campana: 'ORLANT', titulo: 'Distribución de clasificación', oculto: true },
+    { tipo: 'calidad_bar_asesores', campana: 'ORLANT', titulo: 'Promedio de calidad por asesor', oculto: true },
     { tipo: 'calidad_monitoreos_panel', campana: 'ORLANT' },
   ]);
   assert.ok(!calidadDe('ORLANT').oculta);

@@ -20570,3 +20570,36 @@ escuchan y califican desde el Módulo de Calidad. Detalle y plan en
   `docs/pendientes.md`. No se guardó ningún monitoreo de prueba en producción.
 - **Pendiente del supervisor**: ¿los monitoreos de encuesta entran al promedio de Calidad y de cada
   asesor? Hoy sí entran (nada filtra por origen).
+
+## Fase 332 — ORLANT › Calidad solo con «Resultado de los monitoreos» (v1.169.0, 2026-11-11)
+
+Reporte del supervisor: en el dashboard de ORLANT, pestaña Calidad, salían a la vez el bloque de
+antes y el nuevo; además «Invalid Date» como nombre de asesor, textos cortados y un hueco.
+
+- **Diagnóstico (producción, solo lectura, sesión de administrador)**: la pestaña tenía 4 paneles:
+  `calidad_kpis`, `calidad_pie`, `calidad_bar_asesores` (la Calidad «clásica», Fase 130/213) y
+  `calidad_monitoreos_panel` (Fase 307, al final). **Los dos bloques leen los mismos monitoreos de la
+  plataforma** (`CAL_DB`, `GET /monitoreos`), no una base subida a mano: 153 monitoreos (sep 95 /
+  94,79 %, oct 58 / 96,72 %), promedio 95,52. La configuración es una sola por cliente (supervisor y
+  cliente ven los mismos bloques; el cliente, sin evaluador ni observaciones); `/dashboards` y
+  `/monitoreos` van con `no-store`: no era caché. Mobilize, Aurora y HLM ya tenían solo el bloque
+  nuevo (Fase 269) y ningún «Invalid Date»: no se tocaron sus configuraciones.
+- **«Invalid Date»**: 32 de los 153 monitoreos de ORLANT tienen guardado ese texto como asesor
+  (16 de septiembre, carga del 07/10; 16 de octubre, carga del 29/10), sin usuario vinculado. Es el
+  texto de una fecha inválida: la carga masiva lee el Excel con `cellDates` y una celda de nombre
+  que llega como fecha se guardaba con `String()`. El nombre real **no está en la base**; el Excel de
+  octubre que hay en el equipo lee bien los 58 nombres (Node y Brave), así que el archivo que se
+  subió ese día era otro. Corregir los 32 es una escritura en producción: queda en
+  `docs/pendientes.md` con las opciones.
+- **Cambio**: los 3 paneles de antes quedan `oculto: true` (migración idempotente
+  `fase332_orlant_calidad_solo_nueva_v1` y la plantilla `PERFILES_ACTUALES.ORLANT`); el tablero no
+  dibuja ni exporta un panel oculto (`gdPanelOculto`). Nada se borra. En el bloque nuevo: promedio
+  del equipo con ▲/▼ por asesor y la clasificación en texto junto al promedio (lo único que el de
+  antes tenía y el nuevo no); «Invalid Date» se muestra «Sin nombre (revisar carga)»; la tabla por
+  asesor y el filtro Mes sin textos cortados (en el celular, una tarjeta por asesor). La carga masiva
+  omite con aviso una fila cuyo nombre llega como fecha. Estos ajustes del bloque nuevo también se
+  ven en Mobilize, Aurora y HLM (es el mismo componente).
+- **Verificación**: pruebas `fase332` (7) y las de foto/migraciones actualizadas a la regla nueva;
+  suite completa en verde. Local (Playwright + Brave, copia de la base demo, monitoreos sintéticos
+  con nombres largos y uno «Invalid Date»), claro y oscuro, 375/768/1440: solo el bloque nuevo, 0
+  textos cortados, 0 tarjetas vacías, sin scroll horizontal, 0 errores de consola.
