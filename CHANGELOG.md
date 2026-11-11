@@ -4,6 +4,17 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.175.0 — Noviembre 2026
+
+**Fase 342: Calidad — la plantilla principal de la campaña queda habilitada sola.**
+
+- Quien supervisa o hace calidad en una campaña ya puede calificar con la plantilla principal de esa
+  campaña, aunque tenga otras plantillas marcadas en su usuario. Así no vuelve a pasar que un supervisor
+  no pueda calificar en SURA.
+- Las plantillas marcadas a mano siguen funcionando igual. Una plantilla que no es la principal se sigue
+  usando solo si está marcada.
+- No cambia qué monitoreos ve cada persona.
+
 ## v1.174.3 — Noviembre 2026
 
 **Fase 341: el botón «Ver datos» siempre en el mismo lugar.**
