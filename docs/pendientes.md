@@ -215,11 +215,11 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 
 ## 2. Esperando una respuesta de Edwin
 
-- **Mobilize, Calidad de encuestas: ¿los monitoreos de encuesta cuentan en el promedio?** (Fase 331,
-  11/11) — pregunta para el supervisor. Hoy sí: entran al promedio de Calidad de Mobilize, al de cada
-  asesor y a «Mis resultados», como cualquier monitoreo. Quedan marcados «Encuesta» y se pueden
-  filtrar en Calidad › Monitoreos. Si deben ir aparte, es un cambio de cálculo que se hace solo con su
-  respuesta.
+- ~~**Mobilize, Calidad de encuestas: ¿los monitoreos de encuesta cuentan en el promedio?**~~ —
+  **RESUELTO** (reunión con Edwin, 11/11): sí cuentan como monitoreo normal de Calidad, para no hacer
+  doble trabajo. Verificado (Fase 338, local con datos sintéticos): salen con su nota en Monitoreos,
+  Resumen por asesor, Detalle por mes, Reportes, metas, la pestaña Calidad del dashboard y el botón
+  «Monitoreo» de la Encuesta. Sin cambios de código.
 
 - **Aurora, Agendas: la base que pasó Edwin no era la definitiva** (anotado 07/11) —
   Prioridad ALTA. Las agendas de Aurora salen de **3 bases**, no de una. Se corrigen el

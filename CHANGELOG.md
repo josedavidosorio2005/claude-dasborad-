@@ -4,6 +4,15 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.174.0 — Noviembre 2026
+
+**Fase 338: Calidad del dashboard — «Llamadas con fallas» más corta.**
+
+- En la pestaña Calidad del dashboard (ORLANT, Mobilize, Aurora, HLM y Televentas SURA), la tabla
+  «Llamadas con fallas» muestra las 10 más recientes. El título sigue diciendo cuántas hay en total
+  (por ejemplo «Llamadas con fallas (32)»).
+- «Ver más» despliega todas y «Ver menos» las vuelve a recoger. La tabla por asesor no cambia.
+
 ## v1.173.1 — Noviembre 2026
 
 **Fase 336: Calidad de encuestas — el ID de la llamada sin el apóstrofo.**
