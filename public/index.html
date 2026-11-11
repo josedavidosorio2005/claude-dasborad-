@@ -1077,52 +1077,8 @@
       <!-- Fase 331: datos de la llamada de Calidad de encuestas que se esta calificando -->
       <div class="cen-banner" id="cen-banner" role="status" hidden></div>
       <!-- Fase 254: formulario "Calificar" de las plantillas nuevas (como el HTML de Edwin) -->
-      <div id="cf2" hidden></div>
-      <div id="cf-viejo">
-      <div class="aurora-card">
-        <div class="aurora-card-title" id="cf-form-title">Datos generales del monitoreo</div>
-        <div class="form-row">
-          <div class="ig"><label for="cf-asesor">Nombre del Asesor</label>
-            <select id="cf-asesor"></select>
-            <small id="cf-asesor-hint" style="color:var(--c-text-muted);font-size:0.75rem;display:none">No hay asesores registrados para esta campaña. Cree el usuario en Admin &gt; Usuarios (rol ASESOR) primero.</small>
-          </div>
-          <div class="ig"><label for="cf-fecha">Fecha del monitoreo</label><input type="date" id="cf-fecha" min="2020-01-01">
-            <small id="cf-fecha-hint" style="color:var(--c-text-muted);font-size:0.75rem">Hoy por defecto; puedes elegir una fecha pasada (no futura).</small>
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="ig"><label for="cf-idllamada">ID / Llamada - Wpp</label><input type="text" id="cf-idllamada" placeholder="Ej: ID-98745"></div>
-          <div class="ig"><label for="cf-telefono"># Teléfono</label><input type="text" id="cf-telefono" placeholder="Ej: 3001234567"></div>
-        </div>
-        <div class="form-row">
-          <div class="ig"><label for="cf-codificacion">Codificación</label>
-            <input type="text" id="cf-codificacion" placeholder="Ej: POS">
-            <select id="cf-codificacion-select" aria-label="Codificación" style="display:none"></select>
-          </div>
-          <div class="ig"><label for="cf-evaluador">Evaluador</label><input type="text" id="cf-evaluador" placeholder="Nombre del evaluador" disabled>
-            <small style="color:var(--c-text-muted);font-size:0.75rem">Es quien inicio sesión; no se puede cambiar.</small>
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="ig"><label>Canal Auditado</label>
-            <div class="canal-toggle">
-              <button type="button" class="canal-btn active" id="cf-canal-btn-LLAMADA" onclick="setCanalAuditado('LLAMADA')">&#128222; Llamada</button>
-              <button type="button" class="canal-btn" id="cf-canal-btn-WPP" onclick="setCanalAuditado('WPP')">&#128172; WhatsApp / Chat</button>
-            </div>
-            <input type="hidden" id="cf-canal" value="LLAMADA">
-          </div>
-        </div>
-      </div>
-      <div id="cf-items-wrap"></div>
-      <div class="qi-preview" id="cf-preview"></div>
-      <div class="aurora-card">
-        <div class="ig"><label for="cf-observaciones">Observaciones generales</label><input type="text" id="cf-observaciones" placeholder="Opcional"></div>
-        <div class="modal-btns" style="margin-top:10px">
-          <button class="btn-cancel" onclick="resetCalForm()">Limpiar</button>
-          <button class="btn-primary" onclick="submitMonitoreo()">Guardar Monitoreo</button>
-        </div>
-      </div>
-      </div>
+      <div id="cf2"></div>
+      <!-- Fase 340: el formulario viejo (cf-viejo) se retiro: un solo formulario, #cf2 (calidad-calificar.js). -->
     </div>
 
     <div id="cpanel-carga" class="atab-panel">

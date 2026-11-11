@@ -527,6 +527,10 @@ test('Fase 151: GET /monitoreos -- telefono solo para CALIDAD/SUPERVISOR/REPORTE
   const creado = await request(app).post('/api/monitoreos').set(auth('CALIDAD'))
     .send({ ...monitoreoBody(PROPIA), telefono: '3000000151' });
   assert.equal(creado.status, 201);
+  // Fase 340 (regla «sin telefono»): un monitoreo nuevo ya no guarda el telefono; lo que se prueba aqui es
+  // quien VE el de un monitoreo viejo que si lo tiene, asi que se le pone directo en la base.
+  assert.equal(db.prepare('SELECT telefono FROM monitoreos WHERE id = ?').get(creado.body.id).telefono, null, 'POST ignora el telefono');
+  db.prepare('UPDATE monitoreos SET telefono = ? WHERE id = ?').run('3000000151', creado.body.id);
   const VEN = ['ADMIN', 'ADMIN_MASTER', 'CALIDAD', 'SUPERVISOR', 'REPORTES'];
   let conAcceso = 0;
   for (const rol of [...TODOS_LOS_ROLES, 'ADMIN_MASTER']) {

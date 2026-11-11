@@ -360,58 +360,11 @@ async function onCalCampanaChange(){
   if(typeof cenActualizarTab==='function') cenActualizarTab(); // Fase 331
 }
 
-// Fase 95 (tema B): si la campana tiene al menos una codificacion activa
-// en el catalogo, el campo se muestra como desplegable (solo esos
-// valores); si no, sigue siendo texto libre, igual que hasta ahora.
-// `valorActual` precarga el valor (usado al editar un monitoreo).
-function renderCalCodifCampoForm(valorActual){
-  var inputEl = document.getElementById('cf-codificacion');
-  var selEl = document.getElementById('cf-codificacion-select');
-  if(!inputEl || !selEl) return;
-  var activas = calCodificacionesActivas(_ccampana);
-  if(activas.length > 0){
-    selEl.innerHTML = '<option value="">— Seleccione —</option>' +
-      activas.map(function(v){ return '<option value="'+esc(v)+'">'+esc(v)+'</option>'; }).join('');
-    selEl.value = valorActual || '';
-    selEl.style.display = '';
-    inputEl.style.display = 'none';
-  } else {
-    selEl.style.display = 'none';
-    inputEl.style.display = '';
-    inputEl.value = valorActual || '';
-  }
-}
-function calLeerCodificacionForm(){
-  var selEl = document.getElementById('cf-codificacion-select');
-  if(selEl && selEl.style.display !== 'none') return selEl.value.trim();
-  return document.getElementById('cf-codificacion').value.trim();
-}
-
-// Lista desplegable de asesores: solo usuarios con rol ASESOR, activos, y asignados a la campana actual.
-function populateCalAsesorSelect(){
-  var sel = document.getElementById('cf-asesor');
-  var hint = document.getElementById('cf-asesor-hint');
-  if(!sel) return;
-  var asesores = users.filter(function(u){
-    return u.rol==='ASESOR' && u.asesorCampana===_ccampana && u.active;
-  }).sort(function(a,b){ return a.nombre.localeCompare(b.nombre); });
-  if(asesores.length===0){
-    sel.innerHTML = '<option value="">—</option>';
-    sel.disabled = true;
-    if(hint) hint.style.display = 'block';
-  } else {
-    sel.disabled = false;
-    if(hint) hint.style.display = 'none';
-    sel.innerHTML = '<option value="">Seleccione un asesor...</option>' +
-      // Fase 88: value SIEMPRE el nombre crudo (es lo que filtra/agrupa
-      // contra CAL_DB), solo el texto visible pasa por textoFormatoNombre
-      // -- mismo patron que agendas.js/trafico.js. Fase 95 (tema A):
-      // data-user-id lleva el id real del usuario ASESOR, para que
-      // submitMonitoreo() lo mande como asesorUserId (identifica al asesor
-      // sin depender solo del nombre en /monitoreos/mios).
-      asesores.map(function(u){ return '<option value="'+esc(u.nombre)+'" data-user-id="'+u.id+'">'+esc(textoFormatoNombre(u.nombre))+'</option>'; }).join('');
-  }
-}
+// Fase 340: el formulario viejo de Calificar se retiro (un solo formulario: calidad-calificar.js).
+// Estas dos quedan como llamadas sin efecto para quien todavia las invoca: el formulario comun arma
+// su propia lista de asesores y su campo de codificacion (con el catalogo de la campaña).
+function renderCalCodifCampoForm(){ /* Fase 340: lo hace el formulario comun al dibujarse */ }
+function populateCalAsesorSelect(){ /* Fase 340: idem */ }
 
 function switchCalTab(t){
   if((t==='nuevo' || t==='carga') && !calCanEvaluate()) t='resumen';
@@ -436,190 +389,28 @@ function switchCalTab(t){
   if(typeof _cenPintarBanner==='function') _cenPintarBanner(); // Fase 331: datos de la llamada abierta
 }
 
-function renderCalItemsForm(){
-  if(typeof cc2Sync==='function' && cc2Sync()) return; // Fase 254: plantilla nueva -> formulario Calificar
-  var items = calItems(_ccampana);
-  var cats = [];
-  items.forEach(function(it){ if(cats.indexOf(it.cat)===-1) cats.push(it.cat); });
-  var html='';
-  cats.forEach(function(cat){
-    html += '<div class="qi-cat-header">'+esc(cat)+'</div>';
-    items.filter(function(it){return it.cat===cat;}).forEach(function(it){
-      html += '<div class="qi-row">'+
-        '<div class="qi-label">'+(it.critico?'<span class="qi-crit">&#9888;</span>':'')+esc(it.n)+'. '+esc(it.label)+'<span class="qi-weight">('+esc(it.weight)+'%)</span></div>'+
-        '<select class="qi-select" id="cf-item-'+esc(it.n)+'" aria-label="'+esc(it.n)+'. '+esc(it.label)+'" onchange="renderCalPreview()">'+
-          '<option value="">—</option><option value="SI">SI</option><option value="NO">NO</option><option value="N/A">N/A</option>'+
-        '</select></div>';
-    });
-  });
-  document.getElementById('cf-items-wrap').innerHTML = calPlantillaSelectorHtml(_ccampana, !!_editingMonitoreoId) + html; // Fase 237
-  renderCalPreview();
-}
+// Fase 340: un solo formulario. Siempre el comun (calidad-calificar.js: cc2Sync); sin plantilla
+// habilitada para este usuario, un aviso (nunca el formulario viejo con la plantilla principal).
+function renderCalItemsForm(){ if(typeof cc2Sync==='function') cc2Sync(); }
+function renderCalPreview(){ /* Fase 340: la calificacion definitiva se calcula en vivo en el formulario comun */ }
 
-function calReadAnswers(){
-  var items = calItems(_ccampana);
-  var answers = {};
-  items.forEach(function(it){
-    var el = document.getElementById('cf-item-'+it.n);
-    answers[it.n] = el ? el.value : '';
-  });
-  return answers;
-}
+var _editingMonitoreoId = null; // Fase 340: ya no se usa (la edicion va por el formulario comun)
 
-function renderCalPreview(){
-  var items = calItems(_ccampana);
-  var answers = calReadAnswers();
-  var r = calComputeScore(items, answers, calEngine(_ccampana));
-  var pv = document.getElementById('cf-preview');
-  if(!pv) return;
-  pv.innerHTML =
-    '<div class="qi-pill"><div class="qv">'+(r.puntaje===null?'—':r.puntaje)+'</div><div class="ql">PUNTAJE OBTENIDO</div></div>'+
-    '<div class="qi-pill"><div class="qv" style="font-size:0.95rem">'+calEstadoHtml(r.clasificacion)+'</div><div class="ql">CLASIFICACION</div></div>'+
-    '<div class="qi-pill"><div class="qv">'+(r.fallos===null?'—':r.fallos)+'</div><div class="ql"># FALLOS CRITICOS</div></div>'+
-    '<div class="qi-pill"><div class="qv" style="font-size:0.85rem">'+calEstadoHtml(r.nivelCritico)+'</div><div class="ql">NIVEL CRITICO</div></div>';
-}
-
-function setCanalAuditado(canal){
-  document.getElementById('cf-canal').value = canal;
-  document.getElementById('cf-canal-btn-LLAMADA').classList.toggle('active', canal==='LLAMADA');
-  document.getElementById('cf-canal-btn-WPP').classList.toggle('active', canal==='WPP');
-}
-
-var _editingMonitoreoId = null;
-
-// Fase 95 (tema A): "hoy" tal como lo ve el navegador -- solo para mostrar
-// el campo bloqueado; el valor real que queda guardado lo decide el
-// servidor con la hora de Colombia (fechaLimitesHoyColombia), nunca esto.
+// Fase 95 (tema A): "hoy" tal como lo ve el navegador (valor por defecto de la fecha del monitoreo;
+// el servidor revisa que no sea futura con la hora de Colombia).
 function calFechaHoyLocal(){
   var d = new Date();
   var pad = function(n){ return n<10 ? '0'+n : n; };
   return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
 }
+function calSetFechaEvaluadorAuto(){ /* Fase 340: el formulario comun pone hoy y el evaluador al dibujarse */ }
 
-// Fase 95 (tema A): fecha = hoy, bloqueada salvo administrador completo
-// (correcciones); evaluador = usuario de la sesion, siempre bloqueado.
-// Se llama tanto al abrir el modulo (openCalidad) como al resetear el
-// formulario (resetCalForm) -- antes solo openCalidad tocaba estos campos
-// (sin bloquear la fecha), asi que un administrador veia el campo
-// deshabilitado hasta el primer guardado.
-function calSetFechaEvaluadorAuto(){
-  var fechaEl = document.getElementById('cf-fecha');
-  fechaEl.value = calFechaHoyLocal();
-  // Fase 337: quien califica elige la fecha (hoy por defecto, nunca futura).
-  fechaEl.disabled = false;
-  fechaEl.max = calFechaHoyLocal();
-  fechaEl.min = '2020-01-01';
-  document.getElementById('cf-evaluador').value = currentUser ? currentUser.nombre : 'Administrador';
-}
-
-function resetCalForm(){
-  calItems(_ccampana).forEach(function(it){ var el=document.getElementById('cf-item-'+it.n); if(el) el.value=''; });
-  populateCalAsesorSelect();
-  document.getElementById('cf-idllamada').value='';
-  document.getElementById('cf-telefono').value='';
-  renderCalCodifCampoForm('');
-  document.getElementById('cf-observaciones').value='';
-  calSetFechaEvaluadorAuto();
-  setCanalAuditado('LLAMADA');
-  // Fase 237: al salir de una edicion, el formulario vuelve a la plantilla principal.
-  if(_editingMonitoreoId){ _editingMonitoreoId = null; _calPlantillaElegida[_ccampana] = null; renderCalItemsForm(); }
-  _editingMonitoreoId = null;
-  var ft = document.getElementById('cf-form-title'); if(ft) ft.textContent = 'Datos generales del monitoreo';
-  renderCalPreview();
-}
-
+// Editar un monitoreo guardado: siempre en el formulario comun (quien puede, lo decide el servidor).
 function editarMonitoreo(id){
-  // Fase 254: los de plantillas nuevas se editan en el formulario Calificar.
-  var m0 = (calMonModulo(_ccampana)).find(function(x){ return x.id===id; });
-  if(m0 && typeof cc2PuedeEditar==='function' && cc2PuedeEditar(m0) && cc2Editar(m0)) return;
-  if(!calCanManageMonitoreos()){ showToast('Solo el rol Reportes o el Administrador pueden editar un monitoreo ya guardado'); return; }
-  var arr = calMonModulo(_ccampana);
-  var m = arr.find(function(x){ return x.id===id; });
+  var m = calMonModulo(_ccampana).find(function(x){ return x.id===id; });
   if(!m){ showToast('Monitoreo no encontrado'); return; }
-  _editingMonitoreoId = id;
-  _calPlantillaElegida[_ccampana] = m.plantillaId || null; // Fase 237: la plantilla con que se hizo
-  _ctab = 'nuevo';
-  document.querySelectorAll('#calidad-modal .atab').forEach(function(el){ el.classList.toggle('atab-active', el.dataset.ctab==='nuevo'); });
-  document.querySelectorAll('#calidad-modal .atab-panel').forEach(function(el){ el.classList.toggle('visible', el.id==='cpanel-nuevo'); });
-  renderCalItemsForm();
-  populateCalAsesorSelect();
-  var ft = document.getElementById('cf-form-title'); if(ft) ft.textContent = 'Editando monitoreo existente (solo Reportes/Admin)';
-  document.getElementById('cf-asesor').value = m.asesor;
-  // Fase 95 (tema A): la fecha solo se puede tocar al editar si el actor es
-  // administrador completo (correccion explicita); el evaluador original
-  // nunca cambia, siempre bloqueado.
-  var fechaEl = document.getElementById('cf-fecha');
-  fechaEl.value = m.fecha || '';
-  fechaEl.disabled = false; // Fase 337: quien puede editar puede corregir la fecha (el servidor lo revisa)
-  fechaEl.max = calFechaHoyLocal();
-  document.getElementById('cf-idllamada').value = m.idLlamada || '';
-  document.getElementById('cf-telefono').value = m.telefono || '';
-  renderCalCodifCampoForm(m.codificacion || '');
-  document.getElementById('cf-evaluador').value = m.evaluador || '';
-  document.getElementById('cf-observaciones').value = m.observaciones || '';
-  setCanalAuditado(m.canal || 'LLAMADA');
-  calItems(_ccampana).forEach(function(it){
-    var el = document.getElementById('cf-item-'+it.n);
-    if(el) el.value = (m.answers && m.answers[it.n]) || '';
-  });
-  renderCalPreview();
-  showToast('Editando monitoreo de '+m.asesor+' ('+(m.fecha||'-')+') — modifique y presione Guardar');
-}
-
-async function submitMonitoreo(){
-  var editing = !!_editingMonitoreoId;
-  if(editing){
-    if(!calCanManageMonitoreos()){ showToast('Solo el rol Reportes o el Administrador pueden editar un monitoreo ya guardado'); return; }
-  } else if(!calCurrentPerm()){ showToast('No tiene permiso para evaluar esta campana'); return; }
-  var asesorSel = document.getElementById('cf-asesor');
-  var asesor = asesorSel.value.trim();
-  if(!asesor){ showToast('Seleccione el asesor a monitorear'); return; }
-  // Fase 95 (tema A): id real del usuario ASESOR elegido (data-user-id del
-  // <option>), para que el servidor pueda identificarlo sin depender solo
-  // del nombre en /monitoreos/mios.
-  var asesorOpt = asesorSel.selectedOptions && asesorSel.selectedOptions[0];
-  var asesorUserId = asesorOpt ? asesorOpt.getAttribute('data-user-id') : null;
-  var answers = calReadAnswers();
-  var preview = calComputeScore(calItems(_ccampana), answers, calEngine(_ccampana));
-  if(preview.puntaje===null){ showToast('Responda al menos un item'); return; }
-  // El servidor solo acepta 'SI'/'NO'/'N/A'/''; enviamos las respuestas tal cual.
-  // fecha/evaluador: el servidor los recalcula/ignora salvo la excepcion de
-  // administrador para la fecha (Fase 95, tema A) -- se siguen mandando
-  // porque el schema los sigue exigiendo/aceptando.
-  var body = {
-    campana: _ccampana,
-    asesor: asesor,
-    asesorUserId: asesorUserId ? Number(asesorUserId) : undefined,
-    fecha: document.getElementById('cf-fecha').value,
-    canal: document.getElementById('cf-canal').value || 'LLAMADA',
-    idLlamada: document.getElementById('cf-idllamada').value.trim(),
-    telefono: document.getElementById('cf-telefono').value.trim(),
-    codificacion: calLeerCodificacionForm(),
-    evaluador: document.getElementById('cf-evaluador').value.trim(),
-    observaciones: document.getElementById('cf-observaciones').value.trim(),
-    answers: answers
-  };
-  // Fase 237: plantilla elegida (si la campaña tiene varias); sin ella, la principal.
-  var pElegida = _calPlantillaDe(_ccampana);
-  if(pElegida && !pElegida.principal && !editing) body.plantillaId = pElegida.id;
-  // Fase 331: monitoreo de una llamada de Calidad de encuestas (solo uno nuevo).
-  var deEncuesta = !editing && typeof cenModoActivo==='function' && cenModoActivo();
-  if(deEncuesta) Object.assign(body, cenCampoGuardar());
-  var btn = document.querySelector('#cpanel-nuevo .btn-primary');
-  try{
-    await withButtonLoading(btn, 'Guardando...', async function(){
-      if(editing){
-        await apiRequest('PUT','/monitoreos/'+_editingMonitoreoId, body);
-      } else {
-        await apiRequest('POST','/monitoreos', body);
-      }
-    });
-  }catch(e){ showToast(e.message, 'error'); return; }
-  showToast(editing ? 'Monitoreo actualizado correctamente' : 'Monitoreo guardado correctamente');
-  resetCalForm();
-  await loadCalData(_ccampana, _cmesFiltro || undefined);
-  if(deEncuesta){ cenDespuesDeGuardar(); return; } // Fase 331: vuelve a la lista
-  switchCalTab('monitoreos');
+  if(!(typeof cc2PuedeEditar==='function' && cc2PuedeEditar(m))){ showToast('Solo quien lo calificó, el rol Reportes o el Administrador pueden editar un monitoreo guardado'); return; }
+  if(!cc2Editar(m)) showToast('No se encontró la plantilla de este monitoreo');
 }
 
 async function calMonitoreosDelete(id){

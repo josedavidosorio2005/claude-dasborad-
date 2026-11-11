@@ -698,7 +698,7 @@ router.post(
         mes: calc.monthKey(fecha),
         canal: b.canal,
         idLlamada: b.idLlamada || connEnc || null,
-        telefono: b.telefono || null,
+        telefono: null, // Fase 340 (regla «sin telefono»): un monitoreo nuevo nunca guarda telefono
         codificacion: codifCheck.valor,
         evaluador,
         evaluadorUserId: req.actor.isMasterAdmin ? null : req.actor.id,
@@ -909,7 +909,7 @@ router.put(
       calc.monthKey(fecha),
       b.canal ?? row.canal,
       (b.idLlamada ?? row.idLlamada) || null,
-      (b.telefono ?? row.telefono) || null,
+      row.telefono || null, // Fase 340: editar no cambia ni agrega telefono (lo ya guardado se deja)
       codificacion,
       JSON.stringify(answers),
       score.puntaje,
