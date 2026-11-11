@@ -31,6 +31,13 @@ function cenFallasTexto(fallas) {
   return (fallas || []).map(function (f) { return cenPreguntaCorta(f.pregunta) + ': ' + cenValorTexto(f.pregunta, f.valor); }).join(' · ');
 }
 
+// Fase 336: ID de la llamada para MOSTRAR y COPIAR. Wolkvox exporta el CONN_ID con un apostrofo
+// al inicio (marca de texto de Excel: '8751.4872...). Se quita solo al verlo y al copiarlo; el dato
+// guardado y el cruce (bloqueo, encuestaConnId) siguen con el valor original.
+function cenIdVisible(id) {
+  return String(id == null ? '' : id).replace(/^[\s'‘’`´]+/, '').trim();
+}
+
 // Nombre normalizado para comparar: sin tildes, sin mayusculas, espacios simples.
 function cenNormNombre(s) {
   var t = String(s == null ? '' : s).trim().toLowerCase().replace(/\s+/g, ' ');
@@ -84,6 +91,6 @@ function cenNotaOrigen(lista) {
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { cenOrigenDe: cenOrigenDe, cenFiltrarPorOrigen: cenFiltrarPorOrigen, cenNotaOrigen: cenNotaOrigen, cenPreguntaCorta: cenPreguntaCorta, cenValorTexto: cenValorTexto, cenFallasTexto: cenFallasTexto,
+  module.exports = { cenIdVisible: cenIdVisible, cenOrigenDe: cenOrigenDe, cenFiltrarPorOrigen: cenFiltrarPorOrigen, cenNotaOrigen: cenNotaOrigen, cenPreguntaCorta: cenPreguntaCorta, cenValorTexto: cenValorTexto, cenFallasTexto: cenFallasTexto,
     cenNormNombre: cenNormNombre, cenBuscarAsesor: cenBuscarAsesor, cenFecha: cenFecha, cenEstadoFila: cenEstadoFila, cenAvisoSinId: cenAvisoSinId };
 }
