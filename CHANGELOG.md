@@ -4,6 +4,20 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.171.0 — Noviembre 2026
+
+**Fase 334: Módulo de Calidad — cada quien ve solo lo que calificó.**
+
+- Las personas de calidad y los supervisores, en el Módulo de Calidad (Monitoreos, Resumen por
+  asesor, Detalle por mes y Reportes), ven solo los monitoreos que ellos mismos calificaron. El
+  administrador sigue viendo todos.
+- La tarjeta «Monitoreos totales» muestra el total de la campaña, hecho por todos, y debajo «Hechos
+  por mí». El promedio y los críticos de las tarjetas son los de sus propios monitoreos.
+- En Reportes cada uno ve solo su propia meta.
+- No cambia: el asesor sigue viendo solo sus resultados; la pestaña Calidad del dashboard sigue con el
+  consolidado completo para el cliente, el supervisor y el administrador; «Calidad de encuestas» de
+  Mobilize sigue siendo una lista compartida para todos los que tienen permiso.
+
 ## v1.170.0 — Noviembre 2026
 
 **Fase 333: Calidad — los monitoreos sin nombre de asesor salen como «Sin asesor».**

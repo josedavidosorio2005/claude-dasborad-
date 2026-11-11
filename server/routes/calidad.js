@@ -554,6 +554,36 @@ router.put(
   })
 );
 
+// Fase 334: "solo lo mio" del Modulo de Calidad (ver GET /monitoreos).
+const FILTRO_PROPIOS = ' AND (evaluadorUserId = @uid OR (evaluadorUserId IS NULL AND lower(trim(evaluador)) = lower(trim(@nombre))))';
+function soloPropios(req) {
+  const a = req.actor;
+  if (!a || isFullAdmin(a) || a.isMasterAdmin) return false;
+  if (a.rol === 'CALIDAD') return true;
+  return a.rol === 'SUPERVISOR' && req.query.vista === 'propios';
+}
+
+// Fase 334: tarjeta «Monitoreos totales» del modulo: el total de la campaña (hechos por todos)
+// y cuantos hizo quien mira. Solo conteos, nunca la lista de otros.
+router.get(
+  '/monitoreos/total',
+  requireActor,
+  validate(schemas.calidadQuery, 'query'),
+  wrap((req, res) => {
+    const { campana, mes } = req.query;
+    if (!campaignAccess(req.actor, campana)) return res.status(403).json({ error: 'Sin acceso a los datos de esta campana' });
+    const p = { campana, mes: mes || null, uid: (req.actor && req.actor.id) || 0, nombre: (req.actor && req.actor.nombre) || '' };
+    const donde = ' WHERE campana = @campana' + (mes ? ' AND mes = @mes' : '');
+    const conPropios = !!req.actor && !req.actor.isMasterAdmin;
+    const porMes = {};
+    db.prepare('SELECT mes, COUNT(*) AS n FROM monitoreos' + donde + ' GROUP BY mes').all(p).forEach((r) => { porMes[r.mes] = { total: r.n, propios: 0 }; });
+    if (conPropios) db.prepare('SELECT mes, COUNT(*) AS n FROM monitoreos' + donde + FILTRO_PROPIOS + ' GROUP BY mes').all(p).forEach((r) => { (porMes[r.mes] = porMes[r.mes] || { total: 0, propios: 0 }).propios = r.n; });
+    const total = Object.values(porMes).reduce((s, x) => s + x.total, 0);
+    const propios = Object.values(porMes).reduce((s, x) => s + x.propios, 0);
+    res.json({ total, propios, porMes });
+  })
+);
+
 router.get(
   '/monitoreos',
   requireActor,
@@ -563,14 +593,16 @@ router.get(
     if (!campaignAccess(req.actor, campana)) {
       return res.status(403).json({ error: 'Sin acceso a los datos de esta campana' });
     }
-    // Fase 329 (regla del supervisor): todo el que tiene acceso a Calidad de la campaña
-    // (admin, supervisor, CALIDAD, Reportes, Gerencia) ve TODOS sus monitoreos, sin
-    // importar quien los califico. Se quita el filtro "solo los mios" del rol CALIDAD
-    // (Fase 254). Editar sigue siendo solo lo propio (puedeEditarMonitoreo). El asesor
-    // usa /monitoreos/mios y el cliente recibe la version sin evaluador ni observaciones.
+    // Fase 334 (pedido de Edwin, reemplaza la regla de la Fase 329): en el Modulo de Calidad
+    // cada quien ve solo lo que califico. El rol CALIDAD, SIEMPRE solo lo suyo; el SUPERVISOR,
+    // solo lo suyo cuando lo pide el modulo (?vista=propios) -- sin eso recibe el consolidado
+    // de la pestaña Calidad del dashboard, que sigue igual. El administrador ve todo. Lo suyo =
+    // su users.id en evaluadorUserId (los viejos sin id, por el nombre del evaluador, Fase 254).
+    // El asesor usa /monitoreos/mios y el cliente recibe la version sin evaluador ni observaciones.
+    const propios = soloPropios(req);
     const rows = db
-      .prepare('SELECT * FROM monitoreos WHERE campana = @campana' + (mes ? ' AND mes = @mes' : '') + ' ORDER BY id DESC')
-      .all({ campana, mes: mes || null });
+      .prepare('SELECT * FROM monitoreos WHERE campana = @campana' + (mes ? ' AND mes = @mes' : '') + (propios ? FILTRO_PROPIOS : '') + ' ORDER BY id DESC')
+      .all({ campana, mes: mes || null, uid: (req.actor && req.actor.id) || 0, nombre: (req.actor && req.actor.nombre) || '' });
     const lista = rows.map((r) => monitoreoPara(req.actor, r));
     // Fase 287: la cuenta de cliente, sin evaluador ni observaciones (y sin nombre de asesor si el cliente los oculta).
     res.json(privacidad.esCuentaCliente(req.actor) ? privacidad.monitoreosParaCliente(lista, privacidad.ocultaAsesores(db, req.actor, campana)) : lista);
@@ -1057,6 +1089,8 @@ router.get(
       mes,
       // Fase 287: la cuenta de cliente no recibe el nombre de los evaluadores.
       lideres: calc.lideresCumplimiento(monitoreos, cronograma, mes)
+        // Fase 334: en el Modulo de Calidad, CALIDAD y SUPERVISOR ven solo su propia meta.
+        .filter((l) => !soloPropios(req) || String(l.liderId) === String(req.actor.id))
         .map((l) => (privacidad.esCuentaCliente(req.actor) ? { ...l, liderNombre: '' } : l)),
     });
   })

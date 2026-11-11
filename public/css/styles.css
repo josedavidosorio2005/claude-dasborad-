@@ -2404,3 +2404,6 @@ div.ca-bar-fila{cursor:default}
 /* Fase 332: el valor de los filtros Mes / Asesor del bloque nuevo no se corta con «…»: pasa a
    otra línea si no cabe (antes «Septiembre 2026 y Octubre 20…»). */
 .cmp-pick-v{white-space:normal;overflow:visible;text-overflow:clip;max-width:none}
+/* Fase 334: «Hechos por mí: N» bajo el total de la campaña (Módulo de Calidad). */
+.aurora-kpi .cal-kpi-mios{margin-top:4px;color:var(--c-text-2)}
+.aurora-kpi .cal-kpi-mios b{color:var(--c-text)}

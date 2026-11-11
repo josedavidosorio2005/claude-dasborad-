@@ -37,20 +37,17 @@ before(async () => {
   for (const m of [mA, mB, mSup, mOtra]) assert.ok(m && m.id, JSON.stringify(m));
 });
 
-test('el evaluador A ve los monitoreos del evaluador B y del supervisor de su campaña (con y sin mes)', async () => {
-  for (const ev of [evA, evB]) {
-    const r = await ids(ev.token, 'MOBILIZE');
-    assert.equal(r.status, 200);
-    for (const m of [mA, mB, mSup]) assert.ok(r.ids.includes(m.id), 've el monitoreo ' + m.id);
-    assert.ok(!r.ids.includes(mOtra.id), 'nunca uno de otra campaña');
-    const conMes = await ids(ev.token, 'MOBILIZE', hoy.slice(0, 7));
-    for (const m of [mA, mB, mSup]) assert.ok(conMes.ids.includes(m.id));
-  }
+// Fase 334 (pedido de Edwin): esta regla de la Fase 329 se reemplazo. El rol CALIDAD vuelve a
+// ver solo lo suyo; el supervisor recibe el consolidado sin ?vista=propios (dashboard) y solo lo
+// suyo con el (Modulo de Calidad). Detalle por rol en fase334-calidad-cada-quien.test.js.
+test('Fase 334: el evaluador A ya no ve los de B ni los del supervisor; el supervisor sigue con el consolidado del dashboard', async () => {
+  const a = await ids(evA.token, 'MOBILIZE');
+  assert.equal(a.status, 200);
+  assert.deepEqual(a.ids, [mA.id]);
+  assert.deepEqual((await ids(evB.token, 'MOBILIZE')).ids, [mB.id]);
   const s = await ids(sup.token, 'MOBILIZE');
-  for (const m of [mA, mB, mSup]) assert.ok(s.ids.includes(m.id), 'el supervisor también');
-  const fila = (await ids(evA.token, 'MOBILIZE')).body.find((m) => m.id === mB.id);
-  assert.equal(fila.evaluador, evB.nombre, 'el equipo de Calidad sí ve quién calificó');
-  assert.equal(fila.observaciones, 'Observación ficticia 329');
+  for (const m of [mA, mB, mSup]) assert.ok(s.ids.includes(m.id), 'el supervisor, sin vista=propios, todo (dashboard)');
+  assert.ok(!s.ids.includes(mOtra.id), 'nunca uno de otra campaña');
 });
 
 test('sin acceso a otra campaña: 403 (no ve los de ORLANT ni los de MOBILIZE quien solo tiene ORLANT)', async () => {

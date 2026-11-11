@@ -7,7 +7,7 @@
 var _ca = { plantillaId: null, detalleTexto: '' };
 
 function _caPlantillas() { return typeof CAL_PLANTILLAS_TODAS !== 'undefined' ? CAL_PLANTILLAS_TODAS : []; }
-function _caMonitoreosMes() { return calFilterByMonth(((CAL_DB[_ccampana] || {}).monitoreos) || [], _cmesFiltro); }
+function _caMonitoreosMes() { return calFilterByMonth(calMonModulo(_ccampana), _cmesFiltro); }
 
 // Plantillas de la campaña que tienen monitoreos en el periodo (o la principal).
 function _caPlantillasConDatos(arr) {
@@ -90,7 +90,7 @@ function caVerAsesor(nombre) { _ca.detalleTexto = nombre || ''; switchCalTab('de
 
 function caRenderDetalle() {
   var host = document.getElementById('ca-detalle'); if (!host) return;
-  var lista = caFiltrar(((CAL_DB[_ccampana] || {}).monitoreos) || [], _cmesFiltro, _ca.detalleTexto);
+  var lista = caFiltrar(calMonModulo(_ccampana), _cmesFiltro, _ca.detalleTexto);
   var k = caKpis(lista);
   var filas = lista.map(function (m) {
     var c = caClase(Number(m.puntaje));
@@ -139,7 +139,7 @@ function caDetalleHtml(m, p) {
     (m.observaciones ? '<p><strong>Observaciones:</strong> ' + esc(m.observaciones) + '</p>' : '');
 }
 function caVerMonitoreo(id) {
-  var m = (((CAL_DB[_ccampana] || {}).monitoreos) || []).find(function (x) { return x.id === id; });
+  var m = (calMonModulo(_ccampana)).find(function (x) { return x.id === id; });
   if (!m) return;
   document.getElementById('ca-ov-detalle-t').textContent = 'Monitoreo de ' + textoFormatoNombre(m.asesor);
   document.getElementById('ca-ov-detalle-b').innerHTML = caDetalleHtml(m, caPlantillaDe(m, _caPlantillas()));
