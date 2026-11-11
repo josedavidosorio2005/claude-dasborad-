@@ -71,10 +71,16 @@ function _textoFormatoPalabra(palabra) {
 // la base, no el resultado de esta funcion (ver los call-sites: el `value`
 // de un <option> es siempre el original, solo el texto visible pasa por
 // aca).
+// Fase 333: "Invalid Date" no es un nombre (una celda de nombre leida como fecha en una carga
+// masiva vieja dejo 32 monitoreos de ORLANT asi). Donde se muestre un nombre, sale "Sin asesor".
+var TEXTO_SIN_ASESOR = 'Sin asesor';
+function textoEsSinAsesor(valor) { return /^\s*invalid date\s*$/i.test(String(valor == null ? '' : valor)); }
+
 function textoFormatoNombre(valor) {
   if (valor === null || valor === undefined) return valor;
   var s = String(valor).trim();
   if (!s) return s;
+  if (textoEsSinAsesor(s)) return TEXTO_SIN_ASESOR;
   s = s.replace(/_/g, ' ').replace(/\s+/g, ' ').trim();
   return s.split(' ').map(_textoFormatoPalabra).join(' ');
 }
@@ -87,5 +93,7 @@ if (typeof module !== 'undefined' && module.exports) {
     TEXTO_SIGLAS: TEXTO_SIGLAS,
     TEXTO_ESPECIALES: TEXTO_ESPECIALES,
     textoFormatoNombre: textoFormatoNombre,
+    TEXTO_SIN_ASESOR: TEXTO_SIN_ASESOR, // Fase 333
+    textoEsSinAsesor: textoEsSinAsesor,
   };
 }

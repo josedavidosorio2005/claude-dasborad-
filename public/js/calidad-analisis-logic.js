@@ -28,12 +28,19 @@ function caAlertaResumen(fallos) {
   return fallos === 1 ? { k: 'warn', t: 'Alerta' } : { k: 'bad', t: 'Crítico frecuente' };
 }
 
+// Fase 333: "Invalid Date" guardado como asesor = "Sin asesor": cuenta en totales y promedios,
+// no como un asesor mas, y va siempre al final de las listas.
+function caSinAsesor(n) { return /^\s*invalid date\s*$/i.test(String(n == null ? '' : n)); }
+function caAlFinalSinAsesor(cmp) {
+  return function (x, y) { var a = caSinAsesor(x.asesor), b = caSinAsesor(y.asesor); return a !== b ? (a ? 1 : -1) : cmp(x, y); };
+}
+
 function caKpis(monitoreos) {
   var arr = monitoreos || [];
   var total = arr.length;
   var prom = total ? caR1(arr.reduce(function (s, m) { return s + (Number(m.puntaje) || 0); }, 0) / total) : null;
   var asesores = {};
-  arr.forEach(function (m) { asesores[String(m.asesor || '').trim().toLowerCase()] = true; });
+  arr.forEach(function (m) { if (!caSinAsesor(m.asesor)) asesores[String(m.asesor || '').trim().toLowerCase()] = true; });
   return {
     total: total,
     promedio: prom,
@@ -58,7 +65,7 @@ function caResumenAsesores(monitoreos) {
     var prom = caR1(a.notas.reduce(function (s, x) { return s + x; }, 0) / a.notas.length);
     return { asesor: a.asesor, monitoreos: a.notas.length, promedio: prom, clase: caClase(prom), fallos: a.fallos, alerta: caAlertaResumen(a.fallos),
       mejor: Math.max.apply(null, a.notas), peor: Math.min.apply(null, a.notas) };
-  }).sort(function (x, y) { return y.promedio - x.promedio || String(x.asesor).localeCompare(String(y.asesor)); });
+  }).sort(caAlFinalSinAsesor(function (x, y) { return y.promedio - x.promedio || String(x.asesor).localeCompare(String(y.asesor)); }));
 }
 
 // Fase 323 (plan C6, variante SURA): metricas de un grupo de monitoreos de una plantilla
@@ -82,7 +89,7 @@ function caResumenDescuento(monitoreos) {
   });
   return orden.map(function (k) { return Object.assign({ asesor: by[k].asesor }, caMetricasDescuento(by[k].lista)); })
     .filter(function (f) { return f.monitoreos > 0; })
-    .sort(function (x, y) { return y.promedio - x.promedio || String(x.asesor).localeCompare(String(y.asesor)); });
+    .sort(caAlFinalSinAsesor(function (x, y) { return y.promedio - x.promedio || String(x.asesor).localeCompare(String(y.asesor)); }));
 }
 
 // Items de la plantilla con cuantos monitoreos los fallaron (NO) y que

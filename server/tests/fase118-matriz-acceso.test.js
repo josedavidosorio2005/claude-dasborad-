@@ -172,6 +172,7 @@ declarar(['GET /monitoreos'], 'scopedRead');
 declarar(['POST /monitoreos'], 'calidadEval');
 declarar(['POST /monitoreos/bulk'], 'calidadEval');
 declarar(['PUT /monitoreos/:id', 'DELETE /monitoreos/:id'], 'calidadManage');
+declarar(['PUT /monitoreos/:id/asesor'], 'admin'); // Fase 333: corregir solo el asesor "Invalid Date" (fase333-sin-asesor.test.js)
 declarar(['GET /calidad/codificaciones'], 'scopedRead');
 declarar(['POST /calidad/codificaciones/bulk', 'PUT /calidad/codificaciones/:id'], 'cargaCampana'); // Fase 299
 declarar(['GET /calidad/plantillas/admin', 'POST /calidad/plantillas/importar', 'PUT /calidad/plantillas/:id/activo', 'PUT /calidad/plantillas/:id/descripciones'], 'admin'); // Fase 253: importador y versiones; Fase 316: descripciones

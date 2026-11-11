@@ -89,7 +89,7 @@ function ceAsesoresDe(monitoreos, meses) {
   (monitoreos || []).forEach(function (m) {
     if (_ceNota(m) !== null && (meses || []).indexOf(_ceMes(m)) !== -1 && m.asesor) o[m.asesor] = true;
   });
-  return Object.keys(o).sort();
+  return Object.keys(o).sort(ceOrdenSinAsesorAlFinal(function (a, b) { return a < b ? -1 : a > b ? 1 : 0; }));
 }
 
 // La vista entera. asesores: null = todos; [] = ninguno; [..] = esos.
@@ -113,10 +113,11 @@ function ceResultado(monitoreos, opts) {
     var a = by[k];
     var avg = a.n.reduce(function (s, x) { return s + x; }, 0) / a.n.length;
     return { name: a.name, cnt: a.n.length, avg: avg, clase: ceClase(avg), zero: a.n.filter(function (x) { return x === 0; }).length, fallos: a.fallos,
-      max: Math.max.apply(null, a.n), min: Math.min.apply(null, a.n) };
+      max: Math.max.apply(null, a.n), min: Math.min.apply(null, a.n), sinAsesor: ceNombreInvalido(a.name) };
   });
-  var porAsesor = ag.slice().sort(function (a, b) { return b.avg - a.avg; });
-  var lineaAsesor = ag.slice().sort(function (a, b) { return String(a.name).localeCompare(String(b.name)); });
+  // Fase 333: "Sin asesor" siempre al final (tabla, linea y listas).
+  var porAsesor = ag.slice().sort(ceOrdenSinAsesorAlFinal(function (a, b) { return b.avg - a.avg; }, 'name'));
+  var lineaAsesor = ag.slice().sort(ceOrdenSinAsesorAlFinal(function (a, b) { return String(a.name).localeCompare(String(b.name)); }, 'name'));
   var avg = rs.length ? rs.reduce(function (s, m) { return s + _ceNota(m); }, 0) / rs.length : null;
   var critico = modelo === 'weighted'
     ? rs.filter(function (m) { return ceFallos(m, items) > 0; }).length
@@ -136,13 +137,14 @@ function ceResultado(monitoreos, opts) {
     var nombres = {};
     fal.forEach(function (m) { var k = String(m.asesor || '').trim(); if (k) nombres[k] = (nombres[k] || 0) + 1; });
     return { it: it, pos: pos, c: fal.length, pct: rs.length ? fal.length / rs.length * 100 : 0,
-      asesores: Object.keys(nombres).sort(function (a, b) { return nombres[b] - nombres[a] || a.localeCompare(b); }).map(function (n) { return { asesor: n, veces: nombres[n] }; }) };
+      asesores: Object.keys(nombres).sort(ceOrdenSinAsesorAlFinal(function (a, b) { return nombres[b] - nombres[a] || a.localeCompare(b); })).map(function (n) { return { asesor: n, veces: nombres[n] }; }) };
   }).sort(function (a, b) { return b.c - a.c || a.pos - b.pos; });
   return {
     modelo: modelo,
     total: rs.length,
     monitoreos: rs,
-    kpis: { total: rs.length, promedio: avg, clase: ceClase(avg), critico: critico, asesores: ag.length,
+    // Fase 333: los monitoreos "Sin asesor" cuentan en el total y el promedio, pero no como un asesor mas.
+    kpis: { total: rs.length, promedio: avg, clase: ceClase(avg), critico: critico, asesores: ag.filter(function (a) { return !a.sinAsesor; }).length,
       criticoLabel: modelo === 'weighted' ? 'Con fallos en ítems críticos' : 'Notas en 0% (crítico)' },
     columnaFinal: modelo === 'weighted' ? 'Fallos críticos' : 'En 0%',
     porAsesor: porAsesor.map(function (a) { return Object.assign({}, a, { final: modelo === 'weighted' ? a.fallos : a.zero }); }),
@@ -164,7 +166,7 @@ function ceResumenAsesores(monitoreos, mes, texto, items) {
     by[k].n.push(_ceNota(m)); by[k].f += ceFallos(m, items);
   });
   return orden.map(function (k) { return by[k]; }).filter(function (a) { return !q || ceKey(a.name).indexOf(q) !== -1; })
-    .sort(function (a, b) { return String(a.name).localeCompare(String(b.name)); })
+    .sort(ceOrdenSinAsesorAlFinal(function (a, b) { return String(a.name).localeCompare(String(b.name)); }, 'name'))
     .map(function (a) {
       var avg = a.n.reduce(function (s, x) { return s + x; }, 0) / a.n.length;
       return { name: a.name, cnt: a.n.length, avg: avg, clase: ceClase(avg), fallos: a.f,
@@ -190,26 +192,37 @@ function ceMesesDetalle(monitoreos) {
   return Object.keys(o).sort().reverse();
 }
 
-// Fase 332: nombre de asesor para mostrar. Un nombre que quedo guardado como "Invalid Date"
+// Fase 332/333: nombre de asesor para mostrar. Un nombre que quedo guardado como "Invalid Date"
 // (celda de nombre leida como fecha en una carga masiva vieja) no es un nombre: se muestra
-// como "Sin nombre (revisar carga)" hasta que se corrija el dato. El resto, como siempre.
-var CE_SIN_NOMBRE = 'Sin nombre (revisar carga)';
+// "Sin asesor" (Fase 333, antes "Sin nombre (revisar carga)"). El resto, como siempre.
+var CE_SIN_NOMBRE = 'Sin asesor';
 function ceNombreInvalido(n) { return /^\s*invalid date\s*$/i.test(String(n == null ? '' : n)); }
 function ceNombreAsesor(n, formato) {
   if (ceNombreInvalido(n)) return CE_SIN_NOMBRE;
   return typeof formato === 'function' ? formato(n) : n;
 }
+// Fase 333: comparador que deja "Sin asesor" siempre al final y, entre los demas, usa `cmp`.
+// `campo`: si los elementos son objetos, la propiedad con el nombre (si no, el elemento es el nombre).
+function ceOrdenSinAsesorAlFinal(cmp, campo) {
+  return function (a, b) {
+    var sa = ceNombreInvalido(campo ? a && a[campo] : a), sb = ceNombreInvalido(campo ? b && b[campo] : b);
+    if (sa !== sb) return sa ? 1 : -1;
+    return cmp(a, b);
+  };
+}
 // Fase 332: promedio del equipo (el de las tarjetas: todos los monitoreos del periodo) y
 // cada asesor por encima (▲, igual o mas) o por debajo (▼) -- lo que mostraba el bloque de
 // antes de ORLANT («Promedio de calidad por asesor»), mismo criterio (calDashPuntajeVsEquipo).
+// Fase 333: "Sin asesor" no cuenta ni por encima ni por debajo (el promedio del equipo si lo incluye).
 function ceVsEquipo(porAsesor, promedioEquipo) {
-  if (promedioEquipo === null || promedioEquipo === undefined || !(porAsesor || []).length) return { equipo: null, encima: 0, debajo: 0 };
-  var encima = porAsesor.filter(function (a) { return a.avg >= promedioEquipo; }).length;
-  return { equipo: promedioEquipo, encima: encima, debajo: porAsesor.length - encima };
+  var conAsesor = (porAsesor || []).filter(function (a) { return !(a.sinAsesor || ceNombreInvalido(a.name)); });
+  if (promedioEquipo === null || promedioEquipo === undefined || !conAsesor.length) return { equipo: null, encima: 0, debajo: 0 };
+  var encima = conAsesor.filter(function (a) { return a.avg >= promedioEquipo; }).length;
+  return { equipo: promedioEquipo, encima: encima, debajo: conAsesor.length - encima };
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { CE_SIN_NOMBRE: CE_SIN_NOMBRE, ceNombreInvalido: ceNombreInvalido, ceNombreAsesor: ceNombreAsesor, ceVsEquipo: ceVsEquipo, ceClase: ceClase, cePct: cePct, ceMesLabel: ceMesLabel, ceMesDesc: ceMesDesc, ceModelo: ceModelo, ceFallos: ceFallos, ceKey: ceKey,
+  module.exports = { CE_SIN_NOMBRE: CE_SIN_NOMBRE, ceNombreInvalido: ceNombreInvalido, ceNombreAsesor: ceNombreAsesor, ceOrdenSinAsesorAlFinal: ceOrdenSinAsesorAlFinal, ceVsEquipo: ceVsEquipo, ceClase: ceClase, cePct: cePct, ceMesLabel: ceMesLabel, ceMesDesc: ceMesDesc, ceModelo: ceModelo, ceFallos: ceFallos, ceKey: ceKey,
     ceMesesConDatos: ceMesesConDatos, ceMesesEfectivos: ceMesesEfectivos, ceMesFiltroDesc: ceMesFiltroDesc, ceMesPorDefecto: ceMesPorDefecto, ceAsesoresDe: ceAsesoresDe, ceResultado: ceResultado,
     ceResumenAsesores: ceResumenAsesores, ceDetalleMes: ceDetalleMes, ceMesesDetalle: ceMesesDetalle };
 }
