@@ -20631,3 +20631,25 @@ Decisión del usuario: se resuelve con lo que hay en su equipo, sin pedir archiv
   375/768/1440): «Sin asesor» última fila, sin flecha; «Asesores evaluados» 21; ▲ 14 / ▼ 7; sin textos
   cortados ni errores. Ningún mes se volvió a subir; las copias temporales (bases y capturas) se
   borraron.
+
+## Fase 334 — Módulo de Calidad: cada quien ve solo lo suyo (v1.171.0, 2026-11-11)
+
+Pedido de Edwin: en el perfil de una persona de calidad salían monitoreos hechos por otra. Regla
+nueva, que **reemplaza la de la Fase 329**.
+
+- **Servidor** (`GET /monitoreos`): ADMIN todo; **CALIDAD siempre solo lo suyo** (su `users.id` en
+  `evaluadorUserId`; los viejos sin id, por el nombre del evaluador, criterio de la Fase 254);
+  **SUPERVISOR solo lo suyo con `?vista=propios`** (lo que pide el Módulo de Calidad) y el consolidado
+  sin él (pestaña Calidad del dashboard, sin cambios). Reportes, Gerencia, cliente y asesor como
+  antes. `GET /metas/cumplimiento` con la misma regla (cada quien su meta). Ruta nueva
+  `GET /monitoreos/total` (solo conteos: total de la campaña y los propios, por mes) para la tarjeta.
+- **Pantalla**: el módulo tiene su propia lista (`monitoreosModulo`, `calMonModulo`), separada del
+  consolidado que usa el dashboard (`CAL_DB[c].monitoreos`), así abrir el módulo nunca cambia lo que
+  ve el supervisor en el dashboard. Tarjeta «Monitoreos totales» = total de la campaña + «Hechos por
+  mí: N»; promedio y críticos sobre los propios.
+- **De la Fase 329 queda**: editar sigue siendo de quien calificó / Reportes / admin; el asesor en
+  «Mis resultados»; el cliente sin evaluador ni observaciones; Reportes y Gerencia ven todo. Se
+  revirtió: que el rol CALIDAD vea los de otros. «Calidad de encuestas» no cambia (cola compartida).
+- Pruebas `fase334` (7) por rol; `fase329`, `fase254` y `fase331` ajustadas. Local (Brave, copia de la
+  base demo, datos sintéticos), claro y oscuro, 375/768/1440, como CALIDAD y como SUPERVISOR: solo
+  lo propio en el módulo, total de la campaña en la tarjeta, consolidado intacto en el dashboard.

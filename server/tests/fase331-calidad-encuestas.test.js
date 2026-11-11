@@ -178,7 +178,8 @@ test('monitoreos de siempre: igual que antes (origen manual, sin encuesta); los 
   assert.equal(m.status, 201, JSON.stringify(m.body));
   assert.equal(m.body.origen, 'manual');
   assert.equal(m.body.encuestaConnId, null);
-  const todos = (await request(app).get('/api/monitoreos?campana=MOBILIZE').set(H(evA.token))).body;
+  // Fase 334: el evaluador ve solo lo suyo; el consolidado se pide como administrador.
+  const todos = (await request(app).get('/api/monitoreos?campana=MOBILIZE').set(H(admin))).body;
   assert.equal(todos.filter((x) => x.origen === 'encuesta').length, 2);
   assert.ok(todos.some((x) => x.origen === 'manual'));
   // La carga masiva no acepta el vinculo (no viene de encuestas).

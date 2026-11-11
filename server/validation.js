@@ -564,6 +564,9 @@ const traficoWppCargaBody = z.object({
 const calidadQuery = z.object({
   campana: campanaSchema,
   mes: mesSchema.optional(),
+  // Fase 334: 'propios' = lo que pide el Modulo de Calidad (el SUPERVISOR ve ahi solo lo que el
+  // califico; el rol CALIDAD siempre solo lo suyo). Sin el, el consolidado del dashboard.
+  vista: z.enum(['propios']).optional(),
 });
 
 // ── Agendas de ORLANT (Fase 78) ──────────────────────────────

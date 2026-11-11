@@ -169,6 +169,7 @@ declarar(['DELETE /users/:id'], 'permiso:eliminarUsuarios');
 declarar(['GET /calidad/plantillas', 'GET /calidad/plantillas/todas'], 'open'); // filtra por campana adentro (lista), no 403 -- Fase 102 PR #225; /todas: Fase 237
 declarar(['GET /monitoreos/mios', 'GET /monitoreos/mios/nuevos', 'PUT /monitoreos/:id/visto'], 'open'); // auto-scoped por actor.id/nombre
 declarar(['GET /monitoreos'], 'scopedRead');
+declarar(['GET /monitoreos/total'], 'scopedRead'); // Fase 334: solo conteos (total de la campaña y los propios)
 declarar(['POST /monitoreos'], 'calidadEval');
 declarar(['POST /monitoreos/bulk'], 'calidadEval');
 declarar(['PUT /monitoreos/:id', 'DELETE /monitoreos/:id'], 'calidadManage');

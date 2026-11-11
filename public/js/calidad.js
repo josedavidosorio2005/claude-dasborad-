@@ -115,6 +115,17 @@ function calCodificacionesActivas(camp){
 // Carga desde el servidor los datos de una campana (monitoreos, cronograma y el
 // cumplimiento del mes indicado). Se llama al abrir el modulo y al cambiar
 // campana o mes. `mes` por defecto: el mes actual.
+// Fase 334: en el Modulo de Calidad, CALIDAD y SUPERVISOR ven solo lo que calificaron (el
+// administrador y los demas roles, todo como siempre). El servidor es el que filtra.
+function calVeSoloPropios(){
+  return !isFullAdmin() && !!currentUser && (currentUser.rol==='CALIDAD' || currentUser.rol==='SUPERVISOR');
+}
+// Lista de monitoreos del MODULO (la propia para CALIDAD/SUPERVISOR; el consolidado para los demas).
+function calMonModulo(camp){
+  var d = CAL_DB[camp] || {};
+  return (d.monitoreosModulo !== null && d.monitoreosModulo !== undefined) ? d.monitoreosModulo : (d.monitoreos || []);
+}
+
 async function loadCalData(camp, mes){
   await calLoadPlantillas();
   // Umbrales de semaforo (color por dato, configurables desde el panel de
@@ -128,6 +139,14 @@ async function loadCalData(camp, mes){
   try{
     d.monitoreos = (await apiRequest('GET','/monitoreos?'+q)) || [];
   }catch(e){ d.monitoreos = d.monitoreos || []; }
+  // Fase 334: el Modulo de Calidad tiene su PROPIA lista (CALIDAD y SUPERVISOR: solo lo que
+  // ellos calificaron, filtrado en el servidor). `d.monitoreos` sigue siendo el consolidado
+  // que usa la pestaña Calidad del dashboard (no cambia).
+  if(calVeSoloPropios()){
+    try{ d.monitoreosModulo = (await apiRequest('GET','/monitoreos?'+q+'&vista=propios')) || []; }
+    catch(e){ d.monitoreosModulo = d.monitoreosModulo || []; }
+  } else d.monitoreosModulo = null;
+  try{ d.totalCampana = await apiRequest('GET','/monitoreos/total?'+q); }catch(e){ d.totalCampana = null; }
   try{
     var metas = (await apiRequest('GET','/metas?'+q)) || [];
     d.cronogramaRows = metas;
@@ -135,7 +154,7 @@ async function loadCalData(camp, mes){
     metas.forEach(function(r){ (d.cronogramaByMes[r.mes] = d.cronogramaByMes[r.mes] || []).push(r); });
   }catch(e){ d.cronogramaRows = d.cronogramaRows || []; }
   try{
-    var cu = await apiRequest('GET','/metas/cumplimiento?'+q+'&mes='+mes);
+    var cu = await apiRequest('GET','/metas/cumplimiento?'+q+'&mes='+mes+(calVeSoloPropios()?'&vista=propios':'')); // Fase 334
     d.cumplimiento[mes] = (cu && cu.lideres) || [];
   }catch(e){ d.cumplimiento[mes] = d.cumplimiento[mes] || []; }
   try{
@@ -314,7 +333,7 @@ document.getElementById('calidad-overlay').addEventListener('click',function(e){
 
 function populateCalMesSelect(){
   var sel = document.getElementById('cal-mes-sel');
-  var arr = (CAL_DB[_ccampana] && CAL_DB[_ccampana].monitoreos) || [];
+  var arr = calMonModulo(_ccampana);
   var months = calAvailableMonths(arr);
   var curMonth = gdHoyLocal().slice(0,7);
   if(months.indexOf(curMonth)===-1) months.unshift(curMonth);
@@ -508,10 +527,10 @@ function resetCalForm(){
 
 function editarMonitoreo(id){
   // Fase 254: los de plantillas nuevas se editan en el formulario Calificar.
-  var m0 = ((CAL_DB[_ccampana] && CAL_DB[_ccampana].monitoreos) || []).find(function(x){ return x.id===id; });
+  var m0 = (calMonModulo(_ccampana)).find(function(x){ return x.id===id; });
   if(m0 && typeof cc2PuedeEditar==='function' && cc2PuedeEditar(m0) && cc2Editar(m0)) return;
   if(!calCanManageMonitoreos()){ showToast('Solo el rol Reportes o el Administrador pueden editar un monitoreo ya guardado'); return; }
-  var arr = (CAL_DB[_ccampana] && CAL_DB[_ccampana].monitoreos) || [];
+  var arr = calMonModulo(_ccampana);
   var m = arr.find(function(x){ return x.id===id; });
   if(!m){ showToast('Monitoreo no encontrado'); return; }
   _editingMonitoreoId = id;
@@ -611,7 +630,7 @@ async function calMonitoreosDelete(id){
 }
 
 function renderCalMonitoreosTable(){
-  var arr = calFilterByMonth((CAL_DB[_ccampana]||{}).monitoreos, _cmesFiltro).slice().sort(function(a,b){return b.id-a.id;});
+  var arr = calFilterByMonth(calMonModulo(_ccampana), _cmesFiltro).slice().sort(function(a,b){return b.id-a.id;});
   // Fase 331 (PR 3): filtro por origen y marca de los de Calidad de encuestas (solo esta lista).
   var conOrigen = typeof cenPrepararFiltroOrigen==='function' ? cenPrepararFiltroOrigen(arr) : null;
   if(conOrigen) arr = conOrigen.lista;
@@ -635,7 +654,7 @@ function renderCalMonitoreosTable(){
 
 function renderCalResumenTable(){
   if(typeof caRenderResumen==='function'){ caRenderResumen(); return; } // Fase 255: resumen como el HTML de Edwin
-  var arr = calFilterByMonth((CAL_DB[_ccampana]||{}).monitoreos, _cmesFiltro);
+  var arr = calFilterByMonth(calMonModulo(_ccampana), _cmesFiltro);
   var byAsesor = {};
   arr.forEach(function(m){
     if(!byAsesor[m.asesor]) byAsesor[m.asesor] = {count:0, sum:0, fallos:0};
@@ -663,7 +682,7 @@ function renderCalResumenTable(){
 }
 
 function renderCalKpis(){
-  var allArr = (CAL_DB[_ccampana]||{}).monitoreos || [];
+  var allArr = calMonModulo(_ccampana);
   var arr = calFilterByMonth(allArr, _cmesFiltro);
   var total = arr.length;
   var promedio = total ? Math.round((arr.reduce(function(a,m){return a+m.puntaje;},0)/total)*10)/10 : 0;
@@ -676,10 +695,19 @@ function renderCalKpis(){
   var promCardCls = (typeof _gdSemaforoClase === 'function' && promCardColorReal) ? _gdSemaforoClase(promCardColorReal)
     : (promCardColorFallback==='verde'?'kpi-green':promCardColorFallback==='amarillo'?'kpi-org':'kpi-red');
   var promCardBadge = (typeof semaforoBadgeHtml === 'function') ? semaforoBadgeHtml(promCardColorReal || promCardColorFallback) : '';
+  // Fase 334: con la vista propia (CALIDAD / SUPERVISOR) la tarjeta muestra el total de la
+  // campaña, hechos por todos, y debajo «Hechos por mí: N»; promedio y críticos, sobre los propios.
+  var tarjetaTotal = '<div class="aurora-kpi"><div class="kv">'+total+'</div><div class="kl">'+totalLabel+'</div></div>';
+  var tc = (CAL_DB[_ccampana]||{}).totalCampana;
+  if(calVeSoloPropios() && tc){
+    var tMes = _cmesFiltro ? ((tc.porMes||{})[_cmesFiltro] || { total: 0, propios: 0 }) : tc;
+    tarjetaTotal = '<div class="aurora-kpi"><div class="kv">'+tMes.total+'</div><div class="kl">'+totalLabel+' · de toda la campaña</div>'+
+      '<div class="kl cal-kpi-mios">Hechos por mí: <b>'+total+'</b></div></div>';
+  }
   var html =
-    '<div class="aurora-kpi"><div class="kv">'+total+'</div><div class="kl">'+totalLabel+'</div></div>'+
-    '<div class="aurora-kpi '+promCardCls+'"><div class="kv">'+promCardBadge+(total?promedio:'—')+'</div><div class="kl">Promedio Puntaje</div></div>'+
-    '<div class="aurora-kpi kpi-red"><div class="kv">'+criticos+'</div><div class="kl">Monitoreos Criticos Absolutos</div></div>';
+    tarjetaTotal+
+    '<div class="aurora-kpi '+promCardCls+'"><div class="kv">'+promCardBadge+(total?promedio:'—')+'</div><div class="kl">'+(calVeSoloPropios()?'Promedio de mis monitoreos':'Promedio Puntaje')+'</div></div>'+
+    '<div class="aurora-kpi kpi-red"><div class="kv">'+criticos+'</div><div class="kl">'+(calVeSoloPropios()?'Mis monitoreos críticos absolutos':'Monitoreos Criticos Absolutos')+'</div></div>';
 
   if(currentUser && (currentUser.rol==='CALIDAD' || currentUser.rol==='SUPERVISOR')){
     var lideresList = calLideresCumplimiento(_ccampana, mesMeta);
@@ -871,7 +899,7 @@ function verSupervisionLider(camp, mes, liderNombre){
     '<div class="aurora-kpi"><div class="kv">'+l.realizadosLlamada+' / '+l.metaLlamada+'</div><div class="kl">Llamada'+(l.pctLlamadaCompl!==null?' ('+l.pctLlamadaCompl+'%)':'')+'</div></div>'+
     (l.auditaWpp ? '<div class="aurora-kpi"><div class="kv">'+l.realizadosWpp+' / '+l.metaWpp+'</div><div class="kl">WhatsApp/Chat'+(l.pctWppCompl!==null?' ('+l.pctWppCompl+'%)':'')+'</div></div>' : '');
 
-  var arr = (CAL_DB[camp] && CAL_DB[camp].monitoreos) || [];
+  var arr = calMonModulo(camp);
   var misMon = arr.filter(function(m){
     return calMonthKey(m.fecha)===mes && String(m.evaluadorUserId)===String(l.liderId);
   }).sort(function(a,b){ return (b.fecha||'').localeCompare(a.fecha||''); });
@@ -890,7 +918,7 @@ function verSupervisionLider(camp, mes, liderNombre){
 }
 
 function renderCalReportes(){
-  var allArr = (CAL_DB[_ccampana]||{}).monitoreos || [];
+  var allArr = calMonModulo(_ccampana);
   var arr = calFilterByMonth(allArr, _cmesFiltro);
   var curMonth = _cmesFiltro || gdHoyLocal().slice(0,7);
   var sobresaliente = arr.filter(function(m){return m.puntaje>=90;}).length;
