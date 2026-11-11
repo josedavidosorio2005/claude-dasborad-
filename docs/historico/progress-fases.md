@@ -20740,3 +20740,12 @@ Decisión del usuario después de la Fase 340: quien supervisa o hace calidad en
 - No cambia: las no principales sin marcar siguen bloqueadas, la regla no da campañas, Reportes y el asesor no califican, y lo que ve cada rol en Monitoreos (Fase 334) es igual.
 - Texto de ayuda en Usuarios › Plantillas y el aviso sin plantilla de «Calificar» actualizados.
 - Pruebas `fase342` (4) y `fase237` ajustada (la principal ahora es usable para quien tiene otra marcada); la prueba por rol de `fase340` pasó a `fase342`.
+
+## Fase 343 — Vuelve el teléfono a «Calificar» (v1.175.1, 2026-11-11)
+
+Corrección del usuario a la Fase 340: el teléfono sí se necesita en Calidad para ubicar la llamada junto con el ID.
+
+- **Qué había quitado la Fase 340 (#772)**: el campo `telefono` de `CC2_CAMPOS_POR_CAMPANA.ORLANT`, el filtro en `cc2CamposDe` que lo sacaba de toda plantilla que lo trajera, el campo del formulario viejo (`#cf-telefono`, que usaba cualquier campaña sin plantilla usable), `set('telefono')` al editar, y en el servidor `POST /monitoreos` guardaba `null` y `PUT` ignoraba el valor nuevo. La carga masiva no se tocó (siguió guardando TELEFONO) y ningún teléfono guardado se borró.
+- **Ahora**: `cc2CamposDe` deja el teléfono y lo pone justo después de `idLlamada`; vuelve a ORLANT y a `CC2_CAMPOS_GENERICOS`; las plantillas con `campos` lo muestran solo si lo traen. `POST` guarda `b.telefono`, `PUT` lo corrige (`b.telefono ?? row.telefono`).
+- **Quién lo ve**: `puedeVerTelefono` (CALIDAD, SUPERVISOR, REPORTES y administrador). Arreglo de paso: el asesor lo recibía en `/monitoreos/mios` y en `PUT /monitoreos/:id/visto` (Fase 151 lo permitía) y lo veía en la ventana de detalle de «Mis resultados»; ahora esas rutas usan `monitoreoPara` y el campo salió de la ventana. La cuenta de cliente ya no lo recibía (`monitoreosParaCliente`), así que el dashboard y sus exportaciones tampoco lo traen.
+- Pruebas `fase343` (4: formulario, guardar/editar, quién lo ve por rol, carga masiva) y `fase118`, `fase318`, `fase340` ajustadas.
