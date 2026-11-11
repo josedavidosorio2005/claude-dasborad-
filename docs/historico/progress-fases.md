@@ -20533,3 +20533,40 @@ Monitoreos, Resumen por asesor y Detalle por mes.
   lista de campaña) y el cliente sigue con `monitoreosParaCliente`. Sin cambios de puntajes,
   plantillas ni datos.
 - Pruebas: `fase329` (5) y `fase254` ajustada a la regla nueva.
+
+## Fase 331 — Mobilize: Calidad de encuestas (v1.165.0–v1.168.0, 2026-11-11)
+
+Pedido del supervisor, comprometido con el cliente: las llamadas con la encuesta mal calificada se
+escuchan y califican desde el Módulo de Calidad. Detalle y plan en
+[`docs/calidad-encuestas-mobilize.md`](../calidad-encuestas-mobilize.md).
+
+- **Investigación** (archivo HistIVR real de agosto y octubre, solo encabezados y conteos): 25
+  columnas; CONN_ID único por fila; ANI = teléfono (no se guarda); Q05–Q10 siempre vacías. Escalas:
+  P1 0–10, P2 1–5, P3 Sí/No, P4 1–5. Las cuatro encajan en la regla del supervisor.
+- **Decisiones del usuario (11/11)**: sin teléfono (sigue la regla de la Fase 131); bloqueo de 15 min
+  con renovación; en P2 y P4 el 3 cuenta como malo; Reportes y Gerencia ven sin calificar; las mal
+  calificadas sin ID quedan fuera, con un aviso; el agente se llena solo si coincide; ningún
+  promedio cambia mientras el supervisor decide.
+- **PR #759 (v1.165.0)**, servidor: `encuesta_monitoreo_reglas` (configurable; MOBILIZE P1 0–5, P2
+  1–3, P3 = No, P4 1–3), `monitoreos.encuestaConnId` con índice único parcial (el servidor rechaza
+  un segundo monitoreo; vínculo por CONN_ID porque recargar un mes reinserta las filas),
+  `encuesta_monitoreo_bloqueos` (fuera de `datos_version`), rutas `/calidad/encuestas/monitoreo`
+  (+ `/conteo`, `/bloqueo`, `/liberar`). Acceso `canVerCalidadEncuestas`; nunca ASESOR ni cliente.
+- **PR #760 (v1.166.0)**: pestaña «Calidad de encuestas» en Calidad › Mobilize (contador, Pendientes /
+  Resueltas, Copiar ID, bloqueo, formulario Calificar común o clásico ya lleno, Cancelar libera).
+  Columna nueva `encuestas.hora` (HH:MM de DATE; lectura verificada con los archivos reales: 21/21 y
+  82/82). Las encuestas ya cargadas quedan sin hora hasta volver a subir el mes.
+- **PR #761 (v1.167.0)**: marca «Encuesta» y filtro «Origen» en Calidad › Monitoreos (solo la lista;
+  tarjetas, resumen y promedios siguen contando todos). Se corrigió que el filtro se colaba en ORLANT.
+- **PR #762 (v1.168.0)**: botón «Monitoreo» por pregunta en la Encuesta del dashboard (mismos filtros del
+  panel, más skill y asesor en la ruta), solo lectura; la cuenta de cliente no lo ve (403 y el
+  navegador ni lo pide).
+- **Verificación**: pruebas `fase331-*` (22) y la suite completa en verde en cada PR; CI verde; deploy
+  confirmado por `/api/health`. Visual local con Playwright + Brave (copia de la base demo, datos
+  sintéticos), claro y oscuro, 375 / 768 / 1440: sin errores de consola ni scroll horizontal de la
+  página, bloqueo ajeno, guardado de punta a punta con los dos formularios, Escape y foco del
+  diálogo. **En producción** solo se confirmó la versión y que las rutas nuevas piden sesión (401);
+  la revisión con sesión no se hizo (la ventana se cerró antes del inicio de sesión) y queda en
+  `docs/pendientes.md`. No se guardó ningún monitoreo de prueba en producción.
+- **Pendiente del supervisor**: ¿los monitoreos de encuesta entran al promedio de Calidad y de cada
+  asesor? Hoy sí entran (nada filtra por origen).

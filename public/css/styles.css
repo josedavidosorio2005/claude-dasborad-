@@ -2370,3 +2370,12 @@ div.ca-bar-fila{cursor:default}
 .cal-origen-fil label{font-size:var(--fs-note);font-weight:700;color:var(--c-text-2)}
 .cal-origen-fil select{min-height:32px;padding:4px 8px;border:1px solid var(--c-border);border-radius:var(--r-sm);background:var(--c-surface);color:var(--c-text)}
 @media (max-width:768px){.cal-origen-fil select{min-height:44px}}
+/* Fase 331 (PR 4): boton y ventana "Monitoreo" de la Encuesta del dashboard. */
+.enc-cab-acc{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.modal.enc-mon-modal{width:1160px;max-width:calc(100vw - 32px)}
+.enc-mon-fh{white-space:nowrap}
+@media (min-width:1024px){.enc-mon-modal .cen-id code{word-break:normal;white-space:nowrap}}
+.enc-mon-resuelta{color:var(--c-success-dark)}
+.enc-mon-pendiente{color:var(--c-text-2)}
+@media (max-width:768px){.enc-mon-btn{min-height:44px}}
+@media(max-width:480px){.modal.enc-mon-modal{padding:20px 14px 16px}}
