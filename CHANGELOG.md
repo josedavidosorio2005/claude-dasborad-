@@ -4,6 +4,19 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.165.0 — Noviembre 2026
+
+**Fase 331 (parte 1): Calidad de encuestas de Mobilize — la base en el servidor.**
+
+- Preparación para la nueva pestaña «Calidad de encuestas»: la plataforma ya sabe qué llamadas de
+  Mobilize tuvieron la encuesta mal calificada (pregunta 1 de 0 a 5, pregunta 3 en «No», preguntas 2
+  y 4 de 1 a 3), una sola vez por llamada aunque haya fallado varias preguntas.
+- Si alguien abre una llamada para calificarla, nadie más puede abrirla mientras tanto (se libera al
+  guardar, al cancelar o a los 15 minutos sin actividad), y una misma llamada nunca queda con dos
+  monitoreos.
+- Todavía no se ve nada nuevo en pantalla: la pestaña llega en la siguiente versión. Los monitoreos
+  y la plantilla de siempre no cambian, ni ningún puntaje.
+
 ## v1.164.1 — Noviembre 2026
 
 **Fase 329: Calidad — el equipo de calidad ve todos los monitoreos de su campaña.**

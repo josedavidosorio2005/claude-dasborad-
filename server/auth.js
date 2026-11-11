@@ -207,6 +207,18 @@ function canEvaluateCampaign(actor, campana) {
   return actor.perms && actor.perms['campana_' + campana] === true;
 }
 
+// Fase 331 (Calidad de encuestas, Mobilize): VER la lista de llamadas con la
+// encuesta mal calificada. Todo el que tiene acceso al Modulo de Calidad de la
+// campaña (administrador, supervisor, CALIDAD, Reportes, Gerencia, lideres con
+// el modulo Calidad) -- nunca el ASESOR ni la cuenta de cliente. Calificarlas
+// exige ademas canEvaluateCampaign (como cualquier monitoreo).
+function canVerCalidadEncuestas(actor, campana) {
+  if (isFullAdmin(actor)) return true;
+  if (!actor || !actor.perms || actor.rol === 'ASESOR' || actor.rol === 'CLIENTES_DASH') return false;
+  if (actor.perms['campana_' + campana] !== true) return false;
+  return canEvaluateCampaign(actor, campana) || actor.perms.Calidad === true;
+}
+
 // Fase 237 (plan de Calidad, sec. 3): acceso por plantilla. Permisos
 // plantilla_<id> en el mismo perms. Un usuario SIN ninguna plantilla_* en
 // true sigue como siempre (todas las plantillas de sus campañas: no se
@@ -334,6 +346,7 @@ module.exports = {
   identidadParaLimiteDeTasa,
   campaignAccess,
   canEvaluateCampaign,
+  canVerCalidadEncuestas, // Fase 331
   canUsePlantilla,
   tienePlantillasMarcadas,
   canManageMonitoreos,

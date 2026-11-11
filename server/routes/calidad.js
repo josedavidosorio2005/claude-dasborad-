@@ -10,7 +10,8 @@
 const express = require('express');
 const db = require('../db');
 const calc = require('../calidad-logic');
-const { requireActor, isFullAdmin, campaignAccess, canEvaluateCampaign, canManageMonitoreos, canUsePlantilla, canLoadCampaign, puedeCargarAlgunaCampana } = require('../auth');
+const { requireActor, isFullAdmin, campaignAccess, canEvaluateCampaign, canManageMonitoreos, canUsePlantilla, canLoadCampaign, puedeCargarAlgunaCampana, canVerCalidadEncuestas } = require('../auth');
+const encMon = require('../encuesta-monitoreo'); // Fase 331
 const { validate, schemas } = require('../validation');
 const { cargarNivelServicioDiario } = require('../nivel-servicio-diario');
 const { fechaLimitesHoyColombia } = require('../fecha-limites');
@@ -160,6 +161,7 @@ function toMonitoreo(row) {
     extras: row.extras ? JSON.parse(row.extras) : null, // Fase 252
     origen: row.origen || 'manual',
     encuestaId: row.encuestaId || null,
+    encuestaConnId: row.encuestaConnId || null, // Fase 331: CONN_ID de la encuesta que lo origino
   };
 }
 
@@ -616,15 +618,23 @@ router.post(
     if (reglas.error) return res.status(400).json({ error: reglas.error, faltantes: reglas.faltantes });
     const errPaciente = textoMonitoreoConDatoPaciente(b.observaciones, b.extras); // Fase 287
     if (errPaciente) return res.status(400).json({ error: errPaciente });
-    const info = db
+    // Fase 331: monitoreo de una llamada de Calidad de encuestas. Solo si la llamada
+    // esta mal calificada, no tiene monitoreo y nadie mas la tiene abierta.
+    const connEnc = b.encuestaConnId || null;
+    if (connEnc) {
+      if (!canVerCalidadEncuestas(req.actor, b.campana)) return res.status(403).json({ error: 'Calidad de encuestas solo está disponible para el equipo de Calidad de la campaña' });
+      const errEnc = encMon.validarParaGuardar(db, { campana: b.campana, connId: connEnc, actor: req.actor });
+      if (errEnc) return res.status(errEnc.status).json({ error: errEnc.error, bloqueadoPor: errEnc.bloqueadoPor || null });
+    }
+    const insertar = () => db
       .prepare(
         `INSERT INTO monitoreos
            (campana, asesor, asesorUserId, fecha, mes, canal, idLlamada, telefono, codificacion,
             evaluador, evaluadorUserId, answers, puntaje, clasificacion, fallos,
-            nivelCritico, observaciones, createdAt, plantillaId, extras, origen)
+            nivelCritico, observaciones, createdAt, plantillaId, extras, origen, encuestaConnId)
          VALUES (@campana,@asesor,@asesorUserId,@fecha,@mes,@canal,@idLlamada,@telefono,@codificacion,
                  @evaluador,@evaluadorUserId,@answers,@puntaje,@clasificacion,@fallos,
-                 @nivelCritico,@observaciones,@createdAt,@plantillaId,@extras,'manual')`
+                 @nivelCritico,@observaciones,@createdAt,@plantillaId,@extras,@origen,@encuestaConnId)`
       )
       .run({
         // Fase 237: la principal se guarda como NULL (igual que los viejos);
@@ -638,7 +648,7 @@ router.post(
         fecha,
         mes: calc.monthKey(fecha),
         canal: b.canal,
-        idLlamada: b.idLlamada || null,
+        idLlamada: b.idLlamada || connEnc || null,
         telefono: b.telefono || null,
         codificacion: codifCheck.valor,
         evaluador,
@@ -651,9 +661,20 @@ router.post(
         observaciones: b.observaciones || null,
         createdAt: now,
         extras: reglas.extras,
+        origen: connEnc ? 'encuesta' : 'manual',
+        encuestaConnId: connEnc,
       });
+    let info;
+    try {
+      // Fase 331: guardar y liberar el bloqueo en una sola transaccion.
+      info = db.transaction(() => { const r = insertar(); if (connEnc) encMon.borrarBloqueo(db, b.campana, connEnc); return r; })();
+    } catch (e) {
+      // Indice unico (campana, encuestaConnId): dos personas guardando a la vez.
+      if (connEnc && e && e.code === 'SQLITE_CONSTRAINT_UNIQUE') return res.status(409).json({ error: 'Esa llamada ya fue calificada' });
+      throw e;
+    }
     const row = db.prepare('SELECT * FROM monitoreos WHERE id = ?').get(info.lastInsertRowid);
-    logCalEvent('MONITOREO', b.asesor, b.campana, req.actor, `Puntaje: ${score.puntaje}`);
+    logCalEvent('MONITOREO', b.asesor, b.campana, req.actor, `Puntaje: ${score.puntaje}` + (connEnc ? ' (Calidad de encuestas)' : ''));
     res.status(201).json(monitoreoPara(req.actor, row));
   })
 );

@@ -3939,7 +3939,9 @@ runOnceMigration('fase161_indices_v1', crearIndicesFase161);
 // EXISTS, idempotente) y al final, despues de todas las migraciones: asi
 // cubre tablas nuevas y las que una migracion reconstruya (al reconstruir
 // una tabla sus triggers se pierden).
-const TABLAS_SIN_VERSION_DATOS = ['users', 'historial', 'tokens_revocados', 'schema_migrations', 'seed_demo_marcas', 'datos_version'];
+// Fase 331: + encuesta_monitoreo_bloqueos ("la esta calificando otra persona": se renueva
+// mientras el formulario esta abierto y no cambia ningun dato que se muestre en cache).
+const TABLAS_SIN_VERSION_DATOS = ['users', 'historial', 'tokens_revocados', 'schema_migrations', 'seed_demo_marcas', 'datos_version', 'encuesta_monitoreo_bloqueos'];
 function asegurarDatosVersion() {
   db.exec('CREATE TABLE IF NOT EXISTS datos_version (id INTEGER PRIMARY KEY CHECK (id = 1), n INTEGER NOT NULL)');
   db.prepare('INSERT OR IGNORE INTO datos_version (id, n) VALUES (1, 0)').run();
@@ -5016,6 +5018,54 @@ function marcarAsesorOcultoCliente() {
   if (!config.isTest) console.log('[db] Migracion fase287_asesor_oculto_cliente_v1 aplicada.');
 }
 runOnceMigration('fase287_asesor_oculto_cliente_v1', marcarAsesorOcultoCliente);
+
+// Fase 331 (pedido del supervisor, Mobilize): "Calidad de encuestas" -- las
+// llamadas con la encuesta mal calificada se escuchan y califican en Calidad.
+// Solo cosas NUEVAS (ningun monitoreo, plantilla ni encuesta existente cambia):
+//  - encuesta_monitoreo_reglas: que respuesta cuenta como "mal calificada",
+//    POR PREGUNTA y por campaña (rango min..max inclusivo, configurable, no
+//    fijo en el codigo). Se siembra solo MOBILIZE con la regla del supervisor.
+//  - monitoreos.encuestaConnId: el CONN_ID de la llamada de la encuesta que
+//    origino el monitoreo (NULL en los de siempre). El vinculo es por CONN_ID y
+//    no por encuestas.id porque volver a subir un mes de encuestas borra y
+//    reinserta las filas (cambia su id; el CONN_ID no). Indice UNICO parcial:
+//    el servidor nunca guarda dos monitoreos para la misma llamada.
+//  - encuesta_monitoreo_bloqueos: "la esta calificando otra persona" (una fila
+//    por llamada, con vencimiento).
+function crearEncuestaMonitoreo() {
+  const colsMon = db.prepare('PRAGMA table_info(monitoreos)').all().map((c) => c.name);
+  db.transaction(() => {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS encuesta_monitoreo_reglas (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        campana TEXT NOT NULL,
+        pregunta TEXT NOT NULL,
+        min INTEGER NOT NULL,
+        max INTEGER NOT NULL,
+        updatedAt TEXT NOT NULL,
+        UNIQUE (campana, pregunta)
+      );
+      CREATE TABLE IF NOT EXISTS encuesta_monitoreo_bloqueos (
+        campana TEXT NOT NULL,
+        connId TEXT NOT NULL,
+        userId INTEGER,
+        nombre TEXT NOT NULL,
+        expira INTEGER NOT NULL,
+        PRIMARY KEY (campana, connId)
+      );
+    `);
+    if (!colsMon.includes('encuestaConnId')) db.exec('ALTER TABLE monitoreos ADD COLUMN encuestaConnId TEXT');
+    db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_monitoreos_encuesta_conn ON monitoreos(campana, encuestaConnId) WHERE encuestaConnId IS NOT NULL');
+    // Regla del supervisor (11/11/2026): P1 de 0 a 5; P3 (Sí/No) = No (2);
+    // P2 y P4 (escala corta 1 a 5) de 1 a 3.
+    const ins = db.prepare('INSERT OR IGNORE INTO encuesta_monitoreo_reglas (campana, pregunta, min, max, updatedAt) VALUES (?, ?, ?, ?, ?)');
+    const ahora = new Date().toISOString();
+    for (const [q, min, max] of [['q1', 0, 5], ['q2', 1, 3], ['q3', 2, 2], ['q4', 1, 3]]) ins.run('MOBILIZE', q, min, max, ahora);
+  })();
+  asegurarDatosVersion(); // triggers de la tabla de reglas (la de bloqueos queda fuera)
+  if (!config.isTest) console.log('[db] Migracion fase331_encuesta_monitoreo_v1 aplicada.');
+}
+runOnceMigration('fase331_encuesta_monitoreo_v1', crearEncuestaMonitoreo);
 
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
