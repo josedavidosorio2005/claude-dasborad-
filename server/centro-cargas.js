@@ -78,7 +78,9 @@ const CARGAS_RETIRADAS_POR_CLIENTE = {
   // (monitoreos por Excel; la que usa es "Calidad: resumen por asesor") ni
   // "Tipificacion de WhatsApp" (Mobilize no tiene WhatsApp). Solo se dejan de
   // mostrar (y de contar en "Falta <mes>"); no se borran datos ni tablas.
-  MOBILIZE: ['calidad', 'tipificacion_whatsapp'],
+  // Fase 339 (pedido de Edwin, 11/11): tampoco «Calidad: resumen por asesor» (la base subida a mano):
+  // Calidad ya se hace en la plataforma. El modulo sigue en el registro y los datos subidos no se borran.
+  MOBILIZE: ['calidad', 'tipificacion_whatsapp', 'calidad_resumen'],
 };
 function cargaRetiradaPara(cliente, carga) {
   return !!carga.retirada || (CARGAS_RETIRADAS_POR_CLIENTE[cliente] || []).includes(carga.id);

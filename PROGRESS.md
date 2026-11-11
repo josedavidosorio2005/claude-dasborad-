@@ -515,6 +515,7 @@ mismo orden):
 - Fase 336 — Calidad de encuestas: el ID de la llamada se ve y se copia sin el apóstrofo de Wolkvox (el dato guardado no cambia) (v1.173.1, 2026-11-11)
 - Fase 337 — Calidad: «Fecha del monitoreo» editable al calificar (sin futuras) y «Cambiar fecha» de un monitoreo guardado sin tocar la nota, con historial (v1.173.0, 2026-11-11)
 - Fase 338 — Dashboard › Calidad: «Llamadas con fallas» de a 10 con «Ver más / Ver menos»; monitoreos de encuesta verificados como normales; eliminar sigue solo admin y Reportes (v1.174.0, 2026-11-11)
+- Fase 339 — Mobilize: la carga manual «Calidad: resumen por asesor» oculta por configuración (sin borrar datos) (v1.174.1, 2026-11-11)
 - Fase 340 — Calidad: un solo formulario «Calificar» para todos los roles (el viejo se quitó); sin plantilla habilitada, aviso claro; sin teléfono (v1.174.2, 2026-11-11)
 - Fase 309 — Revisión de seguridad: el cliente ya no recibe el nombre de los líderes en `GET /metas`; resto en `docs/revision-seguridad-2026-11-09.md` (v1.154.1, 2026-11-10)
 - Fase 308 — Revisión antes de la reunión con clientes y pendientes del supervisor (solo docs, 2026-11-10)

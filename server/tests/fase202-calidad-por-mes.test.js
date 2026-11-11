@@ -4,7 +4,12 @@
 // la torta con el % de monitoreos por asesor y las barras con el Prom.
 // puntaje (%) por asesor; la tabla sigue con clasificación y fallos críticos.
 'use strict';
-const { test } = require('node:test');
+const { test, before, after } = require('node:test');
+// Fase 339: Mobilize ya no usa esta carga (CARGAS_RETIRADAS_POR_CLIENTE). Estas pruebas siguen probando
+// la carga en si (la puede volver a usar otro cliente): mientras corren se quita la marca y se repone.
+const _retiradas = require('../centro-cargas').CARGAS_RETIRADAS_POR_CLIENTE.MOBILIZE;
+before(() => { const i = _retiradas.indexOf('calidad_resumen'); if (i !== -1) _retiradas.splice(i, 1); });
+after(() => { if (!_retiradas.includes('calidad_resumen')) _retiradas.push('calidad_resumen'); });
 const assert = require('node:assert/strict');
 const fs = require('fs');
 const path = require('path');
