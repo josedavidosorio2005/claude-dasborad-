@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.172.0` (ver `server/package.json`, expuesta en
+- **Versión**: `1.173.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -512,6 +512,7 @@ mismo orden):
 - Fase 333 — ORLANT: «Invalid Date» se ve «Sin asesor» (al final, sin ▲/▼, fuera de «Asesores evaluados»); 16 corregidos (solo el asesor) con el Excel de octubre, 16 de septiembre quedan «Sin asesor» (v1.170.0, 2026-11-11)
 - Fase 334 — Módulo de Calidad: CALIDAD y SUPERVISOR ven solo lo que calificaron (reemplaza la Fase 329); tarjeta con el total de la campaña y «Hechos por mí» (v1.171.0, 2026-11-11)
 - Fase 335 — Televentas SURA: pestaña «Calidad» (Resultado de los monitoreos, plantilla de descuento), agregada desde el marco sin tocar la app de Edwin (v1.172.0, 2026-11-11)
+- Fase 337 — Calidad: «Fecha del monitoreo» editable al calificar (sin futuras) y «Cambiar fecha» de un monitoreo guardado sin tocar la nota, con historial (v1.173.0, 2026-11-11)
 - Fase 309 — Revisión de seguridad: el cliente ya no recibe el nombre de los líderes en `GET /metas`; resto en `docs/revision-seguridad-2026-11-09.md` (v1.154.1, 2026-11-10)
 - Fase 308 — Revisión antes de la reunión con clientes y pendientes del supervisor (solo docs, 2026-11-10)
 - Fase 307 — Calidad para que los líderes evalúen: ORLANT conserva su Calidad y suma «Resultado de los monitoreos» al final; Aurora ya lo tenía (se muestra con el primer monitoreo) (v1.154.0, 2026-11-10)

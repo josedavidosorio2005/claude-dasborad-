@@ -300,6 +300,10 @@ const monitoreoBulkBody = z.object({
     }),
 });
 
+// Fase 337: cambiar solo la fecha de un monitoreo (PUT /monitoreos/:id/fecha). El servidor ademas
+// revisa que no sea futura ni anterior a 2020 (errorFechaMonitoreo, routes/calidad.js).
+const cambiarFechaMonitoreoBody = z.object({ fecha: fechaSchema }).strict();
+
 // Fase 333: corregir solo el asesor de un monitoreo "Invalid Date" (PUT /monitoreos/:id/asesor).
 const corregirAsesorBody = z.object({
   asesor: z.string(reqStr('El asesor es obligatorio')).trim().min(1).max(120),
@@ -1740,6 +1744,7 @@ module.exports = {
     createMonitoreoBody,
     updateMonitoreoBody,
     corregirAsesorBody, // Fase 333
+    cambiarFechaMonitoreoBody, // Fase 337
     importarPlantillaBody,
     plantillaDescripcionesBody, // Fase 316
     monitoreoBulkBody,

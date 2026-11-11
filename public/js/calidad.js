@@ -505,7 +505,10 @@ function calFechaHoyLocal(){
 function calSetFechaEvaluadorAuto(){
   var fechaEl = document.getElementById('cf-fecha');
   fechaEl.value = calFechaHoyLocal();
-  fechaEl.disabled = !isFullAdmin();
+  // Fase 337: quien califica elige la fecha (hoy por defecto, nunca futura).
+  fechaEl.disabled = false;
+  fechaEl.max = calFechaHoyLocal();
+  fechaEl.min = '2020-01-01';
   document.getElementById('cf-evaluador').value = currentUser ? currentUser.nombre : 'Administrador';
 }
 
@@ -547,7 +550,8 @@ function editarMonitoreo(id){
   // nunca cambia, siempre bloqueado.
   var fechaEl = document.getElementById('cf-fecha');
   fechaEl.value = m.fecha || '';
-  fechaEl.disabled = !isFullAdmin();
+  fechaEl.disabled = false; // Fase 337: quien puede editar puede corregir la fecha (el servidor lo revisa)
+  fechaEl.max = calFechaHoyLocal();
   document.getElementById('cf-idllamada').value = m.idLlamada || '';
   document.getElementById('cf-telefono').value = m.telefono || '';
   renderCalCodifCampoForm(m.codificacion || '');
@@ -637,7 +641,10 @@ function renderCalMonitoreosTable(){
   var canManage = calCanManageMonitoreos();
   // Fase 254: Calidad edita lo que ella califico con plantillas nuevas.
   var puedeAlguno = !canManage && typeof cc2PuedeEditar==='function' && arr.some(function(m){ return cc2PuedeEditar(m); });
-  var html = '<tr><th>Asesor</th><th>Fecha</th><th>Canal</th><th>ID/Llamada</th><th>Codificacion</th><th>Evaluador</th><th>Puntaje</th><th>Clasificacion</th><th>Fallos</th><th>Nivel Critico</th>'+((canManage||puedeAlguno)?'<th></th>':'')+'</tr>';
+  // Fase 337: «Cambiar fecha» (solo la fecha) para quien lo califico, Reportes y el administrador.
+  var fechaAlguno = arr.some(function(m){ return calPuedeCambiarFecha(m); });
+  var conAcciones = canManage || puedeAlguno || fechaAlguno;
+  var html = '<tr><th>Asesor</th><th>Fecha</th><th>Canal</th><th>ID/Llamada</th><th>Codificacion</th><th>Evaluador</th><th>Puntaje</th><th>Clasificacion</th><th>Fallos</th><th>Nivel Critico</th>'+(conAcciones?'<th></th>':'')+'</tr>';
   if(arr.length===0){
     html += '<tr><td colspan="11" style="text-align:center;color:var(--c-text-muted)">Sin monitoreos registrados'+(_cmesFiltro?' en '+_cmesFiltro:'')+(conOrigen&&conOrigen.origen?' con ese origen':'')+'</td></tr>';
   } else {
@@ -645,11 +652,69 @@ function renderCalMonitoreosTable(){
       var canalLbl = calEstadoHtml(m.canal==='WPP' ? '💬 WPP' : '📞 Llamada');
       html += '<tr><td>'+esc(textoFormatoNombre(m.asesor))+(m.origen==='encuesta'?' <span class="cen-marca" title="Monitoreo originado en una encuesta mal calificada">Encuesta</span>':'')+'</td><td>'+esc(m.fecha||'-')+'</td><td>'+canalLbl+'</td><td>'+esc(m.idLlamada||'-')+'</td><td>'+esc(m.codificacion||'-')+'</td><td>'+esc(m.evaluador||'-')+'</td>'+
         '<td class="peak">'+m.puntaje+'</td><td>'+calEstadoHtml(m.clasificacion)+'</td><td>'+m.fallos+'</td><td>'+calEstadoHtml(m.nivelCritico)+'</td>'+
-        (canManage?('<td><button class="btn-sm btn-edit" onclick="editarMonitoreo('+m.id+')">Editar</button> <button class="btn-sm btn-delete" onclick="calMonitoreosDelete('+m.id+')">Eliminar</button></td>'):
-          (puedeAlguno?('<td>'+(cc2PuedeEditar(m)?'<button class="btn-sm btn-edit" onclick="editarMonitoreo('+m.id+')">Editar</button>':'')+'</td>'):''))+'</tr>';
+        (conAcciones?('<td class="cal-acciones">'+
+          ((canManage || (puedeAlguno && cc2PuedeEditar(m)))?'<button class="btn-sm btn-edit" onclick="editarMonitoreo('+m.id+')">Editar</button> ':'')+
+          (calPuedeCambiarFecha(m)?'<button class="btn-sm" onclick="calCambiarFecha('+m.id+')">Cambiar fecha</button> ':'')+
+          (canManage?'<button class="btn-sm btn-delete" onclick="calMonitoreosDelete('+m.id+')">Eliminar</button>':'')+'</td>'):'')+'</tr>';
     });
   }
   document.getElementById('cal-monitoreos-table').innerHTML = html;
+}
+
+// Fase 337: quien puede cambiar SOLO la fecha (el servidor decide: puedeCambiarFecha).
+function calPuedeCambiarFecha(m){
+  if(!m) return false;
+  if(isFullAdmin()) return true;
+  if(!currentUser) return false;
+  if(calCanManageMonitoreos()) return true; // Reportes de la campaña
+  return (currentUser.rol==='CALIDAD' || currentUser.rol==='SUPERVISOR') && m.evaluadorUserId === currentUser.id && calCurrentPerm();
+}
+function _calFechaDialogo(){
+  var ov = document.getElementById('cal-fecha-ov');
+  if(!ov){
+    ov = document.createElement('div');
+    ov.className = 'cc2-ov'; ov.id = 'cal-fecha-ov'; ov.hidden = true;
+    ov.setAttribute('role','dialog'); ov.setAttribute('aria-modal','true'); ov.setAttribute('aria-labelledby','cal-fecha-t');
+    ov.innerHTML = '<div class="cc2-dlg"><h3 id="cal-fecha-t">Cambiar fecha del monitoreo</h3><p class="cpl-ayuda" id="cal-fecha-info"></p>'+
+      '<label class="cc2-f"><span class="cc2-lt">Fecha del monitoreo</span><input type="date" id="cal-fecha-in" min="2020-01-01"></label>'+
+      '<p class="cpl-ayuda">Solo cambia la fecha: las respuestas y el puntaje quedan igual. El monitoreo pasa al mes de la fecha nueva y el cambio queda en el historial.</p>'+
+      '<div class="modal-btns"><button type="button" class="btn-cancel" onclick="calCerrarFecha()">Cancelar</button><button type="button" class="btn-primary" id="cal-fecha-ok" onclick="calGuardarFecha()">Guardar fecha</button></div></div>';
+    ov.addEventListener('click', function(e){ if(e.target===ov) calCerrarFecha(); });
+    ov.addEventListener('keydown', function(e){ if(e.key==='Escape'){ e.stopPropagation(); calCerrarFecha(); } });
+    document.getElementById('calidad-modal').appendChild(ov);
+  }
+  return ov;
+}
+var _calFechaId = null, _calFechaFoco = null;
+function calCambiarFecha(id){
+  var m = calMonModulo(_ccampana).find(function(x){ return x.id===id; });
+  if(!m || !calPuedeCambiarFecha(m)){ showToast('No puedes cambiar la fecha de este monitoreo'); return; }
+  _calFechaId = id; _calFechaFoco = document.activeElement;
+  var ov = _calFechaDialogo();
+  document.getElementById('cal-fecha-info').textContent = textoFormatoNombre(m.asesor)+' · fecha actual '+(m.fecha||'-');
+  var inp = document.getElementById('cal-fecha-in');
+  inp.max = calFechaHoyLocal(); inp.value = m.fecha || calFechaHoyLocal();
+  ov.hidden = false; inp.focus();
+}
+function calCerrarFecha(){
+  var ov = document.getElementById('cal-fecha-ov'); if(ov) ov.hidden = true;
+  _calFechaId = null;
+  if(_calFechaFoco && _calFechaFoco.focus) _calFechaFoco.focus();
+}
+async function calGuardarFecha(){
+  var id = _calFechaId; if(!id) return;
+  var fecha = document.getElementById('cal-fecha-in').value;
+  if(!fecha){ showToast('Elige la fecha del monitoreo', 'error'); return; }
+  if(fecha > calFechaHoyLocal()){ showToast('La fecha del monitoreo no puede ser futura', 'error'); return; }
+  try{
+    await withButtonLoading(document.getElementById('cal-fecha-ok'), 'Guardando...', function(){ return apiRequest('PUT','/monitoreos/'+id+'/fecha', { fecha: fecha }); });
+  }catch(e){ showToast(e.message, 'error'); return; }
+  calCerrarFecha();
+  showToast('Fecha del monitoreo actualizada');
+  // El monitoreo pasa a su mes nuevo en todas las vistas del modulo (y en el dashboard al abrirlo).
+  await loadCalData(_ccampana, _cmesFiltro || undefined);
+  populateCalMesSelect();
+  switchCalTab(_ctab);
 }
 
 function renderCalResumenTable(){

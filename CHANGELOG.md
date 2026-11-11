@@ -4,6 +4,19 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.173.0 — Noviembre 2026
+
+**Fase 337: Calidad — quien califica elige la fecha del monitoreo.**
+
+- En «Calificar» (todas las campañas), el campo «Fecha del monitoreo» ya se puede cambiar: trae la
+  fecha de hoy y permite elegir días pasados, nunca futuros. Antes la fecha se ponía sola.
+- En Calidad › Monitoreos hay un botón «Cambiar fecha» para quien calificó el monitoreo, para Reportes
+  y para el administrador. Solo cambia la fecha: las respuestas y el puntaje quedan igual, y queda en
+  el historial quién la cambió, la fecha anterior y la nueva.
+- El monitoreo pasa al mes de su fecha en Monitoreos, Resumen por asesor, Detalle por mes, Reportes,
+  metas y la pestaña Calidad del dashboard. También vale para los monitoreos de «Calidad de encuestas»
+  de Mobilize. El asesor y el cliente no pueden cambiar fechas.
+
 ## v1.172.0 — Noviembre 2026
 
 **Fase 335: Televentas SURA tiene pestaña «Calidad».**
