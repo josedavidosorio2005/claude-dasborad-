@@ -4,6 +4,19 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.170.0 — Noviembre 2026
+
+**Fase 333: Calidad — los monitoreos sin nombre de asesor salen como «Sin asesor».**
+
+- Los monitoreos de ORLANT que quedaron guardados con «Invalid Date» en vez del nombre del asesor
+  ahora se ven como «Sin asesor» en las gráficas, tablas, filtros, ventanas de detalle y
+  exportaciones, siempre al final de la lista y sin flecha de por encima o por debajo del promedio.
+- Siguen contando en el total de monitoreos y en el promedio general, pero no cuentan como un asesor
+  más en «Asesores evaluados» ni en «por encima / por debajo».
+- El administrador puede corregir solo el nombre del asesor de esos monitoreos (sin cambiar la nota,
+  las respuestas, la fecha, el evaluador ni las observaciones), y únicamente con un nombre que ya
+  exista en la plataforma.
+
 ## v1.169.0 — Noviembre 2026
 
 **Fase 332: Calidad de ORLANT muestra solo «Resultado de los monitoreos».**

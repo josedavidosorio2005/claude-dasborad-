@@ -65,9 +65,9 @@ test('bloque nuevo: promedio del equipo con ▲ por encima / ▼ por debajo, igu
   assert.ok(panel.includes("<span>Promedio general' + (k.promedio === null ? '' : ' · <em class=\"cmp-clase-txt\">' + esc(k.clase.t) + '</em>')"), 'la clasificacion general, en texto');
 });
 
-test('"Invalid Date": se muestra "Sin nombre (revisar carga)" en todo el bloque nuevo; los nombres reales no cambian', () => {
-  assert.equal(CE.ceNombreAsesor('Invalid Date'), 'Sin nombre (revisar carga)');
-  assert.equal(CE.ceNombreAsesor(' invalid date '), 'Sin nombre (revisar carga)');
+test('"Invalid Date": se muestra "Sin asesor" (Fase 333) en todo el bloque nuevo; los nombres reales no cambian', () => {
+  assert.equal(CE.ceNombreAsesor('Invalid Date'), 'Sin asesor');
+  assert.equal(CE.ceNombreAsesor(' invalid date '), 'Sin asesor');
   assert.equal(CE.ceNombreAsesor('Persona Ficticia', (s) => s.toUpperCase()), 'PERSONA FICTICIA');
   assert.equal(CE.ceNombreAsesor('Invalid Dates'), 'Invalid Dates', 'solo el texto exacto de la fecha invalida');
   const panel = PUB('js/calidad-panel.js');

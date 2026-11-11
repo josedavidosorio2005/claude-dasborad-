@@ -90,11 +90,11 @@ function _cmpRender(p, i) {
   if (ve) {
     var disp = ceAsesoresDe(arr, mesesEf);
     (st.asesores || []).forEach(function (a) { if (disp.indexOf(a) === -1) disp.push(a); });
-    disp.sort();
+    disp.sort(ceOrdenSinAsesorAlFinal(function (a, b) { return a < b ? -1 : a > b ? 1 : 0; })); // Fase 333: "Sin asesor" al final
     var qq = String(st.q || '').toLowerCase();
     var asDesc = st.asesores === null ? 'Todos' : !st.asesores.length ? 'Ninguno' : st.asesores.length === 1 ? _cmpNombre(st.asesores[0]) : st.asesores.length + ' asesores';
     pickAs = _cmpPickHtml('cmp-as-' + i, 'Asesor', asDesc, disp.map(function (a) {
-      return { v: a, l: _cmpNombre(a), on: st.asesores === null || st.asesores.indexOf(a) !== -1, oculto: qq && String(a).toLowerCase().indexOf(qq) === -1 };
+      return { v: a, l: _cmpNombre(a), on: st.asesores === null || st.asesores.indexOf(a) !== -1, oculto: qq && String(_cmpNombre(a)).toLowerCase().indexOf(qq) === -1 };
     }), true, st.q);
   }
   var selector = lista.length > 1 ? '<label class="ca-filtro">Plantilla <select onchange="_cmpElegir(\'' + esc(camp) + '\', this.value)">' + lista.map(function (q) {
@@ -130,7 +130,7 @@ function _cmpRender(p, i) {
   var tabla = !ve ? '' : '<div class="aurora-card"><div class="aurora-card-title">Resultado por asesor · ' + esc(mesDesc) + '</div>' + notaEquipo + '<div class="cmp-tabla-wrap"><table class="aurora-rank-table cmp-tabla"><tr><th>#</th><th>Asesor</th><th>Monit.</th><th>Calif. definitiva</th><th>Clasificación</th><th>' + esc(v.columnaFinal) + '</th></tr>' +
     (v.porAsesor.length ? v.porAsesor.map(function (a, n) {
       // Fase 332: data-l = etiqueta de cada dato en el celular (la tabla pasa a tarjetas).
-      return '<tr><td data-l="#">' + (n + 1) + '</td><td data-l="Asesor"><b>' + esc(_cmpNombre(a.name)) + '</b></td><td data-l="Monit.">' + a.cnt + '</td><td data-l="Calif. definitiva" class="cmp-calif"><span>' + cePct(a.avg) + (vsEq.equipo === null ? '' : ' <span class="cmp-vs ' + (a.avg >= vsEq.equipo ? 'cmp-vs-up" title="Por encima del promedio del equipo">▲' : 'cmp-vs-down" title="Por debajo del promedio del equipo">▼') + '</span>') + '</span></td><td data-l="Clasificación">' + _caPill(a.clase) + '</td><td data-l="' + esc(v.columnaFinal) + '">' + a.final + '</td></tr>';
+      return '<tr><td data-l="#">' + (n + 1) + '</td><td data-l="Asesor"><b>' + esc(_cmpNombre(a.name)) + '</b></td><td data-l="Monit.">' + a.cnt + '</td><td data-l="Calif. definitiva" class="cmp-calif"><span>' + cePct(a.avg) + (vsEq.equipo === null || a.sinAsesor ? '' : ' <span class="cmp-vs' + (a.avg >= vsEq.equipo ? 'cmp-vs-up" title="Por encima del promedio del equipo">▲' : 'cmp-vs-down" title="Por debajo del promedio del equipo">▼') + '</span>') + '</span></td><td data-l="Clasificación">' + _caPill(a.clase) + '</td><td data-l="' + esc(v.columnaFinal) + '">' + a.final + '</td></tr>';
     }).join('') : '<tr><td colspan="6" class="ca-vacio">No hay monitoreos completos en el periodo seleccionado. Los asesores aparecen aquí cuando se registra su primer monitoreo del mes.</td></tr>') + '</table></div></div>';
   var items = '<div class="aurora-card"><div class="aurora-card-title">Ítems más afectados</div>' + (v.total && pl ? '<div class="ca-barras">' + v.items.map(function (x) {
     var cuerpo = '<span class="ca-bar-txt">' + esc(x.it.n + '. ' + x.it.label) + (x.it.critico ? ' ⚠' : '') + '</span><span class="ca-bar"><span class="' + (x.it.critico ? 'cmp-fill-c' : 'cmp-fill') + '" style="width:' + x.pct + '%"></span></span><span class="ca-bar-n">' + x.c + ' · ' + cePct(x.pct) + '</span>';

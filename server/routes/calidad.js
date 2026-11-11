@@ -876,6 +876,36 @@ router.put(
   })
 );
 
+// Fase 333 (decision del usuario, 11/11): corregir SOLO el nombre del asesor de un monitoreo
+// cuyo asesor quedo guardado como "Invalid Date" (carga masiva vieja). A diferencia del PUT
+// de edicion, NO recalcula la nota ni revalida la plantilla: solo cambian `asesor` y
+// `updatedAt`; respuestas, nota, fecha, evaluador, observaciones y extras quedan igual. Solo el
+// administrador, solo un monitoreo hoy "Invalid Date", y solo con un nombre que YA existe en
+// esa campaña (otro monitoreo o un usuario ASESOR de la campaña), con su escritura exacta.
+router.put(
+  '/monitoreos/:id/asesor',
+  requireActor,
+  validate(schemas.idParamSchema, 'params'),
+  validate(schemas.corregirAsesorBody),
+  wrap((req, res) => {
+    if (!isFullAdmin(req.actor)) return res.status(403).json({ error: 'Solo el administrador puede corregir el asesor de un monitoreo' });
+    const row = db.prepare('SELECT * FROM monitoreos WHERE id = ?').get(req.params.id);
+    if (!row) return res.status(404).json({ error: 'Monitoreo no encontrado' });
+    if (!/^\s*invalid date\s*$/i.test(String(row.asesor || ''))) {
+      return res.status(400).json({ error: 'Solo se corrige el asesor de un monitoreo guardado como «Invalid Date»' });
+    }
+    const nombre = req.body.asesor;
+    if (/^\s*invalid date\s*$/i.test(nombre)) return res.status(400).json({ error: 'Ese no es un nombre de asesor' });
+    const existe = db.prepare("SELECT 1 FROM monitoreos WHERE campana = ? AND asesor = ? AND id <> ? LIMIT 1").get(row.campana, nombre, row.id) ||
+      db.prepare("SELECT 1 FROM users WHERE rol = 'ASESOR' AND asesorCampana = ? AND nombre = ? LIMIT 1").get(row.campana, nombre);
+    if (!existe) return res.status(400).json({ error: 'Ese nombre no existe en la plataforma para esta campaña: no se inventan nombres' });
+    db.prepare('UPDATE monitoreos SET asesor = ?, updatedAt = ? WHERE id = ?').run(nombre, nowStr(), row.id);
+    const updated = db.prepare('SELECT * FROM monitoreos WHERE id = ?').get(row.id);
+    logCalEvent('MONITOREO_ASESOR_CORREGIDO', nombre, row.campana, req.actor, `Monitoreo ${row.id}: asesor «Invalid Date» corregido (sin cambiar la nota)`);
+    res.json(monitoreoPara(req.actor, updated));
+  })
+);
+
 router.delete(
   '/monitoreos/:id',
   requireActor,

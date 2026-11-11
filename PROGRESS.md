@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.169.0` (ver `server/package.json`, expuesta en
+- **Versión**: `1.170.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -509,6 +509,7 @@ mismo orden):
 - Fase 330 — Plan de integración con la API de Wolkvox (solo documento, 2026-11-10)
 - Fase 331 — Mobilize: «Calidad de encuestas» (llamadas con la encuesta mal calificada → monitoreo con bloqueo), origen en Monitoreos y botón «Monitoreo» en la Encuesta; sin teléfono (v1.165.0–v1.168.0, 2026-11-11)
 - Fase 332 — ORLANT › Calidad solo con «Resultado de los monitoreos» (los 3 paneles de antes ocultos por configuración), ▲/▼ del equipo en el bloque nuevo, sin textos cortados; 32 monitoreos con «Invalid Date» pendientes de corregir (v1.169.0, 2026-11-11)
+- Fase 333 — ORLANT: «Invalid Date» se ve «Sin asesor» (al final, sin ▲/▼, fuera de «Asesores evaluados»); corrección solo del asesor de los que cruzan con el Excel de octubre (v1.170.0, 2026-11-11)
 - Fase 309 — Revisión de seguridad: el cliente ya no recibe el nombre de los líderes en `GET /metas`; resto en `docs/revision-seguridad-2026-11-09.md` (v1.154.1, 2026-11-10)
 - Fase 308 — Revisión antes de la reunión con clientes y pendientes del supervisor (solo docs, 2026-11-10)
 - Fase 307 — Calidad para que los líderes evalúen: ORLANT conserva su Calidad y suma «Resultado de los monitoreos» al final; Aurora ya lo tenía (se muestra con el primer monitoreo) (v1.154.0, 2026-11-10)

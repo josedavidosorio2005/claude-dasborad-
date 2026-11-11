@@ -20603,3 +20603,23 @@ antes y el nuevo; además «Invalid Date» como nombre de asesor, textos cortado
   suite completa en verde. Local (Playwright + Brave, copia de la base demo, monitoreos sintéticos
   con nombres largos y uno «Invalid Date»), claro y oscuro, 375/768/1440: solo el bloque nuevo, 0
   textos cortados, 0 tarjetas vacías, sin scroll horizontal, 0 errores de consola.
+
+## Fase 333 — ORLANT: los 32 monitoreos «Invalid Date» (v1.170.0, 2026-11-11)
+
+Decisión del usuario: se resuelve con lo que hay en su equipo, sin pedir archivos al supervisor.
+
+- **Búsqueda local** (131 Excel revisados, solo conteos): el Excel de Calidad de ORLANT de octubre
+  (58 filas, fecha del archivo 29/10) y un `ORLANT.xlsx` con 5 filas de septiembre. No hay un Excel
+  de septiembre con las llamadas de la carga del 07/10.
+- **Cruce de prueba en producción** (solo lectura, sesión del administrador, sin imprimir nombres):
+  de los 32, **16 cruzan con certeza** (todos los de octubre: una sola fila del Excel con el mismo ID
+  de llamada y la misma fecha, y el nombre ya existe en la plataforma; 14 asesores distintos) y **16
+  no cruzan** (los de septiembre). Total 153, promedio 95,52.
+- **Ruta nueva** `PUT /monitoreos/:id/asesor` (solo administrador): cambia SOLO `asesor` y
+  `updatedAt` de un monitoreo hoy «Invalid Date», con un nombre que ya exista en la campaña; no
+  recalcula la nota (el PUT de edición sí la recalcula con la plantilla actual, por eso no se usó).
+  Queda en el historial (`MONITOREO_ASESOR_CORREGIDO`).
+- **Pantalla**: «Invalid Date» = «Sin asesor» en `textoFormatoNombre` (gráficas, tablas, filtros,
+  diálogos y exportaciones); al final de las listas (bloque nuevo y Módulo de Calidad), sin ▲/▼, fuera
+  de «Asesores evaluados» y de por encima/por debajo; dentro del total y del promedio general.
+- Pruebas `fase333` (5) y la matriz de acceso; suite completa en verde.

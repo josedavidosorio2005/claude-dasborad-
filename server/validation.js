@@ -300,6 +300,11 @@ const monitoreoBulkBody = z.object({
     }),
 });
 
+// Fase 333: corregir solo el asesor de un monitoreo "Invalid Date" (PUT /monitoreos/:id/asesor).
+const corregirAsesorBody = z.object({
+  asesor: z.string(reqStr('El asesor es obligatorio')).trim().min(1).max(120),
+}).strict();
+
 const updateMonitoreoBody = z
   .object({
     asesor: z.string().trim().min(1).max(120).optional(),
@@ -1731,6 +1736,7 @@ module.exports = {
     idParamSchema,
     createMonitoreoBody,
     updateMonitoreoBody,
+    corregirAsesorBody, // Fase 333
     importarPlantillaBody,
     plantillaDescripcionesBody, // Fase 316
     monitoreoBulkBody,
