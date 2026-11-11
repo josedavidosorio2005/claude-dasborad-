@@ -205,13 +205,13 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   (solo lectura, sin calificar ninguna llamada de prueba). Para ver la hora de las encuestas ya
   cargadas, el supervisor debe volver a subir agosto, septiembre y octubre de Encuesta.
 
-- **ORLANT, Calidad: 32 monitoreos con «Invalid Date» como asesor** (Fase 332, 11/11) — 16 de
-  septiembre (carga del 07/10) y 16 de octubre (carga del 29/10). El nombre real no está guardado en
-  la plataforma; hoy se muestran como «Sin nombre (revisar carga)» y cuentan en el promedio (95,52).
-  Opciones, todas con tu OK escrito (es escribir en producción): (a) que Edwin pase el Excel que se
-  subió esos días y se corrige cada nombre desde Calidad › Monitoreos › Editar, por la interfaz; o
-  (b) dejarlos así. No se recomienda volver a subir el mes: la carga masiva los tomaría como
-  monitoreos nuevos (el nombre cambia) y quedarían duplicados.
+- **ORLANT, Calidad: 16 monitoreos de septiembre «Sin asesor»** (Fases 332–333, 11/11) — de los 32
+  con «Invalid Date», los 16 de octubre se corrigieron (solo el asesor) cruzando con el Excel de
+  octubre del equipo; los 16 de septiembre (carga del 07/10) no tienen Excel con qué cruzarlos y
+  quedan como están en la base, en pantalla «Sin asesor» (cuentan en el total y en el promedio, no
+  como un asesor). Decisión del usuario: no se piden archivos ni se vuelve a subir el mes. Si algún
+  día aparece el Excel de septiembre, se corrigen con la misma ruta acotada
+  (`PUT /monitoreos/:id/asesor`, solo administrador).
 
 ## 2. Esperando una respuesta de Edwin
 
