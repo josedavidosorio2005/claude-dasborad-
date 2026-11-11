@@ -56,6 +56,9 @@ function condicionFallas(reglas, params) {
 }
 
 function filtrosFecha(q, clausulas, params) {
+  // Fase 331 (PR 4): skill y asesor, como el panel Encuesta del dashboard.
+  if (q.skill) { clausulas.push('skill = @skill'); params.skill = q.skill; }
+  if (q.agente) { clausulas.push('agente = @agente'); params.agente = q.agente; }
   if (q.desde) { clausulas.push('fecha >= @desde'); params.desde = q.desde; }
   if (q.hasta) { clausulas.push('fecha <= @hasta'); params.hasta = q.hasta; }
   if (q.meses) {

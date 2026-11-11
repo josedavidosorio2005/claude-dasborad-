@@ -904,6 +904,17 @@
   </div>
 </div>
 
+<!-- Fase 331 (PR 4): "Monitoreo" de una pregunta de la Encuesta de Mobilize (encuesta-monitoreo.js). Patron A3b, solo lectura. -->
+<div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-encuesta-monitoreo-title" id="modal-encuesta-monitoreo">
+  <div class="modal enc-mon-modal">
+    <h3 id="modal-encuesta-monitoreo-title">Monitoreo</h3>
+    <div id="enc-mon-cuerpo"></div>
+    <div class="modal-btns">
+      <button class="btn-primary" onclick="encMonCerrar()">Cerrar</button>
+    </div>
+  </div>
+</div>
+
 <!-- Fase 186: "Clasificación de asesores" de Tipificacion (solo administrador, tipificacion.js). Patron A3b. -->
 <div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-clasif-asesores-title" id="modal-clasif-asesores">
   <div class="modal tipif-clasif-modal">
@@ -2003,6 +2014,7 @@
 <script src="js/calidad-calificar.js"></script>
 <script src="js/calidad-encuestas-logic.js"></script>
 <script src="js/calidad-encuestas.js"></script>
+<script src="js/encuesta-monitoreo.js"></script>
 <script src="js/alias-admin.js"></script>
 <script src="js/agendas-usuaria-logic.js"></script>
 <script src="js/agendas-usuaria.js"></script>

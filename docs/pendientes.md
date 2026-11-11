@@ -199,7 +199,19 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   sigue sin logo (lo necesitaría cuando sus pestañas queden visibles para el
   cliente); SURA usa su tablero propio.
 
+- **Mobilize, Calidad de encuestas: verificar en producción con sesión** (Fase 331, 11/11) —
+  la pestaña, el filtro de origen y el botón «Monitoreo» se verificaron en local (claro/oscuro,
+  375/768/1440) y en producción solo por la versión y el 401 sin sesión. Falta mirarlos con tu sesión
+  (solo lectura, sin calificar ninguna llamada de prueba). Para ver la hora de las encuestas ya
+  cargadas, el supervisor debe volver a subir agosto, septiembre y octubre de Encuesta.
+
 ## 2. Esperando una respuesta de Edwin
+
+- **Mobilize, Calidad de encuestas: ¿los monitoreos de encuesta cuentan en el promedio?** (Fase 331,
+  11/11) — pregunta para el supervisor. Hoy sí: entran al promedio de Calidad de Mobilize, al de cada
+  asesor y a «Mis resultados», como cualquier monitoreo. Quedan marcados «Encuesta» y se pueden
+  filtrar en Calidad › Monitoreos. Si deben ir aparte, es un cambio de cálculo que se hace solo con su
+  respuesta.
 
 - **Aurora, Agendas: la base que pasó Edwin no era la definitiva** (anotado 07/11) —
   Prioridad ALTA. Las agendas de Aurora salen de **3 bases**, no de una. Se corrigen el

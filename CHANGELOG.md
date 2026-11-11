@@ -4,6 +4,18 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.168.0 — Noviembre 2026
+
+**Fase 331 (parte 4): botón «Monitoreo» en la Encuesta del dashboard de Mobilize.**
+
+- En la pestaña Encuesta, cada pregunta tiene ahora un botón «Monitoreo». Muestra las llamadas que
+  calificaron mal esa pregunta, con el mismo periodo y los mismos filtros del panel: fecha y hora, ID
+  de la llamada (con «Copiar»), agente, qué preguntas calificó mal, si está pendiente o resuelta, la
+  nota y la observación del monitoreo.
+- Si una llamada calificó mal varias preguntas, en todas se ve el mismo monitoreo.
+- Es solo para mirar: no califica ni cambia nada. Va aparte de la pestaña Calidad del dashboard.
+- Por ahora la cuenta del cliente no ve el botón.
+
 ## v1.167.0 — Noviembre 2026
 
 **Fase 331 (parte 3): en Monitoreos se distinguen los que vienen de Calidad de encuestas.**

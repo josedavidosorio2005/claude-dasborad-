@@ -1207,6 +1207,9 @@ const encuestaMonitoreoQuery = z.object({
   campana: campanaSchema,
   estado: z.enum(['pendientes', 'resueltas', 'todas']).optional().default('pendientes'),
   pregunta: z.enum(['q1', 'q2', 'q3', 'q4']).optional(),
+  // Fase 331 (PR 4): mismos filtros del panel Encuesta del dashboard.
+  skill: z.string().trim().max(200).optional(),
+  agente: z.string().trim().max(200).optional(),
   desde: fechaSchema.optional(),
   hasta: fechaSchema.optional(),
   meses: mesesListaSchema.optional(),

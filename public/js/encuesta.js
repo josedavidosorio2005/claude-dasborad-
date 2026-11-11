@@ -99,11 +99,16 @@ async function _encuestaRenderPanel(p, i) {
     ? '<div class="ig ig-filtro"><label for="enc-f-agente-' + i + '">Asesor</label>' +
       '<select id="enc-f-agente-' + i + '">' + _encuestaOptionsHtml(op.agentes, estado.agente, _encuestaNombre) + '</select></div>'
     : '';
+  // Fase 331 (PR 4): boton "Monitoreo" por pregunta (Calidad de encuestas) si el servidor da
+  // acceso; la cuenta de cliente no lo ve.
+  var monOk = typeof encMonCargarAcceso === 'function' ? await encMonCargarAcceso(campana) : false;
   var cuadros = (ENCUESTA_PREGUNTAS || []).map(function (q) {
+    var mon = monOk ? encMonBotonHtml(q, i) : '';
     // Fase 195: la pregunta 1 lleva en su cabecera "Cantidad" | "NPS".
     var cab = q.key === 'q1'
-      ? '<div class="gd-grafica-cab enc-cab"><div class="aurora-card-title">Pregunta ' + q.n + '</div>' + _encuestaBotonesQ1Html(i) + '</div>'
-      : '<div class="aurora-card-title">Pregunta ' + q.n + '</div>';
+      ? '<div class="gd-grafica-cab enc-cab"><div class="aurora-card-title">Pregunta ' + q.n + '</div><div class="enc-cab-acc">' + _encuestaBotonesQ1Html(i) + mon + '</div></div>'
+      : (mon ? '<div class="gd-grafica-cab enc-cab"><div class="aurora-card-title">Pregunta ' + q.n + '</div>' + mon + '</div>'
+        : '<div class="aurora-card-title">Pregunta ' + q.n + '</div>');
     return '<div class="aurora-card enc-pregunta">' + cab +
       '<div class="aurora-chart-wrap" style="height:230px"><canvas id="enc-c-' + q.key + '-' + i + '" role="img" aria-label="Pregunta ' + q.n + ': cantidad por respuesta"></canvas></div>' +
       '<p class="enc-pie" id="enc-pie-' + q.key + '-' + i + '"></p>' +

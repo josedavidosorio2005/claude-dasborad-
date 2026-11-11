@@ -336,6 +336,8 @@ var MOTION_DIALOGOS_SIMPLES = {
   'modal-change-own-password': function () { if (typeof cerrarCambiarPasswordModal === 'function') cerrarCambiarPasswordModal(); },
   // Fase 147 (Parte B): textos de la encuesta de Mobilize.
   'modal-encuesta-preguntas': function () { if (typeof _encuestaCerrarPreguntas === 'function') _encuestaCerrarPreguntas(); },
+  // Fase 331 (PR 4): "Monitoreo" de una pregunta de la Encuesta.
+  'modal-encuesta-monitoreo': function () { if (typeof encMonCerrar === 'function') encMonCerrar(); },
   // Fase 152 (B9): "Ver datos" de una grafica.
   'modal-ver-datos': function () { if (typeof cerrarVerDatos === 'function') cerrarVerDatos(); },
   // Fase 186: "Clasificación de asesores" de Tipificacion.
