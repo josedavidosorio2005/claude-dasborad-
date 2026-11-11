@@ -69,7 +69,9 @@ function _cmpRender(p, i) {
   // Meses: los de MESES; con "Todos", el mes por defecto del HTML. Al cambiar MESES se vuelve a tomar.
   var hoy = _cmpHoyMes();
   // Solo los meses MARCADOS en MESES (_gdMeses; gdMesesTarjetasActual() devuelve todos con "Todos").
-  var marcados = (typeof _gdMeses === 'function') ? _gdMeses().slice().sort() : [];
+  // Fase 335: fuera del dashboard generico (pestaña Calidad de Televentas SURA) el bloque usa
+  // solo su propio filtro Mes, nunca el «Meses» del ultimo tablero abierto.
+  var marcados = (!p.mesesPropios && typeof _gdMeses === 'function') ? _gdMeses().slice().sort() : [];
   var clave = marcados.join(',') || 'todos';
   var st = _cmpFiltro[camp];
   if (!st || st.clave !== clave) st = _cmpFiltro[camp] = { clave: clave, meses: marcados.length ? marcados : [ceMesPorDefecto(arr, hoy)], asesores: null, q: '' };
@@ -326,7 +328,8 @@ function _cmpDialogo() {
     ov.innerHTML = '<div class="cc2-dlg ca-dlg-ancho"><h3 id="cmp-ov-t"></h3><div id="cmp-ov-b"></div><div class="modal-btns"><button type="button" class="btn-primary" onclick="_cmpCerrar()">Cerrar</button></div></div>';
     ov.addEventListener('click', function (e) { if (e.target === ov) _cmpCerrar(); });
   }
-  var host = document.getElementById('gd-overlay') || document.body;
+  // Fase 335: con Televentas abierto (dialogo con el resto de la pagina inerte), el dialogo va adentro.
+  var host = document.querySelector('#stv-overlay.show #stv-modal') || document.getElementById('gd-overlay') || document.body;
   if (ov.parentNode !== host) host.appendChild(ov);
   return ov;
 }
