@@ -33,7 +33,8 @@ test('NPS: solo el valor y la formula', () => {
 test('Cargar datos de Mobilize: sin Calidad vieja ni Tipificacion de WhatsApp; ORLANT, Aurora y HLM igual', () => {
   const mob = CC.resumenCliente(db, 'MOBILIZE', 2026, CATALOGO);
   assert.ok(!mob.some((m) => m.id === 'calidad'), 'sin la seccion Calidad vieja');
-  assert.ok(mob.some((m) => m.id === 'calidad_resumen'), 'Calidad: resumen por asesor se queda');
+  // Fase 339 (pedido de Edwin): tampoco «Calidad: resumen por asesor» (Calidad se hace en la plataforma).
+  assert.ok(!mob.some((m) => m.id === 'calidad_resumen'), 'sin Calidad: resumen por asesor');
   assert.deepEqual(mob.find((m) => m.id === 'tipificacion').cargas.map((c) => c.id), ['tipificacion_llamadas']);
   for (const cli of ['ORLANT', 'CLINICA AURORA', 'HOSPITAL LA MARIA']) {
     const mods = CC.resumenCliente(db, cli, 2026, CATALOGO);
@@ -62,5 +63,5 @@ test('ocultar no borra: los datos siguen y se pueden descargar; el aviso "Falta 
   } finally {
     db.prepare("DELETE FROM tipificaciones WHERE agente = 'Asesor Sintetico 251'").run();
   }
-  assert.deepEqual(CC.CARGAS_RETIRADAS_POR_CLIENTE.MOBILIZE, ['calidad', 'tipificacion_whatsapp']);
+  assert.deepEqual(CC.CARGAS_RETIRADAS_POR_CLIENTE.MOBILIZE, ['calidad', 'tipificacion_whatsapp', 'calidad_resumen']); // Fase 339
 });

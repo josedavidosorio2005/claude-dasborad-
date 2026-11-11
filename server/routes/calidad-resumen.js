@@ -11,6 +11,7 @@ const { impactoCalidadResumen, cargarCalidadResumen, calidadResumenOpciones, cal
 const { wrap, logEvent, actorLabel } = require('./shared');
 const { ocultaAsesores, seudonimos } = require('../privacidad-cliente'); // Fase 287 (#5)
 
+const { cargaRetiradaPara } = require('../centro-cargas'); // Fase 339
 const router = express.Router();
 const sinAcceso = (res) => res.status(403).json({ error: 'Sin acceso a los datos de esta campana' });
 
@@ -31,12 +32,14 @@ router.get('/calidad/calidad-resumen/mensual', requireActor, validate(schemas.ca
 }));
 
 router.post('/calidad/calidad-resumen/carga/impacto', requireActor, validate(schemas.calidadResumenCargaBody), wrap((req, res) => {
+  if (cargaRetiradaPara(req.body.campana, { id: 'calidad_resumen' })) return res.status(400).json({ error: 'Esta campaña ya no usa «Calidad: resumen por asesor»: Calidad se califica en la plataforma' }); // Fase 339
   if (!canLoadModule(req.actor, 'calidad_resumen', campanaDeCarga(req))) return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para calcular el impacto de una carga' });
   if (!campaignAccess(req.actor, req.body.campana)) return sinAcceso(res);
   res.json(impactoCalidadResumen(db, req.body));
 }));
 
 router.post('/calidad/calidad-resumen/carga', requireActor, validate(schemas.calidadResumenCargaBody), wrap((req, res) => {
+  if (cargaRetiradaPara(req.body.campana, { id: 'calidad_resumen' })) return res.status(400).json({ error: 'Esta campaña ya no usa «Calidad: resumen por asesor»: Calidad se califica en la plataforma' }); // Fase 339
   if (!canLoadModule(req.actor, 'calidad_resumen', campanaDeCarga(req))) return res.status(403).json({ error: 'Se requiere el permiso de Cargar Datos para subir el resumen de calidad' });
   const b = req.body;
   if (!campaignAccess(req.actor, b.campana)) return sinAcceso(res);

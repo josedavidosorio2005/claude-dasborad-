@@ -20708,3 +20708,7 @@ El CONN_ID de Wolkvox llega con un apóstrofo inicial (marca de texto de Excel).
 - **Monitoreos de Calidad de encuestas**: Edwin confirma que cuentan como monitoreo normal. Verificado en local (prueba temporal, datos sintéticos): salen con su nota en Monitoreos, Resumen por asesor, Detalle por mes, Reportes, metas, la pestaña Calidad del dashboard y el botón «Monitoreo» de la Encuesta. Sin cambios.
 - **Eliminar monitoreos**: hoy solo el administrador y el rol Reportes de la campaña (servidor `canManageMonitoreos`); CALIDAD y SUPERVISOR no pueden. Sin cambios.
 - Prueba `fase338` (2, el bloque real en vm).
+
+## Fase 339 — Mobilize sin la carga «Calidad: resumen por asesor» (v1.174.1, 2026-11-11)
+
+Pedido de Edwin: Calidad de Mobilize ya se hace en la plataforma. El panel viejo del dashboard ya había salido en la Fase 269; faltaba la carga manual. Se oculta por configuración con el mecanismo existente `CARGAS_RETIRADAS_POR_CLIENTE` (`server/centro-cargas.js`): Mobilize suma `calidad_resumen` a lo retirado. El módulo sigue en el registro, los datos de `calidad_resumen_asesor` no se borran y `POST /calidad/calidad-resumen/carga` (e /impacto) responden 400 para una campaña que la tiene retirada. Las tres listas largas del Módulo de Calidad quedan anotadas en `docs/pendientes.md` para Edwin. Prueba `fase339` (2); `fase153`, `fase172`, `fase202`, `fase220` y `fase251` ajustadas.

@@ -42,7 +42,7 @@ test('resumen por mes: registros, ultima carga (la mas reciente aunque el format
 
 test('Tipificacion: un conteo por canal; los modulos salen del registro, en el orden del catalogo', () => {
   const mods = CC.resumenCliente(db, 'MOBILIZE', 2026, CATALOGO);
-  assert.deepEqual(mods.map((m) => m.id), ['llamadas_unicas', 'tipificacion', 'encuesta', 'calidad_resumen', 'flujo_llamadas', 'flujo_hora'] /* Fase 196; Fase 251: sin la Calidad vieja */.sort((a, b) => CATALOGO.findIndex((x) => x.id === a) - CATALOGO.findIndex((x) => x.id === b)));
+  assert.deepEqual(mods.map((m) => m.id), ['llamadas_unicas', 'tipificacion', 'encuesta', 'flujo_llamadas', 'flujo_hora'] /* Fase 196; Fase 251: sin la Calidad vieja; Fase 339: sin el resumen por asesor */.sort((a, b) => CATALOGO.findIndex((x) => x.id === a) - CATALOGO.findIndex((x) => x.id === b)));
   // Fase 251: Mobilize sin Tipificacion de WhatsApp; ORLANT con los dos canales.
   assert.deepEqual(mods.find((m) => m.id === 'tipificacion').cargas.map((c) => c.id), ['tipificacion_llamadas']);
   assert.deepEqual(CC.resumenCliente(db, 'ORLANT', 2026, CATALOGO).find((m) => m.id === 'tipificacion').cargas.map((c) => c.id), ['tipificacion_llamadas', 'tipificacion_whatsapp']);
