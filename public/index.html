@@ -1147,6 +1147,16 @@
     <div id="cpanel-monitoreos" class="atab-panel">
       <div class="aurora-card">
         <div class="aurora-card-title">Historial de Monitoreos</div>
+        <!-- Fase 331 (PR 3): filtro por origen (solo la lista; ningun promedio cambia). Lo muestra calidad-encuestas.js -->
+        <div class="cal-origen-fil" id="cal-origen-fil" hidden>
+          <label for="cal-origen-sel">Origen</label>
+          <select id="cal-origen-sel" onchange="renderCalMonitoreosTable()">
+            <option value="">Todos</option>
+            <option value="manual">Monitoreos de siempre</option>
+            <option value="encuesta">Calidad de encuestas</option>
+          </select>
+          <span class="cen-nota" id="cal-origen-nota"></span>
+        </div>
         <div style="overflow-x:auto">
           <table class="aurora-rank-table" id="cal-monitoreos-table"></table>
         </div>

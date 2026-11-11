@@ -2363,3 +2363,10 @@ div.ca-bar-fila{cursor:default}
   .cen-fallas{white-space:normal}
 }
 .cen-banner[hidden],.cen-badge[hidden],#ctab-btn-encuestas[hidden]{display:none}
+/* Fase 331 (PR 3): marca y filtro por origen en Monitoreos. */
+.cen-marca{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:var(--r-pill);background:var(--c-info-bg);color:var(--c-primary);font-size:var(--fs-note);font-weight:700;white-space:nowrap;vertical-align:middle}
+.cal-origen-fil{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin:0 0 10px}
+.cal-origen-fil[hidden]{display:none}
+.cal-origen-fil label{font-size:var(--fs-note);font-weight:700;color:var(--c-text-2)}
+.cal-origen-fil select{min-height:32px;padding:4px 8px;border:1px solid var(--c-border);border-radius:var(--r-sm);background:var(--c-surface);color:var(--c-text)}
+@media (max-width:768px){.cal-origen-fil select{min-height:44px}}

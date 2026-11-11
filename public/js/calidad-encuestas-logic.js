@@ -70,7 +70,20 @@ function cenAvisoSinId(n) {
     : n + ' encuestas mal calificadas no traen ID de la llamada y no se pueden ubicar en Wolkvox; no aparecen en la lista.';
 }
 
+// Fase 331 (PR 3): lista de Monitoreos filtrada por origen ('' = todos, 'manual', 'encuesta').
+// Los monitoreos viejos sin origen cuentan como 'manual'. Solo filtra lo que se lista.
+function cenOrigenDe(m) { return m && m.origen === 'encuesta' ? 'encuesta' : 'manual'; }
+function cenFiltrarPorOrigen(lista, origen) {
+  var o = origen === 'encuesta' || origen === 'manual' ? origen : '';
+  return (lista || []).filter(function (m) { return !o || cenOrigenDe(m) === o; });
+}
+function cenNotaOrigen(lista) {
+  var n = (lista || []).filter(function (m) { return cenOrigenDe(m) === 'encuesta'; }).length;
+  if (!n) return '';
+  return (n === 1 ? '1 monitoreo viene' : n + ' monitoreos vienen') + ' de Calidad de encuestas. Por ahora cuentan en los promedios igual que los demás.';
+}
+
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { cenPreguntaCorta: cenPreguntaCorta, cenValorTexto: cenValorTexto, cenFallasTexto: cenFallasTexto,
+  module.exports = { cenOrigenDe: cenOrigenDe, cenFiltrarPorOrigen: cenFiltrarPorOrigen, cenNotaOrigen: cenNotaOrigen, cenPreguntaCorta: cenPreguntaCorta, cenValorTexto: cenValorTexto, cenFallasTexto: cenFallasTexto,
     cenNormNombre: cenNormNombre, cenBuscarAsesor: cenBuscarAsesor, cenFecha: cenFecha, cenEstadoFila: cenEstadoFila, cenAvisoSinId: cenAvisoSinId };
 }
