@@ -83,7 +83,7 @@ function encMonContenidoHtml(d, pregunta) {
     filas.map(function (f) {
       var m = f.monitoreo || {};
       return '<tr><td class="enc-mon-fh">' + esc(cenFecha(f.fecha)) + (f.hora ? '<br><span class="cen-nota">' + esc(f.hora) + '</span>' : '') + '</td>' +
-        '<td><span class="cen-id"><code>' + esc(f.connId) + '</code><button type="button" class="btn-sm cen-copiar" data-conn="' + esc(f.connId) + '" aria-label="Copiar el ID de la llamada">Copiar</button></span></td>' +
+        '<td><span class="cen-id"><code>' + esc(cenIdVisible(f.connId)) + '</code><button type="button" class="btn-sm cen-copiar" data-conn="' + esc(cenIdVisible(f.connId)) + '" aria-label="Copiar el ID de la llamada">Copiar</button></span></td>' + // Fase 336: sin apostrofo
         '<td>' + esc(f.agente ? textoFormatoNombre(f.agente) : '—') + '</td><td><span class="cen-fallas">' + esc(cenFallasTexto(f.fallas)) + '</span></td>' +
         '<td>' + _encMonEstadoHtml(f) + '</td>' +
         '<td class="peak">' + (f.monitoreo ? esc(m.puntaje != null ? m.puntaje : '—') + (m.clasificacion ? ' ' + calEstadoHtml(m.clasificacion) : '') : '—') + '</td>' +

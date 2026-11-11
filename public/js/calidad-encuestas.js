@@ -94,7 +94,8 @@ function _cenPintarContador(n) {
 }
 
 function _cenIdHtml(connId) {
-  return '<span class="cen-id"><code>' + _cenEsc(connId) + '</code><button type="button" class="btn-sm cen-copiar" data-conn="' + _cenEsc(connId) + '" aria-label="Copiar el ID de la llamada">Copiar</button></span>';
+  var v = cenIdVisible(connId); // Fase 336: sin el apostrofo inicial al verlo y al copiarlo
+  return '<span class="cen-id"><code>' + _cenEsc(v) + '</code><button type="button" class="btn-sm cen-copiar" data-conn="' + _cenEsc(v) + '" aria-label="Copiar el ID de la llamada">Copiar</button></span>';
 }
 
 function _cenFilaHtml(f, puedeCalificar) {
@@ -166,7 +167,7 @@ function _cenPrellenar(ll) {
   var cf2 = document.getElementById('cf2');
   var nuevo = cf2 && !cf2.hidden;
   var setVal = function (id, v) { var el = document.getElementById(id); if (el) el.value = v; };
-  setVal(nuevo ? 'cc2-f-idLlamada' : 'cf-idllamada', ll.connId);
+  setVal(nuevo ? 'cc2-f-idLlamada' : 'cf-idllamada', cenIdVisible(ll.connId)); // Fase 336: como se ve (el vinculo va aparte, con el original)
   // Asesor: solo si coincide con un usuario ASESOR de la campaña; si no, lo elige el evaluador.
   var sel = document.getElementById(nuevo ? 'cc2-f-asesor' : 'cf-asesor');
   if (!sel) return;

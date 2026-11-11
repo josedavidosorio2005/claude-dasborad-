@@ -4,6 +4,15 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.173.1 — Noviembre 2026
+
+**Fase 336: Calidad de encuestas — el ID de la llamada sin el apóstrofo.**
+
+- Wolkvox entrega el ID de la llamada con un apóstrofo al inicio ('8751.4872…). En «Calidad de
+  encuestas», en el formulario y en la ventana «Monitoreo» de la Encuesta ahora se ve y se copia sin
+  ese apóstrofo, listo para buscar la grabación en Wolkvox.
+- El dato guardado no cambia, ni el cruce con los monitoreos.
+
 ## v1.173.0 — Noviembre 2026
 
 **Fase 337: Calidad — quien califica elige la fecha del monitoreo.**
