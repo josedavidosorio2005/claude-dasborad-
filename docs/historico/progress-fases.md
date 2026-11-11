@@ -20558,7 +20558,7 @@ escuchan y califican desde el Módulo de Calidad. Detalle y plan en
   82/82). Las encuestas ya cargadas quedan sin hora hasta volver a subir el mes.
 - **PR #761 (v1.167.0)**: marca «Encuesta» y filtro «Origen» en Calidad › Monitoreos (solo la lista;
   tarjetas, resumen y promedios siguen contando todos). Se corrigió que el filtro se colaba en ORLANT.
-- **PR 4 (v1.168.0)**: botón «Monitoreo» por pregunta en la Encuesta del dashboard (mismos filtros del
+- **PR #762 (v1.168.0)**: botón «Monitoreo» por pregunta en la Encuesta del dashboard (mismos filtros del
   panel, más skill y asesor en la ruta), solo lectura; la cuenta de cliente no lo ve (403 y el
   navegador ni lo pide).
 - **Verificación**: pruebas `fase331-*` (22) y la suite completa en verde en cada PR; CI verde; deploy

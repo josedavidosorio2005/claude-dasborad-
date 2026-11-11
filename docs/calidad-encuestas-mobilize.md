@@ -48,7 +48,7 @@ Las columnas Q05–Q10 del HistIVR vienen vacías y no se leen.
    el formulario Calificar ya lleno (v1.166.0, PR #760).
 3. Marca y filtro por origen (encuesta / manual) en Monitoreos (v1.167.0, PR #761).
 4. Botón «Monitoreo» por pregunta en la pestaña Encuesta del dashboard de
-   Mobilize, con los filtros del panel; no lo ve la cuenta de cliente (v1.168.0).
+   Mobilize, con los filtros del panel; no lo ve la cuenta de cliente (v1.168.0, PR #762).
 
 ## Si más adelante el supervisor pide el teléfono
 
