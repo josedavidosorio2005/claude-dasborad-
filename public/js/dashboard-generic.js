@@ -1448,7 +1448,7 @@ function _gdActualizarCompararContra(){
   if(!tab || !tab.panels || !tab.panels.length){ wrap.style.display = ''; nota.style.display = 'none'; return; }
   var subActiva = _gdSubtabActiva(tab);
   var indicesVisibles = subActiva ? subActiva.indices : tab.panels.map(function(p,i){ return i; });
-  var visibles = tab.panels.filter(function(p,i){ return indicesVisibles.indexOf(i) !== -1; });
+  var visibles = tab.panels.filter(function(p,i){ return indicesVisibles.indexOf(i) !== -1 && !gdPanelOculto(p); }); // Fase 332
   var todosAutonomos = gdTodosAutonomos(visibles);
   // Fase 207: con Todos o varios meses no hay "mes anterior" contra el que comparar.
   var sinComparar = todosAutonomos || !gdMesUnicoMarcado();
@@ -1834,6 +1834,10 @@ var GD_TIPOS_PANEL_PROPIO = ['trafico_combo', 'trafico_whatsapp_combo', 'agendas
 // Paneles que nunca van en la rejilla de graficas (<canvas id="gd-c<i>">).
 var GD_TIPOS_SIN_LIENZO = ['kpi_row', 'calidad_kpis', 'tabla', 'nota_kpi'].concat(GD_TIPOS_PANEL_PROPIO);
 
+// Fase 332: un panel con `oculto: true` en la configuracion no se dibuja ni se exporta
+// (queda en dashboards_config y su codigo de lectura sigue ahi; se vuelve a ver quitando la marca).
+function gdPanelOculto(p){ return !!(p && p.oculto === true); }
+
 function renderGenericTab(key){
   var tab = (_gd.config.layout.tabs || []).find(function(t){ return t.key===key; });
   var host = document.getElementById('gd-panels');
@@ -1842,7 +1846,7 @@ function renderGenericTab(key){
   var subActiva = _gdSubtabActiva(tab);
   // Sin `subtabs`: todos los indices del tab, igual que siempre. Con
   // `subtabs`: solo los indices de la sub-pestana activa.
-  var indicesVisibles = subActiva ? subActiva.indices : panels.map(function(p,i){ return i; });
+  var indicesVisibles = (subActiva ? subActiva.indices : panels.map(function(p,i){ return i; })).filter(function(i){ return !gdPanelOculto(panels[i]); }); // Fase 332
   var subtabsHtml = '';
   if(tab.subtabs && tab.subtabs.length > 1){
     subtabsHtml = '<div class="gd-subtabs">' + tab.subtabs.map(function(s){
@@ -2725,6 +2729,7 @@ async function _gdDatosPanelesTab(){
   var panels = tab.panels || [];
   for(var i=0; i<panels.length; i++){
     var p = panels[i];
+    if(gdPanelOculto(p)) continue; // Fase 332: lo oculto tampoco se exporta
     if(p.tipo === 'kpi_row'){
       (p.items || []).forEach(function(it){ out.push({ titulo: it.titulo, tipo: 'kpi', filas: [{ Valor: _gdResolver(it.fuente).scalar }] }); });
       continue;

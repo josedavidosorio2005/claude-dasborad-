@@ -134,7 +134,15 @@ function cmParseRows(aoa, items){
     var row = aoa[i];
     if(!row || row.every(function(v){ return v===''||v==null; })) continue;
     var fila = i+1;
-    var asesor = row[map.fijas.asesor]==null ? '' : String(row[map.fijas.asesor]).trim();
+    // Fase 332: un nombre de asesor nunca es una fecha. Con cellDates, una celda de nombre con
+    // formato de fecha llegaba como Date y se guardaba el texto "Invalid Date" (32 monitoreos de
+    // ORLANT). Ahora la fila se omite con un aviso para corregir esa celda en el Excel.
+    var asesorCelda = row[map.fijas.asesor];
+    if(asesorCelda instanceof Date || /^\s*invalid date\s*$/i.test(String(asesorCelda == null ? '' : asesorCelda))){
+      avisos.push('Fila '+fila+': el nombre del asesor viene como fecha en el Excel (revisa el formato de esa celda), se omitio.');
+      continue;
+    }
+    var asesor = asesorCelda==null ? '' : String(asesorCelda).trim();
     var fecha = cmParseFecha(row[map.fijas.fecha]);
     if(!asesor){
       // Fase 213: la plantilla trae filas vacias con formulas (puntaje "",

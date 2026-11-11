@@ -2379,3 +2379,28 @@ div.ca-bar-fila{cursor:default}
 .enc-mon-pendiente{color:var(--c-text-2)}
 @media (max-width:768px){.enc-mon-btn{min-height:44px}}
 @media(max-width:480px){.modal.enc-mon-modal{padding:20px 14px 16px}}
+/* Fase 332: «Resultado por asesor» sin textos cortados (la columna Clasificación se iba
+   fuera de la tarjeta con nombres largos): el nombre puede ir en dos líneas, la pastilla
+   de clasificación y la nota nunca se parten. ▲/▼ con color Y símbolo (WCAG 1.4.1). */
+.cmp-tabla-wrap{overflow-x:auto}
+.cmp-tabla td:nth-child(2){white-space:normal;min-width:9em;overflow-wrap:anywhere}
+.cmp-tabla .cc2-pill{white-space:nowrap}
+.cmp-tabla .cmp-calif{white-space:nowrap}
+.cmp-vs{font-size:var(--fs-note);font-weight:700;margin-left:2px}
+.cmp-vs-up{color:var(--c-success-dark)}
+.cmp-vs-down{color:var(--c-danger-dark)}
+.cmp-equipo{margin:-4px 0 10px}
+.cmp-clase-txt{font-style:normal;font-weight:700}
+/* Fase 332: en el celular «Resultado por asesor» pasa a una tarjeta por asesor (nada fuera de vista). */
+@media (max-width:600px){
+  .cmp-tabla,.cmp-tabla tbody,.cmp-tabla tr,.cmp-tabla td{display:block;width:100%}
+  .cmp-tabla tr:first-child{display:none}
+  .cmp-tabla{min-width:0}
+  .cmp-tabla tr{padding:8px 4px;border-bottom:1px solid var(--c-border)}
+  .cmp-tabla td{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:3px 4px;border:0;text-align:right}
+  .cmp-tabla td::before{content:attr(data-l);flex:none;font-size:var(--fs-note);color:var(--c-text-muted);font-weight:600;text-align:left}
+  .cmp-tabla td:nth-child(2){min-width:0;white-space:normal}
+}
+/* Fase 332: el valor de los filtros Mes / Asesor del bloque nuevo no se corta con «…»: pasa a
+   otra línea si no cabe (antes «Septiembre 2026 y Octubre 20…»). */
+.cmp-pick-v{white-space:normal;overflow:visible;text-overflow:clip;max-width:none}

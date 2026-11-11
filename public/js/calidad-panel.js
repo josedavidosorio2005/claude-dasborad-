@@ -17,6 +17,9 @@
 // si el registro lo permite (asesorVisibleCliente) o si quien mira es interno;
 // si no, sin filtro de asesor ni vistas por asesor. Sin monitoreos: no se dibuja.
 
+// Fase 332: nombre de asesor para mostrar ("Invalid Date" guardado = "Sin nombre (revisar carga)").
+function _cmpNombre(n) { return ceNombreAsesor(n, textoFormatoNombre); }
+
 function _cmpVeAsesores(campana) {
   var interno = typeof currentUser === 'undefined' || !currentUser || currentUser.rol !== 'CLIENTES_DASH';
   return interno || (typeof LISTAS_REGISTRO !== 'undefined' && (LISTAS_REGISTRO.asesorVisibleCliente || []).indexOf(campana) !== -1);
@@ -89,9 +92,9 @@ function _cmpRender(p, i) {
     (st.asesores || []).forEach(function (a) { if (disp.indexOf(a) === -1) disp.push(a); });
     disp.sort();
     var qq = String(st.q || '').toLowerCase();
-    var asDesc = st.asesores === null ? 'Todos' : !st.asesores.length ? 'Ninguno' : st.asesores.length === 1 ? textoFormatoNombre(st.asesores[0]) : st.asesores.length + ' asesores';
+    var asDesc = st.asesores === null ? 'Todos' : !st.asesores.length ? 'Ninguno' : st.asesores.length === 1 ? _cmpNombre(st.asesores[0]) : st.asesores.length + ' asesores';
     pickAs = _cmpPickHtml('cmp-as-' + i, 'Asesor', asDesc, disp.map(function (a) {
-      return { v: a, l: textoFormatoNombre(a), on: st.asesores === null || st.asesores.indexOf(a) !== -1, oculto: qq && String(a).toLowerCase().indexOf(qq) === -1 };
+      return { v: a, l: _cmpNombre(a), on: st.asesores === null || st.asesores.indexOf(a) !== -1, oculto: qq && String(a).toLowerCase().indexOf(qq) === -1 };
     }), true, st.q);
   }
   var selector = lista.length > 1 ? '<label class="ca-filtro">Plantilla <select onchange="_cmpElegir(\'' + esc(camp) + '\', this.value)">' + lista.map(function (q) {
@@ -106,7 +109,7 @@ function _cmpRender(p, i) {
   var k = v.kpis;
   var kpis = '<div class="ca-kpis cmp-kpis">' +
     '<div class="ca-kpi"><b>' + k.total + '</b><span>Monitoreos calificados</span></div>' +
-    '<div class="ca-kpi"><b class="cc2-c-' + (k.promedio === null ? 'na' : k.clase.k) + '">' + cePct(k.promedio) + '</b><span>Promedio general</span></div>' +
+    '<div class="ca-kpi"><b class="cc2-c-' + (k.promedio === null ? 'na' : k.clase.k) + '">' + cePct(k.promedio) + '</b><span>Promedio general' + (k.promedio === null ? '' : ' · <em class="cmp-clase-txt">' + esc(k.clase.t) + '</em>') + '</span></div>' +
     '<div class="ca-kpi"><b>' + k.critico + '</b><span>' + esc(k.criticoLabel) + '</span></div>' +
     '<div class="ca-kpi"><b>' + k.asesores + '</b><span>Asesores evaluados</span></div></div>';
 
@@ -114,21 +117,25 @@ function _cmpRender(p, i) {
   var lineaAs = !ve ? '' : '<div class="aurora-card"><div class="aurora-card-title">Calificación definitiva por asesor · ' + esc(mesDesc) + '</div>' +
     (v.lineaAsesor.length ? '<div class="aurora-chart-wrap cmp-chart-as"><canvas id="cmp-c-as-' + i + '"></canvas></div>' + _cmpBandaHtml() : vacio('Sin monitoreos calificados en el periodo seleccionado.')) + '</div>';
   var porMes = '<div class="aurora-card"><div class="aurora-card-title">Calificación definitiva por mes</div>' +
-    '<p class="cpl-ayuda">' + esc(st.asesores !== null && ve ? 'Calificación definitiva de ' + (st.asesores.length === 1 ? textoFormatoNombre(st.asesores[0]) : st.asesores.length + ' asesores') + ' en cada mes seleccionado' : 'Calificación definitiva del equipo en cada mes seleccionado') + '</p>' +
+    '<p class="cpl-ayuda">' + esc(st.asesores !== null && ve ? 'Calificación definitiva de ' + (st.asesores.length === 1 ? _cmpNombre(st.asesores[0]) : st.asesores.length + ' asesores') + ' en cada mes seleccionado' : 'Calificación definitiva del equipo en cada mes seleccionado') + '</p>' +
     (v.porMes.length ? '<div class="aurora-chart-wrap cmp-chart"><canvas id="cmp-c-mes-' + i + '"></canvas></div>' : vacio('Sin monitoreos calificados.')) + '</div>';
   var torta = '<div class="aurora-card"><div class="aurora-card-title">Monitoreos por clasificación</div>' +
     (v.total ? '<p class="cpl-ayuda">' + v.total + ' monitoreo' + (v.total === 1 ? '' : 's') + ' calificado' + (v.total === 1 ? '' : 's') + ' · ' + esc(mesDesc) + '</p>' +
       '<div class="cmp-torta"><div class="aurora-chart-wrap cmp-chart-pie"><canvas id="cmp-c-pie-' + i + '"></canvas></div><div class="cmp-pie-leg">' + v.torta.map(function (c) {
         return '<div><i class="cmp-dot cmp-dot-' + c.k + '" aria-hidden="true"></i><span>' + esc(c.t) + '<small>' + esc(c.rango) + '</small></span><b>' + c.n + ' · ' + cePct(c.pct) + '</b></div>';
       }).join('') + '</div></div>' : vacio('Sin monitoreos calificados en el periodo seleccionado.')) + '</div>';
-  var tabla = !ve ? '' : '<div class="aurora-card"><div class="aurora-card-title">Resultado por asesor · ' + esc(mesDesc) + '</div><div style="overflow-x:auto"><table class="aurora-rank-table cmp-tabla"><tr><th>#</th><th>Asesor</th><th>Monit.</th><th>Calif. definitiva</th><th>Clasificación</th><th>' + esc(v.columnaFinal) + '</th></tr>' +
+  // Fase 332: promedio del equipo y ▲ por encima / ▼ por debajo (lo que traia el bloque de antes de ORLANT).
+  var vsEq = ceVsEquipo(v.porAsesor, k.promedio);
+  var notaEquipo = vsEq.equipo === null ? '' : '<p class="cpl-ayuda cmp-equipo">Promedio del equipo: <b>' + cePct(vsEq.equipo) + '</b> · ▲ ' + vsEq.encima + ' por encima · ▼ ' + vsEq.debajo + ' por debajo</p>';
+  var tabla = !ve ? '' : '<div class="aurora-card"><div class="aurora-card-title">Resultado por asesor · ' + esc(mesDesc) + '</div>' + notaEquipo + '<div class="cmp-tabla-wrap"><table class="aurora-rank-table cmp-tabla"><tr><th>#</th><th>Asesor</th><th>Monit.</th><th>Calif. definitiva</th><th>Clasificación</th><th>' + esc(v.columnaFinal) + '</th></tr>' +
     (v.porAsesor.length ? v.porAsesor.map(function (a, n) {
-      return '<tr><td>' + (n + 1) + '</td><td><b>' + esc(textoFormatoNombre(a.name)) + '</b></td><td>' + a.cnt + '</td><td>' + cePct(a.avg) + '</td><td>' + _caPill(a.clase) + '</td><td>' + a.final + '</td></tr>';
+      // Fase 332: data-l = etiqueta de cada dato en el celular (la tabla pasa a tarjetas).
+      return '<tr><td data-l="#">' + (n + 1) + '</td><td data-l="Asesor"><b>' + esc(_cmpNombre(a.name)) + '</b></td><td data-l="Monit.">' + a.cnt + '</td><td data-l="Calif. definitiva" class="cmp-calif"><span>' + cePct(a.avg) + (vsEq.equipo === null ? '' : ' <span class="cmp-vs ' + (a.avg >= vsEq.equipo ? 'cmp-vs-up" title="Por encima del promedio del equipo">▲' : 'cmp-vs-down" title="Por debajo del promedio del equipo">▼') + '</span>') + '</span></td><td data-l="Clasificación">' + _caPill(a.clase) + '</td><td data-l="' + esc(v.columnaFinal) + '">' + a.final + '</td></tr>';
     }).join('') : '<tr><td colspan="6" class="ca-vacio">No hay monitoreos completos en el periodo seleccionado. Los asesores aparecen aquí cuando se registra su primer monitoreo del mes.</td></tr>') + '</table></div></div>';
   var items = '<div class="aurora-card"><div class="aurora-card-title">Ítems más afectados</div>' + (v.total && pl ? '<div class="ca-barras">' + v.items.map(function (x) {
     var cuerpo = '<span class="ca-bar-txt">' + esc(x.it.n + '. ' + x.it.label) + (x.it.critico ? ' ⚠' : '') + '</span><span class="ca-bar"><span class="' + (x.it.critico ? 'cmp-fill-c' : 'cmp-fill') + '" style="width:' + x.pct + '%"></span></span><span class="ca-bar-n">' + x.c + ' · ' + cePct(x.pct) + '</span>';
     if (!ve || !x.c) return '<div class="ca-bar-fila">' + cuerpo + '</div>';
-    return '<details class="ca-bar-fila"><summary>' + cuerpo + '</summary><ul>' + x.asesores.map(function (a) { return '<li>' + esc(textoFormatoNombre(a.asesor)) + ' <span>(' + a.veces + ')</span></li>'; }).join('') + '</ul></details>';
+    return '<details class="ca-bar-fila"><summary>' + cuerpo + '</summary><ul>' + x.asesores.map(function (a) { return '<li>' + esc(_cmpNombre(a.asesor)) + ' <span>(' + a.veces + ')</span></li>'; }).join('') + '</ul></details>';
   }).join('') + '</div>' : vacio('Sin datos en el rango seleccionado.')) + '</div>';
   var nota = '<p class="cpl-ayuda cmp-nota">Solo aparecen los asesores con monitoreos en el mes seleccionado: si un asesor no se monitorea en un mes, sale de la vista y de los promedios de ese mes, y vuelve a aparecer cuando se le registre un monitoreo. Solo se cuentan monitoreos con todos los ítems calificados. Escala: 0–69% Crítico · 70–89% No crítico · 90–100% Sobresaliente.</p>';
 
@@ -139,7 +146,7 @@ function _cmpRender(p, i) {
   var filasFallas = (verTodas ? fallas : fallas.slice(0, CMP_LIMITE)).map(function (m) {
     var c = caClase(Number(m.puntaje));
     return '<tr class="ca-click" tabindex="0" role="button" aria-label="Ver el detalle del monitoreo del ' + esc(m.fecha || '') + '" onclick="_cmpVer(\'' + cs + '\',' + m.id + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();_cmpVer(\'' + cs + '\',' + m.id + ')}">' +
-      '<td>' + esc(m.fecha || '-') + '</td>' + (ve ? '<td><b>' + esc(textoFormatoNombre(m.asesor)) + '</b></td>' : '') + '<td>' + esc(m.idLlamada || '-') + '</td>' +
+      '<td>' + esc(m.fecha || '-') + '</td>' + (ve ? '<td><b>' + esc(_cmpNombre(m.asesor)) + '</b></td>' : '') + '<td>' + esc(m.idLlamada || '-') + '</td>' +
       '<td><span class="cc2-pill cc2-' + c.k + '">' + _caPct(m.puntaje) + '</span></td><td class="ca-mot">' + esc((m.extras && m.extras.motivo) || _cmpMotivo(m, pl)) + '</td></tr>';
   }).join('');
   var llamadas = '<div class="aurora-card"><div class="aurora-card-title">Llamadas con fallas (' + fallas.length + ')</div>' +
@@ -185,7 +192,7 @@ function _cmpLinea(canvasId, cats, vals, cnts) {
     ref(90, CG), ref(70, CR)] }, options: o });
 }
 function _cmpGraficas(v, i, ve) {
-  if (ve && v.lineaAsesor.length) _cmpLinea('cmp-c-as-' + i, v.lineaAsesor.map(function (a) { return textoFormatoNombre(a.name); }), v.lineaAsesor.map(function (a) { return a.avg; }), v.lineaAsesor.map(function (a) { return a.cnt; }));
+  if (ve && v.lineaAsesor.length) _cmpLinea('cmp-c-as-' + i, v.lineaAsesor.map(function (a) { return _cmpNombre(a.name); }), v.lineaAsesor.map(function (a) { return a.avg; }), v.lineaAsesor.map(function (a) { return a.cnt; }));
   if (v.porMes.length) _cmpLinea('cmp-c-mes-' + i, v.porMes.map(function (x) { return x.label; }), v.porMes.map(function (x) { return x.avg; }), v.porMes.map(function (x) { return x.monitoreos; }));
   if (v.total && typeof _gdChart === 'function' && typeof loPie === 'function') {
     var o = loPie(null);
@@ -253,7 +260,7 @@ function _cmpPintarDetalle(enfocarBuscar) {
       (d.lista.length ? d.lista.map(function (m) {
         var k = ceClase(m.puntaje === null || m.puntaje === undefined ? null : Number(m.puntaje));
         return '<tr class="ca-click" tabindex="0" role="button" onclick="_cmpVer(\'' + cs + '\',' + m.id + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();_cmpVer(\'' + cs + '\',' + m.id + ')}">' +
-          '<td>' + esc(m.fecha || '-') + '</td>' + (c.ve ? '<td><b>' + esc(textoFormatoNombre(m.asesor)) + '</b></td>' : '') + '<td>' + esc(m.idLlamada || '-') + '</td><td>' + esc(m.codificacion || '-') + '</td><td>' + esc(m.evaluador || '-') + '</td>' +
+          '<td>' + esc(m.fecha || '-') + '</td>' + (c.ve ? '<td><b>' + esc(_cmpNombre(m.asesor)) + '</b></td>' : '') + '<td>' + esc(m.idLlamada || '-') + '</td><td>' + esc(m.codificacion || '-') + '</td><td>' + esc(m.evaluador || '-') + '</td>' +
           '<td><span class="cc2-pill cc2-' + k.k + '">' + (m.puntaje === null || m.puntaje === undefined ? 'Incompleto' : cePct(Number(m.puntaje))) + '</span></td><td class="ca-mot">' + esc((m.extras && m.extras.motivo) || _cmpMotivo(m, c.pl) || (m.puntaje === null || m.puntaje === undefined ? '' : 'Sin afectaciones')) + '</td></tr>';
       }).join('') : '<tr><td colspan="7" class="ca-vacio">' + (_cmpDlg.q ? 'Ningún monitoreo de ese asesor en este mes.' : 'Sin monitoreos en este mes.') + '</td></tr>') + '</table></div>';
   if (enfocarBuscar) { var q = document.getElementById('cmp-dlg-q'); if (q) { q.focus(); q.setSelectionRange(q.value.length, q.value.length); } }
@@ -278,7 +285,7 @@ function _cmpPintarResumen(enfocarBuscar) {
     '<div style="overflow-x:auto"><table class="aurora-rank-table"><tr><th>#</th><th>Nombre del asesor</th><th># Monitoreos</th><th>Prom. puntaje</th><th>Clasificación</th><th>Alerta críticos</th><th>Total fallos críticos</th></tr>' +
       (filas.length ? filas.map(function (a, n) {
         return '<tr class="ca-click" tabindex="0" role="button" data-a="' + esc(a.name) + '" onclick="_cmpDeResumenADetalle(this.dataset.a)" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();_cmpDeResumenADetalle(this.dataset.a)}">' +
-          '<td>' + (n + 1) + '</td><td><b>' + esc(textoFormatoNombre(a.name)) + '</b></td><td>' + a.cnt + '</td><td>' + cePct(a.avg) + '</td><td>' + _caPill(a.clase) + '</td><td>' + _caPill(a.alerta) + '</td><td>' + a.fallos + '</td></tr>';
+          '<td>' + (n + 1) + '</td><td><b>' + esc(_cmpNombre(a.name)) + '</b></td><td>' + a.cnt + '</td><td>' + cePct(a.avg) + '</td><td>' + _caPill(a.clase) + '</td><td>' + _caPill(a.alerta) + '</td><td>' + a.fallos + '</td></tr>';
       }).join('') : '<tr><td colspan="7" class="ca-vacio">' + (_cmpDlg.q ? 'Ningún asesor coincide con la búsqueda.' : 'Sin monitoreos completos en este periodo.') + '</td></tr>') + '</table></div>' +
     '<p class="cpl-ayuda">Se calcula automáticamente con los monitoreos completos de la plantilla. Alerta críticos: 0 fallos = sin fallos · 1 = alerta · 2 o más = crítico frecuente. Toca un asesor para ver sus monitoreos.</p>';
   if (enfocarBuscar) { var q = document.getElementById('cmp-dlg-q'); if (q) { q.focus(); q.setSelectionRange(q.value.length, q.value.length); } }
@@ -294,7 +301,7 @@ function _cmpPintarResumenDescuento(c, host, filas, enfocarBuscar) {
       (filas.length ? filas.map(function (a, n) {
         var d = porNombre[String(a.name).trim().toLowerCase()] || { enCero: 0, mejor: null, peor: null };
         return '<tr class="ca-click" tabindex="0" role="button" data-a="' + esc(a.name) + '" onclick="_cmpDeResumenADetalle(this.dataset.a)" onkeydown="_cmpTeclaFila(event, this)">' +
-          '<td>' + (n + 1) + '</td><td><b>' + esc(textoFormatoNombre(a.name)) + '</b></td><td>' + a.cnt + '</td><td>' + cePct(a.avg) + '</td><td>' + _caPill(a.clase) + '</td><td>' + d.enCero + '</td><td>' + cePct(d.mejor) + '</td><td>' + cePct(d.peor) + '</td></tr>';
+          '<td>' + (n + 1) + '</td><td><b>' + esc(_cmpNombre(a.name)) + '</b></td><td>' + a.cnt + '</td><td>' + cePct(a.avg) + '</td><td>' + _caPill(a.clase) + '</td><td>' + d.enCero + '</td><td>' + cePct(d.mejor) + '</td><td>' + cePct(d.peor) + '</td></tr>';
       }).join('') : '<tr><td colspan="8" class="ca-vacio">' + (_cmpDlg.q ? 'Ningún asesor coincide con la búsqueda.' : 'Sin monitoreos completos en este periodo.') + '</td></tr>') + '</table></div>' +
     '<p class="cpl-ayuda">Cálculo por descuento: un crítico en NO deja la nota en 0 %. «En 0 %» = monitoreos con nota 0. Toca un asesor para ver sus monitoreos.</p>';
   if (enfocarBuscar) { var q = document.getElementById('cmp-dlg-q'); if (q) { q.focus(); q.setSelectionRange(q.value.length, q.value.length); } }

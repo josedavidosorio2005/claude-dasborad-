@@ -205,6 +205,14 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   (solo lectura, sin calificar ninguna llamada de prueba). Para ver la hora de las encuestas ya
   cargadas, el supervisor debe volver a subir agosto, septiembre y octubre de Encuesta.
 
+- **ORLANT, Calidad: 32 monitoreos con «Invalid Date» como asesor** (Fase 332, 11/11) — 16 de
+  septiembre (carga del 07/10) y 16 de octubre (carga del 29/10). El nombre real no está guardado en
+  la plataforma; hoy se muestran como «Sin nombre (revisar carga)» y cuentan en el promedio (95,52).
+  Opciones, todas con tu OK escrito (es escribir en producción): (a) que Edwin pase el Excel que se
+  subió esos días y se corrige cada nombre desde Calidad › Monitoreos › Editar, por la interfaz; o
+  (b) dejarlos así. No se recomienda volver a subir el mes: la carga masiva los tomaría como
+  monitoreos nuevos (el nombre cambia) y quedarían duplicados.
+
 ## 2. Esperando una respuesta de Edwin
 
 - **Mobilize, Calidad de encuestas: ¿los monitoreos de encuesta cuentan en el promedio?** (Fase 331,

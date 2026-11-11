@@ -196,9 +196,11 @@ const GENERADORES = {
     key: 'calidad', label: 'Calidad',
     panels: (aj && aj.clasica)
       ? [
-        { tipo: 'calidad_kpis', campana },
-        { tipo: 'calidad_pie', campana, titulo: 'Distribución de clasificación' },
-        { tipo: 'calidad_bar_asesores', campana, titulo: 'Promedio de calidad por asesor' },
+        // Fase 332 (reporte del supervisor): los 3 de antes quedan ocultos por configuracion
+        // (no se borran); se ve solo «Resultado de los monitoreos».
+        { tipo: 'calidad_kpis', campana, oculto: true },
+        { tipo: 'calidad_pie', campana, titulo: 'Distribución de clasificación', oculto: true },
+        { tipo: 'calidad_bar_asesores', campana, titulo: 'Promedio de calidad por asesor', oculto: true },
         { tipo: 'calidad_monitoreos_panel', campana }, // Fase 307: + lo que califican los lideres (como Mobilize)
       ]
       : [{ tipo: 'calidad_monitoreos_panel', campana }],

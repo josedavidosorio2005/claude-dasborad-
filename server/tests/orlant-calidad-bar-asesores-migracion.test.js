@@ -86,7 +86,9 @@ test('migracion dashboards_config_orlant_calidad_bar_asesores_v1: agrega el pane
   const layout = JSON.parse(row.layout);
   const tab = layout.tabs.find((t) => t.key === 'calidad');
   assert.ok(tab);
-  tab.panels = tab.panels.filter((p) => p.tipo !== 'calidad_monitoreos_panel') /* Fase 307 */;
+  tab.panels = tab.panels.filter((p) => p.tipo !== 'calidad_monitoreos_panel') /* Fase 307 */
+    // Fase 332: despues se marcan `oculto: true` (no se borran); aqui se compara lo demas.
+    .map((p) => { assert.equal(p.oculto, true, p.tipo + ' oculto por la Fase 332'); const c = Object.assign({}, p); delete c.oculto; return c; });
   assert.equal(tab.panels.length, 3);
   assert.deepEqual(tab.panels[0], CALIDAD_VIEJO.panels[0], 'calidad_kpis queda exactamente igual');
   assert.deepEqual(tab.panels[1], CALIDAD_VIEJO.panels[1], 'calidad_pie queda exactamente igual');
