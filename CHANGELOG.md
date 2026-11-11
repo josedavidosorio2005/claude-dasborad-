@@ -4,6 +4,14 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.174.1 — Noviembre 2026
+
+**Fase 339: Mobilize ya no muestra la carga «Calidad: resumen por asesor».**
+
+- En Cargar Datos de Mobilize ya no aparece «Calidad: resumen por asesor» (la base de Calidad que se
+  subía a mano). Calidad de Mobilize se califica en la plataforma.
+- No se borró nada: lo que se subió antes sigue guardado. Las demás campañas no cambian.
+
 ## v1.174.0 — Noviembre 2026
 
 **Fase 338: Calidad del dashboard — «Llamadas con fallas» más corta.**
