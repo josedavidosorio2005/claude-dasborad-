@@ -13,7 +13,7 @@ const { db, request, app, tokenFor, MASTER_PASSWORD, SEED } = require('./helpers
 
 const auth = (t) => ({ Authorization: `Bearer ${t}` });
 const MES = new Date().toISOString().slice(0, 7);
-const FECHA = `${MES}-15`;
+const FECHA = `${MES}-01`; // Fase 337: la fecha ahora se respeta (no puede ser futura)
 const RESP_TODO_SI = Object.fromEntries(Array.from({ length: 17 }, (_, i) => [String(i + 1), 'SI']));
 
 async function calidadUser(adminToken, campana, sufijo) {

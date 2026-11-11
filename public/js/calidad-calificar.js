@@ -57,7 +57,9 @@ function _cc2Campo(c) {
       ases.map(function (u) { return '<option value="' + esc(u.nombre) + '" data-user-id="' + esc(u.id) + '">' + esc(textoFormatoNombre(u.nombre)) + '</option>'; }).join('') +
       '</select><small class="cc2-hint" id="cc2-asesor-info" hidden></small></label>';
   }
-  if (c.k === 'fecha') return '<label class="cc2-f">' + lbl + '<input type="date" id="' + id + '" value="' + esc(calFechaHoyLocal()) + '"' + (isFullAdmin() ? '' : ' disabled') + '></label>';
+  // Fase 337: «Fecha del monitoreo» editable para quien califica: hoy por defecto, fechas pasadas
+  // si, futuras no (el servidor vuelve a revisarlo).
+  if (c.k === 'fecha') return '<label class="cc2-f"><span class="cc2-lt">Fecha del monitoreo *</span><input type="date" id="' + id + '" value="' + esc(calFechaHoyLocal()) + '" max="' + esc(calFechaHoyLocal()) + '" min="2020-01-01" required></label>';
   if (c.k === 'evaluador') return '<label class="cc2-f">' + lbl + '<input type="text" id="' + id + '" value="' + esc(currentUser ? currentUser.nombre : 'Administrador') + '" disabled></label>';
   // Fase 318: canal auditado del formulario de siempre de ORLANT (se guarda en `canal`).
   if (c.k === 'canal') return '<label class="cc2-f">' + lbl + '<select id="' + id + '"><option value="LLAMADA">Llamada</option><option value="WPP">WhatsApp / Chat</option></select></label>';

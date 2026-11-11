@@ -15,6 +15,20 @@ const encMon = require('../encuesta-monitoreo'); // Fase 331
 const { validate, schemas } = require('../validation');
 const { cargarNivelServicioDiario } = require('../nivel-servicio-diario');
 const { fechaLimitesHoyColombia } = require('../fecha-limites');
+
+// Fase 337 (pedido urgente, 11/11): fecha del monitoreo elegida por quien califica. Valida que sea
+// una fecha real AAAA-MM-DD (nunca un texto como "Invalid Date", Fase 333), no futura (hoy en
+// Colombia) y no anterior a 2020. Devuelve null si sirve o el mensaje de error.
+function errorFechaMonitoreo(fecha) {
+  const s = String(fecha == null ? '' : fecha).trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return 'La fecha del monitoreo debe tener formato AAAA-MM-DD';
+  const [y, m, d] = s.split('-').map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  if (isNaN(dt.getTime()) || dt.getUTCFullYear() !== y || dt.getUTCMonth() !== m - 1 || dt.getUTCDate() !== d) return 'La fecha del monitoreo no existe en el calendario';
+  if (s > fechaLimitesHoyColombia()) return 'La fecha del monitoreo no puede ser futura';
+  if (s < '2020-01-01') return 'La fecha del monitoreo no puede ser anterior a 2020';
+  return null;
+}
 const { wrap, nowStr, logEvent, actorLabel } = require('./shared');
 const { aplicarAliasAFilas } = require('../alias-asesores');
 const camposLib = require('../calidad-campos'); // Fase 252
@@ -637,7 +651,10 @@ router.post(
     // Colombia, salvo que el actor sea administrador completo (correccion
     // explicita, envia una fecha distinta).
     const evaluador = req.actor.nombre;
-    const fecha = isFullAdmin(req.actor) && b.fecha ? b.fecha : fechaLimitesHoyColombia();
+    // Fase 337: quien califica elige la fecha del monitoreo (hoy por defecto); antes, solo el admin.
+    const fecha = b.fecha ? String(b.fecha).trim() : fechaLimitesHoyColombia();
+    const errFecha = errorFechaMonitoreo(fecha);
+    if (errFecha) return res.status(400).json({ error: errFecha });
     const asesorUserId = resolverAsesorUserId(b.asesorUserId, b.asesor, b.campana);
     // Fase 95 (tema B): si la campana ya tiene catalogo de codificaciones,
     // el valor debe estar en la lista activa; si no tiene catalogo
@@ -851,7 +868,9 @@ router.put(
     // nombre visible ni evaluadorUserId) -- no se aceptan del body. La
     // fecha solo la puede corregir un administrador completo; cualquier
     // otro rol que edite (REPORTES) mantiene la fecha original.
-    const fecha = isFullAdmin(req.actor) && b.fecha ? b.fecha : row.fecha;
+    // Fase 337: quien puede editar el monitoreo puede corregir su fecha (antes, solo el admin).
+    const fecha = b.fecha ? String(b.fecha).trim() : row.fecha;
+    if (fecha !== row.fecha) { const errF = errorFechaMonitoreo(fecha); if (errF) return res.status(400).json({ error: errF }); }
     const asesorNombre = b.asesor ?? row.asesor;
     const asesorUserId = b.asesorUserId
       ? resolverAsesorUserId(b.asesorUserId, asesorNombre, row.campana)
@@ -903,7 +922,39 @@ router.put(
       row.id
     );
     const updated = db.prepare('SELECT * FROM monitoreos WHERE id = ?').get(row.id);
-    logCalEvent('MONITOREO_EDIT', updated.asesor, row.campana, req.actor, `Puntaje: ${score.puntaje}`);
+    logCalEvent('MONITOREO_EDIT', updated.asesor, row.campana, req.actor, `Puntaje: ${score.puntaje}` + (fecha !== row.fecha ? ` · fecha ${row.fecha} → ${fecha}` : '')); // Fase 337
+    res.json(monitoreoPara(req.actor, updated));
+  })
+);
+
+// Fase 337 (pedido urgente, 11/11): cambiar SOLO la fecha de un monitoreo guardado. No recalcula la
+// nota ni toca respuestas, evaluador u observaciones: solo `fecha`, `mes` (el monitoreo pasa al mes
+// que corresponde en todas las vistas) y `updatedAt`. Pueden: quien lo califico (CALIDAD o
+// SUPERVISOR, con acceso para calificar la campaña), Reportes de la campaña y el administrador.
+// El asesor y el cliente, nunca. Queda en el historial: quien, fecha anterior y nueva.
+function puedeCambiarFecha(actor, row) {
+  if (!actor) return false;
+  if (canManageMonitoreos(actor, row.campana)) return true; // admin y Reportes de la campaña
+  return actor.id != null && !actor.isMasterAdmin && row.evaluadorUserId === actor.id && canEvaluateCampaign(actor, row.campana);
+}
+router.put(
+  '/monitoreos/:id/fecha',
+  requireActor,
+  validate(schemas.idParamSchema, 'params'),
+  validate(schemas.cambiarFechaMonitoreoBody),
+  wrap((req, res) => {
+    const row = db.prepare('SELECT * FROM monitoreos WHERE id = ?').get(req.params.id);
+    if (!row) return res.status(404).json({ error: 'Monitoreo no encontrado' });
+    if (!puedeCambiarFecha(req.actor, row)) {
+      return res.status(403).json({ error: 'Solo quien calificó el monitoreo, el rol Reportes o el administrador pueden cambiar su fecha' });
+    }
+    const nueva = req.body.fecha;
+    const err = errorFechaMonitoreo(nueva);
+    if (err) return res.status(400).json({ error: err });
+    if (nueva === row.fecha) return res.json(monitoreoPara(req.actor, row));
+    db.prepare('UPDATE monitoreos SET fecha = ?, mes = ?, updatedAt = ? WHERE id = ?').run(nueva, calc.monthKey(nueva), nowStr(), row.id);
+    const updated = db.prepare('SELECT * FROM monitoreos WHERE id = ?').get(row.id);
+    logCalEvent('MONITOREO_FECHA', row.asesor, row.campana, req.actor, `Monitoreo ${row.id}: fecha ${row.fecha} → ${nueva} (sin cambiar la nota)`);
     res.json(monitoreoPara(req.actor, updated));
   })
 );

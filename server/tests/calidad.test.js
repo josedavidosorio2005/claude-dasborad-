@@ -4,7 +4,7 @@ const { request, app, tokenFor, MASTER_PASSWORD } = require('./helpers');
 
 const auth = (t) => ({ Authorization: `Bearer ${t}` });
 const MES = new Date().toISOString().slice(0, 7);
-const FECHA = `${MES}-15`;
+const FECHA = `${MES}-01`; // Fase 337: la fecha ahora se respeta (no puede ser futura)
 
 // Crea un usuario CALIDAD con acceso a la campana indicada y devuelve su token + id.
 async function calidadUser(adminToken, campana, sufijo) {
