@@ -20731,3 +20731,12 @@ Barrido local (Brave, copia de la base demo, administrador, todas las pestañas 
 - «Calificación definitiva por asesor»: el botón quedaba encima de la banda de colores (`.cmp-banda`).
 
 Arreglo: `_gdVerDatosAncla` sube a la fila `.cmp-torta` y salta la leyenda (`.cmp-banda`, `.cmp-pie-leg`) antes de insertar; el resto de gráficas queda igual. Las tarjetas con dos gráficas (salida de ORLANT) siguen con un botón debajo de cada una, y las que tienen tabla debajo (Inasistencia, Efectividad, Ranking) lo tienen entre la gráfica y la tabla, que es la regla. Prueba `fase341` (4, la función real con un DOM mínimo). Capturas de las tarjetas en claro y oscuro, 375/768/1440, fuera del repo. Las 3 propuestas de paleta van aparte en un documento, sin cambiar colores.
+
+## Fase 342 — Plantilla principal automática (v1.175.0, 2026-11-11)
+
+Decisión del usuario después de la Fase 340: quien supervisa o hace calidad en una campaña queda habilitado para la plantilla principal de esa campaña aunque tenga otras marcadas.
+
+- `canUsePlantilla(actor, familia, fila)` (`server/auth.js`): además de la regla de la Fase 237 (sin marcadas, todas; con marcadas, las marcadas), habilita la fila `principal` de una campaña donde `canEvaluateCampaign` es verdadero (CALIDAD con la campaña o SUPERVISOR que la supervisa). Las dos llamadas (`GET /calidad/plantillas/todas` → `usable`, y `POST /monitoreos`) pasan la fila. Sin fila, la regla de antes.
+- No cambia: las no principales sin marcar siguen bloqueadas, la regla no da campañas, Reportes y el asesor no califican, y lo que ve cada rol en Monitoreos (Fase 334) es igual.
+- Texto de ayuda en Usuarios › Plantillas y el aviso sin plantilla de «Calificar» actualizados.
+- Pruebas `fase342` (4) y `fase237` ajustada (la principal ahora es usable para quien tiene otra marcada); la prueba por rol de `fase340` pasó a `fase342`.

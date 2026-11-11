@@ -41,7 +41,8 @@ function cc2AvisoSinPlantilla(camp) {
   var todas = (typeof CAL_PLANTILLAS_TODAS !== 'undefined' ? CAL_PLANTILLAS_TODAS : []).filter(function (p) { return p.campana === camp && p.activo !== false; });
   if (!todas.length) return 'Esta campaña todavía no tiene una plantilla de Calidad. El administrador la importa en Calidad › Plantillas.';
   var principal = todas.find(function (p) { return p.principal; }) || todas[0];
-  return 'Tu usuario no tiene habilitada la plantilla «' + (principal.nombre || camp) + '» para calificar en ' + camp + '. Pídele al administrador que la marque en tu usuario (Usuarios › Editar › Plantillas de Calidad).';
+  // Fase 342: la principal se habilita sola a quien califica la campaña; si sale esto, falta el acceso a la campaña.
+  return 'Tu usuario no tiene habilitada la plantilla «' + (principal.nombre || camp) + '» para calificar en ' + camp + '. Pídele al administrador que revise tu acceso a la campaña en Usuarios.';
 }
 // Fase 340: lleva al panel Calificar sin pasar por la regla de pestañas (Reportes edita sin poder calificar).
 function cc2MostrarPanel() {

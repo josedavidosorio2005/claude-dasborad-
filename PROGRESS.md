@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.174.3` (ver `server/package.json`, expuesta en
+- **Versión**: `1.175.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -518,6 +518,7 @@ mismo orden):
 - Fase 339 — Mobilize: la carga manual «Calidad: resumen por asesor» oculta por configuración (sin borrar datos) (v1.174.1, 2026-11-11)
 - Fase 340 — Calidad: un solo formulario «Calificar» para todos los roles (el viejo se quitó); sin plantilla habilitada, aviso claro; sin teléfono (v1.174.2, 2026-11-11)
 - Fase 341 — Dashboards: «Ver datos» siempre debajo de la gráfica y su leyenda, a la derecha (torta de Calidad y banda de colores corregidas) (v1.174.3, 2026-11-11)
+- Fase 342 — Calidad: la plantilla principal de cada campaña queda habilitada sola para quien la supervisa o la califica, aunque tenga otras marcadas (v1.175.0, 2026-11-11)
 - Fase 309 — Revisión de seguridad: el cliente ya no recibe el nombre de los líderes en `GET /metas`; resto en `docs/revision-seguridad-2026-11-09.md` (v1.154.1, 2026-11-10)
 - Fase 308 — Revisión antes de la reunión con clientes y pendientes del supervisor (solo docs, 2026-11-10)
 - Fase 307 — Calidad para que los líderes evalúen: ORLANT conserva su Calidad y suma «Resultado de los monitoreos» al final; Aurora ya lo tenía (se muestra con el primer monitoreo) (v1.154.0, 2026-11-10)

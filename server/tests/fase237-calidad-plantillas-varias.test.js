@@ -88,14 +88,14 @@ test('una plantilla de otra campaña o inactiva no se acepta', async () => {
   assert.match(r.body.error, /no es de esta campaña/);
 });
 
-test('acceso por plantilla: sin ninguna marcada, todas; con alguna marcada, solo esas (además de la campaña)', async () => {
+test('acceso por plantilla: sin ninguna marcada, todas; con alguna marcada, esas y la principal de su campaña (Fase 342)', async () => {
   const solo2 = await crear('f237solo2', 'CALIDAD', { Calidad: true, campana_ORLANT: true, ['plantilla_' + orlantSegundaId]: true });
   assert.equal((await request(app).post('/api/monitoreos').set(auth(solo2.token)).send(monitoreo({ plantillaId: orlantSegundaId }))).status, 201);
-  const sinPrincipal = await request(app).post('/api/monitoreos').set(auth(solo2.token)).send(monitoreo());
-  assert.equal(sinPrincipal.status, 403);
-  assert.match(sinPrincipal.body.error, /No tiene acceso a esa plantilla/);
+  // Fase 342: la principal de la campaña que califica queda habilitada sola.
+  const principal = await request(app).post('/api/monitoreos').set(auth(solo2.token)).send(monitoreo());
+  assert.equal(principal.status, 201, JSON.stringify(principal.body));
   const t = await request(app).get('/api/calidad/plantillas/todas').set(auth(solo2.token));
-  assert.deepEqual(t.body.filter((p) => p.campana === 'ORLANT').map((p) => p.usable), [false, true]);
+  assert.deepEqual(t.body.filter((p) => p.campana === 'ORLANT').map((p) => p.usable), [true, true]);
   // la plantilla no salta la campaña
   const sinCampana = await crear('f237sincamp', 'CALIDAD', { Calidad: true, campana_MOBILIZE: true, ['plantilla_' + orlantSegundaId]: true });
   assert.equal((await request(app).post('/api/monitoreos').set(auth(sinCampana.token)).send(monitoreo({ plantillaId: orlantSegundaId }))).status, 403);

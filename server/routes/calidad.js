@@ -330,7 +330,7 @@ router.get(
       .prepare('SELECT * FROM calidad_plantillas' + (conInactivas ? '' : ' WHERE activo = 1') + ' ORDER BY campana, principal DESC, id')
       .all()
       .filter((row) => puedeVerPlantillasDe(req.actor, row.campana));
-    res.json(rows.map((r) => Object.assign(toPlantilla(r), { usable: !!r.activo && canEvaluateCampaign(req.actor, r.campana) && canUsePlantilla(req.actor, familiaDe(r)) })));
+    res.json(rows.map((r) => Object.assign(toPlantilla(r), { usable: !!r.activo && canEvaluateCampaign(req.actor, r.campana) && canUsePlantilla(req.actor, familiaDe(r), r) })));
   })
 );
 
@@ -638,7 +638,7 @@ router.post(
       return res.status(400).json({ error: b.plantillaId ? 'Esa plantilla no es de esta campaña o no está activa' : 'Esa campana no tiene plantilla de calificacion' });
     }
     // Fase 237: acceso por plantilla (plantilla_<id>), ademas de la campaña.
-    if (!canUsePlantilla(req.actor, familiaDe(plantillaRow))) {
+    if (!canUsePlantilla(req.actor, familiaDe(plantillaRow), plantillaRow)) {
       return res.status(403).json({ error: 'No tiene acceso a esa plantilla de calificación' });
     }
     const plantilla = toPlantilla(plantillaRow);

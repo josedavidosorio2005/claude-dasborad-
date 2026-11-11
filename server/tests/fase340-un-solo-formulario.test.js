@@ -53,20 +53,5 @@ test('el formulario viejo ya no existe: ni su HTML ni su codigo de guardado', ()
   assert.ok(cc2.includes("if (calCanEvaluate()) switchCalTab('nuevo'); else cc2MostrarPanel();"), 'Reportes llega al formulario al editar');
 });
 
-// La prueba del telefono paso a fase343 (el telefono volvio).
-test('por rol (servidor): el SUPERVISOR sin la plantilla marcada no califica con ella; marcada, si', async () => {
-  const mk = async (user, perms) => {
-    const r = await request(app).post('/api/users').set(H(admin)).send({ nombre: 'Persona Ficticia ' + user, user, password: 'Clave#Fase340x', rol: 'SUPERVISOR', perms });
-    assert.equal(r.status, 201, JSON.stringify(r.body));
-    return tokenFor(user, 'Clave#Fase340x');
-  };
-  const principal = db.prepare("SELECT id FROM calidad_plantillas WHERE campana = 'MOBILIZE' AND principal = 1").get().id;
-  const otra = db.prepare("SELECT id FROM calidad_plantillas WHERE campana = 'ORLANT' AND principal = 1").get().id;
-  const sinMarca = await mk('sup340a', { Calidad: true, campana_MOBILIZE: true, ['plantilla_' + otra]: true });
-  const conMarca = await mk('sup340b', { Calidad: true, campana_MOBILIZE: true, ['plantilla_' + principal]: true });
-  const body = { campana: 'MOBILIZE', asesor: 'Asesor Ficticio', fecha: hoy, canal: 'LLAMADA', answers: { 1: 'SI' } };
-  assert.equal((await request(app).post('/api/monitoreos').set(H(sinMarca)).send(body)).status, 403, 'sin la plantilla marcada, el servidor no deja');
-  assert.equal((await request(app).post('/api/monitoreos').set(H(conMarca)).send(body)).status, 201);
-  const pls = (await request(app).get('/api/calidad/plantillas/todas').set(H(sinMarca))).body.filter((p) => p.campana === 'MOBILIZE');
-  assert.ok(pls.length && pls.every((p) => p.usable === false), 'por eso el navegador no tenia plantilla usable y caia al formulario viejo');
-});
+// La prueba del telefono paso a fase343 (el telefono volvio) y la prueba por rol del servidor a fase342
+// (la principal se habilita sola).
