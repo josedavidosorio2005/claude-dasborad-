@@ -241,6 +241,10 @@ declarar(['POST /calidad/llamadas-salida/carga/impacto', 'POST /calidad/llamadas
 // fase147-b-encuesta.test.js), carga cargaManual.
 declarar(['GET /calidad/encuestas/opciones', 'GET /calidad/encuestas/resumen', 'GET /calidad/encuestas/comentarios', 'GET /calidad/encuestas/fcr'], 'scopedRead');
 declarar(['POST /calidad/encuestas/carga/impacto', 'POST /calidad/encuestas/carga'], 'cargaManual');
+// Fase 331: Calidad de encuestas -- el equipo de Calidad de la campaña (nunca el ASESOR ni el cliente).
+// Los POST (abrir/cancelar) exigen ademas canEvaluateCampaign: fase331-calidad-encuestas.test.js.
+declarar(['GET /calidad/encuestas/monitoreo', 'GET /calidad/encuestas/monitoreo/conteo'], 'calidadEncuestas');
+declarar(['POST /calidad/encuestas/monitoreo/bloqueo', 'POST /calidad/encuestas/monitoreo/liberar'], 'calidadEncuestas');
 // Fase 142 (punto 4, ORLANT): WhatsApp por rangos de minutos -- mismo patron.
 declarar(['GET /calidad/whatsapp-tiempos/opciones'], 'scopedRead');
 declarar(['GET /calidad/whatsapp-tiempos/rangos', 'GET /calidad/whatsapp-tiempos/resumen'], 'scopedRead');
@@ -400,6 +404,9 @@ for (const [ruta, pol] of Object.entries(POLITICA)) {
           deberiaPasar = quienDeberiaPasarDataLoaderGlobal(rol) || (campana === PROPIA && rol === 'SUPERVISOR');
         } else if (pol.tipo === 'cargaCampana') {
           deberiaPasar = rol === 'ADMIN' || (campana === PROPIA && rol === 'SUPERVISOR');
+        } else if (pol.tipo === 'calidadEncuestas') {
+          // Fase 331: canVerCalidadEncuestas -- campana_ propia con el modulo Calidad o calificador.
+          deberiaPasar = rol === 'ADMIN' || (campana === PROPIA && ['CALIDAD', 'GERENCIA', 'SUPERVISOR', 'REPORTES'].includes(rol));
         } else {
           continue; // calidadEval/calidadManage/cargaManual/moduloYcarga se prueban aparte (necesitan POST)
         }

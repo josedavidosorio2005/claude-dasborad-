@@ -274,13 +274,16 @@ const createMonitoreoBody = z.object({
   // Fase 252: campos extra de la plantilla (placa, tipo de llamada, ID de
   // agente). La lista cerrada y los limites los aplica calidad-campos.js.
   extras: extrasMonitoreoSchema,
+  // Fase 331: CONN_ID de la llamada de "Calidad de encuestas" (monitoreo originado
+  // en una encuesta mal calificada). Sin el, es un monitoreo de siempre.
+  encuestaConnId: z.string().trim().min(1).max(100).optional(),
 });
 
 // Carga masiva de monitoreos (Excel de 3 hojas: Monitoreos + Diccionario +
 // Resumen por Asesor de apoyo — solo "Monitoreos" se parsea). Cada fila es
 // el mismo shape que createMonitoreoBody sin "campana" (va una sola vez a
 // nivel de carga, no por fila).
-const monitoreoBulkFila = createMonitoreoBody.omit({ campana: true });
+const monitoreoBulkFila = createMonitoreoBody.omit({ campana: true, encuestaConnId: true }); // Fase 331: la carga masiva no viene de encuestas
 const monitoreoBulkBody = z.object({
   campana: campanaSchema,
   archivoNombre: z.string().trim().max(300).optional().default(''),
@@ -1197,6 +1200,20 @@ const encuestasFcrQuery = z.object({
   base: z.enum(['total', 'respondieron', 'empezaron']).optional(), // Fase 200: + empezaron
 });
 
+// Fase 331: Calidad de encuestas (Mobilize).
+const encuestaMonitoreoQuery = z.object({
+  campana: campanaSchema,
+  estado: z.enum(['pendientes', 'resueltas', 'todas']).optional().default('pendientes'),
+  pregunta: z.enum(['q1', 'q2', 'q3', 'q4']).optional(),
+  desde: fechaSchema.optional(),
+  hasta: fechaSchema.optional(),
+  meses: mesesListaSchema.optional(),
+});
+const encuestaMonitoreoBloqueoBody = z.object({
+  campana: campanaSchema,
+  connId: z.string().trim().min(1, 'Falta el ID de la llamada').max(100),
+});
+
 // ── "Ultima actualizacion" por cliente (Fase 131, Parte 4) ──────────────
 // `campana` (no `cliente`, por consistencia con el resto de endpoints de
 // solo lectura -- GET /calidad/.../opciones etc. -- aunque aqui el valor
@@ -1763,6 +1780,8 @@ module.exports = {
     encuestasOpcionesQuery,
     encuestasFiltrosQuery,
     encuestasFcrQuery,
+    encuestaMonitoreoQuery, // Fase 331
+    encuestaMonitoreoBloqueoBody, // Fase 331
     ultimaActualizacionQuery,
     inasistenciaCargaBody,
     inasistenciaFiltrosQuery,

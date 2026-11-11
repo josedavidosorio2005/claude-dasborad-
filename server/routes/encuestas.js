@@ -13,7 +13,8 @@ const express = require('express');
 const db = require('../db');
 // Fase 158: cache de /opciones (ver cache-opciones.js).
 const { opcionesConCache } = require('../cache-opciones');
-const { requireActor, campaignAccess, canLoadModule, campanaDeCarga } = require('../auth');
+const { requireActor, campaignAccess, canLoadModule, campanaDeCarga, canVerCalidadEncuestas, canEvaluateCampaign } = require('../auth');
+const encMon = require('../encuesta-monitoreo'); // Fase 331
 const { validate, schemas } = require('../validation');
 const {
   impactoEncuestas,
@@ -116,6 +117,69 @@ router.post(
       `${resultado.desde} a ${resultado.hasta} (${resultado.borradas} reemplazada(s))`
     );
     res.status(201).json(resultado);
+  })
+);
+
+// ══════════════════════════════════════════════════════════
+// Fase 331: Calidad de encuestas (Mobilize). Llamadas con la encuesta mal
+// calificada (reglas por pregunta en encuesta_monitoreo_reglas), una fila por
+// CONN_ID, con su monitoreo si ya se califico. Solo quien tiene acceso al
+// Modulo de Calidad de la campaña; nunca el ASESOR ni la cuenta de cliente.
+// Sin telefonos (la tabla encuestas no los guarda, regla de la Fase 131).
+// ══════════════════════════════════════════════════════════
+function sinCalidadEncuestas(res) {
+  return res.status(403).json({ error: 'Calidad de encuestas solo está disponible para el equipo de Calidad de la campaña' });
+}
+
+router.get(
+  '/calidad/encuestas/monitoreo',
+  requireActor,
+  validate(schemas.encuestaMonitoreoQuery, 'query'),
+  wrap((req, res) => {
+    if (!canVerCalidadEncuestas(req.actor, req.query.campana)) return sinCalidadEncuestas(res);
+    const r = encMon.listar(db, req.query, req.actor);
+    res.json(Object.assign(r, { activa: r.reglas.length > 0, puedeCalificar: canEvaluateCampaign(req.actor, req.query.campana), bloqueoMinutos: encMon.BLOQUEO_MS / 60000 }));
+  })
+);
+
+// Contador de la pestaña (la alerta): solo el numero de pendientes.
+router.get(
+  '/calidad/encuestas/monitoreo/conteo',
+  requireActor,
+  validate(schemas.encuestasOpcionesQuery, 'query'),
+  wrap((req, res) => {
+    if (!canVerCalidadEncuestas(req.actor, req.query.campana)) return sinCalidadEncuestas(res);
+    const activa = encMon.campanaTieneReglas(db, req.query.campana);
+    res.json({ activa, pendientes: activa ? encMon.contarPendientes(db, req.query.campana) : 0 });
+  })
+);
+
+// Abrir una llamada para calificarla (o renovar el bloqueo propio).
+router.post(
+  '/calidad/encuestas/monitoreo/bloqueo',
+  requireActor,
+  validate(schemas.encuestaMonitoreoBloqueoBody),
+  wrap((req, res) => {
+    const { campana, connId } = req.body;
+    if (!canVerCalidadEncuestas(req.actor, campana)) return sinCalidadEncuestas(res);
+    if (!canEvaluateCampaign(req.actor, campana)) return res.status(403).json({ error: 'No tiene permiso para calificar en esta campaña' });
+    const r = encMon.bloquear(db, { campana, connId, actor: req.actor });
+    if (!r.ok) return res.status(r.status).json({ error: r.error, bloqueadoPor: r.bloqueadoPor || null, resuelta: !!r.resuelta });
+    res.json(r);
+  })
+);
+
+// Cancelar: libera el bloqueo propio.
+router.post(
+  '/calidad/encuestas/monitoreo/liberar',
+  requireActor,
+  validate(schemas.encuestaMonitoreoBloqueoBody),
+  wrap((req, res) => {
+    const { campana, connId } = req.body;
+    if (!canVerCalidadEncuestas(req.actor, campana)) return sinCalidadEncuestas(res);
+    const r = encMon.liberar(db, { campana, connId, actor: req.actor });
+    if (!r.ok) return res.status(r.status).json({ error: r.error, bloqueadoPor: r.bloqueadoPor || null });
+    res.json(r);
   })
 );
 
