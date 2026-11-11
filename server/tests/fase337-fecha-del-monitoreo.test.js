@@ -114,5 +114,5 @@ test('pantalla: campo «Fecha del monitoreo» editable (hoy, sin futuras) y «Ca
   const cal = PUB('js/calidad.js');
   assert.ok(cal.includes("apiRequest('PUT','/monitoreos/'+id+'/fecha', { fecha: fecha })"));
   assert.ok(cal.includes('Cambiar fecha</button>'));
-  assert.ok(PUB('index.html').includes('<label for="cf-fecha">Fecha del monitoreo</label><input type="date" id="cf-fecha" min="2020-01-01">'));
+  assert.ok(!PUB('index.html').includes('id="cf-fecha"'), 'Fase 340: un solo formulario (el viejo, con cf-fecha, se retiro)');
 });

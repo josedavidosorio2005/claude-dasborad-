@@ -20,14 +20,17 @@ before(async () => {
   orlant = { id: row.id, campana: 'ORLANT', engine: row.engine, principal: true, campos: row.campos ? JSON.parse(row.campos) : null, items: JSON.parse(row.items) };
 });
 
-test('cc2CamposDe: ORLANT (sin campos) usa el formulario comun; las plantillas con campos, los suyos; SURA y las demas sin campos, el de antes', () => {
+// Fase 340: un solo formulario. Toda plantilla usa el comun (sin campos propios: los genericos) y
+// el telefono nunca sale.
+test('cc2CamposDe: ORLANT usa sus campos del comun; con campos, los suyos; sin campos, los genericos; nunca telefono', () => {
   assert.equal(orlant.campos, null, 'la plantilla de ORLANT no se toca (sigue sin campos)');
-  assert.deepEqual(C.cc2CamposDe(orlant).map((c) => c.k), ['asesor', 'fecha', 'idLlamada', 'telefono', 'codificacion', 'evaluador', 'canal', 'observaciones']);
+  assert.deepEqual(C.cc2CamposDe(orlant).map((c) => c.k), ['asesor', 'fecha', 'idLlamada', 'codificacion', 'evaluador', 'canal', 'observaciones']);
   const mob = { campana: 'MOBILIZE', campos: [{ k: 'asesor', etiqueta: 'A' }, { k: 'placa', etiqueta: 'P' }] };
-  assert.equal(C.cc2CamposDe(mob), mob.campos, 'Mobilize/Aurora: sus propios campos, igual que hoy');
-  assert.equal(C.cc2CamposDe({ campana: 'SURA', engine: 'sura', campos: null }), null);
-  assert.equal(C.cc2CamposDe({ campana: 'ORLANT', engine: 'sura', campos: null }), null, 'motor de descuento nunca');
-  assert.equal(C.cc2CamposDe({ campana: 'OTRA', campos: null }), null);
+  assert.deepEqual(C.cc2CamposDe(mob), mob.campos, 'Mobilize/Aurora: sus propios campos, igual que hoy');
+  const conTel = { campana: 'CLINICA AURORA', campos: [{ k: 'asesor', etiqueta: 'A' }, { k: 'telefono', etiqueta: 'T' }, { k: 'fecha', etiqueta: 'F' }] };
+  assert.deepEqual(C.cc2CamposDe(conTel).map((c) => c.k), ['asesor', 'fecha'], 'el telefono de la plantilla no sale');
+  assert.deepEqual(C.cc2CamposDe({ campana: 'OTRA', campos: null }).map((c) => c.k), C.CC2_CAMPOS_GENERICOS.map((c) => c.k), 'sin campos: los genericos (nunca el formulario viejo)');
+  assert.ok(!C.CC2_CAMPOS_GENERICOS.some((c) => c.k === 'telefono'));
   assert.equal(C.cc2CamposDe(null), null);
 });
 
@@ -74,7 +77,7 @@ test('guardar como lo manda el formulario comun para ORLANT: sin plantillaId (la
 test('front: el formulario comun se elige con cc2CamposDe, tiene canal, y editar un monitoreo viejo sin plantillaId abre la principal', () => {
   const src = pub('calidad-calificar.js');
   assert.doesNotThrow(() => new vm.Script(src)); assert.doesNotThrow(() => new vm.Script(pub('calidad-calificar-logic.js')));
-  assert.match(src, /var usar = !!cc2CamposDe\(p\);/);
+  assert.ok(!src.includes("getElementById('cf-viejo')"), 'Fase 340: el formulario viejo ya no existe');
   assert.match(src, /var b = cc2Bloques\(cc2CamposDe\(p\)\);/);
   assert.match(src, /if \(c\.k === 'canal'\) return .*<option value="LLAMADA">Llamada<\/option><option value="WPP">WhatsApp \/ Chat<\/option>/);
   assert.match(src, /canal: _cc2Val\('canal'\) \|\| 'LLAMADA'/);

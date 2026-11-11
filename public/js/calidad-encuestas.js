@@ -152,7 +152,7 @@ async function cenAbrir(connId) {
   _cen.campana = _ccampana;
   _cenIniciarRenovacion(r.renovarMs);
   // Formulario limpio (sin salir de una edicion a medias) con la plantilla principal.
-  if (typeof cc2Limpiar === 'function' && document.getElementById('cf2') && !document.getElementById('cf2').hidden) cc2Limpiar();
+  if (typeof cc2Limpiar === 'function') cc2Limpiar();
   if (typeof _calPlantillaElegida !== 'undefined') _calPlantillaElegida[_ccampana] = null;
   if (typeof resetCalForm === 'function') resetCalForm();
   switchCalTab('nuevo');
@@ -164,18 +164,17 @@ async function cenAbrir(connId) {
 }
 
 function _cenPrellenar(ll) {
-  var cf2 = document.getElementById('cf2');
-  var nuevo = cf2 && !cf2.hidden;
+  // Fase 340: un solo formulario (el comun, #cf2).
   var setVal = function (id, v) { var el = document.getElementById(id); if (el) el.value = v; };
-  setVal(nuevo ? 'cc2-f-idLlamada' : 'cf-idllamada', cenIdVisible(ll.connId)); // Fase 336: como se ve (el vinculo va aparte, con el original)
+  setVal('cc2-f-idLlamada', cenIdVisible(ll.connId)); // Fase 336: como se ve (el vinculo va aparte, con el original)
   // Asesor: solo si coincide con un usuario ASESOR de la campaña; si no, lo elige el evaluador.
-  var sel = document.getElementById(nuevo ? 'cc2-f-asesor' : 'cf-asesor');
+  var sel = document.getElementById('cc2-f-asesor');
   if (!sel) return;
   var opciones = Array.prototype.map.call(sel.options, function (o) { return { nombre: o.value, opt: o }; }).filter(function (x) { return x.nombre; });
   var hallado = cenBuscarAsesor(ll.agente, opciones);
   if (hallado) {
     sel.value = hallado.nombre;
-    if (nuevo && typeof _cc2AsesorElegido === 'function') _cc2AsesorElegido();
+    if (typeof _cc2AsesorElegido === 'function') _cc2AsesorElegido();
   }
   _cen.asesorEncontrado = !!hallado;
 }

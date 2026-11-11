@@ -93,8 +93,8 @@ test('pestaña: oculta hasta que el servidor da acceso, con contador; panel, avi
 
 test('formularios: los dos Calificar mandan el CONN_ID solo en un monitoreo NUEVO y vuelven a la lista', () => {
   const cal = PUB('js/calidad.js');
-  assert.ok(cal.includes("var deEncuesta = !editing && typeof cenModoActivo==='function' && cenModoActivo();"));
-  assert.ok(cal.includes('if(deEncuesta){ cenDespuesDeGuardar(); return; }'));
+  // Fase 340: el formulario viejo (submitMonitoreo de calidad.js) se retiro; queda solo el comun (cc2).
+  assert.ok(!cal.includes('async function submitMonitoreo('));
   assert.ok(cal.includes("if(typeof cenAlSalirDelModulo==='function') cenAlSalirDelModulo(); // Fase 331: libera la llamada abierta"), 'cerrar el modulo libera el bloqueo');
   const cc2 = PUB('js/calidad-calificar.js');
   assert.ok(cc2.includes("var deEncuesta = !editando && typeof cenModoActivo === 'function' && cenModoActivo();"));

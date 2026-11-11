@@ -18,20 +18,36 @@ function cc2PlantillaActual(camp) {
   return us.find(function (x) { return x.principal; }) || us[0] || null;
 }
 
-// Muestra el formulario nuevo si la plantilla trae campos. true = lo mostro.
+// Fase 340: el UNICO formulario «Calificar» (el viejo se retiro). true = lo dibujo con una plantilla.
+// Sin una plantilla que este usuario pueda usar en la campaña, un aviso claro (nunca otro formulario).
 function cc2Sync() {
   var nuevo = document.getElementById('cf2');
-  var viejo = document.getElementById('cf-viejo');
-  if (!nuevo || !viejo) return false;
+  if (!nuevo) return false;
+  nuevo.hidden = false;
   var p = cc2PlantillaActual(_ccampana);
-  var usar = !!cc2CamposDe(p); // Fase 318: tambien las plantillas con campos por campaña (ORLANT)
-  nuevo.hidden = !usar;
-  viejo.hidden = usar;
-  if (!usar) { _cc2.plantilla = null; return false; }
+  if (!p) {
+    _cc2.plantilla = null;
+    nuevo.innerHTML = '<div class="aurora-card"><p class="ca-vacio">' + esc(cc2AvisoSinPlantilla(_ccampana)) + '</p></div>';
+    return false;
+  }
   if (!_cc2.plantilla || _cc2.plantilla.id !== p.id) { _cc2.answers = {}; if (!_cc2.editId) _cc2.editId = null; }
   _cc2.plantilla = p;
   cc2Render();
   return true;
+}
+
+// Fase 340: por que no hay formulario (antes se caia al formulario viejo con la plantilla principal).
+function cc2AvisoSinPlantilla(camp) {
+  var todas = (typeof CAL_PLANTILLAS_TODAS !== 'undefined' ? CAL_PLANTILLAS_TODAS : []).filter(function (p) { return p.campana === camp && p.activo !== false; });
+  if (!todas.length) return 'Esta campaña todavía no tiene una plantilla de Calidad. El administrador la importa en Calidad › Plantillas.';
+  var principal = todas.find(function (p) { return p.principal; }) || todas[0];
+  return 'Tu usuario no tiene habilitada la plantilla «' + (principal.nombre || camp) + '» para calificar en ' + camp + '. Pídele al administrador que la marque en tu usuario (Usuarios › Editar › Plantillas de Calidad).';
+}
+// Fase 340: lleva al panel Calificar sin pasar por la regla de pestañas (Reportes edita sin poder calificar).
+function cc2MostrarPanel() {
+  _ctab = 'nuevo';
+  document.querySelectorAll('#calidad-modal .atab').forEach(function (el) { el.classList.toggle('atab-active', el.dataset.ctab === 'nuevo'); });
+  document.querySelectorAll('#calidad-modal .atab-panel').forEach(function (el) { el.classList.toggle('visible', el.id === 'cpanel-nuevo'); });
 }
 
 function _cc2Asesores() {
@@ -315,7 +331,7 @@ function cc2Editar(m) {
   _cc2.plantilla = p;
   _cc2.answers = {};
   Object.keys(m.answers || {}).forEach(function (k) { if (m.answers[k]) _cc2.answers[k] = m.answers[k]; });
-  switchCalTab('nuevo');
+  if (calCanEvaluate()) switchCalTab('nuevo'); else cc2MostrarPanel(); // Fase 340: Reportes tambien llega al formulario
   cc2Sync();
   var set = function (k, v) { var el = document.getElementById('cc2-f-' + k); if (el && v != null) el.value = v; };
   // Fase 270: si el asesor del monitoreo no esta en la lista (nombre viejo o
@@ -325,7 +341,7 @@ function cc2Editar(m) {
     var o = document.createElement('option'); o.value = m.asesor; o.textContent = textoFormatoNombre(m.asesor) + ' (sin usuario)';
     selA.appendChild(o); selA.disabled = false;
   }
-  set('asesor', m.asesor); _cc2AsesorElegido(); set('fecha', m.fecha); set('idLlamada', m.idLlamada); set('telefono', m.telefono);
+  set('asesor', m.asesor); _cc2AsesorElegido(); set('fecha', m.fecha); set('idLlamada', m.idLlamada); // Fase 340: sin telefono
   set('codificacion', m.codificacion); set('observaciones', m.observaciones); set('evaluador', m.evaluador);
   set('canal', m.canal || 'LLAMADA'); // Fase 318
   var ex = m.extras || {};
@@ -341,3 +357,6 @@ function cc2PuedeEditar(m) {
   var p = CAL_PLANTILLAS_TODAS.find(function (x) { return x.id === m.plantillaId; });
   return !!(p && p.campos && currentUser && currentUser.rol === 'CALIDAD' && m.evaluadorUserId === currentUser.id);
 }
+
+// Fase 340: lo que antes hacia el formulario viejo (calidad.js), ahora con el unico formulario.
+function resetCalForm() { if (typeof cc2Limpiar === 'function') cc2Limpiar(); }

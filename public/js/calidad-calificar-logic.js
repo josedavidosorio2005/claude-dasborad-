@@ -128,19 +128,29 @@ var CC2_CAMPOS_POR_CAMPANA = {
     { k: 'asesor', etiqueta: 'Nombre del asesor' },
     { k: 'fecha', etiqueta: 'Fecha' },
     { k: 'idLlamada', etiqueta: 'ID / Llamada - Wpp' },
-    { k: 'telefono', etiqueta: '# Teléfono' },
     { k: 'codificacion', etiqueta: 'Codificación' },
     { k: 'evaluador', etiqueta: 'Evaluador' },
     { k: 'canal', etiqueta: 'Canal auditado' },
     { k: 'observaciones', etiqueta: 'Observaciones generales' },
   ],
 };
-// Campos con que se dibuja el formulario comun para esta plantilla, o null (formulario de antes).
+// Fase 340: un solo formulario. Una plantilla sin `campos` ni entrada en CC2_CAMPOS_POR_CAMPANA usa
+// estos campos (los del formulario de antes, sin telefono). El formulario viejo ya no existe.
+var CC2_CAMPOS_GENERICOS = [
+  { k: 'asesor', etiqueta: 'Nombre del asesor' },
+  { k: 'fecha', etiqueta: 'Fecha' },
+  { k: 'idLlamada', etiqueta: 'ID / Llamada - Wpp' },
+  { k: 'codificacion', etiqueta: 'Codificación' },
+  { k: 'evaluador', etiqueta: 'Evaluador' },
+  { k: 'canal', etiqueta: 'Canal auditado' },
+  { k: 'observaciones', etiqueta: 'Observaciones generales' },
+];
+// Campos con que se dibuja el formulario comun para esta plantilla (null solo sin plantilla).
+// Fase 340 (regla «sin telefono»): el campo telefono nunca sale, aunque una plantilla lo traiga.
 function cc2CamposDe(p) {
   if (!p) return null;
-  if (p.campos) return p.campos;
-  if ((p.engine || p.motor) === 'sura') return null;
-  return CC2_CAMPOS_POR_CAMPANA[p.campana] || null;
+  var lista = p.campos || CC2_CAMPOS_POR_CAMPANA[p.campana] || CC2_CAMPOS_GENERICOS;
+  return lista.filter(function (c) { return c && c.k !== 'telefono'; });
 }
 
 // Campos del formulario de la plantilla, en 2 bloques: "Información general"
@@ -157,5 +167,5 @@ function cc2Bloques(campos) {
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { cc2EsDescuento: cc2EsDescuento, cc2Opciones: cc2Opciones, cc2Faltantes: cc2Faltantes, cc2Deducciones: cc2Deducciones, cc2Nota: cc2Nota, cc2Clase: cc2Clase, cc2Alerta: cc2Alerta,
     cc2SubItem: cc2SubItem, cc2Motivo: cc2Motivo, cc2SugerirObs: cc2SugerirObs, cc2PorCategoria: cc2PorCategoria, cc2Bloques: cc2Bloques,
-    CC2_CAMPOS_POR_CAMPANA: CC2_CAMPOS_POR_CAMPANA, cc2CamposDe: cc2CamposDe };
+    CC2_CAMPOS_POR_CAMPANA: CC2_CAMPOS_POR_CAMPANA, CC2_CAMPOS_GENERICOS: CC2_CAMPOS_GENERICOS, cc2CamposDe: cc2CamposDe };
 }

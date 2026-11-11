@@ -4,6 +4,19 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.174.2 — Noviembre 2026
+
+**Fase 340: Calidad — un solo formulario «Calificar» para todos.**
+
+- Ya no existe el formulario viejo de «Calificar». Todos los roles (Calidad, Supervisor, Reportes y
+  administrador) y todas las campañas califican y editan con el mismo formulario.
+- Si un usuario no tiene habilitada la plantilla de la campaña, en vez del formulario viejo sale un
+  aviso claro: el administrador debe marcarle la plantilla en Usuarios › Editar › Plantillas de Calidad.
+  (Esto era lo que le pasaba a un supervisor en SURA.)
+- El formulario ya no pide el teléfono y un monitoreo nuevo no lo guarda. Lo que ya estaba guardado
+  no se borró.
+- Las notas de los monitoreos guardados no cambian.
+
 ## v1.174.0 — Noviembre 2026
 
 **Fase 338: Calidad del dashboard — «Llamadas con fallas» más corta.**

@@ -20708,3 +20708,13 @@ El CONN_ID de Wolkvox llega con un apóstrofo inicial (marca de texto de Excel).
 - **Monitoreos de Calidad de encuestas**: Edwin confirma que cuentan como monitoreo normal. Verificado en local (prueba temporal, datos sintéticos): salen con su nota en Monitoreos, Resumen por asesor, Detalle por mes, Reportes, metas, la pestaña Calidad del dashboard y el botón «Monitoreo» de la Encuesta. Sin cambios.
 - **Eliminar monitoreos**: hoy solo el administrador y el rol Reportes de la campaña (servidor `canManageMonitoreos`); CALIDAD y SUPERVISOR no pueden. Sin cambios.
 - Prueba `fase338` (2, el bloque real en vm).
+
+## Fase 340 — Calidad: un solo formulario «Calificar» (v1.174.2, 2026-11-11)
+
+Crítico: un supervisor veía en SURA el formulario viejo de Calificar (con los ítems de otra plantilla).
+
+- **Causa** (diagnóstico de solo lectura en producción): el usuario tenía marcadas otras plantillas de Calidad pero no la de SURA. Con plantillas marcadas, el acceso por plantilla (Fase 237, `canUsePlantilla`) solo deja usar esas; sin plantilla usable, el navegador caía al formulario viejo (`#cf-viejo`) armado con la plantilla principal. Los monitoreos de SURA guardados tienen su plantilla y su nota correctas (0 diferencias).
+- **Ahora**: el formulario viejo se quitó (HTML y `submitMonitoreo`/lectura de ítems en `calidad.js`); todas las plantillas usan el formulario común (`cc2CamposDe`: los campos de la plantilla, los de su campaña o `CC2_CAMPOS_GENERICOS`). Sin plantilla usable sale un aviso (`cc2AvisoSinPlantilla`) que dice qué plantilla pedir al administrador. Reportes edita en el mismo formulario (`cc2MostrarPanel`). Calidad de encuestas prellena el formulario común.
+- **Regla «sin teléfono»**: ningún formulario muestra el campo (aunque la plantilla lo traiga); `POST /monitoreos` guarda `telefono` en null y `PUT` conserva lo ya guardado sin aceptar uno nuevo. Los teléfonos ya guardados (cargas masivas viejas de ORLANT y un monitoreo de Aurora) no se tocaron: limpiarlos solo con OK. La carga masiva por Excel todavía lee la columna TELEFONO (pendiente de decidir).
+- **Pendiente del administrador**: marcarle al supervisor la plantilla «Televentas SURA» en Usuarios (o decidir si `supervisa_<C>` debe habilitar sola la plantilla de su campaña).
+- Pruebas `fase340` (4) y `fase118`, `fase318`, `fase331`, `fase337` ajustadas. Local (Brave, copia de la base demo, plantilla SURA importada, datos sintéticos), claro y oscuro, 375/768/1440: CALIDAD (ORLANT y Mobilize con el formulario común, guarda), SUPERVISOR sin la plantilla (aviso), SUPERVISOR con la plantilla (formulario de SURA), Reportes (edita y actualiza); sin formulario viejo, sin teléfono, 0 errores de consola, sin scroll horizontal.
