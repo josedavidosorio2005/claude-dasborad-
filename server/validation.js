@@ -1161,6 +1161,8 @@ const encuestaFilaArraySchema = z.tuple([
   // Fase 184: CONN_ID (ID de la llamada, '' si el archivo no lo trae).
   // Opcional al final: una carga con la forma de antes (8 campos) sigue valida.
   z.string().trim().max(100).optional(),
+  // Fase 331: hora de la llamada (HH:MM, '' si no se pudo leer). Opcional al final.
+  z.string().trim().regex(/^(?:(?:[01]\d|2[0-3]):[0-5]\d)?$/, { message: 'hora debe ser HH:MM' }).optional(),
 ]);
 
 const encuestasCargaBody = z.object({

@@ -302,8 +302,10 @@ async function openCalidad(){
   renderCalCodifCampoForm('');
   var defaultTab = canEval ? 'nuevo' : (currentUser && currentUser.rol==='REPORTES' ? 'reportes' : 'resumen');
   switchCalTab(defaultTab);
+  if(typeof cenActualizarTab==='function') cenActualizarTab(); // Fase 331: pestaña y contador
 }
 function closeCalidad(){
+  if(typeof cenAlSalirDelModulo==='function') cenAlSalirDelModulo(); // Fase 331: libera la llamada abierta
   var cerrarReal = function(){ document.getElementById('calidad-overlay').classList.remove('show'); };
   if (typeof motionCerrarModal === 'function') motionCerrarModal('calidad-modal', cerrarReal);
   else cerrarReal();
@@ -327,6 +329,7 @@ async function onCalMesChange(){
   switchCalTab(_ctab);
 }
 async function onCalCampanaChange(){
+  if(typeof cenAlSalirDelModulo==='function') cenAlSalirDelModulo(); // Fase 331
   _ccampana = document.getElementById('cal-campana-sel').value;
   await loadCalData(_ccampana, _cmesFiltro || undefined);
   populateCalMesSelect();
@@ -335,6 +338,7 @@ async function onCalCampanaChange(){
   renderCalCodifCampoForm('');
   _calActualizarTabCarga();
   switchCalTab(_ctab);
+  if(typeof cenActualizarTab==='function') cenActualizarTab(); // Fase 331
 }
 
 // Fase 95 (tema B): si la campana tiene al menos una codificacion activa
@@ -394,6 +398,7 @@ function switchCalTab(t){
   if((t==='nuevo' || t==='carga') && !calCanEvaluate()) t='resumen';
   if(t==='carga' && _calCampanaTieneDashboard(_ccampana)) t='monitoreos';
   if(t==='plantillas' && !isFullAdmin()) t='resumen'; // Fase 253
+  if(t==='encuestas' && !(typeof _cen!=='undefined' && _cen.activa)) t = calCanEvaluate() ? 'nuevo' : 'resumen'; // Fase 331
   _ctab = t;
   document.querySelectorAll('#calidad-modal .atab').forEach(function(el){ el.classList.toggle('atab-active', el.dataset.ctab===t); });
   document.querySelectorAll('#calidad-modal .atab-panel').forEach(function(el){ el.classList.toggle('visible', el.id==='cpanel-'+t); });
@@ -408,6 +413,8 @@ function switchCalTab(t){
   else if(t==='reportes') setTimeout(renderCalReportes,60);
   else if(t==='config') renderCalConfig();
   else if(t==='plantillas' && typeof calPlantillasRender==='function') calPlantillasRender(); // Fase 253
+  else if(t==='encuestas' && typeof cenRender==='function') cenRender(); // Fase 331
+  if(typeof _cenPintarBanner==='function') _cenPintarBanner(); // Fase 331: datos de la llamada abierta
 }
 
 function renderCalItemsForm(){
@@ -572,6 +579,9 @@ async function submitMonitoreo(){
   // Fase 237: plantilla elegida (si la campaña tiene varias); sin ella, la principal.
   var pElegida = _calPlantillaDe(_ccampana);
   if(pElegida && !pElegida.principal && !editing) body.plantillaId = pElegida.id;
+  // Fase 331: monitoreo de una llamada de Calidad de encuestas (solo uno nuevo).
+  var deEncuesta = !editing && typeof cenModoActivo==='function' && cenModoActivo();
+  if(deEncuesta) Object.assign(body, cenCampoGuardar());
   var btn = document.querySelector('#cpanel-nuevo .btn-primary');
   try{
     await withButtonLoading(btn, 'Guardando...', async function(){
@@ -585,6 +595,7 @@ async function submitMonitoreo(){
   showToast(editing ? 'Monitoreo actualizado correctamente' : 'Monitoreo guardado correctamente');
   resetCalForm();
   await loadCalData(_ccampana, _cmesFiltro || undefined);
+  if(deEncuesta){ cenDespuesDeGuardar(); return; } // Fase 331: vuelve a la lista
   switchCalTab('monitoreos');
 }
 

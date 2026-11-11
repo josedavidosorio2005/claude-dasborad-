@@ -1052,6 +1052,8 @@
       <button class="atab atab-active" data-ctab="nuevo" id="ctab-btn-nuevo" onclick="switchCalTab('nuevo')">Calificar</button>
       <button class="atab" data-ctab="carga" id="ctab-btn-carga" onclick="switchCalTab('carga')">Carga Masiva (Excel)</button>
       <button class="atab" data-ctab="monitoreos" onclick="switchCalTab('monitoreos')">Monitoreos</button>
+      <!-- Fase 331: Calidad de encuestas (Mobilize); la muestra calidad-encuestas.js si el servidor da acceso -->
+      <button class="atab" data-ctab="encuestas" id="ctab-btn-encuestas" onclick="switchCalTab('encuestas')" hidden>Calidad de encuestas<span class="cen-badge" id="cen-badge" aria-hidden="true" hidden>0</span></button>
       <button class="atab" data-ctab="resumen" onclick="switchCalTab('resumen')">Resumen por Asesor</button>
       <button class="atab" data-ctab="detalle" onclick="switchCalTab('detalle')">Detalle por mes</button>
       <button class="atab" data-ctab="diccionario" onclick="switchCalTab('diccionario')">Diccionario</button>
@@ -1061,6 +1063,8 @@
     </div>
 
     <div id="cpanel-nuevo" class="atab-panel visible">
+      <!-- Fase 331: datos de la llamada de Calidad de encuestas que se esta calificando -->
+      <div class="cen-banner" id="cen-banner" role="status" hidden></div>
       <!-- Fase 254: formulario "Calificar" de las plantillas nuevas (como el HTML de Edwin) -->
       <div id="cf2" hidden></div>
       <div id="cf-viejo">
@@ -1130,6 +1134,13 @@
           <button class="btn-cancel" onclick="cancelarPreviewMonitoreos()">Descartar</button>
           <button class="btn-primary" id="cm-save-btn" onclick="guardarMonitoreosMasivo()">Guardar carga masiva</button>
         </div>
+      </div>
+    </div>
+
+    <div id="cpanel-encuestas" class="atab-panel">
+      <div class="aurora-card">
+        <div class="aurora-card-title">Calidad de encuestas</div>
+        <div id="cen-contenido"></div>
       </div>
     </div>
 
@@ -1980,6 +1991,8 @@
 <script src="js/errores.js"></script>
 <script src="js/calidad-calificar-logic.js"></script>
 <script src="js/calidad-calificar.js"></script>
+<script src="js/calidad-encuestas-logic.js"></script>
+<script src="js/calidad-encuestas.js"></script>
 <script src="js/alias-admin.js"></script>
 <script src="js/agendas-usuaria-logic.js"></script>
 <script src="js/agendas-usuaria.js"></script>

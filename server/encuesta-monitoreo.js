@@ -100,7 +100,7 @@ function listar(db, q, actor) {
   const sinId = db.prepare(`SELECT COUNT(*) AS n FROM encuestas WHERE ${where} AND connId = ''`).get(params).n;
   // Una fila por CONN_ID (si un mismo ID aparece dos veces, la primera por fecha).
   const filas = db.prepare(
-    `SELECT connId, fecha, agente, skill, q1, q2, q3, q4 FROM encuestas
+    `SELECT connId, fecha, hora, agente, skill, q1, q2, q3, q4 FROM encuestas
       WHERE ${where} AND connId <> '' ORDER BY fecha DESC, id DESC`
   ).all(params);
   const vistos = new Set();
@@ -132,6 +132,7 @@ function listar(db, q, actor) {
     out.push({
       connId: f.connId,
       fecha: f.fecha,
+      hora: f.hora || '',
       agente: f.agente,
       skill: f.skill,
       // Siempre TODAS las preguntas que fallo la llamada (aunque se filtre por una).
@@ -153,7 +154,7 @@ function llamadaMalCalificada(db, campana, connId) {
   const reglas = reglasDe(db, campana);
   if (!reglas.length) return null;
   const f = db.prepare(
-    "SELECT connId, fecha, agente, skill, q1, q2, q3, q4 FROM encuestas WHERE campana = ? AND connId = ? AND connId <> '' ORDER BY fecha, id LIMIT 1"
+    "SELECT connId, fecha, hora, agente, skill, q1, q2, q3, q4 FROM encuestas WHERE campana = ? AND connId = ? AND connId <> '' ORDER BY fecha, id LIMIT 1"
   ).get(campana, connId);
   if (!f) return null;
   const fallas = fallasDeFila(f, reglas);

@@ -4,6 +4,25 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.166.0 — Noviembre 2026
+
+**Fase 331 (parte 2): pestaña «Calidad de encuestas» en Calidad › Mobilize.**
+
+- Nueva pestaña con las llamadas de Mobilize cuya encuesta salió mal calificada, pendientes por
+  escuchar. El número rojo junto al nombre de la pestaña es la alerta de cuántas faltan (solo dentro
+  de la plataforma, sin correos).
+- Cada llamada aparece una sola vez, con su fecha, hora, ID de la llamada (con botón «Copiar» para
+  buscar la grabación en Wolkvox), el agente y qué preguntas calificó mal y con cuánto.
+- Al dar «Calificar» se abre el formulario de Calificar de Mobilize con el ID de la llamada puesto y el
+  asesor elegido si su nombre coincide (si no, se elige de la lista). Mientras alguien la tenga abierta,
+  a los demás les sale «La está calificando otra persona». «Cancelar» la libera.
+- Al guardar, la llamada pasa a «Resueltas», donde se ve su nota, la observación y quién calificó.
+- La ven el administrador, el supervisor, Calidad, Reportes y Gerencia; Reportes y Gerencia solo miran.
+  El asesor y el cliente no la ven.
+- La hora de la llamada se guarda desde ahora: para verla en las encuestas ya cargadas hay que volver a
+  subir ese mes en Cargar Datos. El teléfono sigue sin guardarse.
+- Los monitoreos, la plantilla y los puntajes de siempre no cambian.
+
 ## v1.165.0 — Noviembre 2026
 
 **Fase 331 (parte 1): Calidad de encuestas de Mobilize — la base en el servidor.**

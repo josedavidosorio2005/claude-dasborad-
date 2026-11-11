@@ -14,7 +14,7 @@ function nowStr() {
 
 // Orden FIJO del payload -- igual a ENCUESTA_ORDEN_ARRAY
 // (public/js/encuesta-logic.js) y encuestaFilaArraySchema (validation.js).
-const CAMPOS_FILA = ['fecha', 'agente', 'skill', 'q1', 'q2', 'q3', 'q4', 'comentario', 'connId'];
+const CAMPOS_FILA = ['fecha', 'agente', 'skill', 'q1', 'q2', 'q3', 'q4', 'comentario', 'connId', 'hora']; // Fase 331: + hora
 
 // Mismos rangos que ENCUESTA_PREGUNTAS (encuesta-logic.js).
 const PREGUNTAS = [
@@ -83,8 +83,8 @@ function cargarEncuestas(db, { campana, archivoNombre, cargadoPorNombre, filas }
   const { desde, hasta } = rangoFechas(filasObj);
   const del = db.prepare('DELETE FROM encuestas WHERE campana = ? AND fecha >= ? AND fecha <= ?');
   const insert = db.prepare(
-    `INSERT INTO encuestas (campana, fecha, agente, skill, q1, q2, q3, q4, comentario, connId, archivoNombre, cargadoPorNombre, createdAt)
-     VALUES (@campana, @fecha, @agente, @skill, @q1, @q2, @q3, @q4, @comentario, @connId, @archivoNombre, @cargadoPorNombre, @createdAt)`
+    `INSERT INTO encuestas (campana, fecha, agente, skill, q1, q2, q3, q4, comentario, connId, hora, archivoNombre, cargadoPorNombre, createdAt)
+     VALUES (@campana, @fecha, @agente, @skill, @q1, @q2, @q3, @q4, @comentario, @connId, @hora, @archivoNombre, @cargadoPorNombre, @createdAt)`
   );
   let borradas = 0;
   db.transaction(() => {
@@ -94,7 +94,7 @@ function cargarEncuestas(db, { campana, archivoNombre, cargadoPorNombre, filas }
     for (const f of filasObj) {
       insert.run({
         campana, fecha: f.fecha, agente: f.agente || '', skill: f.skill || '',
-        q1: f.q1, q2: f.q2, q3: f.q3, q4: f.q4, comentario: f.comentario || '', connId: f.connId || '',
+        q1: f.q1, q2: f.q2, q3: f.q3, q4: f.q4, comentario: f.comentario || '', connId: f.connId || '', hora: f.hora || '',
         archivoNombre: archivoNombre || '', cargadoPorNombre: cargadoPorNombre || '-', createdAt: ts,
       });
     }

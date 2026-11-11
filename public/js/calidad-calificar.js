@@ -278,6 +278,9 @@ async function cc2Guardar() {
     // de siempre: sin plantillaId (el servidor usa la principal). Las demas, como antes.
     if (p.campos || !p.principal) body.plantillaId = p.id;
   }
+  // Fase 331: monitoreo de una llamada de Calidad de encuestas (solo uno nuevo).
+  var deEncuesta = !editando && typeof cenModoActivo === 'function' && cenModoActivo();
+  if (deEncuesta) Object.assign(body, cenCampoGuardar());
   var btn = document.getElementById('cc2-guardar');
   try {
     await withButtonLoading(btn, 'Guardando...', function () {
@@ -288,6 +291,7 @@ async function cc2Guardar() {
   cc2Limpiar();
   await loadCalData(_ccampana, _cmesFiltro || undefined);
   renderCalKpis();
+  if (deEncuesta) cenDespuesDeGuardar(); // Fase 331: vuelve a la lista
 }
 
 function cc2Limpiar() {

@@ -97,7 +97,8 @@ test('una base nueva termina todas las migraciones con HLM, creada despues de la
     'fase317_agendas_nombres_cliente_aurora_v1', // Fase 317: el cliente de Aurora ve nombres en Agendas
     'fase320_titulo_flujo_li_v1', // Fase 320: titulo del flujo de líneas internas (WhatsApp)
     'fase321_sura_modulo_calidad_v1', // Fase 321: SURA con modulo de Calidad
-    'fase331_encuesta_monitoreo_v1']; // Fase 331: tablas y columna nuevas de Calidad de encuestas (solo siembra reglas de MOBILIZE)
+    'fase331_encuesta_monitoreo_v1', // Fase 331: tablas y columna nuevas de Calidad de encuestas (solo siembra reglas de MOBILIZE)
+    'fase331_encuestas_hora_v1']; // Fase 331 (PR 2): columna hora en encuestas (ADD COLUMN, sin tocar filas)
   assert.deepEqual(orden.slice(iHlm + 1).filter((n) => !POSTERIORES.includes(n)), [], 'ninguna migracion vieja corre despues de crear HLM');
   const r = reg.leerRegistro(db).find((c) => c.nombre === HLM);
   assert.ok(r, 'HLM en el registro de clientes');
