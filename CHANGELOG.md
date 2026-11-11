@@ -4,6 +4,19 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.172.0 — Noviembre 2026
+
+**Fase 335: Televentas SURA tiene pestaña «Calidad».**
+
+- Nueva pestaña «Calidad» en el menú de Televentas SURA, con el bloque «Resultado de los monitoreos»
+  de las demás campañas, adaptado a la plantilla «Televentas SURA» (nota desde 100, notas en 0 %,
+  mejor y peor por asesor).
+- Tiene su propio filtro de mes. El filtro de campaña (Odontológico / Salud para ti) no aplica aquí y
+  la pestaña lo dice.
+- El administrador y el supervisor ven también la tabla por asesor y el «Resumen por asesor». La
+  cuenta del cliente ve las tarjetas, las gráficas por mes y la torta, sin la tabla por asesor (se
+  puede activar desde el registro de clientes si se pide) y nunca ve evaluador ni observaciones.
+
 ## v1.171.0 — Noviembre 2026
 
 **Fase 334: Módulo de Calidad — cada quien ve solo lo que calificó.**

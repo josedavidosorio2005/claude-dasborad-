@@ -20653,3 +20653,23 @@ nueva, que **reemplaza la de la Fase 329**.
 - Pruebas `fase334` (7) por rol; `fase329`, `fase254` y `fase331` ajustadas. Local (Brave, copia de la
   base demo, datos sintéticos), claro y oscuro, 375/768/1440, como CALIDAD y como SUPERVISOR: solo
   lo propio en el módulo, total de la campaña en la tarjeta, consolidado intacto en el dashboard.
+
+## Fase 335 — Televentas SURA: pestaña «Calidad» (v1.172.0, 2026-11-11)
+
+- **Por qué no estaba**: razón técnica, no de negocio. Televentas es la app del HTML de Edwin, en un
+  Shadow DOM con sus pestañas fijas (`sura-televentas-app.js`, regenerable con
+  `scripts/sura/generar-televentas.js`); el bloque «Resultado de los monitoreos» vive en el
+  dashboard genérico y busca sus elementos en el documento principal.
+- **Cómo quedó** (decisión del usuario): la pestaña se agrega desde el marco (`sura-televentas.js`),
+  sin tocar la app generada: un botón más en su menú (clase `.tab`) y una sección con un `<slot>`; el
+  contenido va en el DOM normal del host, donde `_cmpRender` usa sus elementos y los estilos de la
+  plataforma. Plantilla de descuento (nota desde 100, En 0 %, mejor y peor). Filtro Mes propio
+  (`mesesPropios`, nunca el «Meses» del último tablero abierto) y nota de que el filtro de campaña no
+  aplica. Los diálogos del bloque se abren dentro de `#stv-modal` (afuera quedarían inertes).
+- **Cliente**: respeta el registro (`asesorVisibleCliente` de SURA = false): tarjetas, por mes y
+  torta, sin tabla por asesor; activarlo es cambiar ese parámetro, sin código. Evaluador y
+  observaciones nunca llegan (servidor). Sin acceso a los monitoreos de SURA, la pestaña no sale.
+- Pruebas `fase335` (3) y `fase274` ajustada. Local (Brave, copia de la base demo, plantilla y 6
+  monitoreos sintéticos), claro y oscuro, 375/768/1440, como administrador y como cliente: pestaña en
+  el menú lateral, solo su sección visible, tabla y «Resumen por asesor» (En 0 %, Mejor, Peor) para
+  el administrador, sin tabla ni observaciones para el cliente, 0 textos cortados, 0 errores.

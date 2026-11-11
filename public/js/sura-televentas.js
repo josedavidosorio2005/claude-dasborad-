@@ -161,6 +161,78 @@ function _stvAplicarPermisos(perm) {
   }
 }
 
+// ── Fase 335: pestaña «Calidad» de Televentas ─────────────────────────────
+// Se agrega DESDE AFUERA de la app de Edwin (sura-televentas-app.js no se toca, asi no se
+// pierde si se regenera el HTML): un boton mas en su menu (misma clase .tab) y una seccion
+// con un <slot>. El contenido va en el DOM normal del host (slot="stv-calidad"), donde el bloque
+// «Resultado de los monitoreos» (calidad-panel.js) encuentra sus elementos y los estilos de la
+// plataforma; se ve con el mismo tema. Plantilla de descuento, filtro Mes propio; el filtro
+// Campaña de Televentas no aplica (los monitoreos no traen ese dato). La tabla por asesor la
+// decide el registro (asesorVisibleCliente), igual que en las demas campañas; el cliente
+// nunca recibe evaluador ni observaciones (servidor).
+var STV_CAL_NOTA = 'Resultado de los monitoreos de Calidad con la plantilla «Televentas SURA». Usa su propio filtro de mes; el filtro de campaña de las otras pestañas (Odontológico / Salud para ti) no aplica aquí, porque los monitoreos no traen la campaña.';
+var STV_CAL_I = 'stvcal'; // sufijo de los ids del bloque (gd-pstvcal, cmp-c-...-stvcal)
+
+function _stvCalidadMontar(root, cliente) {
+  var tabs = root.querySelector('.tabs');
+  var wrap = root.querySelector('.wrap');
+  if (!tabs || !wrap || root.querySelector('.tab[data-p="pcal"]')) return;
+  var btn = document.createElement('button');
+  btn.className = 'tab'; btn.type = 'button'; btn.dataset.p = 'pcal'; btn.hidden = true;
+  btn.innerHTML = '<svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-circle-check"></use></svg>Calidad';
+  tabs.appendChild(btn);
+  var sec = document.createElement('section');
+  sec.id = 'pcal'; sec.hidden = true;
+  sec.innerHTML = '<div class="card"><h2>✅ Calidad</h2><div class="msg" style="margin:0">' + esc(STV_CAL_NOTA) + '</div></div><slot name="stv-calidad"></slot>';
+  wrap.appendChild(sec);
+  btn.addEventListener('click', function () { _stvCalidadAbrir(root, cliente); });
+  // Otra pestaña de Televentas: su propio manejador muestra su seccion; aqui se esconde Calidad.
+  tabs.addEventListener('click', function (e) {
+    var t = e.target.closest && e.target.closest('.tab');
+    if (t && t.dataset.p !== 'pcal') sec.hidden = true;
+  });
+}
+
+// La pestaña se ve si quien mira tiene acceso a los monitoreos de la campaña (admin, supervisor
+// y cliente de SURA): el servidor responde la lista; sin acceso, 403 y la pestaña no sale.
+async function _stvCalidadPermiso(root, cliente) {
+  var btn = root.querySelector('.tab[data-p="pcal"]');
+  if (!btn) return;
+  var ok = false;
+  try { await apiRequest('GET', '/monitoreos/total?campana=' + encodeURIComponent(cliente)); ok = true; } catch (e) { ok = false; }
+  btn.hidden = !ok;
+}
+
+async function _stvCalidadAbrir(root, cliente) {
+  root.querySelectorAll('.tab').forEach(function (x) { x.classList.toggle('on', x.dataset.p === 'pcal'); });
+  root.querySelectorAll('.wrap > section').forEach(function (s) { s.hidden = s.id !== 'pcal'; });
+  ['gfbar', 'dhbar'].forEach(function (id) { var el = root.getElementById ? root.getElementById(id) : root.querySelector('#' + id); if (el) el.hidden = true; });
+  var luz = _stvCalidadLuz();
+  var cont = document.getElementById('gd-p' + STV_CAL_I);
+  cont.innerHTML = '<div class="aurora-card"><p class="ca-vacio">Cargando…</p></div>';
+  try {
+    if (typeof loadCalData === 'function') await loadCalData(cliente);
+  } catch (e) { /* sin datos: el bloque lo dice */ }
+  var hay = typeof CAL_DB !== 'undefined' && CAL_DB[cliente] && (CAL_DB[cliente].monitoreos || []).length;
+  if (!hay) { cont.style.display = ''; cont.innerHTML = '<div class="aurora-card"><p class="ca-vacio">Todavía no hay monitoreos de Calidad para ' + esc(cliente) + '.</p></div>'; return; }
+  if (typeof _cmpRender === 'function') _cmpRender({ tipo: 'calidad_monitoreos_panel', campana: cliente, mesesPropios: true }, STV_CAL_I);
+  luz.hidden = false;
+}
+
+// Contenedor en el DOM normal del host (se proyecta en el <slot> de la seccion).
+function _stvCalidadLuz() {
+  var host = _stv.host;
+  var luz = host.querySelector('[slot="stv-calidad"]');
+  if (!luz) {
+    luz = document.createElement('div');
+    luz.setAttribute('slot', 'stv-calidad');
+    luz.className = 'stv-cal-luz';
+    luz.innerHTML = '<div id="gd-p' + STV_CAL_I + '"></div>';
+    host.appendChild(luz);
+  }
+  return luz;
+}
+
 async function openSuraTeleventas(cliente) {
   var overlay = document.getElementById('stv-overlay');
   // El selector de clientes deja el resto de la pagina `inert`: se cierra
@@ -187,7 +259,9 @@ async function openSuraTeleventas(cliente) {
   if (!_stv.listo) _stvEstadoCarga(_stv.root, 'cargando');
   try {
     var perm = await _stv.app.cargar();
+    _stvCalidadMontar(_stv.root, cliente); // Fase 335: pestaña Calidad (antes de elegir la primera)
     _stvAplicarPermisos(perm);
+    await _stvCalidadPermiso(_stv.root, cliente);
     _stv.listo = true;
     _stvEstadoCarga(_stv.root, null);
     document.getElementById('stv-sub').textContent = perm.puedeEditar

@@ -195,7 +195,8 @@ test('el panel usa la logica nueva, conserva «Llamadas con fallas», respeta no
   }
   assert.match(panel, /ceResultado\(/);
   assert.match(panel, /Escala: 0–69% Crítico · 70–89% No crítico · 90–100% Sobresaliente/);
-  assert.ok(panel.includes("var marcados = (typeof _gdMeses === 'function') ? _gdMeses().slice().sort() : [];"), 'sigue a los meses marcados en MESES (no a todos con "Todos")');
+  // Fase 335: salvo con mesesPropios (Televentas SURA), donde usa solo su filtro Mes.
+  assert.ok(panel.includes("var marcados = (!p.mesesPropios && typeof _gdMeses === 'function') ? _gdMeses().slice().sort() : [];"), 'sigue a los meses marcados en MESES (no a todos con "Todos")');
   assert.match(panel, /asesorVisibleCliente/, 'respeta la regla de nombres para el cliente');
   const html = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'index.html'), 'utf8');
   assert.ok(html.indexOf('js/calidad-equipo-logic.js') !== -1 && html.indexOf('js/calidad-equipo-logic.js') < html.indexOf('js/calidad-panel.js'));
