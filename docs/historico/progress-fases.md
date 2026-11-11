@@ -20701,3 +20701,10 @@ Pedido urgente: los que hacen calidad necesitan cambiar la fecha del monitoreo.
 ## Fase 336 — Calidad de encuestas: ID de la llamada sin apóstrofo (v1.173.1, 2026-11-11)
 
 El CONN_ID de Wolkvox llega con un apóstrofo inicial (marca de texto de Excel). `cenIdVisible` lo quita SOLO al mostrar y copiar (lista, aviso del formulario, que tambien llena el campo ID de la llamada, y ventana «Monitoreo» de la Encuesta); el dato guardado, el bloqueo y `encuestaConnId` siguen con el original. La lista de comentarios de la pestaña Encuesta no se cambió (no se pidió). Prueba `fase336` (3).
+
+## Fase 338 — Reunión con Edwin: «Llamadas con fallas» de a 10 (v1.174.0, 2026-11-11)
+
+- **Llamadas con fallas** (bloque «Resultado de los monitoreos», todas las campañas y Televentas SURA): 10 filas (antes 50), orden de siempre (fecha más reciente primero y, el mismo día, el último guardado), total en el título, «Ver más (N)» / «Ver menos» con `aria-expanded`. La tabla por asesor no cambia. Listas del Módulo de Calidad que también crecen sin paginar (no se tocaron): Monitoreos, Detalle por mes y «Resueltas» de Calidad de encuestas.
+- **Monitoreos de Calidad de encuestas**: Edwin confirma que cuentan como monitoreo normal. Verificado en local (prueba temporal, datos sintéticos): salen con su nota en Monitoreos, Resumen por asesor, Detalle por mes, Reportes, metas, la pestaña Calidad del dashboard y el botón «Monitoreo» de la Encuesta. Sin cambios.
+- **Eliminar monitoreos**: hoy solo el administrador y el rol Reportes de la campaña (servidor `canManageMonitoreos`); CALIDAD y SUPERVISOR no pueden. Sin cambios.
+- Prueba `fase338` (2, el bloque real en vm).

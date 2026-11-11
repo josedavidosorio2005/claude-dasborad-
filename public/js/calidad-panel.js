@@ -28,7 +28,8 @@ var _cmpEstado = {};   // por campaña: plantilla elegida
 var _cmpVerTodas = {}; // por campaña: mostrar todas las llamadas con fallas
 var _cmpFiltro = {};   // por campaña: { meses, asesores (null = todos), clave (MESES aplicado) }
 var _cmpCtx = {};      // por campaña: ultimo { p, i, arr, pl, ve } dibujado (filtros y dialogos)
-function _cmpMostrarTodas(camp) { _cmpVerTodas[camp] = true; _cmpRepintar(camp); }
+// Fase 338: «Ver más» / «Ver menos» de «Llamadas con fallas» (alterna).
+function _cmpMostrarTodas(camp) { _cmpVerTodas[camp] = !_cmpVerTodas[camp]; _cmpRepintar(camp); }
 function _cmpElegir(camp, v) { _cmpEstado[camp] = Number(v) || null; _cmpRepintar(camp); }
 function _cmpRepintar(camp, abierto) {
   var c = _cmpCtx[camp]; if (!c) return;
@@ -143,7 +144,9 @@ function _cmpRender(p, i) {
 
   // Llamadas con fallas: las del periodo y asesores elegidos.
   var fallas = v.monitoreos.filter(function (m) { return _caTieneNo(m); }).sort(function (a, b) { return String(b.fecha || '').localeCompare(String(a.fecha || '')) || b.id - a.id; });
-  var CMP_LIMITE = 50;
+  // Fase 338 (reunion con Edwin, 11/11): 10 filas, las mas recientes primero (fecha y, el mismo dia,
+  // el ultimo guardado); «Ver más» despliega todas y «Ver menos» las recoge. El total, en el titulo.
+  var CMP_LIMITE = 10;
   var verTodas = !!_cmpVerTodas[camp];
   var filasFallas = (verTodas ? fallas : fallas.slice(0, CMP_LIMITE)).map(function (m) {
     var c = caClase(Number(m.puntaje));
@@ -153,7 +156,7 @@ function _cmpRender(p, i) {
   }).join('');
   var llamadas = '<div class="aurora-card"><div class="aurora-card-title">Llamadas con fallas (' + fallas.length + ')</div>' +
     (fallas.length ? '<p class="cpl-ayuda">Haz clic en una llamada para ver su detalle.</p><div style="overflow-x:auto"><table class="aurora-rank-table"><tr><th>Fecha</th>' + (ve ? '<th>Asesor</th>' : '') + '<th>ID llamada</th><th>Nota</th><th>Motivo de afectación</th></tr>' + filasFallas + '</table></div>' +
-        (fallas.length > CMP_LIMITE && !verTodas ? '<button type="button" class="btn-cancel cmp-dicc" data-camp="' + cs + '" onclick="_cmpMostrarTodas(this.dataset.camp)">Ver todas (' + fallas.length + ')</button>' : '')
+        (fallas.length > CMP_LIMITE ? '<button type="button" class="btn-cancel cmp-dicc cmp-vermas" data-camp="' + cs + '" aria-expanded="' + verTodas + '" onclick="_cmpMostrarTodas(this.dataset.camp)">' + (verTodas ? 'Ver menos' : 'Ver más (' + (fallas.length - CMP_LIMITE) + ')') + '</button>' : '')
       : '<p class="ca-vacio">Ninguna llamada con fallas en el periodo seleccionado.</p>') + '</div>';
 
   el.innerHTML =
