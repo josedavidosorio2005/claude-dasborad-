@@ -20697,3 +20697,7 @@ Pedido urgente: los que hacen calidad necesitan cambiar la fecha del monitoreo.
   deduplica por asesor, fecha e ID de llamada).
 - Pruebas `fase337` (6, por rol) y `calidad`, `fase95` ajustadas a la regla nueva. Local (Brave, copia de
   la base demo, datos sintéticos) como CALIDAD, claro y oscuro, 375/768/1440.
+
+## Fase 336 — Calidad de encuestas: ID de la llamada sin apóstrofo (v1.173.1, 2026-11-11)
+
+El CONN_ID de Wolkvox llega con un apóstrofo inicial (marca de texto de Excel). `cenIdVisible` lo quita SOLO al mostrar y copiar (lista, aviso del formulario, que tambien llena el campo ID de la llamada, y ventana «Monitoreo» de la Encuesta); el dato guardado, el bloqueo y `encuestaConnId` siguen con el original. La lista de comentarios de la pestaña Encuesta no se cambió (no se pidió). Prueba `fase336` (3).
