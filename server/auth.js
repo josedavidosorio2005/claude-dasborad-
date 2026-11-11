@@ -228,10 +228,15 @@ function canVerCalidadEncuestas(actor, campana) {
 function tienePlantillasMarcadas(actor) {
   return !!(actor && actor.perms && Object.keys(actor.perms).some((k) => /^plantilla_/.test(k) && actor.perms[k] === true));
 }
-function canUsePlantilla(actor, plantillaId) {
+// Fase 342 (decision del usuario, 11/11): quien califica en una campaña (canEvaluateCampaign:
+// SUPERVISOR que la supervisa o CALIDAD con la campaña) queda habilitado siempre para la plantilla
+// PRINCIPAL de esa campaña, aunque tenga otras marcadas. Las marcadas a mano siguen igual.
+// `plantilla` = la fila de calidad_plantillas (campana, principal); sin ella, la regla de antes.
+function canUsePlantilla(actor, plantillaId, plantilla) {
   if (isFullAdmin(actor)) return true;
   if (!tienePlantillasMarcadas(actor)) return true;
-  return actor.perms['plantilla_' + plantillaId] === true;
+  if (actor.perms['plantilla_' + plantillaId] === true) return true;
+  return !!(plantilla && plantilla.principal && canEvaluateCampaign(actor, plantilla.campana));
 }
 
 // Puede EDITAR / ELIMINAR un monitoreo ya guardado: solo rol REPORTES con acceso
