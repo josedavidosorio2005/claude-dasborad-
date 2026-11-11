@@ -20,17 +20,18 @@ before(async () => {
   orlant = { id: row.id, campana: 'ORLANT', engine: row.engine, principal: true, campos: row.campos ? JSON.parse(row.campos) : null, items: JSON.parse(row.items) };
 });
 
-// Fase 340: un solo formulario. Toda plantilla usa el comun (sin campos propios: los genericos) y
-// el telefono nunca sale.
-test('cc2CamposDe: ORLANT usa sus campos del comun; con campos, los suyos; sin campos, los genericos; nunca telefono', () => {
+// Fase 340: un solo formulario. Toda plantilla usa el comun (sin campos propios: los genericos).
+// Fase 343: el telefono vuelve, siempre justo despues del ID de la llamada.
+test('cc2CamposDe: ORLANT usa sus campos del comun; con campos, los suyos; sin campos, los genericos; telefono despues del ID', () => {
   assert.equal(orlant.campos, null, 'la plantilla de ORLANT no se toca (sigue sin campos)');
-  assert.deepEqual(C.cc2CamposDe(orlant).map((c) => c.k), ['asesor', 'fecha', 'idLlamada', 'codificacion', 'evaluador', 'canal', 'observaciones']);
+  assert.deepEqual(C.cc2CamposDe(orlant).map((c) => c.k), ['asesor', 'fecha', 'idLlamada', 'telefono', 'codificacion', 'evaluador', 'canal', 'observaciones']);
   const mob = { campana: 'MOBILIZE', campos: [{ k: 'asesor', etiqueta: 'A' }, { k: 'placa', etiqueta: 'P' }] };
   assert.deepEqual(C.cc2CamposDe(mob), mob.campos, 'Mobilize/Aurora: sus propios campos, igual que hoy');
-  const conTel = { campana: 'CLINICA AURORA', campos: [{ k: 'asesor', etiqueta: 'A' }, { k: 'telefono', etiqueta: 'T' }, { k: 'fecha', etiqueta: 'F' }] };
-  assert.deepEqual(C.cc2CamposDe(conTel).map((c) => c.k), ['asesor', 'fecha'], 'el telefono de la plantilla no sale');
+  const conTel = { campana: 'CLINICA AURORA', campos: [{ k: 'asesor', etiqueta: 'A' }, { k: 'telefono', etiqueta: 'T' }, { k: 'fecha', etiqueta: 'F' }, { k: 'idLlamada', etiqueta: 'I' }] };
+  assert.deepEqual(C.cc2CamposDe(conTel).map((c) => c.k), ['asesor', 'fecha', 'idLlamada', 'telefono'], 'el telefono de la plantilla sale al lado del ID');
+  assert.deepEqual(C.cc2CamposDe({ campana: 'X', campos: [{ k: 'asesor' }, { k: 'telefono' }] }).map((c) => c.k), ['asesor', 'telefono'], 'sin ID, donde la plantilla lo pone');
   assert.deepEqual(C.cc2CamposDe({ campana: 'OTRA', campos: null }).map((c) => c.k), C.CC2_CAMPOS_GENERICOS.map((c) => c.k), 'sin campos: los genericos (nunca el formulario viejo)');
-  assert.ok(!C.CC2_CAMPOS_GENERICOS.some((c) => c.k === 'telefono'));
+  assert.ok(C.CC2_CAMPOS_GENERICOS.some((c) => c.k === 'telefono'));
   assert.equal(C.cc2CamposDe(null), null);
 });
 

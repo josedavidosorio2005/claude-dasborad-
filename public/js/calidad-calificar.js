@@ -341,7 +341,7 @@ function cc2Editar(m) {
     var o = document.createElement('option'); o.value = m.asesor; o.textContent = textoFormatoNombre(m.asesor) + ' (sin usuario)';
     selA.appendChild(o); selA.disabled = false;
   }
-  set('asesor', m.asesor); _cc2AsesorElegido(); set('fecha', m.fecha); set('idLlamada', m.idLlamada); // Fase 340: sin telefono
+  set('asesor', m.asesor); _cc2AsesorElegido(); set('fecha', m.fecha); set('idLlamada', m.idLlamada); set('telefono', m.telefono); // Fase 343
   set('codificacion', m.codificacion); set('observaciones', m.observaciones); set('evaluador', m.evaluador);
   set('canal', m.canal || 'LLAMADA'); // Fase 318
   var ex = m.extras || {};

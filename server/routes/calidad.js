@@ -136,8 +136,8 @@ function puedeVerPlantillasDe(actor, campana) {
 
 // Fase 151: el telefono del cliente final solo lo reciben los roles que
 // trabajan el monitoreo (CALIDAD, SUPERVISOR, REPORTES) y el administrador.
-// CLIENTES_DASH, GERENCIA y el resto reciben la fila SIN ese campo. El
-// asesor lo sigue viendo en sus propios monitoreos (/monitoreos/mios).
+// CLIENTES_DASH, GERENCIA, el ASESOR (tambien en /monitoreos/mios, Fase 343) y el
+// resto reciben la fila SIN ese campo.
 const ROLES_VEN_TELEFONO = ['CALIDAD', 'SUPERVISOR', 'REPORTES'];
 function puedeVerTelefono(actor) {
   return isFullAdmin(actor) || (!!actor && ROLES_VEN_TELEFONO.includes(actor.rol));
@@ -518,7 +518,8 @@ router.get(
          ORDER BY fecha DESC, id DESC`
       )
       .all({ id: req.actor.id || 0, nombre, campana });
-    res.json(rows.map(toMonitoreo));
+    // Fase 343: el asesor nunca recibe el telefono del cliente final (antes si, en sus propios monitoreos).
+    res.json(rows.map((r) => monitoreoPara(req.actor, r)));
   })
 );
 
@@ -564,7 +565,7 @@ router.put(
       logCalEvent('MONITOREO_VISTO', row.asesor, row.campana, req.actor, '');
     }
     const updated = db.prepare('SELECT * FROM monitoreos WHERE id = ?').get(row.id);
-    res.json(toMonitoreo(updated));
+    res.json(monitoreoPara(req.actor, updated)); // Fase 343: sin telefono para el asesor
   })
 );
 
@@ -698,7 +699,7 @@ router.post(
         mes: calc.monthKey(fecha),
         canal: b.canal,
         idLlamada: b.idLlamada || connEnc || null,
-        telefono: null, // Fase 340 (regla «sin telefono»): un monitoreo nuevo nunca guarda telefono
+        telefono: b.telefono || null, // Fase 343: vuelve a guardarse (lo ven solo quienes califican)
         codificacion: codifCheck.valor,
         evaluador,
         evaluadorUserId: req.actor.isMasterAdmin ? null : req.actor.id,
@@ -909,7 +910,7 @@ router.put(
       calc.monthKey(fecha),
       b.canal ?? row.canal,
       (b.idLlamada ?? row.idLlamada) || null,
-      row.telefono || null, // Fase 340: editar no cambia ni agrega telefono (lo ya guardado se deja)
+      (b.telefono ?? row.telefono) || null, // Fase 343: se puede corregir al editar
       codificacion,
       JSON.stringify(answers),
       score.puntaje,

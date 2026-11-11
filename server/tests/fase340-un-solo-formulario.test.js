@@ -53,19 +53,7 @@ test('el formulario viejo ya no existe: ni su HTML ni su codigo de guardado', ()
   assert.ok(cc2.includes("if (calCanEvaluate()) switchCalTab('nuevo'); else cc2MostrarPanel();"), 'Reportes llega al formulario al editar');
 });
 
-test('regla «sin telefono»: ningun formulario lo pide y el servidor no lo guarda en uno nuevo ni al editar', async () => {
-  const L = require('../../public/js/calidad-calificar-logic.js');
-  assert.ok(!L.cc2CamposDe({ campana: 'ORLANT', campos: null }).some((c) => c.k === 'telefono'));
-  assert.ok(!L.cc2CamposDe({ campana: 'X', campos: [{ k: 'telefono' }, { k: 'asesor' }] }).some((c) => c.k === 'telefono'));
-  const c = await request(app).post('/api/monitoreos').set(H(admin)).send({ campana: 'MOBILIZE', asesor: 'Asesor Ficticio', fecha: hoy, canal: 'LLAMADA', answers: { 1: 'SI' }, telefono: '3000000340' });
-  assert.equal(c.status, 201, JSON.stringify(c.body));
-  assert.equal(db.prepare('SELECT telefono FROM monitoreos WHERE id = ?').get(c.body.id).telefono, null);
-  db.prepare("UPDATE monitoreos SET telefono = '3000000341' WHERE id = ?").run(c.body.id); // uno viejo que si lo tenia
-  const e = await request(app).put('/api/monitoreos/' + c.body.id).set(H(admin)).send({ telefono: '3009999999', observaciones: 'Edicion ficticia' });
-  assert.equal(e.status, 200, JSON.stringify(e.body));
-  assert.equal(db.prepare('SELECT telefono FROM monitoreos WHERE id = ?').get(c.body.id).telefono, '3000000341', 'lo ya guardado no se toca ni se cambia');
-});
-
+// La prueba del telefono paso a fase343 (el telefono volvio).
 test('por rol (servidor): el SUPERVISOR sin la plantilla marcada no califica con ella; marcada, si', async () => {
   const mk = async (user, perms) => {
     const r = await request(app).post('/api/users').set(H(admin)).send({ nombre: 'Persona Ficticia ' + user, user, password: 'Clave#Fase340x', rol: 'SUPERVISOR', perms });
