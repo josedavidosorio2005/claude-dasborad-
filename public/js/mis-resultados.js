@@ -182,7 +182,6 @@ function verDetalleMonitoreo(idx){
   document.getElementById('dm-campana').textContent = m.campana || '-';
   document.getElementById('dm-evaluador').textContent = m.evaluador || '-';
   document.getElementById('dm-idllamada').textContent = m.idLlamada || '-';
-  document.getElementById('dm-telefono').textContent = m.telefono || '-';
   document.getElementById('dm-codificacion').textContent = m.codificacion || '-';
   document.getElementById('dm-canal').innerHTML = calEstadoHtml(m.canal==='WPP' ? '💬 WhatsApp / Chat' : '📞 Llamada');
   document.getElementById('dm-observaciones').textContent = m.observaciones || '-';

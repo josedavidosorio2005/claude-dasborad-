@@ -128,6 +128,7 @@ var CC2_CAMPOS_POR_CAMPANA = {
     { k: 'asesor', etiqueta: 'Nombre del asesor' },
     { k: 'fecha', etiqueta: 'Fecha' },
     { k: 'idLlamada', etiqueta: 'ID / Llamada - Wpp' },
+    { k: 'telefono', etiqueta: '# Teléfono' },
     { k: 'codificacion', etiqueta: 'Codificación' },
     { k: 'evaluador', etiqueta: 'Evaluador' },
     { k: 'canal', etiqueta: 'Canal auditado' },
@@ -135,22 +136,29 @@ var CC2_CAMPOS_POR_CAMPANA = {
   ],
 };
 // Fase 340: un solo formulario. Una plantilla sin `campos` ni entrada en CC2_CAMPOS_POR_CAMPANA usa
-// estos campos (los del formulario de antes, sin telefono). El formulario viejo ya no existe.
+// estos campos (los del formulario de antes, con telefono: Fase 343). El formulario viejo ya no existe.
 var CC2_CAMPOS_GENERICOS = [
   { k: 'asesor', etiqueta: 'Nombre del asesor' },
   { k: 'fecha', etiqueta: 'Fecha' },
   { k: 'idLlamada', etiqueta: 'ID / Llamada - Wpp' },
+  { k: 'telefono', etiqueta: '# Teléfono' },
   { k: 'codificacion', etiqueta: 'Codificación' },
   { k: 'evaluador', etiqueta: 'Evaluador' },
   { k: 'canal', etiqueta: 'Canal auditado' },
   { k: 'observaciones', etiqueta: 'Observaciones generales' },
 ];
 // Campos con que se dibuja el formulario comun para esta plantilla (null solo sin plantilla).
-// Fase 340 (regla «sin telefono»): el campo telefono nunca sale, aunque una plantilla lo traiga.
+// Fase 343 (corrige la Fase 340): el telefono SI se usa en Calidad para ubicar la llamada. Sale en las
+// plantillas que lo traen (y en ORLANT y las genericas), siempre justo despues del ID de la llamada.
 function cc2CamposDe(p) {
   if (!p) return null;
-  var lista = p.campos || CC2_CAMPOS_POR_CAMPANA[p.campana] || CC2_CAMPOS_GENERICOS;
-  return lista.filter(function (c) { return c && c.k !== 'telefono'; });
+  var lista = (p.campos || CC2_CAMPOS_POR_CAMPANA[p.campana] || CC2_CAMPOS_GENERICOS).filter(Boolean);
+  var tel = lista.filter(function (c) { return c.k === 'telefono'; })[0];
+  var iId = lista.map(function (c) { return c.k; }).indexOf('idLlamada');
+  if (!tel || iId === -1) return lista.slice();
+  var sin = lista.filter(function (c) { return c !== tel; });
+  sin.splice(sin.map(function (c) { return c.k; }).indexOf('idLlamada') + 1, 0, tel);
+  return sin;
 }
 
 // Campos del formulario de la plantilla, en 2 bloques: "Información general"

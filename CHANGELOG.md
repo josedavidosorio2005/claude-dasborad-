@@ -4,6 +4,18 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.175.1 — Noviembre 2026
+
+**Fase 343: Calidad — vuelve el teléfono al calificar.**
+
+- El campo «# Teléfono» vuelve a «Calificar», al lado del ID de la llamada, en las campañas que lo
+  tenían, y se guarda con el monitoreo. También se puede corregir al editar.
+- Lo ven solo quienes califican (Calidad, Supervisor, Reportes y administrador) dentro del Módulo de
+  Calidad. El cliente y el asesor nunca lo ven: el asesor ya no lo ve en «Mis resultados».
+- La carga masiva por Excel sigue leyendo y guardando la columna TELEFONO, como siempre.
+- No se borró ni se cambió ningún teléfono ya guardado. Al editar un monitoreo con una plantilla que no
+  trae el campo teléfono, el que ya tenía se conserva.
+
 ## v1.175.0 — Noviembre 2026
 
 **Fase 342: Calidad — la plantilla principal de la campaña queda habilitada sola.**

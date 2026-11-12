@@ -285,7 +285,8 @@ async function cc2Guardar() {
     fecha: _cc2Val('fecha') || calFechaHoyLocal(),
     canal: _cc2Val('canal') || 'LLAMADA', // Fase 318: ORLANT elige el canal; las demas, Llamada como siempre
     idLlamada: _cc2Val('idLlamada'),
-    telefono: _cc2Val('telefono'),
+    // Fase 343: solo si el formulario tiene el campo; sin el, se omite y editar no borra el guardado.
+    telefono: document.getElementById('cc2-f-telefono') ? _cc2Val('telefono') : undefined,
     codificacion: _cc2Val('codificacion'),
     observaciones: _cc2Val('observaciones'),
     answers: answers,
@@ -342,7 +343,7 @@ function cc2Editar(m) {
     var o = document.createElement('option'); o.value = m.asesor; o.textContent = textoFormatoNombre(m.asesor) + ' (sin usuario)';
     selA.appendChild(o); selA.disabled = false;
   }
-  set('asesor', m.asesor); _cc2AsesorElegido(); set('fecha', m.fecha); set('idLlamada', m.idLlamada); // Fase 340: sin telefono
+  set('asesor', m.asesor); _cc2AsesorElegido(); set('fecha', m.fecha); set('idLlamada', m.idLlamada); set('telefono', m.telefono); // Fase 343
   set('codificacion', m.codificacion); set('observaciones', m.observaciones); set('evaluador', m.evaluador);
   set('canal', m.canal || 'LLAMADA'); // Fase 318
   var ex = m.extras || {};

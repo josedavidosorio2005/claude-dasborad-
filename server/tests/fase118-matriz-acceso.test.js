@@ -527,10 +527,8 @@ test('Fase 151: GET /monitoreos -- telefono solo para CALIDAD/SUPERVISOR/REPORTE
   const creado = await request(app).post('/api/monitoreos').set(auth('CALIDAD'))
     .send({ ...monitoreoBody(PROPIA), telefono: '3000000151' });
   assert.equal(creado.status, 201);
-  // Fase 340 (regla «sin telefono»): un monitoreo nuevo ya no guarda el telefono; lo que se prueba aqui es
-  // quien VE el de un monitoreo viejo que si lo tiene, asi que se le pone directo en la base.
-  assert.equal(db.prepare('SELECT telefono FROM monitoreos WHERE id = ?').get(creado.body.id).telefono, null, 'POST ignora el telefono');
-  db.prepare('UPDATE monitoreos SET telefono = ? WHERE id = ?').run('3000000151', creado.body.id);
+  // Fase 343: el telefono vuelve a guardarse con el monitoreo.
+  assert.equal(db.prepare('SELECT telefono FROM monitoreos WHERE id = ?').get(creado.body.id).telefono, '3000000151');
   const VEN = ['ADMIN', 'ADMIN_MASTER', 'CALIDAD', 'SUPERVISOR', 'REPORTES'];
   let conAcceso = 0;
   for (const rol of [...TODOS_LOS_ROLES, 'ADMIN_MASTER']) {
@@ -545,13 +543,13 @@ test('Fase 151: GET /monitoreos -- telefono solo para CALIDAD/SUPERVISOR/REPORTE
   assert.ok(conAcceso >= 7, 'la prueba cubre a CLIENTES_DASH, GERENCIA y los roles internos');
   const cliente = await request(app).get('/api/monitoreos?campana=' + PROPIA).set(auth('CLIENTES_DASH'));
   assert.equal(cliente.status, 200, 'el cliente sigue recibiendo los monitoreos de su campana');
-  // El asesor lo ve en sus propios monitoreos (se le asigna la fila directo
-  // en la base: la validacion de asesorUserId no es lo que se prueba aqui).
+  // Fase 343: el asesor NUNCA lo recibe, tampoco en sus propios monitoreos (se le asigna la
+  // fila directo en la base: la validacion de asesorUserId no es lo que se prueba aqui).
   db.prepare('UPDATE monitoreos SET asesorUserId = ? WHERE id = ?').run(actores.ASESOR.id, creado.body.id);
   const mios = await request(app).get('/api/monitoreos/mios').set(auth('ASESOR'));
   const propio = mios.body.find((m) => m.id === creado.body.id);
   assert.ok(propio, 'el asesor recibe su propio monitoreo');
-  assert.equal(propio.telefono, '3000000151');
+  assert.equal('telefono' in propio, false, 'el asesor no recibe el telefono');
 });
 
 test('Fase 118 2A: POST /monitoreos (crear) solo CALIDAD/SUPERVISOR con acceso a la campana (canEvaluateCampaign)', async () => {
