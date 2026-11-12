@@ -15,27 +15,10 @@ const { contrasteRazon, contrasteSimularCvd, contrasteDeltaE } = require('../../
 const CHARTS_PATH = path.join(__dirname, '..', '..', 'public', 'js', 'charts.js');
 const texto = fs.readFileSync(CHARTS_PATH, 'utf8');
 
-function extraerArray(nombreVar) {
-  const re = new RegExp('var ' + nombreVar + "=\\[([^\\]]+)\\]");
-  const m = texto.match(re);
-  assert.ok(m, `no se encontro "var ${nombreVar}=[...]" en charts.js`);
-  return m[1].split(',').map((s) => s.trim().replace(/^'|'$/g, ''));
-}
-
-// Los 2 lugares donde PC se reconstruye en modo claro (la declaracion
-// inicial y dentro de aplicarTemaCharts) tienen que ser el MISMO array --
-// si alguien edita uno y se olvida del otro, el tema oscuro->claro se
-// rompe en silencio.
-function extraerTodasLasApariciones(nombreVar) {
-  const re = new RegExp('(?:var |' + nombreVar + '=)\\[([^\\]]+)\\]', 'g');
-  const out = [];
-  let m;
-  while ((m = re.exec(texto)) !== null) out.push(m[1].split(',').map((s) => s.trim().replace(/^'|'$/g, '')));
-  return out;
-}
-
-const PC = extraerArray('PC');
-const PC_DARK = extraerArray('PC_DARK');
+// Fase 345: la paleta vive en public/css/paleta.css (unico lugar); charts.js la lee de ahi.
+const PALETA = require('./helpers-paleta');
+const PC = PALETA.claro.PC;
+const PC_DARK = PALETA.oscuro.PC;
 
 // Los mismos tonos que CG/CO/CR usan HOY (leidos de las mismas 2
 // asignaciones de charts.js) -- nunca un valor copiado a mano aqui, para
@@ -75,14 +58,11 @@ test('ninguna serie de PC/PC_DARK es el mismo tono que el semaforo (CG/CO/CR) de
   });
 });
 
-test('las 2 apariciones de PC en modo claro (declaracion inicial + aplicarTemaCharts) son identicas', () => {
-  const apariciones = extraerTodasLasApariciones('PC');
-  // La 1ra aparicion es la declaracion inicial de PC; la del else-branch
-  // de aplicarTemaCharts es la ultima (PC_DARK queda en medio, con su
-  // propio array -- ya cubierto por paletasIguales abajo via extraerArray).
-  const inicial = apariciones[0];
-  const delElse = apariciones[apariciones.length - 1];
-  assert.deepEqual(inicial, delElse, 'la paleta clara deberia ser identica en ambos lugares donde se define');
+test('Fase 345: charts.js no tiene colores de serie escritos: los lee de paleta.css', () => {
+  assert.match(texto, /function _paletaDeCss\(\)/);
+  assert.ok(texto.includes("getPropertyValue('--serie-'+i)"));
+  assert.doesNotMatch(texto, /var PC=\['#/, 'sin arreglo de colores escrito');
+  assert.doesNotMatch(texto, /SERIE_PRINCIPAL='#/, 'sin color de rol escrito');
 });
 
 test('las 12 series de PC pasan >=3:1 (componente grafico, WCAG 1.4.11) contra blanco y contra la superficie sutil', () => {
@@ -159,21 +139,14 @@ test('Fase 152 B1: ninguna serie de grafica de los tableros usa los colores del 
 
 // Colores de serie de MARCA (ajuste pedido en la revision de B1), leidos de
 // charts.js para cada tema.
-function seriesDelTema(bloque) {
-  const v = (n) => { const m = bloque.match(new RegExp(n + "='(#[0-9a-fA-F]{6}|null)'|" + n + '=(null)')); return m ? (m[1] || m[2]) : undefined; };
-  return { principal: v('SERIE_PRINCIPAL'), secundaria: v('SERIE_SECUNDARIA'), borde: v('SERIE_SECUNDARIA_BORDE'), linea: v('SERIE_LINEA') };
-}
-const SERIES_CLARO = seriesDelTema(bloqueClaro);
-const SERIES_OSCURO = seriesDelTema(bloqueOscuro);
+// Fase 345: los roles son las series 1, 2 y 3 de la paleta (colorSerie, charts.js).
+const rol = (t) => ({ principal: t.series[0], secundaria: t.series[1], borde: null, linea: t.series[2] });
+const SERIES_CLARO = rol(PALETA.claro);
+const SERIES_OSCURO = rol(PALETA.oscuro);
 const FONDOS = { claro: ['#ffffff', '#f7fbfd'], oscuro: ['#132c35', '#17343e'] };
 
-test('Fase 152 B1: series con los colores de marca (teal, azul solo relleno, morado del sistema)', () => {
-  assert.equal(SERIES_CLARO.principal.toLowerCase(), '#004150');
-  assert.equal(SERIES_CLARO.secundaria.toLowerCase(), '#3da2db');
-  assert.equal(SERIES_OSCURO.secundaria.toLowerCase(), '#3da2db');
-  assert.equal(SERIES_CLARO.linea.toLowerCase(), '#8e44ad', '--c-purple claro');
-  assert.equal(SERIES_OSCURO.linea.toLowerCase(), '#c084fc', '--c-purple oscuro');
-  assert.equal(SERIES_OSCURO.principal.toLowerCase(), '#dbe9ee', 'texto claro del sistema en oscuro (--c-text), elegido en la revision de B1');
+test('Fase 152 B1 / Fase 345: los roles salen de la paleta en su orden (1 principal, 2 secundaria, 3 linea, 4 no conectada)', () => {
+  assert.ok(texto.includes('SERIE_PRINCIPAL = sv(0); SERIE_SECUNDARIA = sv(1); SERIE_SECUNDARIA_BORDE = null; SERIE_LINEA = sv(2); SERIE_NO_CONECTADA = sv(3);'));
   // El verde de marca y el semaforo nunca son una serie.
   for (const t of [SERIES_CLARO, SERIES_OSCURO]) {
     for (const c of [t.principal, t.secundaria, t.linea]) {
@@ -188,15 +161,10 @@ test('Fase 152 B1: contraste de cada serie contra el fondo (>= 3:1, WCAG 1.4.11)
     for (const fondo of FONDOS[tema]) {
       assert.ok(contrasteRazon(ser.principal, fondo) >= 3, `${tema} principal vs ${fondo}`);
       assert.ok(contrasteRazon(ser.linea, fondo) >= 3, `${tema} linea vs ${fondo}`);
-      // El azul de marca: si no llega a 3:1 (claro: 2,84:1), la barra lleva
-      // un borde que si llega (teal de marca).
-      if (contrasteRazon(ser.secundaria, fondo) < 3) {
-        assert.ok(ser.borde && ser.borde !== 'null', `${tema}: azul sin 3:1 necesita borde`);
-        assert.ok(contrasteRazon(ser.borde, fondo) >= 3, `${tema} borde vs ${fondo}`);
-      }
+      // Fase 345: la secundaria tambien llega a 3:1, ya no necesita el borde de la barra.
+      assert.ok(contrasteRazon(ser.secundaria, fondo) >= 3, `${tema} secundaria vs ${fondo}`);
     }
   }
-  assert.ok(contrasteRazon(SERIES_CLARO.secundaria, '#ffffff') < 3, 'documenta por que existe el borde en claro');
   assert.match(texto, /function estiloBarraSecundaria()/);
 });
 

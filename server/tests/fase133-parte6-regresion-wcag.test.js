@@ -184,13 +184,9 @@ test('--c-border-control >= 3:1 contra surface y bg, en los 2 temas', () => {
 
 // ── Paleta categorica de graficas (lee charts.js real) ──
 const chartsTexto = fs.readFileSync(CHARTS_PATH, 'utf8');
-function extraerPC(nombreVar) {
-  const m = chartsTexto.match(new RegExp('var ' + nombreVar + '=\\[([^\\]]+)\\]'));
-  assert.ok(m);
-  return m[1].split(',').map((s) => s.trim().replace(/^'|'$/g, ''));
-}
-const PC = extraerPC('PC');
-const PC_DARK = extraerPC('PC_DARK');
+// Fase 345: la paleta se lee de su unico lugar, public/css/paleta.css.
+const PC = require('./helpers-paleta').claro.PC;
+const PC_DARK = require('./helpers-paleta').oscuro.PC;
 function semaforoDe(bloqueElse) {
   const g = chartsTexto.match(new RegExp("CG='(#[0-9a-fA-F]{6})'"));
   const o = chartsTexto.match(new RegExp("CO='(#[0-9a-fA-F]{6})'"));

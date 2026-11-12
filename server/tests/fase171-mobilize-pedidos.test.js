@@ -132,23 +132,30 @@ test('cerrar sesion borra los filtros de todos los paneles, el MES, la URL de fi
 
 // ── 5. Colores ────────────────────────────────────────────────────────────
 
-test('conectadas (azul) y no conectadas (magenta) en colores bien distintos, en claro y oscuro, sin verde/rojo de semaforo', () => {
-  const ctx = { temaActual: () => 'light' };
+test('conectadas y no conectadas en colores bien distintos (series 2 y 4 de la paleta), en claro y oscuro, sin verde/rojo de semaforo', () => {
+  // Fase 345: la paleta sale de paleta.css; aqui se simula getComputedStyle con sus valores.
+  const PAL = require('./helpers-paleta');
+  const { contrasteDeltaE, contrasteSimularCvd } = require('../../public/js/contraste-logic.js');
+  let tema = 'light';
+  const ctx = { temaActual: () => tema, document: { documentElement: {} },
+    getComputedStyle: () => ({ getPropertyValue: (n) => (PAL[tema === 'dark' ? 'oscuro' : 'claro'].tokens[n.replace(/^--/, '')] || '') }) };
   vm.createContext(ctx);
   // Solo el bloque de colores de charts.js (sin Chart.js ni el DOM).
   const ch = JS('charts.js');
-  const iniCol = ch.indexOf("var CD='#0d4a5e'");
+  const iniCol = ch.indexOf("var CG='#1f9d55'");
   const finCol = ch.indexOf('aplicarTemaCharts();', ch.indexOf('function aplicarTemaCharts')) + 'aplicarTemaCharts();'.length;
   const iniFn = ch.indexOf('function colorSerie(rol){');
   vm.runInContext(ch.slice(iniCol, finCol) + '\n' + ch.slice(iniFn, ch.indexOf('\n}', iniFn) + 2), ctx);
-  const hex = (h) => [1, 3, 5].map((k) => parseInt(h.slice(k, k + 2), 16));
-  const dist = (a, b) => Math.sqrt(hex(a).reduce((s, v, k) => s + (v - hex(b)[k]) ** 2, 0));
-  for (const tema of ['light', 'dark']) {
-    ctx.temaActual = () => tema;
+  for (const t of ['light', 'dark']) {
+    tema = t;
     ctx.aplicarTemaCharts();
     const con = vm.runInContext("colorSerie('secundaria')", ctx);
     const no = vm.runInContext("colorSerie('noConectada')", ctx);
-    assert.ok(dist(con, no) > 150, tema + ': ' + con + ' vs ' + no);
+    const pal = PAL[t === 'dark' ? 'oscuro' : 'claro'].series;
+    assert.equal(con, pal[1], 'conectadas = serie 2');
+    assert.equal(no, pal[3], 'no conectadas = serie 4');
+    assert.ok(contrasteDeltaE(con, no) >= 40, t + ': ' + con + ' vs ' + no);
+    for (const x of ['protanopia', 'deuteranopia', 'tritanopia']) assert.ok(contrasteDeltaE(contrasteSimularCvd(con, x), contrasteSimularCvd(no, x)) >= 30, t + ' ' + x);
     assert.ok(![ctx.CG, ctx.CR, ctx.CO].includes(no), 'no es un color de semaforo');
   }
   const lu = JS('llamadas-unicas.js');

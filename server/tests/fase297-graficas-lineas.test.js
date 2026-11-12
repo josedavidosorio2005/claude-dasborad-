@@ -52,10 +52,14 @@ test('texto y sentido de la variacion: "+8 %", "−3 %", "0 %"', () => {
   assert.equal(G.variacionSentido(null), null);
 });
 
-test('colores: >= 3:1 contra la tarjeta en los 2 temas (WCAG 1.4.11) y bien distintos entre si', () => {
+test('colores: series 1/2/3 de la paleta (Fase 345), >= 3:1 contra la tarjeta en los 2 temas (WCAG 1.4.11) y bien distintos entre si; sube/baja siguen siendo estado', () => {
   const fondos = { claro: '#ffffff', oscuro: '#132c35' };
+  const PAL = require('./helpers-paleta');
   for (const [tema, fondo] of Object.entries(fondos)) {
-    const c = G.graficasLineasColores(tema === 'oscuro');
+    const pal = PAL[tema].PC;
+    const c = G.graficasLineasColores(tema === 'oscuro', pal);
+    assert.deepEqual([c.total, c.llamadas, c.whatsapp], pal.slice(0, 3), 'Total, Llamadas y WhatsApp = series 1, 2 y 3');
+    assert.ok(!PAL.SEMAFORO[tema].concat(['#15803d', '#c0392b', '#b45309']).includes(c.llamadas.toLowerCase()) && !['#15803d', '#4ade80'].includes(c.whatsapp.toLowerCase()), 'las series ya no son verde ni naranja');
     for (const k of ['total', 'llamadas', 'whatsapp', 'sube', 'baja']) {
       const r = contrasteRazon(c[k], fondo);
       assert.ok(r >= 3, `${tema} ${k} ${c[k]}: ${r.toFixed(2)}:1`);

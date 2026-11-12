@@ -41,7 +41,7 @@ test('torta generica: sin colores repetidos (paletaColoresSinRepetir)', () => {
 
 test('paletaColoresSinRepetir: la misma etiqueta repetida conserva su color; las distintas no chocan', () => {
   const { paletaColoresSinRepetir } = require('../../public/js/paleta-logic.js');
-  const PC = leer('charts.js').match(/var PC=\[([^\]]+)\]/)[1].split(',').map((s) => s.trim().replace(/'/g, ''));
+  const PC = require('./helpers-paleta').claro.PC; // Fase 345: paleta.css
   const etiquetas = ['Financiero', 'Financiero', 'Financiero', 'Financiero', 'Operativo', 'Operativo', 'Operativo', 'Operativo', 'Calidad', 'Clientes', 'Clientes', 'Clientes'];
   const c = paletaColoresSinRepetir(etiquetas, PC);
   const porEtiqueta = {};

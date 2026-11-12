@@ -8,6 +8,37 @@ siempre viven en el CSS — este documento los explica, no los duplica
 `server/tests/fase133-parte6-regresion-wcag.test.js`, que falla si
 alguien los rompe otra vez).
 
+## Paleta de la plataforma (Fase 345) — un solo archivo
+
+Desde la Fase 345 (12/11/2026) la plataforma usa la **paleta 3 «Segura para daltonismo»**
+(basada en Okabe-Ito, sin verde, ámbar ni rojo), elegida por el usuario y ajustada para que pase
+la medición con daltonismo. **Vive solo en `public/css/paleta.css`**: cambiarla es tocar ese
+archivo.
+
+- **Series** `--serie-1` a `--serie-20` (claro y oscuro), siempre en el mismo orden: 1 azul,
+  2 violeta, 3 rosa, 4 teal, 5 marrón, 6 índigo; 7 a 20 son variantes más claras u oscuras de esos
+  6. `charts.js` las lee al cambiar de tema (`aplicarTemaCharts`): `PC` = 1–12, `PC_EXTRA` = 13–20,
+  `CD`/`CM`/`CP` = 1/2/3, y los roles de `colorSerie()`: principal 1, secundaria 2, línea 3,
+  no conectada 4. Ningún archivo JS tiene colores de serie escritos.
+- **Texto**: `--serie-texto-1` a `-6` (≥ 4,5:1). Las etiquetas de datos que toman el color de su
+  serie pasan por `colorTextoSerie()`. El rosa de gráfica del tema claro (`#CB4893`, 4,30:1) nunca
+  va en texto ni como fondo de botón con letra blanca: en texto, `#A8377F` (5,40:1).
+- **Botones** (propuesta 3): primario = teal de marca `#004150` (no cambia con el tema);
+  secundario con borde `--btn-secundario-*` (el `.btn-sm` genérico); suave `--btn-suave-*`
+  («Ver datos»). **Acento** `--acento` = serie 1: pestaña activa, foco y borde al pasar el mouse
+  (`--c-primary-mid` y `--c-focus` apuntan a él).
+- **Medido** en `server/tests/fase345-paleta.test.js`: cada serie ≥ 3:1 contra tarjeta, superficie
+  sutil y fondo; las 8 primeras a ΔE ≥ 12 con visión normal y con los 3 daltonismos simulados; las
+  20 a ΔE ≥ 12; principal/secundaria/línea a ΔE ≥ 40, y principal/secundaria ≥ 30 con daltonismo;
+  ninguna serie a menos de ΔE 30 del semáforo con visión normal. Con daltonismo rojo-verde el marrón
+  se acerca al rojo y al verde del semáforo (ΔE 4–7): por eso el semáforo sigue llevando siempre
+  símbolo y texto (`semaforoBadgeHtml`).
+- **Ajustes frente a los valores elegidos** (aprobados por el usuario): claro, violeta `#5A3E99` →
+  `#220F6C`, rosa → `#CB4893`, teal → `#186261`, índigo → `#3A4688`; oscuro, violeta `#B39DEB` →
+  `#7D6CEF`, rosa → `#E77EB3`, teal → `#60DCDC`, índigo `#9AA8F0` → `#6F96EB`. El azul y el marrón
+  quedan como se eligieron.
+- **Televentas SURA** toma la paleta desde afuera (Fase 345, PR 2).
+
 ## Los 2 sistemas de color (nunca se mezclan)
 
 1. **Semáforo** (`--c-success`/`--c-warning`/`--c-danger` y sus
@@ -21,7 +52,7 @@ alguien los rompe otra vez).
    `semaforoBadgeHtml()` (`public/js/semaforo-logic.js`). Donde ya hay
    texto visible describiendo el estado (p. ej. "Activo"/"Retirado",
    "Sí"/"No"), no se agrega símbolo — ya cumple WCAG 1.4.1.
-2. **Paleta categórica** (`PC`/`PC_DARK` en `public/js/charts.js`):
+2. **Paleta categórica** (desde la Fase 345: `public/css/paleta.css`, ver la sección anterior; antes `PC`/`PC_DARK` en `public/js/charts.js`):
    series de una gráfica sin juicio de valor (skills, asesores, colas).
    Nunca usa tonos verde/ámbar/rojo (reservados al semáforo) — solo
    teal/azul/índigo/púrpura/magenta/marrón.
@@ -499,6 +530,10 @@ en claro y oscuro (el encabezado no cambia con el tema). Medido en
 
 ## Líneas de Aurora y HLM en azul, naranja y verde (Fase 297) — excepción documentada
 
+> **Fase 345:** ya no es excepción. Total, Llamadas y WhatsApp son las series 1, 2 y 3 de la
+> paleta. La variación mes a mes (▲ sube / ▼ baja) sigue en verde y rojo porque es un estado.
+> Lo de abajo queda como historia.
+
 Pedido del supervisor de Clínica Aurora (09/11/2026), igual en Hospital La
 María: en **Total tráfico** las 3 líneas de ingreso van en azul (Total),
 naranja (Llamadas ingresadas) y verde (WhatsApp ingresados); en **Llamadas y
@@ -513,6 +548,12 @@ fija bajo la gráfica ("variación frente al mes anterior"). Valores en
 `fase297-graficas-lineas.test.js`. ORLANT y Mobilize no cambian.
 
 ## Aurora › Agendas: paleta azul y botones resaltados (Fase 304) — excepción documentada
+
+> **Fase 345:** la **paleta azul de Aurora** (`AU_PALETA`, también Total y Contestadas de Líneas
+> internas) **se respeta**, por ser el azul de la marca del cliente. Los **botones** negro/blanco
+> (de Agendas y del tablero de Mobilize) pasan a los de la propuesta 3, con los mismos tamaños y el
+> ✓ del activo. En Líneas internas, Abandonadas y Nivel de atención dejan el rojo y el verde del
+> semáforo y pasan a las series 3 y 4.
 
 Pedido del supervisor de Clínica Aurora (10/11/2026), solo en la pestaña «Agendas»:
 
@@ -570,6 +611,10 @@ Lógica pura en `public/js/kpi-tarjeta-logic.js` (`kpiTarjetaHtml`, `kpiVariacio
 - **Tendencia pequeña (sparkline):** está preparada (`kpiSparklinePuntos`), pero apagada (`KPI_SPARKLINE_ACTIVO`) hasta que haya 3 meses o más con datos.
 
 ## Colores de serie y líneas de meta (Fase 152, B1)
+
+> **Fase 345:** los roles ahora son las series 1, 2 y 3 de `paleta.css` (ver arriba). La tabla de
+> abajo es la de la Fase 152 y queda como historia; el resto de la sección (meta, semáforo, orden)
+> sigue vigente.
 
 - **Series:** usan `colorSerie(rol)` (`charts.js`), con los colores de marca:
 

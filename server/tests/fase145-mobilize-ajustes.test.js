@@ -198,10 +198,10 @@ test('dashboard-generic.js: renderGenericBanner usa gdMostrarAvisoSinCargas', ()
 // ── M2: % legibles sobre cada porcion de la torta ────────────────────────
 
 const OSCURO = '#0a1e25';
+// Fase 345: la paleta vive en public/css/paleta.css (unico lugar).
 function leerPaleta(nombre) {
-  const src = fs.readFileSync(path.join(PUBLIC_JS, 'charts.js'), 'utf8');
-  const m = src.match(new RegExp('var ' + nombre + "=\\[([^\\]]+)\\]"));
-  return m[1].split(',').map((s) => s.trim().replace(/'/g, ''));
+  const P = require('./helpers-paleta');
+  return nombre === 'PC_DARK' ? P.oscuro.series : P.claro.series;
 }
 
 test('contrasteTextoSobreRelleno: oscuro sobre claro, blanco sobre oscuro', () => {
@@ -217,15 +217,18 @@ test('contrasteTextoSobreRelleno: relleno no hex -> blanco con contorno oscuro',
   assert.deepEqual(contrasteTextoSobreRelleno('rgba(0,0,0,0.5)', OSCURO), { color: '#ffffff', razon: null, halo: OSCURO });
 });
 
-test('paleta clara (PC) + gris de "Otras": todas las porciones llegan a >=4.5:1 sin contorno', () => {
+// Fase 345: con la paleta 3, solo el rosa del tema claro necesita contorno (17,1:1 con el).
+test('paleta clara (las 20 series) + gris de "Otras": >=4.5:1 contra la porcion, o contorno que da >=4.5:1; casi todas sin contorno', () => {
+  let conContorno = 0;
   for (const hex of leerPaleta('PC').concat(['#9aa0a6'])) {
     const r = contrasteTextoSobreRelleno(hex, OSCURO);
-    assert.ok(r.razon >= 4.5, hex + ' ' + r.razon);
-    assert.equal(r.halo, null, hex);
+    if (r.halo === null) assert.ok(r.razon >= 4.5, hex + ' ' + r.razon);
+    else { conContorno++; assert.ok(contrasteRazon(r.color, r.halo) >= 4.5, hex); }
   }
+  assert.ok(conContorno <= 1, 'en claro, a lo sumo una serie con contorno: ' + conContorno);
 });
 
-test('paleta oscura (PC_DARK): >=4.5:1 contra la porcion, o contorno del otro color que da >=4.5:1 contra la letra', () => {
+test('paleta oscura (las 20 series): >=4.5:1 contra la porcion, o contorno del otro color que da >=4.5:1 contra la letra', () => {
   for (const hex of leerPaleta('PC_DARK')) {
     const r = contrasteTextoSobreRelleno(hex, OSCURO);
     if (r.halo === null) assert.ok(r.razon >= 4.5, hex + ' ' + r.razon);

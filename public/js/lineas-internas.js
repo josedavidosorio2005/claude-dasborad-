@@ -79,8 +79,8 @@ function _liRenderFlujo(el, p, i, datos) {
   if (!serie.puntos.length) return;
   var oscuro = _liOscuro();
   var cTotal = auColorAgendas('total', oscuro), cCont = auColorAgendas('citas', oscuro);
-  var cAb = _liVar('--c-danger', '#e74c3c'), cNs = _liVar('--c-success-text', '#17703b');
-  if (oscuro) cNs = _liVar('--c-success', '#4ade80');
+  // Fase 345: Abandonadas y Nivel de atencion son series (no estados): series 3 y 4 de la paleta.
+  var cAb = _liVar('--serie-3', '#CB4893'), cNs = _liVar('--serie-4', '#186261');
   var etiquetas = serie.puntos.map(function (x) { return serie.porArea ? x.etiqueta : (typeof _abFechaCorta === 'function' ? _abFechaCorta(x.etiqueta) : x.etiqueta); });
   if (serie.porArea && typeof auPartirEtiqueta === 'function') etiquetas = etiquetas.map(function (t) { return auPartirEtiqueta(t, 14); });
   var o = loBar(null);
@@ -92,7 +92,7 @@ function _liRenderFlujo(el, p, i, datos) {
     rotation: function (ctx) { return ctx.dataset.yAxisID === 'y2' ? 0 : et.rotacion; },
     anchor: 'end', align: function (ctx) { return ctx.dataset.yAxisID === 'y2' ? 'top' : 'end'; }, offset: 2,
     formatter: function (v, ctx) { return ctx.dataset.yAxisID === 'y2' ? _liFmtPct(v) : liCantidadTexto(v); },
-    color: function (ctx) { return ctx.dataset.borderColor; } });
+    color: function (ctx) { return typeof colorTextoSerie === 'function' ? colorTextoSerie(ctx.dataset.borderColor) : ctx.dataset.borderColor; } });
   o.plugins.tooltip = { callbacks: { label: function (ctx) { return ctx.dataset.label + ': ' + (ctx.dataset.yAxisID === 'y2' ? _liFmtPct(ctx.parsed.y) : _liFmtN(ctx.parsed.y)); } } };
   o.scales.y = Object.assign({}, o.scales.y, { beginAtZero: true, grace: et.rotacion ? '30%' : '15%', title: { display: true, text: 'WhatsApp', color: o.scales.y.ticks.color } });
   o.scales.y2 = { position: 'right', beginAtZero: true, min: 0, max: 100, grid: { display: false },

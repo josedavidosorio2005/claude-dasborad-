@@ -63,99 +63,74 @@ if (typeof Chart !== 'undefined') {
   Chart.defaults.animation.duration = _reducirMovimiento ? 0 : 200;
 }
 
-// Fase 133: CG/CO bajaron de luminosidad (2.87/2.85:1 -> 3.49/3.92:1 contra
-// blanco, mismo cambio y mismos valores que --c-success/--c-warning en
-// styles.css -- un donut/barra de "verde/ambar" (ej. distribucion de
-// Sobresaliente/No Critico/Critico) es un objeto grafico, WCAG 1.4.11 exige
-// 3:1 igual que un control). CR ya pasaba (3.82), sin cambio.
-var CD='#0d4a5e',CM='#1a7a9e',CG='#1f9d55',CR='#e74c3c',CO='#c26a00',CP='#8e44ad';
+// Fase 133: CG/CO/CR = semaforo (cumple / cerca / no cumple). Solo para ESTADOS: nunca son
+// una serie. Contraste >= 3:1 contra las superficies (objeto grafico, WCAG 1.4.11).
+var CG='#1f9d55',CR='#e74c3c',CO='#c26a00';
 
-// Fase 133 (Parte 3, WCAG 1.4.1 + 1.4.11): PC/PC_DARK ya NO reusan CG/CO/CR
-// (el mismo tono exacto del semaforo) en ninguna de sus 12 posiciones -- una
-// grafica categorica (ej. "llamadas por skill") no puede parecer un
-// semaforo de bien/regular/mal sin que nadie lo haya pedido. Paleta nueva
-// generada con una busqueda real (maximizar la distancia perceptual minima
-// CIELAB bajo vision tipica + 3 simulaciones de daltonismo -- ver
-// public/js/contraste-logic.js), restringida a matices fuera del semaforo
-// (teal/azul/indigo/purpura/magenta/marron) y con contraste >=3:1 contra
-// las superficies donde se dibuja. Minimo real medido entre las primeras 8
-// series: 20.1:1 ΔE en el peor caso (protanopia), muy por encima del
-// ejemplo del prompt (ΔE>=12). Detalle completo en docs/sistema-de-diseno.md.
-var PC=['#29564b','#a92dd2','#461a66','#9f8f60','#349db2','#734d26','#d22d80','#1f1f93','#734b9b','#b870db','#ac7c39','#602055'];
+// Fase 345: la PALETA (series y tonos de texto) vive en UN solo archivo, public/css/paleta.css
+// (paleta 3 «Segura para daltonismo», elegida el 12/11/2026). Aqui no hay ningun color de serie
+// escrito: aplicarTemaCharts() la lee de las variables CSS del tema actual.
+//   PC        = series 1..12, en ese orden en toda la plataforma (paletaColorPara elige el
+//               INDICE por la etiqueta; el color de cada indice sale de aqui).
+//   PC_EXTRA  = series 13..20, solo tortas de mas de 12 porciones (Tipificacion).
+//   CD/CM/CP  = series 1/2/3 (los usan graficas viejas por nombre: mismo orden de la paleta).
+//   SERIE_*   = roles de colorSerie(): principal 1, secundaria 2, linea 3, no conectada 4.
+//   PALETA_TEXTO = tono para TEXTO de cada serie base (>= 4,5:1): ver colorTextoSerie().
+var PC=[], PC_EXTRA=[], PALETA_TEXTO=[], CD, CM, CP;
+var SERIE_PRINCIPAL, SERIE_SECUNDARIA, SERIE_SECUNDARIA_BORDE=null, SERIE_LINEA, SERIE_NO_CONECTADA;
+var PALETA_RESPALDO=['#0072B2']; // solo si paleta.css no cargo (nunca deberia pasar)
+function _paletaDeCss(){
+  try{
+    var cs=getComputedStyle(document.documentElement), s=[], t=[];
+    for(var i=1;i<=20;i++){ var v=cs.getPropertyValue('--serie-'+i).trim(); if(!v) return null; s.push(v); }
+    for(var j=1;j<=6;j++) t.push(cs.getPropertyValue('--serie-texto-'+j).trim() || s[j-1]);
+    return { series:s, texto:t };
+  }catch(e){ return null; }
+}
 
-// Set alterno de la paleta categorica para modo oscuro (paleta-logic.js no
-// cambia: sigue derivando el INDICE de forma determinista por hash de la
-// etiqueta -- lo unico que cambia aqui es a que color resuelve cada
-// indice, para que se distingan sobre un fondo oscuro). Misma busqueda que
-// PC, minimo real medido: ΔE 17.5:1 (peor caso, tritanopia).
-var PC_DARK=['#428a78','#a457db','#abeded','#d9c68c','#ac6939','#9898cd','#53c6a9','#a99670','#bf9540','#cb4da1','#adc7eb','#9e79d2'];
-
-// Fase 206: 8 colores categoricos EXTRA, solo para tortas de mas de 12
-// porciones (Tipificacion: hasta 15/20), asi ninguna porcion repite color.
-// Mismas reglas que PC (sin tonos del semaforo; >=3:1 contra las superficies
-// del tema; medido con contraste-logic.js): claro, contraste 4,30-12,05:1 y
-// ΔE minimo 14,3 contra PC y entre si; oscuro, 4,55-7,64:1 y ΔE minimo 12,1.
-var PC_EXTRA_CLARO=['#2f6fb8','#8a1f4f','#5c5ab8','#1d6f73','#8c5a8c','#4b2c1a','#c04a9a','#3a3a5c'];
-var PC_EXTRA_DARK=['#5aa0e0','#e07ab0','#8f8fe8','#6fd6d0','#d8a8e0','#c8a070','#7fb8d8','#e0b0c8'];
-var PC_EXTRA=PC_EXTRA_CLARO;
-
-// Colores de eje/leyenda/fondo-de-datalabel que lo()/loPie() usaban como
-// literales sueltos -- ahora tambien reasignables por tema. CHART_TICK
-// (claro) baja igual que --c-text-muted en styles.css (2.97 -> 5.38:1).
+// Colores de eje/leyenda/fondo-de-datalabel -- reasignables por tema.
 var CHART_GRID='#f0f4f8', CHART_TICK='#4f6f7d', CHART_DL_BG='rgba(255,255,255,0.75)';
 
-// Puente con theme.js: reasigna CD/CM/CG/CR/CO/CP/PC (y CHART_GRID/TICK/
-// DL_BG) segun el tema actual. El resto de este archivo y de
-// dashboard-generic.js/trafico.js/calidad.js/mis-resultados.js ya leen
-// estas variables por NOMBRE en el momento de construir cada grafico (no
-// las copian a una constante propia), asi que reasignarlas aca alcanza --
-// no hace falta tocar esos call-sites uno por uno. theme.js llama a esta
-// funcion al cargar la pagina y en cada toggle de tema.
+// Puente con theme.js: reasigna la paleta (desde paleta.css) y el semaforo segun el tema
+// actual. El resto de los archivos leen estas variables por NOMBRE al construir cada grafico.
+// theme.js llama a esta funcion al cargar la pagina y en cada cambio de tema.
 function aplicarTemaCharts(){
   var oscuro = typeof temaActual === 'function' && temaActual() === 'dark';
+  var p = _paletaDeCss() || { series: PALETA_RESPALDO.slice(), texto: PALETA_RESPALDO.slice() };
+  var sv = function(i){ return p.series[i] || p.series[0]; };
+  PC = p.series.slice(0, 12); PC_EXTRA = p.series.slice(12, 20); PALETA_TEXTO = p.texto.slice();
+  CD = sv(0); CM = sv(1); CP = sv(2);
+  SERIE_PRINCIPAL = sv(0); SERIE_SECUNDARIA = sv(1); SERIE_SECUNDARIA_BORDE = null; SERIE_LINEA = sv(2); SERIE_NO_CONECTADA = sv(3);
   if(oscuro){
-    CD='#5fc9ea'; CM='#7dd6f0'; CG='#4ade80'; CR='#f87171'; CO='#fbbf24'; CP='#c084fc';
-    PC=PC_DARK; PC_EXTRA=PC_EXTRA_DARK;
+    CG='#4ade80'; CR='#f87171'; CO='#fbbf24';
     CHART_GRID='#23414c'; CHART_TICK='#8fb4bf'; CHART_DL_BG='rgba(19,44,53,0.78)';
-    SERIE_PRINCIPAL='#dbe9ee'; SERIE_SECUNDARIA='#3DA2DB'; SERIE_SECUNDARIA_BORDE=null; SERIE_LINEA='#c084fc';
-    SERIE_NO_CONECTADA='#cb4da1';
   } else {
-    CD='#0d4a5e'; CM='#1a7a9e'; CG='#1f9d55'; CR='#e74c3c'; CO='#c26a00'; CP='#8e44ad';
-    PC=['#29564b','#a92dd2','#461a66','#9f8f60','#349db2','#734d26','#d22d80','#1f1f93','#734b9b','#b870db','#ac7c39','#602055'];
-    PC_EXTRA=PC_EXTRA_CLARO;
+    CG='#1f9d55'; CR='#e74c3c'; CO='#c26a00';
     CHART_GRID='#f0f4f8'; CHART_TICK='#4f6f7d'; CHART_DL_BG='rgba(255,255,255,0.75)';
-    SERIE_PRINCIPAL='#004150'; SERIE_SECUNDARIA='#3DA2DB'; SERIE_SECUNDARIA_BORDE='#004150'; SERIE_LINEA='#8e44ad';
-    SERIE_NO_CONECTADA='#d22d80';
   }
-  // Fase 214 (Edwin: en oscuro, nombres y leyendas negros que no se ven): el
-  // color por defecto de Chart.js (#666) queda en todo lo que no trae color
-  // propio (leyendas, ejes de graficas con escalas propias). Sigue al tema.
+  // Fase 214: el color por defecto de Chart.js (#666) sigue al tema.
   if(typeof Chart !== 'undefined' && Chart.defaults) Chart.defaults.color = CHART_TICK;
 }
-// Fase 214: en Chart.js 4 la leyenda pinta el texto con el `fontColor` de cada
-// item; las leyendas con generateLabels propio deben ponerlo (sin el, el texto
-// salia negro en tema oscuro).
+// Fase 214: las leyendas con generateLabels propio deben poner el color del texto.
 function leyendaColorTexto(){ return CHART_TICK; }
-// Fase 152 (B1, ajuste pedido): colores de SERIE de marca (ver colorSerie).
-var SERIE_PRINCIPAL='#004150', SERIE_SECUNDARIA='#3DA2DB', SERIE_SECUNDARIA_BORDE='#004150', SERIE_LINEA='#8e44ad';
-// Fase 171 (pedido de Edwin): "no conectadas" en un color bien distinto del de
-// "conectadas" (azul, SERIE_SECUNDARIA): el magenta de la paleta categorica
-// (nunca verde/ambar/rojo, que son del semaforo).
-var SERIE_NO_CONECTADA='#d22d80';
+// Fase 345: color para TEXTO (etiquetas de datos) de una serie. Si la serie ya llega a 4,5:1
+// contra la tarjeta del tema se usa tal cual; si es una de las 6 base, su --serie-texto-N; si no,
+// el color de los ejes. Asi el rosa del tema claro y el violeta del oscuro nunca quedan como texto.
+function colorTextoSerie(hex){
+  if(!hex || typeof hex !== 'string') return CHART_TICK;
+  var fondo = (typeof temaActual === 'function' && temaActual() === 'dark') ? '#132c35' : '#ffffff';
+  try{ if(typeof contrasteRazon === 'function' && contrasteRazon(hex, fondo) >= 4.5) return hex; }catch(e){}
+  var i = PC.map(function(c){ return String(c).toUpperCase(); }).indexOf(hex.toUpperCase());
+  if(i >= 0 && i < 6 && PALETA_TEXTO[i]) return PALETA_TEXTO[i];
+  return CHART_TICK;
+}
 aplicarTemaCharts();
 
-// Fase 152 (B1): color de SERIE por rol, con los colores de MARCA (nunca
-// CG/CO/CR ni el verde de marca #74B859: el semaforo queda solo para lo
-// que se compara contra una meta). Se lee al dibujar, asi sigue el tema.
-//   'principal'  -> teal de marca #004150 (oscuro: #dbe9ee, el texto claro
-//                   del sistema, --c-text; elegida en la revision de B1
-//                   porque se separa del azul: deltaE 44)
-//   'secundaria' -> azul de marca #3DA2DB, SOLO como relleno de barras
-//                   (nunca texto). En claro da 2,84:1 contra blanco, por
-//                   eso lleva borde de 1 px en teal (11,2:1) -- ver
-//                   estiloBarraSecundaria. En oscuro da 5,1:1, sin borde.
-//   'linea'      -> morado del sistema (--c-purple: #8e44ad / #c084fc)
-// Contrastes medidos en server/tests/fase133-paleta-graficas.test.js.
+// Fase 152 (B1), Fase 345: color de SERIE por rol, siempre de la paleta (paleta.css) y en su
+// orden: 'principal' = serie 1, 'secundaria' = serie 2, 'linea' = serie 3, 'noConectada' = serie 4.
+// Nunca CG/CO/CR (semaforo, solo estados). Todas llegan a 3:1 contra la tarjeta: ya no hace falta
+// el borde de la barra secundaria (estiloBarraSecundaria lo pone solo si SERIE_SECUNDARIA_BORDE).
+// Medido en server/tests/fase345-paleta.test.js.
 function colorSerie(rol){
   if(rol === 'secundaria') return SERIE_SECUNDARIA;
   if(rol === 'linea') return SERIE_LINEA;

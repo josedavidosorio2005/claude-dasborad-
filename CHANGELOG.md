@@ -4,6 +4,25 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+
+## v1.178.0 — Noviembre 2026
+
+**Fase 345: colores nuevos en toda la plataforma (paleta «Segura para daltonismo»).**
+
+- Las gráficas de todos los dashboards y del Módulo de Calidad usan la paleta nueva: azul, violeta,
+  rosa, teal, marrón e índigo, en el mismo orden en todas partes. Está pensada para que la distingan
+  también las personas con daltonismo.
+- Botones: el principal sigue en el verde azulado de la marca; los secundarios llevan borde azul, y
+  «Ver datos» tiene un fondo azul suave. La pestaña activa y el foco van en el mismo azul.
+- El verde, el amarillo y el rojo quedan solo para estados (cumple, alerta, no cumple), siempre con
+  su símbolo o texto.
+- Clínica Aurora y Hospital La María: las líneas de Total tráfico y de salida pasan a la paleta
+  nueva; la subida y la bajada mes a mes siguen en verde y rojo. La paleta azul de Agendas de Aurora
+  no cambia.
+- Mobilize y Agendas de Aurora: los botones negros pasan al estilo nuevo, con el mismo tamaño y el ✓.
+- Solo cambian colores: las cifras, los textos y la distribución de las pantallas son los mismos.
+  La fecha de «Última actualización» sigue en naranja.
+
 ## v1.177.0 — Noviembre 2026
 
 **Fase W1: copia oculta de Mobilize para probar la conexión con Wolkvox.**

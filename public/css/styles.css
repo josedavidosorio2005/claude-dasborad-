@@ -2077,20 +2077,19 @@ div.ca-bar-fila{cursor:default}
 .au-ag-botones{gap:8px}
 /* Fase 305: el mismo estilo para todos los botones del tablero de MOBILIZE (clase
    .gd-botones-resaltados en #gd-overlay, ver gdBotonesResaltados). */
-.au-ag-botones .gd-subtab-btn,.gd-botones-resaltados .gd-subtab-btn{min-height:44px;padding:8px 16px;background:#111;color:#fff;border:2px solid #111;font-weight:600}
-.au-ag-botones .gd-subtab-btn:hover,.gd-botones-resaltados .gd-subtab-btn:hover{background:#333;border-color:#333;color:#fff}
-.au-ag-botones .gd-subtab-btn.on,.gd-botones-resaltados .gd-subtab-btn.on{background:#1565c0;border-color:#1565c0;color:#fff;font-weight:700;box-shadow:0 0 0 2px #fff inset}
+/* Fase 345: mismos tamanos (44 px, borde de 2 px, ✓ en el activo), con los colores de la paleta 3:
+   inactivo = boton secundario (fondo de tarjeta, texto y borde --btn-secundario), activo = primario
+   (teal de marca) con ✓ y borde doble. Los tokens cambian solos con el tema (paleta.css). */
+.au-ag-botones .gd-subtab-btn,.gd-botones-resaltados .gd-subtab-btn{min-height:44px;padding:8px 16px;background:var(--btn-secundario-bg);color:var(--btn-secundario-fg);border:2px solid var(--btn-secundario-borde);font-weight:600}
+.au-ag-botones .gd-subtab-btn:hover,.gd-botones-resaltados .gd-subtab-btn:hover{background:var(--acento-suave);border-color:var(--btn-secundario-borde);color:var(--btn-secundario-fg)}
+.au-ag-botones .gd-subtab-btn.on,.gd-botones-resaltados .gd-subtab-btn.on{background:var(--btn-primario-bg);border-color:var(--btn-primario-bg);color:var(--btn-primario-fg);font-weight:700;box-shadow:0 0 0 2px var(--btn-primario-fg) inset}
 .au-ag-botones .gd-subtab-btn.on::before,.gd-botones-resaltados .gd-subtab-btn.on::before{content:"✓ "}
 .au-ag-botones .gd-subtab-btn:focus-visible,.gd-botones-resaltados .gd-subtab-btn:focus-visible{outline:3px solid var(--c-focus);outline-offset:2px}
-[data-theme="dark"] .au-ag-botones .gd-subtab-btn,[data-theme="dark"] .gd-botones-resaltados .gd-subtab-btn{background:#fff;color:#111;border-color:#fff}
-[data-theme="dark"] .au-ag-botones .gd-subtab-btn:hover,[data-theme="dark"] .gd-botones-resaltados .gd-subtab-btn:hover{background:#dde8f3;border-color:#dde8f3;color:#111}
-[data-theme="dark"] .au-ag-botones .gd-subtab-btn.on,[data-theme="dark"] .gd-botones-resaltados .gd-subtab-btn.on{background:#90c8f8;border-color:#90c8f8;color:#0a2540;box-shadow:0 0 0 2px #0a2540 inset}
-/* Fase 305: en MOBILIZE tambien los botones de accion de los paneles (Aplicar filtros, Excel, PDF, Ver datos...) resaltados, sin estado activo. */
-.gd-botones-resaltados #gd-panels .btn-sm{min-height:44px;padding:8px 16px;background:#111;color:#fff;border:2px solid #111;font-weight:600}
-.gd-botones-resaltados #gd-panels .btn-sm:hover{background:#333;border-color:#333;color:#fff}
+/* Fase 305/345: en MOBILIZE los botones de accion de los paneles, igual que el secundario. */
+.gd-botones-resaltados #gd-panels .btn-sm{min-height:44px;padding:8px 16px;background:var(--btn-secundario-bg);color:var(--btn-secundario-fg);border:2px solid var(--btn-secundario-borde);font-weight:600}
+.gd-botones-resaltados #gd-panels .btn-sm:hover{background:var(--acento-suave);border-color:var(--btn-secundario-borde);color:var(--btn-secundario-fg)}
 .gd-botones-resaltados #gd-panels .btn-sm:focus-visible{outline:3px solid var(--c-focus);outline-offset:2px}
-[data-theme="dark"] .gd-botones-resaltados #gd-panels .btn-sm{background:#fff;color:#111;border-color:#fff}
-[data-theme="dark"] .gd-botones-resaltados #gd-panels .btn-sm:hover{background:#dde8f3;border-color:#dde8f3;color:#111}
+.gd-botones-resaltados #gd-panels .btn-sm.btn-ver-datos{background:var(--btn-suave-bg);color:var(--btn-suave-fg);border-color:var(--btn-suave-borde)}
 .au-ag-vermas{display:flex;justify-content:center;margin-top:10px}
 .au-g2-wrap{height:440px}
 @media (max-width:600px){.au-g2-wrap{height:560px}}
@@ -2408,3 +2407,25 @@ div.ca-bar-fila{cursor:default}
 /* Fase 334: «Hechos por mí: N» bajo el total de la campaña (Módulo de Calidad). */
 .aurora-kpi .cal-kpi-mios{margin-top:4px;color:var(--c-text-2)}
 .aurora-kpi .cal-kpi-mios b{color:var(--c-text)}
+
+/* ═══ Fase 345: paleta 3 «Segura para daltonismo» en la interfaz ═══════════════════════════
+   Los valores viven en paleta.css (unico lugar). Aqui solo se conectan los tokens de siempre a
+   la paleta: acento (pestana activa, foco, borde al pasar el mouse, spinner), fondo suave,
+   puntos de seccion, botones secundario y «Ver datos». El primario sigue en el teal de marca.
+   El semaforo (--c-success/--c-warning/--c-danger) NO cambia: queda solo para estados. */
+:root{ --c-primary-mid:var(--acento); --c-info-bg:var(--acento-suave); --c-purple:var(--serie-2);
+  --c-acento-llamadas:var(--serie-1); --c-acento-whatsapp:var(--serie-4); --c-acento-salida:var(--serie-2); }
+:root[data-theme="dark"]{ --c-primary-mid:var(--acento); --c-info-bg:var(--acento-suave); --c-purple:var(--serie-2);
+  --c-acento-llamadas:var(--serie-1); --c-acento-whatsapp:var(--serie-4); --c-acento-salida:var(--serie-2); }
+.atab.atab-active{color:var(--acento-texto);border-bottom-color:var(--acento);background:var(--acento-suave);}
+.atab:hover{color:var(--acento-texto);}
+.gd-subtab-btn:hover{color:var(--acento-texto);border-color:var(--acento);}
+[data-theme="dark"] .aurora-kpi.kpi-pur{border-left-color:var(--serie-2);}
+/* Boton secundario (con borde): el .btn-sm generico de siempre. */
+.btn-sm:not(.btn-primary,.btn-edit,.btn-delete,.btn-cancel,.btn-suspend,.btn-activate,.btn-pass){
+  background:var(--btn-secundario-bg);color:var(--btn-secundario-fg);border:1px solid var(--btn-secundario-borde);}
+.btn-sm:not(.btn-primary,.btn-edit,.btn-delete,.btn-cancel,.btn-suspend,.btn-activate,.btn-pass):hover:not([disabled]){
+  background:var(--acento-suave);border-color:var(--btn-secundario-borde);color:var(--btn-secundario-fg);}
+/* Boton suave: «Ver datos» de cada grafica. */
+.btn-sm.btn-ver-datos{background:var(--btn-suave-bg);color:var(--btn-suave-fg);border:1px solid var(--btn-suave-borde);}
+.btn-sm.btn-ver-datos:hover:not([disabled]){background:var(--btn-suave-bg);border-color:var(--btn-suave-fg);color:var(--btn-suave-fg);}

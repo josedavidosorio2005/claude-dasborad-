@@ -14,7 +14,7 @@ const vm = require('vm');
 const { paletaColorPara, paletaColoresSinRepetir } = require('../../public/js/paleta-logic.js');
 
 const JS = path.join(__dirname, '..', '..', 'public', 'js');
-const PC = fs.readFileSync(path.join(JS, 'charts.js'), 'utf8').match(/var PC=\[([^\]]+)\]/)[1].split(',').map((s) => s.trim().replace(/'/g, ''));
+const PC = require('./helpers-paleta').claro.PC; // Fase 345: la paleta vive en paleta.css
 // Orden de la torta: de mas a menos registros.
 const CATEGORIAS = ['Agendamiento de cita', 'Cancelación', 'Información general', 'Reprogramación', 'Resultados', 'Otro motivo', 'Autorizaciones', 'Quejas', 'Llamada caída'];
 
