@@ -7,6 +7,15 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.183.1 — Noviembre 2026
+
+**Fase 348 (D): la ventana de Calidad del dashboard se cierra fácil.**
+
+- La ventana que abre «Detalle por mes», «Resumen por asesor» y el detalle de cada monitoreo tiene
+  una X arriba a la derecha, que se ve siempre aunque se baje por el contenido.
+- Se cierra también con un clic afuera o con la tecla Esc.
+- Si el detalle de un monitoreo se abrió desde la lista, el botón de abajo dice «Volver a la lista».
+
 ## v1.183.0 — Noviembre 2026
 
 **Fase 348 (C5): las listas de Calidad en pantalla completa.**
