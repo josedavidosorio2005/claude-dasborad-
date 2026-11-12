@@ -58,6 +58,14 @@ async function cenRender() {
   if (camp !== _ccampana) return;
   _cen.datos = d;
   _cenPintarContador(d.conteo.pendientes);
+  _cenPintarLista();
+}
+
+// Fase 348 (C1): dibuja la lista con lo ya traido (cambiar de pagina no vuelve a pedirla).
+function _cenPintarLista() {
+  var cont = document.getElementById('cen-contenido');
+  var d = _cen.datos;
+  if (!cont || !d) return;
   var c = d.conteo;
   var botones = [{ v: 'pendientes', t: 'Pendientes', n: c.pendientes }, { v: 'resueltas', t: 'Resueltas', n: c.resueltas }].map(function (b) {
     return '<button type="button" class="gd-subtab-btn' + (_cen.estado === b.v ? ' on' : '') + '" aria-pressed="' + (_cen.estado === b.v) + '" onclick="cenElegirEstado(\'' + b.v + '\')">' + b.t + ' (' + b.n + ')</button>';
@@ -69,9 +77,12 @@ async function cenRender() {
   if (!d.filas.length) {
     html += '<p class="cen-vacio">' + (_cen.estado === 'pendientes' ? 'No hay llamadas pendientes por escuchar.' : 'Todavía no hay llamadas resueltas.') + '</p>';
   } else {
+    // Fase 348 (C1): de a 10 (o 20) filas; Pendientes y Resueltas llevan cada una su pagina.
+    var corte = clCortar('cen-' + _cen.estado, d.filas);
     html += '<div class="cen-tabla-wrap"><table class="aurora-rank-table cen-tabla"><thead><tr><th>Fecha</th><th>Hora</th><th>ID de la llamada</th>' + (d.verTelefono ? '<th>Teléfono</th>' : '') + '<th>Agente</th><th>Preguntas mal calificadas</th>' +
       (_cen.estado === 'resueltas' ? '<th>Nota</th><th>Observación</th><th>Evaluador</th>' : '<th><span class="sr-only">Acción</span></th>') + '</tr></thead><tbody>' +
-      d.filas.map(function (f) { return _cenFilaHtml(f, d.puedeCalificar, !!d.verTelefono); }).join('') + '</tbody></table></div>';
+      corte.filas.map(function (f) { return _cenFilaHtml(f, d.puedeCalificar, !!d.verTelefono); }).join('') + '</tbody></table></div>' +
+      clPieHtml('cen-' + _cen.estado, corte.pg);
   }
   var avisos = [];
   if (c.sinId) avisos.push(cenAvisoSinId(c.sinId));
@@ -80,6 +91,8 @@ async function cenRender() {
   if (avisos.length) html += '<p class="cen-aviso">' + avisos.map(_cenEsc).join('<br>') + '</p>';
   cont.innerHTML = html;
 }
+clRegistrar('cen-pendientes', _cenPintarLista);
+clRegistrar('cen-resueltas', _cenPintarLista);
 
 function _cenReglasTexto(reglas) {
   return (reglas || []).map(function (r) {

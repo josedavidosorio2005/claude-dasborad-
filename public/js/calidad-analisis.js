@@ -92,7 +92,8 @@ function caRenderDetalle() {
   var host = document.getElementById('ca-detalle'); if (!host) return;
   var lista = caFiltrar(calMonModulo(_ccampana), _cmesFiltro, _ca.detalleTexto);
   var k = caKpis(lista);
-  var filas = lista.map(function (m) {
+  var corte = clCortar('det', lista); // Fase 348 (C1): de a 10 (o 20); los KPIs cuentan todos
+  var filas = corte.filas.map(function (m) {
     var c = caClase(Number(m.puntaje));
     var mot = (m.extras && m.extras.motivo) || '';
     return '<tr class="ca-click" tabindex="0" role="button" aria-label="Ver el detalle del monitoreo de ' + esc(textoFormatoNombre(m.asesor)) + '" onclick="caVerMonitoreo(' + m.id + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();caVerMonitoreo(' + m.id + ')}">' +
@@ -107,8 +108,10 @@ function caRenderDetalle() {
       '<div class="ca-kpi"><b class="cc2-c-' + k.clase.k + '">' + _caPct(k.promedio) + '</b><span>Calificación definitiva</span></div>' +
       '<div class="ca-kpi"><b>' + esc(k.total ? k.clase.t : '—') + '</b><span>Clasificación</span></div></div>' +
     '<div style="overflow-x:auto"><table class="aurora-rank-table" id="ca-detalle-tabla"><tr><th>Fecha</th><th>Asesor</th><th>ID llamada</th><th>Código</th><th>Evaluador</th><th>Nota</th><th>Motivo de afectación</th></tr>' +
-      (filas || '<tr><td colspan="7" class="ca-vacio">No hay monitoreos con ese filtro.</td></tr>') + '</table></div>';
+      (filas || '<tr><td colspan="7" class="ca-vacio">No hay monitoreos con ese filtro.</td></tr>') + '</table></div>' +
+    clPieHtml('det', corte.pg);
 }
+clRegistrar('det', function () { caRenderDetalle(); });
 // Al escribir en el buscador solo se repinta la tabla (no se pierde el foco).
 var _caDetTimer = null;
 function caRenderDetalleTabla() {
