@@ -107,7 +107,7 @@ function caRenderDetalle() {
       '<td><span class="cc2-pill cc2-' + c.k + '">' + _caPct(m.puntaje) + '</span></td><td class="ca-mot">' + esc(mot || (_caTieneNo(m) ? '' : 'Sin afectaciones')) + '</td></tr>';
   }).join('');
   host.innerHTML =
-    '<div class="ca-filtros">' + clBuscadorHtml('det', conTel) +
+    '<div class="ca-filtros">' + clBuscadorHtml('det', conTel) + clBotonPantallaHtml() +
       (q ? '<button type="button" class="btn-cancel ca-limpiar" onclick="caDetalleVerTodos()">Ver todos</button>' : '') + '</div>' +
     '<div class="ca-kpis">' +
       '<div class="ca-kpi"><b>' + k.total + '</b><span>Monitoreos</span></div>' +

@@ -324,6 +324,7 @@ async function openCalidad(){
   if(typeof cenActualizarTab==='function') cenActualizarTab(); // Fase 331: pestaña y contador
 }
 function closeCalidad(){
+  if(typeof clSalirPantalla==='function') clSalirPantalla(); // Fase 348 (C5)
   if(typeof cenAlSalirDelModulo==='function') cenAlSalirDelModulo(); // Fase 331: libera la llamada abierta
   var cerrarReal = function(){ document.getElementById('calidad-overlay').classList.remove('show'); };
   if (typeof motionCerrarModal === 'function') motionCerrarModal('calidad-modal', cerrarReal);
@@ -364,6 +365,7 @@ async function onCalCampanaChange(){
   if(typeof cenActualizarTab==='function') cenActualizarTab(); // Fase 331
 }
 function calReiniciarVistaListas(){
+  clSalirPantalla(); // Fase 348 (C5)
   clReiniciarVista();
   var os = document.getElementById('cal-origen-sel'); if(os) os.value = '';
   if(typeof _cen!=='undefined'){ _cen.estado = 'pendientes'; _cen.datos = null; }

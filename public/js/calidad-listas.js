@@ -34,7 +34,7 @@ function clPonerBuscador(host, id, conTelefono) {
   if (!host) return;
   var actual = host.querySelector('input[data-cl-q]');
   if (actual && document.activeElement === actual) return;
-  host.innerHTML = clBuscadorHtml(id, conTelefono);
+  host.innerHTML = clBuscadorHtml(id, conTelefono) + clBotonPantallaHtml(); // Fase 348 (C5)
 }
 function clSinResultadosTexto(id) {
   return clEstado(id).q ? 'Nada coincide con «' + clEstado(id).q.trim() + '».' : '';
@@ -131,3 +131,59 @@ document.addEventListener('change', function (ev) {
   e.pagina = 1;
   _clRepintar(id, 'select[data-cl-tam][data-cl-id="' + id + '"]');
 });
+
+// ---- Fase 348 (C5): ver la lista en pantalla completa ----
+// La tarjeta de la lista (.aurora-card) pasa a ocupar toda la ventana. #calidad-modal tiene
+// transform (animacion de entrada), que encerraria al position:fixed: mientras dure, se le quita
+// (cl-con-pantalla). Los dialogos del modulo (Cambiar fecha, detalle) siguen por encima. Escape,
+// el mismo boton o cerrar el modulo la devuelven a su lugar.
+var _clPantalla = null;
+function clBotonPantallaHtml() {
+  var on = !!_clPantalla;
+  return '<button type="button" class="btn-cancel cl-pantalla-btn" data-cl-pantalla="1" aria-pressed="' + on + '"' +
+    (on ? ' title="También con Esc"' : '') + '>' + (on ? 'Salir de pantalla completa' : 'Pantalla completa') + '</button>';
+}
+function _clPintarBotonesPantalla() {
+  var on = !!_clPantalla;
+  Array.prototype.forEach.call(document.querySelectorAll('[data-cl-pantalla]'), function (b) {
+    b.setAttribute('aria-pressed', String(on));
+    b.textContent = on ? 'Salir de pantalla completa' : 'Pantalla completa';
+    if (on) b.title = 'También con Esc'; else b.removeAttribute('title');
+  });
+}
+function clEntrarPantalla(card) {
+  if (!card) return;
+  if (_clPantalla && _clPantalla !== card) clSalirPantalla();
+  _clPantalla = card;
+  card.classList.add('cl-pantalla');
+  var modal = card.closest('#calidad-modal');
+  if (modal) modal.classList.add('cl-con-pantalla');
+  card.scrollTop = 0;
+  _clPintarBotonesPantalla();
+}
+function clSalirPantalla() {
+  var card = _clPantalla;
+  if (!card) return;
+  _clPantalla = null;
+  card.classList.remove('cl-pantalla');
+  var modal = card.closest('#calidad-modal');
+  if (modal) modal.classList.remove('cl-con-pantalla');
+  _clPintarBotonesPantalla();
+  var b = card.querySelector('[data-cl-pantalla]');
+  if (b) { b.focus(); if (b.scrollIntoView) b.scrollIntoView({ block: 'nearest' }); }
+}
+document.addEventListener('click', function (ev) {
+  var b = ev.target && ev.target.closest ? ev.target.closest('[data-cl-pantalla]') : null;
+  if (!b) return;
+  var card = b.closest('.aurora-card');
+  if (_clPantalla && _clPantalla === card) clSalirPantalla();
+  else { clEntrarPantalla(card); b.focus(); }
+});
+// Escape sale de la pantalla completa (sin cerrar el modulo), salvo que haya un dialogo abierto encima.
+document.addEventListener('keydown', function (ev) {
+  if (ev.key !== 'Escape' || !_clPantalla) return;
+  if (document.querySelector('#calidad-overlay .cc2-ov:not([hidden])')) return; // (los dialogos del modulo viven en #calidad-overlay)
+  ev.stopPropagation();
+  ev.preventDefault();
+  clSalirPantalla();
+}, true);
