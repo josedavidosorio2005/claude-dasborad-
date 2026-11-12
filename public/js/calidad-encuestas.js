@@ -74,15 +74,22 @@ function _cenPintarLista() {
   var html = '<div class="cen-cab"><div class="cen-filtro" role="group" aria-label="Estado de las llamadas">' + botones + '</div>' +
     (d.puedeCalificar ? '' : '<span class="cen-nota">Solo lectura: calificar es del equipo de Calidad y del supervisor.</span>') + '</div>' +
     '<p class="cen-ayuda">Llamadas con la encuesta mal calificada (' + _cenEsc(_cenReglasTexto(d.reglas)) + '). Una fila por llamada; con el ID de la llamada, la fecha y la hora se ubica la grabación en Wolkvox.</p>';
+  // Fase 348 (C2): buscador por ID, agente, fecha y telefono (el telefono solo llega a quien califica).
+  var idLista = 'cen-' + _cen.estado;
+  var conTel = !!d.verTelefono && clBuscaTelefono(d.filas);
+  var filasVis = clBuscar(idLista, d.filas, clCamposEncuesta, conTel);
+  if (d.filas.length) html += '<div class="ca-filtros">' + clBuscadorHtml(idLista, conTel) + '</div>';
   if (!d.filas.length) {
     html += '<p class="cen-vacio">' + (_cen.estado === 'pendientes' ? 'No hay llamadas pendientes por escuchar.' : 'Todavía no hay llamadas resueltas.') + '</p>';
+  } else if (!filasVis.length) {
+    html += '<p class="cen-vacio">' + _cenEsc(clSinResultadosTexto(idLista)) + '</p>';
   } else {
     // Fase 348 (C1): de a 10 (o 20) filas; Pendientes y Resueltas llevan cada una su pagina.
-    var corte = clCortar('cen-' + _cen.estado, d.filas);
+    var corte = clCortar(idLista, filasVis);
     html += '<div class="cen-tabla-wrap"><table class="aurora-rank-table cen-tabla"><thead><tr><th>Fecha</th><th>Hora</th><th>ID de la llamada</th>' + (d.verTelefono ? '<th>Teléfono</th>' : '') + '<th>Agente</th><th>Preguntas mal calificadas</th>' +
       (_cen.estado === 'resueltas' ? '<th>Nota</th><th>Observación</th><th>Evaluador</th>' : '<th><span class="sr-only">Acción</span></th>') + '</tr></thead><tbody>' +
       corte.filas.map(function (f) { return _cenFilaHtml(f, d.puedeCalificar, !!d.verTelefono); }).join('') + '</tbody></table></div>' +
-      clPieHtml('cen-' + _cen.estado, corte.pg);
+      clPieHtml(idLista, corte.pg);
   }
   var avisos = [];
   if (c.sinId) avisos.push(cenAvisoSinId(c.sinId));
