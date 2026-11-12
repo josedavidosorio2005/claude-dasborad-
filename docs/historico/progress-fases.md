@@ -20805,3 +20805,5 @@ Decisión del usuario (12/11): paleta 3 de la propuesta de paletas (basada en Ok
 - `sura-televentas.js` agrega `<style data-paleta="plataforma">` después del `<link>` de la hoja del tablero; `sura-televentas-app.js`/`.css` y `scripts/sura` no cambian (la prueba lo verifica con `git diff`).
 - Pendiente anotado en `docs/pendientes.md`: el mapa de calor de Flujo por hora (nivel solo por color). Decidido sin cambio: el marrón frente al semáforo con daltonismo.
 - Pruebas `fase345-televentas-paleta` (4). Visual local con ventas sintéticas de agosto a octubre (los generadores de las pruebas): Cumplimiento, Agentes y Detalle ventas en 375/768/1440, claro y oscuro, sin errores de consola.
+
+- **Cierre (v1.179.1)**: los respaldos de `charts.js` (`PALETA_RESPALDO`), `graficas-lineas-logic.js` y `lineas-internas.js` repetían colores de la paleta; pasan a un gris neutro o a `PC`. Nueva prueba en `fase345-paleta`: ningún color de la paleta aparece en `public/` fuera de `paleta.css`.

@@ -78,7 +78,9 @@ var CG='#1f9d55',CR='#e74c3c',CO='#c26a00';
 //   PALETA_TEXTO = tono para TEXTO de cada serie base (>= 4,5:1): ver colorTextoSerie().
 var PC=[], PC_EXTRA=[], PALETA_TEXTO=[], CD, CM, CP;
 var SERIE_PRINCIPAL, SERIE_SECUNDARIA, SERIE_SECUNDARIA_BORDE=null, SERIE_LINEA, SERIE_NO_CONECTADA;
-var PALETA_RESPALDO=['#0072B2']; // solo si paleta.css no cargo (nunca deberia pasar)
+// Solo si paleta.css no cargo (nunca deberia pasar): un gris neutro (el de los ejes), nunca un color
+// de la paleta escrito aqui -- la paleta vive solo en paleta.css.
+var PALETA_RESPALDO=['#4f6f7d'];
 function _paletaDeCss(){
   try{
     var cs=getComputedStyle(document.documentElement), s=[], t=[];

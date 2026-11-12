@@ -6,6 +6,14 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+
+## v1.179.1 — Noviembre 2026
+
+**Fase 345 (cierre): la paleta queda solo en su archivo.**
+
+- Arreglo interno, sin cambio visible: los colores de respaldo que usaban tres gráficas, por si la
+  paleta no cargaba, ya no repiten colores de la paleta. Ahora la paleta vive en un solo archivo.
+
 ## v1.179.0 — Noviembre 2026
 
 **Fase 345 (parte 2): Televentas de SURA con los colores nuevos.**

@@ -80,7 +80,7 @@ function _liRenderFlujo(el, p, i, datos) {
   var oscuro = _liOscuro();
   var cTotal = auColorAgendas('total', oscuro), cCont = auColorAgendas('citas', oscuro);
   // Fase 345: Abandonadas y Nivel de atencion son series (no estados): series 3 y 4 de la paleta.
-  var cAb = _liVar('--serie-3', '#CB4893'), cNs = _liVar('--serie-4', '#186261');
+  var cAb = _liVar('--serie-3', (typeof PC !== 'undefined' && PC[2]) || '#4f6f7d'), cNs = _liVar('--serie-4', (typeof PC !== 'undefined' && PC[3]) || '#4f6f7d');
   var etiquetas = serie.puntos.map(function (x) { return serie.porArea ? x.etiqueta : (typeof _abFechaCorta === 'function' ? _abFechaCorta(x.etiqueta) : x.etiqueta); });
   if (serie.porArea && typeof auPartirEtiqueta === 'function') etiquetas = etiquetas.map(function (t) { return auPartirEtiqueta(t, 14); });
   var o = loBar(null);
