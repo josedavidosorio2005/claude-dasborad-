@@ -2475,6 +2475,7 @@ div.ca-bar-fila{cursor:default}
    Televentas SURA (gd-menu-lateral.js). Solo con #gd-modal.gd-menu-lateral (clientes de la lista);
    desde 901 px. En 900 px o menos, las pestañas de siempre. */
 .gd-menu-tog{display:none}
+#gd-modal .gd-menu-ico{display:none} /* en 900 px o menos, las pestañas de siempre: sin icono */
 @media (min-width:901px){
   #gd-modal.gd-menu-lateral{display:grid;grid-template-columns:220px minmax(0,1fr);grid-template-rows:auto auto auto 1fr;align-content:start}
   #gd-modal.gd-menu-lateral > .aurora-header,#gd-modal.gd-menu-lateral > #gd-kpis{grid-column:1/-1}
@@ -2485,7 +2486,7 @@ div.ca-bar-fila{cursor:default}
   #gd-modal.gd-menu-lateral #gd-tabs .atab{display:flex;align-items:center;gap:10px;width:100%;min-height:44px;padding:0 12px;margin:0;border:0;border-radius:var(--r-md);white-space:normal;text-align:left;line-height:1.25}
   #gd-modal.gd-menu-lateral #gd-tabs .atab.atab-active{background:var(--c-brand);color:var(--c-on-brand)}
   #gd-modal.gd-menu-lateral #gd-tabs .atab[class*="gd-tab-sec-"]::before{display:none}
-  #gd-modal.gd-menu-lateral #gd-tabs .gd-menu-ico{width:18px;height:18px;flex:0 0 18px}
+  #gd-modal.gd-menu-lateral #gd-tabs .gd-menu-ico{display:block;width:18px;height:18px;flex:0 0 18px}
   #gd-modal.gd-menu-lateral > #gd-panels{grid-column:2;grid-row:3/span 2;min-width:0}
   #gd-modal.gd-menu-lateral.gd-menu-plegado{grid-template-columns:auto minmax(0,1fr)}
   #gd-modal.gd-menu-lateral.gd-menu-plegado > #gd-tabs{display:none}
