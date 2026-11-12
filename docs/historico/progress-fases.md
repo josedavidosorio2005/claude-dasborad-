@@ -20750,6 +20750,17 @@ Corrección del usuario a la Fase 340: el teléfono sí se necesita en Calidad p
 - **Quién lo ve**: `puedeVerTelefono` (CALIDAD, SUPERVISOR, REPORTES y administrador). Arreglo de paso: el asesor lo recibía en `/monitoreos/mios` y en `PUT /monitoreos/:id/visto` (Fase 151 lo permitía) y lo veía en la ventana de detalle de «Mis resultados»; ahora esas rutas usan `monitoreoPara` y el campo salió de la ventana. La cuenta de cliente ya no lo recibía (`monitoreosParaCliente`), así que el dashboard y sus exportaciones tampoco lo traen.
 - Pruebas `fase343` (4: formulario, guardar/editar, quién lo ve por rol, carga masiva) y `fase118`, `fase318`, `fase340` ajustadas.
 
+## Fase 344 — Teléfono en «Calidad de encuestas» de Mobilize (v1.176.0, 2026-11-12)
+
+Pedido del usuario (12/11): guardar el teléfono (ANI) de la base de Encuesta HistIVR y mostrarlo en Calidad de encuestas solo a quienes califican. Reemplaza, solo para esta tabla, la regla «sin teléfono» de las Fases 131/147/184/193.
+
+- **Lector** (`encuesta-logic.js`): `ENCUESTA_COLUMNAS` + `{ key: 'telefono', label: 'ANI', obligatoria: false }`; el payload lleva el teléfono al final (`ENCUESTA_ORDEN_ARRAY[10]`), así una carga vieja sin él sigue válida. AGENT_DNI, CUSTOMER_ID y TELEPHONE siguen sin leerse. Vista previa: «con teléfono (ANI) N de M».
+- **Base**: `runOnceMigration('fase344_encuestas_telefono_v1')` solo hace `ADD COLUMN telefono TEXT NOT NULL DEFAULT ''` (no toca filas). `cargarEncuestas` lo guarda. «Descargar lo cargado» ya excluía la columna `telefono` por nombre (`COLUMNAS_EXCLUIDAS`); resumen, comentarios, FCR y opciones nunca la seleccionan.
+- **Quién lo ve**: `puedeVerTelefono` pasó a `auth.js` (una sola regla para monitoreos y Calidad de encuestas: CALIDAD, SUPERVISOR, REPORTES y administrador). `encMon.listar` lo devuelve solo con `opts.verTelefono`; la ruta responde `verTelefono` y le quita el campo del bloqueo a quien no puede verlo. Gerencia ve la lista sin teléfono; el asesor y el cliente siguen sin acceso (403).
+- **Calificar**: el banner muestra Teléfono con «Copiar» (o «—»), se prellena `cc2-f-telefono` si la plantilla trae el campo, y `POST /monitoreos` con `encuestaConnId` sin teléfono en el cuerpo toma el ANI (`encMon.telefonoDeLlamada`). La lista de Monitoreos del módulo muestra la columna Teléfono solo si el servidor manda el campo.
+- **Recarga segura**: la carga ya reemplazaba por campaña + rango de fechas del archivo (no duplica), y los monitoreos se enlazan por `encuestaConnId` (texto), no por el id de la fila. Nuevo `encMon.impactoRecarga` en `POST /calidad/encuestas/carga/impacto` → `calidadEncuestas` (pendientes y resueltas antes/después, `monitoreosSinLlamada`, `conTelefono`), solo conteos; la confirmación de Cargar Datos lo muestra (`encuestaImpactoCalidadTexto`).
+- **Arreglo de la Fase 343, hecho antes de mezclar #775**: al editar con una plantilla sin campo teléfono, el formulario mandaba `telefono: ''` y el servidor borraba el guardado; ahora se omite si el campo no existe.
+- Pruebas `fase344` (8) y ajustadas `fase147-b`, `fase184`, `fase193`, `fase331`, `fase331-pr2`, `fase153` y `fase160` (listas de migraciones). Suite 2983/2983. Verificación local con Playwright + Brave (base desechable, datos sintéticos): 375/768/1440, claro y oscuro, sin scroll horizontal ni errores de consola.
 
 ## Fase W1 — Réplica oculta «MOBILIZE PRUEBAS API», sin API (v1.177.0, 2026-11-12)
 

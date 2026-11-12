@@ -96,6 +96,7 @@ test('una base nueva termina todas las migraciones con Aurora, creada despues de
     'fase321_sura_modulo_calidad_v1', // Fase 321: SURA con modulo de Calidad
     'fase331_encuesta_monitoreo_v1', // Fase 331: tablas y columna nuevas de Calidad de encuestas (solo siembra reglas de MOBILIZE)
     'fase331_encuestas_hora_v1', // Fase 331 (PR 2): columna hora en encuestas (ADD COLUMN, sin tocar filas)
+    'fase344_encuestas_telefono_v1', // Fase 344: columna telefono (ANI) en encuestas (ADD COLUMN, sin tocar filas)
     'fase332_orlant_calidad_solo_nueva_v1', // Fase 332: los 3 paneles viejos de Calidad de ORLANT ocultos (no toca Aurora/HLM)
     'faseW1_replica_mobilize_api_v1']; // Fase W1: replica interna de Mobilize (fila nueva; no toca Aurora/HLM)
   assert.deepEqual(orden.slice(iAur + 1).filter((n) => !POSTERIORES.includes(n)), [], 'ninguna migracion vieja corre despues de crear Aurora');

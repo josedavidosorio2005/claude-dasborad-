@@ -42,8 +42,9 @@ test('base completa HistIVR: entra tal cual (encabezado en la fila 1), 4 filas, 
   assert.equal(r.filas.length, 4);
   assert.deepEqual(r.avisos, []);
   assert.deepEqual([r.desde, r.hasta, r.dias], ['2025-03-03', '2025-03-05', 3]);
-  assert.deepEqual(r.columnasUsadas, ['AGENT_NAME', 'SKILL_NAME', 'DATE', 'Q01', 'Q02', 'Q03', 'Q04', 'VOICE_MESSAGE', 'CONN_ID']);
-  assert.equal(r.columnasIgnoradas, 16);
+  assert.deepEqual(r.columnasUsadas, ['AGENT_NAME', 'SKILL_NAME', 'DATE', 'Q01', 'Q02', 'Q03', 'Q04', 'VOICE_MESSAGE', 'CONN_ID', 'ANI']); // Fase 344: + ANI
+  assert.equal(r.columnasIgnoradas, 15);
+  assert.equal(r.conTelefono, 4);
   assert.equal(r.conConnId, 4);
   // Las graficas: respondieron P1 3 de 4, P3 = Si 2 / No 1, 2 comentarios.
   assert.equal(r.conteos.total - r.conteos.preguntas.q1.sinRespuesta, 3);
@@ -52,12 +53,14 @@ test('base completa HistIVR: entra tal cual (encabezado en la fila 1), 4 filas, 
   assert.deepEqual(r.filas.map((f) => f[8]), ['CONN-0001', 'CONN-0002', 'CONN-0003', 'CONN-0004']);
 });
 
-test('privacidad: ANI, AGENT_DNI, CUSTOMER_ID, Q05-Q10, RESULT y FEELING nunca llegan a las filas', () => {
+test('privacidad: AGENT_DNI, CUSTOMER_ID, Q05-Q10, RESULT y FEELING nunca llegan a las filas; ANI si (Fase 344), en su posicion', () => {
   const r = L.encuestaParseFilas(OCT);
   const json = JSON.stringify(r.filas);
-  for (const c of [ANI, DNI, CLIENTE, 'POSITIVO', 'SINTETICO']) assert.ok(!json.includes(c), 'se colo ' + c);
+  for (const c of [DNI, CLIENTE, 'POSITIVO', 'SINTETICO']) assert.ok(!json.includes(c), 'se colo ' + c);
+  assert.ok(r.filas.every((f) => f[L.ENCUESTA_ORDEN_ARRAY.indexOf('telefono')] === ANI), 'Fase 344: el ANI va solo en su campo');
   assert.ok(r.filas.every((f) => f.length === L.ENCUESTA_ORDEN_ARRAY.length));
-  assert.ok(!L.ENCUESTA_COLUMNAS.some((c) => ['ANI', 'AGENT_DNI', 'CUSTOMER_ID', 'TELEPHONE'].includes(c.label)));
+  assert.ok(!L.ENCUESTA_COLUMNAS.some((c) => ['AGENT_DNI', 'CUSTOMER_ID', 'TELEPHONE'].includes(c.label)));
+  assert.deepEqual(L.ENCUESTA_COLUMNAS.filter((c) => c.label === 'ANI').map((c) => [c.key, c.obligatoria]), [['telefono', false]]);
 });
 
 test('compatibilidad: el formato viejo (fila de texto antes del encabezado, sin CONN_ID) sigue entrando, con aviso', () => {
@@ -83,11 +86,11 @@ test('vista previa: dice las columnas usadas y cuantas filas traen ID de llamada
   assert.ok(s.includes("'; con ID de llamada '+r.filas.filter(function(f){ return !!f[8]; }).length+' de '+r.filas.length"));
 });
 
-test('API: la base completa se guarda; resumen y comentarios salen de ella, con el ID de la llamada y sin telefono', async () => {
+test('API: la base completa se guarda (Fase 344: con el ANI); resumen y comentarios salen de ella, con el ID de la llamada y sin telefono', async () => {
   const admin = await tokenFor('admin', MASTER_PASSWORD);
   const r = L.encuestaParseFilas(OCT);
   const cuerpo = { campana: 'MOBILIZE', archivoNombre: 'RESULTADO DE ENCUESTA SINTETICO.xlsx', filas: r.filas };
-  assert.ok(![ANI, DNI, CLIENTE].some((c) => JSON.stringify(cuerpo).includes(c)), 'el cuerpo no lleva datos personales');
+  assert.ok(![DNI, CLIENTE].some((c) => JSON.stringify(cuerpo).includes(c)), 'el cuerpo no lleva cedula ni cliente (Fase 344: el ANI si)');
   const imp = await request(app).post('/api/calidad/encuestas/carga/impacto').set(auth(admin)).send(cuerpo);
   assert.equal(imp.status, 200);
   const c = await request(app).post('/api/calidad/encuestas/carga').set(auth(admin)).send(cuerpo);
@@ -106,9 +109,8 @@ test('API: la base completa se guarda; resumen y comentarios salen de ella, con 
   assert.equal((await request(app).get('/api/calidad/encuestas/resumen').query(q).set(auth(admin))).body.total, 4);
   const guardado = JSON.stringify(db.prepare("SELECT * FROM encuestas WHERE campana = 'MOBILIZE'").all());
   const respuestas = JSON.stringify([res, com]);
-  for (const x of [ANI, DNI, CLIENTE]) {
-    assert.ok(!guardado.includes(x), 'la base guarda ' + x);
-    assert.ok(!respuestas.includes(x), 'una respuesta trae ' + x);
-  }
-  assert.ok(!db.prepare('PRAGMA table_info(encuestas)').all().some((col) => /tel|ani|dni|customer/i.test(col.name)));
+  for (const x of [DNI, CLIENTE]) assert.ok(!guardado.includes(x), 'la base guarda ' + x);
+  for (const x of [ANI, DNI, CLIENTE]) assert.ok(!respuestas.includes(x), 'resumen o comentarios traen ' + x);
+  assert.ok(guardado.includes(ANI), 'Fase 344: el ANI se guarda');
+  assert.deepEqual(db.prepare('PRAGMA table_info(encuestas)').all().map((col) => col.name).filter((n) => /tel|ani|dni|customer/i.test(n)), ['telefono']);
 });

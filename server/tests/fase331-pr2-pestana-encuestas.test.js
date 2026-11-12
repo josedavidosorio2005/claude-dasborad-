@@ -29,8 +29,7 @@ test('hora: sale de DATE (Date local, serial de Excel con fraccion, texto); sin 
     ['AGENT_NAME', 'SKILL_NAME', 'DATE', 'Q01', 'Q02', 'Q03', 'Q04', 'CONN_ID', 'ANI'],
     ['Asesor Uno', 'SKILL A', '2026-09-01 14:20', 2, 1, 2, 1, 'CONN-H1', '3000000000'],
   ]);
-  assert.deepEqual(r.filas, [['2026-09-01', 'Asesor Uno', 'SKILL A', 2, 1, 2, 1, '', 'CONN-H1', '14:20']]);
-  assert.ok(!JSON.stringify(r.filas).includes('3000000000'), 'el telefono (ANI) nunca viaja');
+  assert.deepEqual(r.filas, [['2026-09-01', 'Asesor Uno', 'SKILL A', 2, 1, 2, 1, '', 'CONN-H1', '14:20', '3000000000']]); // Fase 344: + ANI al final
 });
 
 test('API: la carga guarda la hora y Calidad de encuestas la devuelve; la forma vieja (9 campos) sigue valida', async () => {
@@ -47,7 +46,7 @@ test('API: la carga guarda la hora y Calidad de encuestas la devuelve; la forma 
   await request(app).post('/api/calidad/encuestas/monitoreo/liberar').set(H(admin)).send({ campana: 'MOBILIZE', connId: 'CONN-H1' });
   const mala = await request(app).post('/api/calidad/encuestas/carga').set(H(admin)).send({ campana: 'MOBILIZE', filas: [['2025-02-05', 'A', 'S', 1, null, null, null, '', 'X', '25:00']] });
   assert.equal(mala.status, 400);
-  assert.ok(!db.prepare('PRAGMA table_info(encuestas)').all().some((x) => /tel|ani/i.test(x.name)), 'sigue sin telefono');
+  assert.deepEqual(db.prepare('PRAGMA table_info(encuestas)').all().map((x) => x.name).filter((n) => /tel|ani/i.test(n)), ['telefono'], 'Fase 344: solo la columna telefono (ANI)');
 });
 
 test('textos: preguntas mal calificadas, fecha, aviso de las que no traen ID', () => {
@@ -86,7 +85,8 @@ test('pestaña: oculta hasta que el servidor da acceso, con contador; panel, avi
   const js = PUB('js/calidad-encuestas.js');
   assert.ok(js.includes("'/calidad/encuestas/monitoreo/conteo?campana='"), 'el servidor decide si se ve (403 = oculta)');
   assert.ok(js.includes('btn.hidden = !_cen.activa;'));
-  assert.ok(!/tel[eé]fono|\bani\b/i.test(js.replace(/Sin telefonos \(regla de la Fase 131\)\./, '')), 'sin telefono');
+  // Fase 344: el telefono sale solo si el servidor lo manda (verTelefono); ver fase344-telefono-calidad-encuestas.
+  assert.ok(js.includes("(d.verTelefono ? '<th>Teléfono</th>' : '')"), 'telefono solo con verTelefono');
   assert.ok(!/onclick="cenAbrir\(/.test(js), 'el ID de la llamada no va dentro de un onclick (delegacion con data-conn)');
   assert.ok(js.includes("navigator.clipboard.writeText(texto)"), 'boton Copiar');
 });
