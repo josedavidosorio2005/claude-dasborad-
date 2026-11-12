@@ -435,13 +435,15 @@ function renderCalMonitoreosTable(){
   // Fase 337: «Cambiar fecha» (solo la fecha) para quien lo califico, Reportes y el administrador.
   var fechaAlguno = arr.some(function(m){ return calPuedeCambiarFecha(m); });
   var conAcciones = canManage || puedeAlguno || fechaAlguno;
-  var html = '<tr><th>Asesor</th><th>Fecha</th><th>Canal</th><th>ID/Llamada</th><th>Codificacion</th><th>Evaluador</th><th>Puntaje</th><th>Clasificacion</th><th>Fallos</th><th>Nivel Critico</th>'+(conAcciones?'<th></th>':'')+'</tr>';
+  // Fase 344: el telefono solo si el servidor lo manda (quien califica); «—» si no se guardo.
+  var verTel = arr.some(function(m){ return Object.prototype.hasOwnProperty.call(m,'telefono'); });
+  var html = '<tr><th>Asesor</th><th>Fecha</th><th>Canal</th><th>ID/Llamada</th>'+(verTel?'<th>Teléfono</th>':'')+'<th>Codificacion</th><th>Evaluador</th><th>Puntaje</th><th>Clasificacion</th><th>Fallos</th><th>Nivel Critico</th>'+(conAcciones?'<th></th>':'')+'</tr>';
   if(arr.length===0){
-    html += '<tr><td colspan="11" style="text-align:center;color:var(--c-text-muted)">Sin monitoreos registrados'+(_cmesFiltro?' en '+_cmesFiltro:'')+(conOrigen&&conOrigen.origen?' con ese origen':'')+'</td></tr>';
+    html += '<tr><td colspan="'+(verTel?12:11)+'" style="text-align:center;color:var(--c-text-muted)">Sin monitoreos registrados'+(_cmesFiltro?' en '+_cmesFiltro:'')+(conOrigen&&conOrigen.origen?' con ese origen':'')+'</td></tr>';
   } else {
     arr.forEach(function(m){
       var canalLbl = calEstadoHtml(m.canal==='WPP' ? '💬 WPP' : '📞 Llamada');
-      html += '<tr><td>'+esc(textoFormatoNombre(m.asesor))+(m.origen==='encuesta'?' <span class="cen-marca" title="Monitoreo originado en una encuesta mal calificada">Encuesta</span>':'')+'</td><td>'+esc(m.fecha||'-')+'</td><td>'+canalLbl+'</td><td>'+esc(m.idLlamada||'-')+'</td><td>'+esc(m.codificacion||'-')+'</td><td>'+esc(m.evaluador||'-')+'</td>'+
+      html += '<tr><td>'+esc(textoFormatoNombre(m.asesor))+(m.origen==='encuesta'?' <span class="cen-marca" title="Monitoreo originado en una encuesta mal calificada">Encuesta</span>':'')+'</td><td>'+esc(m.fecha||'-')+'</td><td>'+canalLbl+'</td><td>'+esc(m.idLlamada||'-')+'</td>'+(verTel?'<td>'+esc(m.telefono||'—')+'</td>':'')+'<td>'+esc(m.codificacion||'-')+'</td><td>'+esc(m.evaluador||'-')+'</td>'+
         '<td class="peak">'+m.puntaje+'</td><td>'+calEstadoHtml(m.clasificacion)+'</td><td>'+m.fallos+'</td><td>'+calEstadoHtml(m.nivelCritico)+'</td>'+
         (conAcciones?('<td class="cal-acciones">'+
           ((canManage || (puedeAlguno && cc2PuedeEditar(m)))?'<button class="btn-sm btn-edit" onclick="editarMonitoreo('+m.id+')">Editar</button> ':'')+

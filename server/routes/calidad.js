@@ -10,7 +10,7 @@
 const express = require('express');
 const db = require('../db');
 const calc = require('../calidad-logic');
-const { requireActor, isFullAdmin, campaignAccess, canEvaluateCampaign, canManageMonitoreos, canUsePlantilla, canLoadCampaign, puedeCargarAlgunaCampana, canVerCalidadEncuestas } = require('../auth');
+const { requireActor, isFullAdmin, campaignAccess, canEvaluateCampaign, canManageMonitoreos, canUsePlantilla, canLoadCampaign, puedeCargarAlgunaCampana, canVerCalidadEncuestas, puedeVerTelefono } = require('../auth');
 const encMon = require('../encuesta-monitoreo'); // Fase 331
 const { validate, schemas } = require('../validation');
 const { cargarNivelServicioDiario } = require('../nivel-servicio-diario');
@@ -138,10 +138,7 @@ function puedeVerPlantillasDe(actor, campana) {
 // trabajan el monitoreo (CALIDAD, SUPERVISOR, REPORTES) y el administrador.
 // CLIENTES_DASH, GERENCIA, el ASESOR (tambien en /monitoreos/mios, Fase 343) y el
 // resto reciben la fila SIN ese campo.
-const ROLES_VEN_TELEFONO = ['CALIDAD', 'SUPERVISOR', 'REPORTES'];
-function puedeVerTelefono(actor) {
-  return isFullAdmin(actor) || (!!actor && ROLES_VEN_TELEFONO.includes(actor.rol));
-}
+// (la regla vive en auth.js: puedeVerTelefono, Fase 344)
 function monitoreoPara(actor, row) {
   const m = toMonitoreo(row);
   if (!puedeVerTelefono(actor)) delete m.telefono;
@@ -699,7 +696,9 @@ router.post(
         mes: calc.monthKey(fecha),
         canal: b.canal,
         idLlamada: b.idLlamada || connEnc || null,
-        telefono: b.telefono || null, // Fase 343: vuelve a guardarse (lo ven solo quienes califican)
+        // Fase 343: vuelve a guardarse (lo ven solo quienes califican). Fase 344: el de una
+        // llamada de Calidad de encuestas, si el formulario no lo trae, sale del ANI de la encuesta.
+        telefono: b.telefono || (connEnc ? encMon.telefonoDeLlamada(db, b.campana, connEnc) : '') || null,
         codificacion: codifCheck.valor,
         evaluador,
         evaluadorUserId: req.actor.isMasterAdmin ? null : req.actor.id,

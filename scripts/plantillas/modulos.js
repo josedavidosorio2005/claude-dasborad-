@@ -164,8 +164,8 @@ const CARGAS = [
     // Fase 193: la plantilla es el export HistIVR completo de Wolkvox, con
     // sus 25 columnas en el mismo orden (la base que manda Edwin desde
     // agosto). Las que el sistema no usa van con un ejemplo inventado y la
-    // nota de que no se leen: ANI (telefono), AGENT_DNI y CUSTOMER_ID nunca
-    // salen del navegador.
+    // nota de que no se leen: AGENT_DNI y CUSTOMER_ID nunca salen del
+    // navegador. Fase 344: ANI (telefono) si se lee, solo para Calidad.
     ordenCompleto: ['AGENT_ID', 'AGENT_NAME', 'AGENT_DNI', 'SKILL_ID', 'SKILL_NAME', 'DATE', 'CONN_ID', 'ANI', 'CUSTOMER_ID',
       'Q01', 'Q02', 'Q03', 'Q04', 'Q05', 'Q06', 'Q07', 'Q08', 'Q09', 'Q10',
       'VOICE_MESSAGE_DURATION', 'TYPE_INTERACTION', 'RESULT', 'TIME', 'VOICE_MESSAGE', 'FEELING'],
@@ -177,7 +177,8 @@ const CARGAS = [
       SKILL_NAME: ['Línea o skill.', 'SKILL SAC'],
       DATE: ['Fecha de la encuesta.', '2026-08-01 10:20'],
       CONN_ID: ['ID de la llamada en Wolkvox. Sale junto a cada comentario y en el Excel; si un archivo no lo trae, queda vacío.', 'A1B2C3D4'],
-      ANI: [NO_LEE_TXT, '3000000001'],
+      // Fase 344: el telefono se lee y se guarda; solo lo ven quienes califican en Calidad.
+      ANI: ['Teléfono de la llamada. Solo lo ven quienes califican en Calidad de encuestas (nunca el cliente ni el asesor); si un archivo no lo trae, se ve «—».', '3000000001'],
       CUSTOMER_ID: [NO_LEE_TXT, '-'],
       Q01: ['Pregunta 1, de 0 a 10. "-" = sin respuesta.', 9],
       Q02: ['Pregunta 2, de 1 a 5.', 5],

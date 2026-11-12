@@ -2347,6 +2347,7 @@ div.ca-bar-fila{cursor:default}
 .cen-tabla td{vertical-align:middle}
 .cen-id{display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap;max-width:100%}
 .cen-id code{font-size:var(--fs-note);word-break:break-all;color:var(--c-text)}
+.cen-sin-tel{color:var(--c-text-muted)} /* Fase 344: encuesta sin ANI */
 .cen-copiar{min-height:24px}
 .cen-fallas{font-weight:600;color:var(--c-danger-dark);white-space:nowrap}
 .cen-obs{min-width:160px;max-width:320px;white-space:normal}
