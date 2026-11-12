@@ -7,6 +7,16 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.182.0 — Noviembre 2026
+
+**Fase 348 (C2): buscador en las listas de Calidad.**
+
+- Monitoreos, Detalle por mes y Calidad de encuestas tienen un buscador: por ID de la llamada,
+  nombre del asesor o fecha (se puede escribir 05/11, 5/11/2026 o 2026-11-05).
+- El teléfono también se puede buscar, pero solo quienes califican (Calidad, supervisores, Reportes
+  y el administrador). Los demás no lo ven ni lo pueden buscar.
+- En Detalle por mes, el buscador reemplaza al que solo buscaba por nombre.
+
 ## v1.181.0 — Noviembre 2026
 
 **Fase 348 (C1): las listas de Calidad, de a 10 filas.**

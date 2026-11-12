@@ -9,8 +9,35 @@ var _clEstado = {};
 var _clPintar = {};
 
 function clEstado(id) {
-  if (!_clEstado[id]) _clEstado[id] = { pagina: 1, porPagina: CL_TAMANO_DEFECTO };
+  if (!_clEstado[id]) _clEstado[id] = { pagina: 1, porPagina: CL_TAMANO_DEFECTO, q: '' };
   return _clEstado[id];
+}
+
+// Fase 348 (C2): el telefono se busca solo si el servidor lo mando (lo decide puedeVerTelefono) y el
+// rol es de los que califican: las dos cosas.
+function clBuscaTelefono(lista) {
+  var rolOk = clPuedeBuscarTelefono(typeof currentUser !== 'undefined' ? currentUser : null, typeof isFullAdmin === 'function' && isFullAdmin());
+  return rolOk && (lista || []).some(function (x) { return x && Object.prototype.hasOwnProperty.call(x, 'telefono'); });
+}
+// Filtra la lista con la busqueda de esa lista. extraer = clCamposMonitoreo / clCamposEncuesta.
+function clBuscar(id, lista, extraer, conTelefono) {
+  return clFiltrar(lista, clEstado(id).q, extraer, { telefono: !!conTelefono });
+}
+function clBuscadorHtml(id, conTelefono) {
+  var ide = esc(id);
+  var ayuda = 'ID, asesor o fecha (DD/MM)' + (conTelefono ? ' o teléfono' : '');
+  return '<label class="ca-filtro cl-buscar">Buscar <input type="search" data-cl-id="' + ide + '" data-cl-q="1" value="' + esc(clEstado(id).q) +
+    '" placeholder="' + esc(ayuda) + '" aria-label="Buscar por ' + esc(ayuda) + '" autocomplete="off"></label>';
+}
+// Pone el buscador en su lugar sin cambiarlo mientras alguien escribe en el.
+function clPonerBuscador(host, id, conTelefono) {
+  if (!host) return;
+  var actual = host.querySelector('input[data-cl-q]');
+  if (actual && document.activeElement === actual) return;
+  host.innerHTML = clBuscadorHtml(id, conTelefono);
+}
+function clSinResultadosTexto(id) {
+  return clEstado(id).q ? 'Nada coincide con «' + clEstado(id).q.trim() + '».' : '';
 }
 function clRegistrar(id, pintar) { _clPintar[id] = pintar; }
 
@@ -62,6 +89,25 @@ document.addEventListener('click', function (ev) {
   var id = b.getAttribute('data-cl-id');
   clEstado(id).pagina = Number(b.getAttribute('data-cl-pag')) || 1;
   _clRepintar(id, '.cl-pag[data-cl-id="' + id + '"][data-cl-pag="' + b.getAttribute('data-cl-pag') + '"]');
+});
+// Al escribir: pagina 1 y se repinta (con una pausa corta); el foco y el cursor vuelven al buscador.
+var _clQTimer = null;
+document.addEventListener('input', function (ev) {
+  var inp = ev.target;
+  if (!inp || !inp.matches || !inp.matches('input[data-cl-q]')) return;
+  var id = inp.getAttribute('data-cl-id');
+  var e = clEstado(id);
+  e.q = inp.value;
+  e.pagina = 1;
+  clearTimeout(_clQTimer);
+  _clQTimer = setTimeout(function () {
+    var sel = 'input[data-cl-q][data-cl-id="' + id + '"]';
+    var antes = document.querySelector(sel);
+    var pos = antes ? antes.selectionStart : null;
+    _clRepintar(id, null);
+    var q = document.querySelector(sel);
+    if (q) { q.focus(); if (pos !== null) { try { q.setSelectionRange(pos, pos); } catch (x) { /* type=search */ } } }
+  }, 200);
 });
 document.addEventListener('change', function (ev) {
   var s = ev.target;

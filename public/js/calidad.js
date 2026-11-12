@@ -437,11 +437,16 @@ function renderCalMonitoreosTable(){
   var conAcciones = canManage || puedeAlguno || fechaAlguno;
   // Fase 344: el telefono solo si el servidor lo manda (quien califica); «—» si no se guardo.
   var verTel = arr.some(function(m){ return Object.prototype.hasOwnProperty.call(m,'telefono'); });
+  // Fase 348 (C2): buscador por ID, asesor, fecha y (solo quien califica) telefono.
+  var conTelBusca = clBuscaTelefono(arr);
+  clPonerBuscador(document.getElementById('cal-monitoreos-buscar'), 'mon', conTelBusca);
+  var totalSinBuscar = arr.length;
+  arr = clBuscar('mon', arr, clCamposMonitoreo, conTelBusca);
   var html = '<tr><th>Asesor</th><th>Fecha</th><th>Canal</th><th>ID/Llamada</th>'+(verTel?'<th>Teléfono</th>':'')+'<th>Codificacion</th><th>Evaluador</th><th>Puntaje</th><th>Clasificacion</th><th>Fallos</th><th>Nivel Critico</th>'+(conAcciones?'<th></th>':'')+'</tr>';
   // Fase 348 (C1): 10 filas por pagina (o 20); los KPIs siguen contando todas.
   var corte = clCortar('mon', arr);
   if(arr.length===0){
-    html += '<tr><td colspan="'+((verTel?12:11)+(conAcciones?1:0))+'" style="text-align:center;color:var(--c-text-muted)">Sin monitoreos registrados'+(_cmesFiltro?' en '+_cmesFiltro:'')+(conOrigen&&conOrigen.origen?' con ese origen':'')+'</td></tr>';
+    html += '<tr><td colspan="'+((verTel?12:11)+(conAcciones?1:0))+'" style="text-align:center;color:var(--c-text-muted)">'+(totalSinBuscar&&clSinResultadosTexto('mon')?esc(clSinResultadosTexto('mon')):'Sin monitoreos registrados'+(_cmesFiltro?' en '+_cmesFiltro:'')+(conOrigen&&conOrigen.origen?' con ese origen':''))+'</td></tr>';
   } else {
     corte.filas.forEach(function(m){
       var canalLbl = calEstadoHtml(m.canal==='WPP' ? '💬 WPP' : '📞 Llamada');

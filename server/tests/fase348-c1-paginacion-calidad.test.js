@@ -49,7 +49,7 @@ test('C1: las tres listas usan la paginacion comun y los KPIs siguen con todas l
   assert.match(ana, /clCortar\('det', lista\)/);
   assert.match(ana, /caKpis\(lista\)/, 'los KPIs del Detalle cuentan toda la lista');
   const cen = PUB('js/calidad-encuestas.js');
-  assert.match(cen, /clCortar\('cen-' \+ _cen\.estado, d\.filas\)/);
+  assert.match(cen, /clCortar\(idLista, filasVis\)/); // Fase 348 (C2): ya con la busqueda aplicada
   assert.match(cen, /clRegistrar\('cen-resueltas', _cenPintarLista\)/);
   const ui = PUB('js/calidad-listas.js');
   assert.match(ui, /Filas por página/);

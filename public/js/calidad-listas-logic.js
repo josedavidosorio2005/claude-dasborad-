@@ -51,6 +51,63 @@ function clPaginasVisibles(pagina, paginas) {
   return out;
 }
 
+// ---- Fase 348 (C2): buscador por ID, nombre del asesor, fecha de la llamada y telefono ----
+// Sin tildes, sin mayusculas y sin el apostrofo inicial que Wolkvox pone a los ID.
+function clNorm(s) {
+  return String(s == null ? '' : s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim().replace(/^'+/, '');
+}
+function clDigitos(s) { return String(s == null ? '' : s).replace(/\D+/g, ''); }
+
+// 'AAAA-MM-DD' (con o sin hora) -> las formas en que alguien la escribe: 2026-11-05, 05/11/2026,
+// 5/11/2026, 05/11, 5/11, 05-11-2026.
+function clFechaVariantes(f) {
+  var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(f || ''));
+  if (!m) return f ? [clNorm(f)] : [];
+  var a = m[1], mm = m[2], dd = m[3], d = String(Number(dd)), mn = String(Number(mm));
+  return [a + '-' + mm + '-' + dd, dd + '/' + mm + '/' + a, d + '/' + mn + '/' + a, dd + '/' + mm, d + '/' + mn, d + '/' + mm, dd + '-' + mm + '-' + a];
+}
+
+// campos = { ids: [], nombres: [], fechas: [], telefonos: [] }. El telefono solo cuenta con
+// opts.telefono (quien califica; ademas el servidor nunca manda el campo a los demas) y con 3 o
+// mas cifras en la busqueda.
+function clCoincide(campos, q, opts) {
+  var t = clNorm(q);
+  if (!t) return true;
+  var c = campos || {};
+  var en = function (arr, fn) { return (arr || []).some(function (v) { return v != null && v !== '' && fn(v); }); };
+  if (en(c.ids, function (v) { return clNorm(v).indexOf(t) !== -1; })) return true;
+  if (en(c.nombres, function (v) { return clNorm(v).indexOf(t) !== -1; })) return true;
+  if (en(c.fechas, function (v) { return clFechaVariantes(v).some(function (x) { return x.indexOf(t) !== -1; }); })) return true;
+  if (opts && opts.telefono) {
+    var dq = clDigitos(t);
+    if (dq.length >= 3 && dq.length === t.replace(/[\s()+.-]/g, '').length &&
+      en(c.telefonos, function (v) { return clDigitos(v).indexOf(dq) !== -1; })) return true;
+  }
+  return false;
+}
+function clFiltrar(lista, q, extraer, opts) {
+  if (!clNorm(q)) return (lista || []).slice();
+  return (lista || []).filter(function (x) { return clCoincide(extraer(x), q, opts); });
+}
+// Campos de un monitoreo (Monitoreos y Detalle por mes).
+function clCamposMonitoreo(m) {
+  m = m || {};
+  return { ids: [m.idLlamada, m.encuestaConnId, m.id != null ? String(m.id) : ''], nombres: [m.asesor], fechas: [m.fechaLlamada, m.fecha], telefonos: [m.telefono] };
+}
+// Campos de una fila de Calidad de encuestas.
+function clCamposEncuesta(f) {
+  f = f || {};
+  var mon = f.monitoreo || {};
+  return { ids: [f.connId], nombres: [f.agente], fechas: [f.fecha, mon.fecha], telefonos: [f.telefono] };
+}
+// Roles que ven y buscan el telefono (la misma lista de server/auth.js: puedeVerTelefono).
+var CL_ROLES_TELEFONO = ['CALIDAD', 'SUPERVISOR', 'REPORTES'];
+function clPuedeBuscarTelefono(usuario, esAdmin) {
+  return !!esAdmin || (!!usuario && CL_ROLES_TELEFONO.indexOf(usuario.rol) !== -1);
+}
+
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { CL_TAMANOS: CL_TAMANOS, CL_TAMANO_DEFECTO: CL_TAMANO_DEFECTO, clTamano: clTamano, clPaginar: clPaginar, clTextoRango: clTextoRango, clPaginasVisibles: clPaginasVisibles };
+  module.exports = { CL_TAMANOS: CL_TAMANOS, CL_TAMANO_DEFECTO: CL_TAMANO_DEFECTO, clTamano: clTamano, clPaginar: clPaginar, clTextoRango: clTextoRango, clPaginasVisibles: clPaginasVisibles,
+    clNorm: clNorm, clFechaVariantes: clFechaVariantes, clCoincide: clCoincide, clFiltrar: clFiltrar, clCamposMonitoreo: clCamposMonitoreo, clCamposEncuesta: clCamposEncuesta,
+    CL_ROLES_TELEFONO: CL_ROLES_TELEFONO, clPuedeBuscarTelefono: clPuedeBuscarTelefono };
 }

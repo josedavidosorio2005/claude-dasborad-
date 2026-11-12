@@ -4,7 +4,7 @@
 // (lista filtrable y el detalle de cada monitoreo) y Diccionario de la
 // plantilla. Todo sale de los monitoreos ya cargados (CAL_DB) y de las
 // plantillas (CAL_PLANTILLAS_TODAS). El mes es el filtro MES de arriba.
-var _ca = { plantillaId: null, detalleTexto: '' };
+var _ca = { plantillaId: null }; // Fase 348 (C2): la busqueda del Detalle vive en clEstado('det')
 
 function _caPlantillas() { return typeof CAL_PLANTILLAS_TODAS !== 'undefined' ? CAL_PLANTILLAS_TODAS : []; }
 function _caMonitoreosMes() { return calFilterByMonth(calMonModulo(_ccampana), _cmesFiltro); }
@@ -86,11 +86,17 @@ function caResumenDescuentoHtml(filas) {
   return html;
 }
 function caTeclaFila(e, el) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); caVerAsesor(el.dataset.a); } }
-function caVerAsesor(nombre) { _ca.detalleTexto = nombre || ''; switchCalTab('detalle'); }
+// Fase 348 (C2): el asesor elegido va al buscador comun del Detalle.
+function caVerAsesor(nombre) { var e = clEstado('det'); e.q = nombre || ''; e.pagina = 1; switchCalTab('detalle'); }
+function caDetalleVerTodos() { var e = clEstado('det'); e.q = ''; e.pagina = 1; caRenderDetalle(); }
 
 function caRenderDetalle() {
   var host = document.getElementById('ca-detalle'); if (!host) return;
-  var lista = caFiltrar(calMonModulo(_ccampana), _cmesFiltro, _ca.detalleTexto);
+  var delMes = caFiltrar(calMonModulo(_ccampana), _cmesFiltro, '');
+  // Fase 348 (C2): buscador por ID, asesor, fecha y (solo quien califica) telefono.
+  var conTel = clBuscaTelefono(delMes);
+  var lista = clBuscar('det', delMes, clCamposMonitoreo, conTel);
+  var q = clEstado('det').q;
   var k = caKpis(lista);
   var corte = clCortar('det', lista); // Fase 348 (C1): de a 10 (o 20); los KPIs cuentan todos
   var filas = corte.filas.map(function (m) {
@@ -101,29 +107,17 @@ function caRenderDetalle() {
       '<td><span class="cc2-pill cc2-' + c.k + '">' + _caPct(m.puntaje) + '</span></td><td class="ca-mot">' + esc(mot || (_caTieneNo(m) ? '' : 'Sin afectaciones')) + '</td></tr>';
   }).join('');
   host.innerHTML =
-    '<div class="ca-filtros"><label class="ca-filtro">Buscar asesor <input type="search" id="ca-detalle-q" value="' + esc(_ca.detalleTexto) + '" placeholder="Nombre del asesor" oninput="_ca.detalleTexto=this.value;caRenderDetalleTabla()"></label>' +
-      (_ca.detalleTexto ? '<button type="button" class="btn-cancel ca-limpiar" onclick="_ca.detalleTexto=\'\';caRenderDetalle()">Ver todos</button>' : '') + '</div>' +
+    '<div class="ca-filtros">' + clBuscadorHtml('det', conTel) +
+      (q ? '<button type="button" class="btn-cancel ca-limpiar" onclick="caDetalleVerTodos()">Ver todos</button>' : '') + '</div>' +
     '<div class="ca-kpis">' +
       '<div class="ca-kpi"><b>' + k.total + '</b><span>Monitoreos</span></div>' +
       '<div class="ca-kpi"><b class="cc2-c-' + k.clase.k + '">' + _caPct(k.promedio) + '</b><span>Calificación definitiva</span></div>' +
       '<div class="ca-kpi"><b>' + esc(k.total ? k.clase.t : '—') + '</b><span>Clasificación</span></div></div>' +
     '<div style="overflow-x:auto"><table class="aurora-rank-table" id="ca-detalle-tabla"><tr><th>Fecha</th><th>Asesor</th><th>ID llamada</th><th>Código</th><th>Evaluador</th><th>Nota</th><th>Motivo de afectación</th></tr>' +
-      (filas || '<tr><td colspan="7" class="ca-vacio">No hay monitoreos con ese filtro.</td></tr>') + '</table></div>' +
+      (filas || '<tr><td colspan="7" class="ca-vacio">' + esc(clSinResultadosTexto('det') || 'No hay monitoreos con ese filtro.') + '</td></tr>') + '</table></div>' +
     clPieHtml('det', corte.pg);
 }
 clRegistrar('det', function () { caRenderDetalle(); });
-// Al escribir en el buscador solo se repinta la tabla (no se pierde el foco).
-var _caDetTimer = null;
-function caRenderDetalleTabla() {
-  clearTimeout(_caDetTimer);
-  _caDetTimer = setTimeout(function () {
-    var q = document.getElementById('ca-detalle-q');
-    var pos = q ? q.selectionStart : null;
-    caRenderDetalle();
-    var q2 = document.getElementById('ca-detalle-q');
-    if (q2) { q2.focus(); if (pos !== null) q2.setSelectionRange(pos, pos); }
-  }, 200);
-}
 
 // Detalle de un monitoreo: cada item con su respuesta, motivo y observaciones.
 function caDetalleHtml(m, p) {
