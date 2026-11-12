@@ -146,6 +146,18 @@ function monitoreoPara(actor, row) {
   return m;
 }
 
+// Fase 346: agrega fechaLlamada (AAAA-MM-DD) a los monitoreos de origen encuesta, con UNA consulta
+// por campaña. Solo informativo: el mes del monitoreo sigue siendo el de su fecha (la calificacion).
+function conFechaLlamada(lista) {
+  const porCamp = {};
+  lista.forEach((m) => { if (m && m.encuestaConnId) (porCamp[m.campana] = porCamp[m.campana] || []).push(m.encuestaConnId); });
+  Object.keys(porCamp).forEach((c) => {
+    const f = encMon.fechasLlamada(db, c, porCamp[c]);
+    lista.forEach((m) => { if (m && m.campana === c && m.encuestaConnId && f[m.encuestaConnId]) m.fechaLlamada = f[m.encuestaConnId]; });
+  });
+  return lista;
+}
+
 function toMonitoreo(row) {
   return {
     id: row.id,
@@ -517,7 +529,7 @@ router.get(
       )
       .all({ id: req.actor.id || 0, nombre, campana });
     // Fase 343: el asesor nunca recibe el telefono del cliente final (antes si, en sus propios monitoreos).
-    res.json(rows.map((r) => monitoreoPara(req.actor, r)));
+    res.json(conFechaLlamada(rows.map((r) => monitoreoPara(req.actor, r)))); // Fase 346
   })
 );
 
@@ -616,7 +628,7 @@ router.get(
     const rows = db
       .prepare('SELECT * FROM monitoreos WHERE campana = @campana' + (mes ? ' AND mes = @mes' : '') + (propios ? FILTRO_PROPIOS : '') + ' ORDER BY id DESC')
       .all({ campana, mes: mes || null, uid: (req.actor && req.actor.id) || 0, nombre: (req.actor && req.actor.nombre) || '' });
-    const lista = rows.map((r) => monitoreoPara(req.actor, r));
+    const lista = conFechaLlamada(rows.map((r) => monitoreoPara(req.actor, r))); // Fase 346
     // Fase 287: la cuenta de cliente, sin evaluador ni observaciones (y sin nombre de asesor si el cliente los oculta).
     res.json(privacidad.esCuentaCliente(req.actor) ? privacidad.monitoreosParaCliente(lista, privacidad.ocultaAsesores(db, req.actor, campana)) : lista);
   })

@@ -20807,3 +20807,12 @@ Decisión del usuario (12/11): paleta 3 de la propuesta de paletas (basada en Ok
 - Pruebas `fase345-televentas-paleta` (4). Visual local con ventas sintéticas de agosto a octubre (los generadores de las pruebas): Cumplimiento, Agentes y Detalle ventas en 375/768/1440, claro y oscuro, sin errores de consola.
 
 - **Cierre (v1.179.1)**: los respaldos de `charts.js` (`PALETA_RESPALDO`), `graficas-lineas-logic.js` y `lineas-internas.js` repetían colores de la paleta; pasan a un gris neutro o a `PC`. Nueva prueba en `fase345-paleta`: ningún color de la paleta aparece en `public/` fuera de `paleta.css`.
+
+
+## Fase 346 — Calidad de encuestas: mes de la calificación y «Llamada del DD/MM» (v1.180.0, 2026-11-12)
+
+Reunión con Edwin del 12/11, opción a (decisión del usuario): un monitoreo de «Calidad de encuestas» cuenta en el mes de su fecha (la de la calificación), como los normales, y las listas muestran también la fecha de la llamada.
+
+- **Servidor**: `encuesta-monitoreo.fechasLlamada(db, campana, connIds)` devuelve `{ connId: fecha }` (la primera fecha de la encuesta enlazada, en lotes de 400, solo lectura). `conFechaLlamada()` en `routes/calidad.js` agrega `fechaLlamada` a los monitoreos con `encuestaConnId` en `GET /monitoreos` y en la lista propia del asesor, con una consulta por campaña. No hay columna nueva ni migración: ningún dato guardado cambia.
+- **Interfaz**: `ceFechaConLlamadaHtml()` (`calidad-equipo-logic.js`) pinta la fecha y la pastilla `.ce-llamada` «Llamada del DD/MM» (colores del botón suave de la paleta). La usan dashboard › Detalle por mes y Resumen por asesor (`calidad-panel.js`), módulo › Monitoreos y supervisión del líder (`calidad.js`) y Resueltas (`calidad-encuestas.js`, donde la fecha pasa a ser la del monitoreo).
+- Pruebas: `fase346-fecha-llamada-encuesta` (4), datos sintéticos.

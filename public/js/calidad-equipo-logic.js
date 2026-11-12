@@ -221,8 +221,21 @@ function ceVsEquipo(porAsesor, promedioEquipo) {
   return { equipo: promedioEquipo, encima: encima, debajo: conAsesor.length - encima };
 }
 
+// Fase 346: «Llamada del DD/MM» junto a la fecha de un monitoreo de Calidad de encuestas (la fecha
+// de la llamada la manda el servidor en fechaLlamada; el monitoreo cuenta en el mes de su fecha).
+function ceFechaLlamadaCorta(f) {
+  var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(f || ''));
+  return m ? m[3] + '/' + m[2] : '';
+}
+function ceFechaConLlamadaHtml(m, escFn, fechaTxt) {
+  var e = escFn || function (x) { return String(x); };
+  var t = e(fechaTxt !== undefined && fechaTxt !== null ? fechaTxt : ((m && m.fecha) || '-'));
+  var c = m && m.fechaLlamada ? ceFechaLlamadaCorta(m.fechaLlamada) : '';
+  return c ? t + ' <span class="ce-llamada">Llamada del ' + e(c) + '</span>' : t;
+}
+
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { CE_SIN_NOMBRE: CE_SIN_NOMBRE, ceNombreInvalido: ceNombreInvalido, ceNombreAsesor: ceNombreAsesor, ceOrdenSinAsesorAlFinal: ceOrdenSinAsesorAlFinal, ceVsEquipo: ceVsEquipo, ceClase: ceClase, cePct: cePct, ceMesLabel: ceMesLabel, ceMesDesc: ceMesDesc, ceModelo: ceModelo, ceFallos: ceFallos, ceKey: ceKey,
+  module.exports = { ceFechaLlamadaCorta: ceFechaLlamadaCorta, ceFechaConLlamadaHtml: ceFechaConLlamadaHtml, CE_SIN_NOMBRE: CE_SIN_NOMBRE, ceNombreInvalido: ceNombreInvalido, ceNombreAsesor: ceNombreAsesor, ceOrdenSinAsesorAlFinal: ceOrdenSinAsesorAlFinal, ceVsEquipo: ceVsEquipo, ceClase: ceClase, cePct: cePct, ceMesLabel: ceMesLabel, ceMesDesc: ceMesDesc, ceModelo: ceModelo, ceFallos: ceFallos, ceKey: ceKey,
     ceMesesConDatos: ceMesesConDatos, ceMesesEfectivos: ceMesesEfectivos, ceMesFiltroDesc: ceMesFiltroDesc, ceMesPorDefecto: ceMesPorDefecto, ceAsesoresDe: ceAsesoresDe, ceResultado: ceResultado,
     ceResumenAsesores: ceResumenAsesores, ceDetalleMes: ceDetalleMes, ceMesesDetalle: ceMesesDetalle };
 }

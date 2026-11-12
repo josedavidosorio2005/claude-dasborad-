@@ -151,7 +151,7 @@ function _cmpRender(p, i) {
   var filasFallas = (verTodas ? fallas : fallas.slice(0, CMP_LIMITE)).map(function (m) {
     var c = caClase(Number(m.puntaje));
     return '<tr class="ca-click" tabindex="0" role="button" aria-label="Ver el detalle del monitoreo del ' + esc(m.fecha || '') + '" onclick="_cmpVer(\'' + cs + '\',' + m.id + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();_cmpVer(\'' + cs + '\',' + m.id + ')}">' +
-      '<td>' + esc(m.fecha || '-') + '</td>' + (ve ? '<td><b>' + esc(_cmpNombre(m.asesor)) + '</b></td>' : '') + '<td>' + esc(m.idLlamada || '-') + '</td>' +
+      '<td>' + ceFechaConLlamadaHtml(m, esc) + '</td>' + (ve ? '<td><b>' + esc(_cmpNombre(m.asesor)) + '</b></td>' : '') + '<td>' + esc(m.idLlamada || '-') + '</td>' +
       '<td><span class="cc2-pill cc2-' + c.k + '">' + _caPct(m.puntaje) + '</span></td><td class="ca-mot">' + esc((m.extras && m.extras.motivo) || _cmpMotivo(m, pl)) + '</td></tr>';
   }).join('');
   var llamadas = '<div class="aurora-card"><div class="aurora-card-title">Llamadas con fallas (' + fallas.length + ')</div>' +
@@ -265,7 +265,7 @@ function _cmpPintarDetalle(enfocarBuscar) {
       (d.lista.length ? d.lista.map(function (m) {
         var k = ceClase(m.puntaje === null || m.puntaje === undefined ? null : Number(m.puntaje));
         return '<tr class="ca-click" tabindex="0" role="button" onclick="_cmpVer(\'' + cs + '\',' + m.id + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();_cmpVer(\'' + cs + '\',' + m.id + ')}">' +
-          '<td>' + esc(m.fecha || '-') + '</td>' + (c.ve ? '<td><b>' + esc(_cmpNombre(m.asesor)) + '</b></td>' : '') + '<td>' + esc(m.idLlamada || '-') + '</td><td>' + esc(m.codificacion || '-') + '</td><td>' + esc(m.evaluador || '-') + '</td>' +
+          '<td>' + ceFechaConLlamadaHtml(m, esc) + '</td>' + (c.ve ? '<td><b>' + esc(_cmpNombre(m.asesor)) + '</b></td>' : '') + '<td>' + esc(m.idLlamada || '-') + '</td><td>' + esc(m.codificacion || '-') + '</td><td>' + esc(m.evaluador || '-') + '</td>' +
           '<td><span class="cc2-pill cc2-' + k.k + '">' + (m.puntaje === null || m.puntaje === undefined ? 'Incompleto' : cePct(Number(m.puntaje))) + '</span></td><td class="ca-mot">' + esc((m.extras && m.extras.motivo) || _cmpMotivo(m, c.pl) || (m.puntaje === null || m.puntaje === undefined ? '' : 'Sin afectaciones')) + '</td></tr>';
       }).join('') : '<tr><td colspan="7" class="ca-vacio">' + (_cmpDlg.q ? 'Ningún monitoreo de ese asesor en este mes.' : 'Sin monitoreos en este mes.') + '</td></tr>') + '</table></div>';
   if (enfocarBuscar) { var q = document.getElementById('cmp-dlg-q'); if (q) { q.focus(); q.setSelectionRange(q.value.length, q.value.length); } }

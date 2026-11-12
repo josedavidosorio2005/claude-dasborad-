@@ -86,7 +86,7 @@ function esDelActor(b, actor) {
 
 function monitoreoResumen(m) {
   return {
-    id: m.id, fecha: m.fecha, asesor: m.asesor, evaluador: m.evaluador,
+    id: m.id, fecha: m.fecha, asesor: m.asesor, evaluador: m.evaluador, // fecha = la de la calificacion
     puntaje: m.puntaje, clasificacion: m.clasificacion, observaciones: m.observaciones || '',
   };
 }
@@ -243,6 +243,20 @@ function impactoRecarga(db, { campana, desde, hasta, filasNuevas }) {
   };
 }
 
+// Fase 346 (decision del usuario 12/11, opcion a): un monitoreo de Calidad de encuestas cuenta en
+// el mes de la CALIFICACION (su fecha), pero las listas muestran tambien la fecha de la llamada.
+// { connId: 'AAAA-MM-DD' } de las encuestas enlazadas (la primera por fecha). No escribe nada.
+function fechasLlamada(db, campana, connIds) {
+  const ids = [...new Set((connIds || []).filter(Boolean))];
+  const out = {};
+  for (let i = 0; i < ids.length; i += 400) {
+    const parte = ids.slice(i, i + 400);
+    db.prepare(`SELECT connId, MIN(fecha) AS fecha FROM encuestas WHERE campana = ? AND connId IN (${parte.map(() => '?').join(',')}) GROUP BY connId`)
+      .all(campana, ...parte).forEach((r) => { out[r.connId] = r.fecha; });
+  }
+  return out;
+}
+
 function borrarBloqueo(db, campana, connId) {
   db.prepare('DELETE FROM encuesta_monitoreo_bloqueos WHERE campana = ? AND connId = ?').run(campana, connId);
 }
@@ -263,4 +277,5 @@ module.exports = {
   borrarBloqueo,
   telefonoDeLlamada,
   impactoRecarga,
+  fechasLlamada, // Fase 346
 };
