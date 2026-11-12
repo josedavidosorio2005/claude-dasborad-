@@ -22,6 +22,9 @@ function tieneModulo(campana) {
 }
 function puedeVer(actor, campana) { return isFullAdmin(actor) || campaignAccess(actor, campana); }
 function puedeEditar(actor, campana) { return isFullAdmin(actor) || (actor && actor.rol === 'SUPERVISOR' && campaignAccess(actor, campana)); }
+// Fase 347 (B3, pedido del usuario 12/11): borrar un error queda solo para el administrador y
+// Reportes con acceso al cliente; el supervisor registra y edita, pero ya no borra.
+function puedeBorrar(actor, campana) { return isFullAdmin(actor) || (!!actor && actor.rol === 'REPORTES' && campaignAccess(actor, campana)); }
 // Primero el acceso (403) y despues el modulo (404): quien no tiene acceso no se entera
 // de que clientes tienen la pestaña.
 function guardiaLectura(req, res, campana) {
@@ -39,7 +42,7 @@ const detalleLog = (f) => `mes ${f.mes}, asesora "${f.asesor}", cantidad ${f.can
 router.get('/calidad/errores', requireActor, validate(schemas.erroresQuery, 'query'), wrap((req, res) => {
   const { campana } = req.query;
   if (!guardiaLectura(req, res, campana)) return;
-  res.json({ ...errores.resumen(db, campana), puedeEditar: puedeEditar(req.actor, campana) });
+  res.json({ ...errores.resumen(db, campana), puedeEditar: puedeEditar(req.actor, campana), puedeBorrar: puedeBorrar(req.actor, campana) });
 }));
 
 router.get('/calidad/errores/asesoras', requireActor, validate(schemas.erroresQuery, 'query'), wrap((req, res) => {
@@ -93,7 +96,8 @@ router.put('/calidad/errores/:id', requireActor, validate(schemas.idParamSchema,
 router.delete('/calidad/errores/:id', requireActor, validate(schemas.idParamSchema, 'params'), wrap((req, res) => {
   const actual = db.prepare('SELECT campana FROM errores_agendamiento WHERE id = ?').get(req.params.id);
   if (!actual) return res.status(404).json({ error: 'Error no encontrado' });
-  if (!guardiaEscritura(req, res, actual.campana)) return;
+  if (!puedeBorrar(req.actor, actual.campana)) return res.status(403).json({ error: 'Solo el administrador o Reportes pueden borrar errores' }); // Fase 347
+  if (!tieneModulo(actual.campana)) return res.status(404).json({ error: 'Este cliente no tiene la pestaña Errores' });
   const r = errores.borrar(db, req.params.id);
   logEvent('ERROR_AGENDAMIENTO_BORRADO', { nombre: r.fila.asesor, user: '-', rol: actual.campana }, actorLabel(req.actor), detalleLog(r.fila));
   res.json({ ok: true });

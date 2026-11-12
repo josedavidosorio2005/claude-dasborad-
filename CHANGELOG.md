@@ -7,6 +7,15 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.180.3 — Noviembre 2026
+
+**Fase 347 (parte 3): Errores de Aurora, borrar solo el administrador y Reportes.**
+
+- Los supervisores siguen registrando y editando errores, pero ya no pueden borrarlos.
+- Reportes tiene un botón «Errores del mes» para ver los errores del mes y borrarlos. No registra
+  ni edita.
+- El administrador puede hacer todo, como antes.
+
 ## v1.180.2 — Noviembre 2026
 
 **Fase 347 (parte 2): Errores de Aurora, cada asesora una sola vez.**

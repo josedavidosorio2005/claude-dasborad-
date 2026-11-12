@@ -1,6 +1,6 @@
 {
   "name": "inconexion-backend",
-  "version": "1.180.2",
+  "version": "1.180.3",
   "description": "Backend seguro para InConexion Platform",
   "main": "server.js",
   "engines": {

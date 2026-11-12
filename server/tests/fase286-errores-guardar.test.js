@@ -100,7 +100,7 @@ test('navegador: un solo «Guardar», «Errores del mes» en sub-pestaña con sc
   assert.ok(!js.includes('Agregar error\'') && !js.includes('>Agregar error<') && !js.includes('Guardar plan de acción'), 'ya no hay dos botones');
   assert.equal((js.match(/class="btn-primary err-guardar"/g) || []).length, 1);
   assert.match(js, /apiRequest\('POST', '\/calidad\/errores\/guardar', cuerpo\)/);
-  assert.match(js, /role="tab"/); assert.match(js, /role="tabpanel" id="err-pan-lista"/);
+  assert.match(js, /role="tab"/); assert.match(js, /role="tabpanel"' : ''\) \+ ' id="err-pan-lista"/); // Fase 347: sin pestañas para Reportes
   assert.match(js, /'Errores del mes \(' \+ regs\.length \+ '\)'/);
   assert.match(js, /btn\.textContent = '¿Borrar\?'/, 'borrar sigue pidiendo confirmacion');
   assert.match(js, /async function _errRecargar[\s\S]*?_erroresPintar\(camp\);/, 'la pestaña de atras se redibuja');

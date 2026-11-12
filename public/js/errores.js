@@ -52,7 +52,9 @@ function _erroresPintar(camp) {
   var avisoMes = (st && st.clave === clave) ? (st.avisoMes || '') : '';
   if (!st || st.clave !== clave || visibles.indexOf(st.mes) === -1) st = _errEstado[camp] = { clave: clave, mes: visibles[visibles.length - 1] || '', avisoMes: avisoMes };
   var cs = esc(camp);
-  var boton = d.puedeEditar ? '<button type="button" class="btn-primary err-agregar" data-camp="' + cs + '" onclick="erroresAbrirEditor(this.dataset.camp)">Agregar errores</button>' : '';
+  // Fase 347: Reportes (borra, pero no registra) abre solo la lista «Errores del mes».
+  var boton = d.puedeEditar ? '<button type="button" class="btn-primary err-agregar" data-camp="' + cs + '" onclick="erroresAbrirEditor(this.dataset.camp)">Agregar errores</button>'
+    : d.puedeBorrar ? '<button type="button" class="btn-primary err-agregar" data-camp="' + cs + '" onclick="erroresAbrirEditor(this.dataset.camp)">Errores del mes</button>' : '';
   var cab = '<div class="aurora-card-title err-cab"><span>Flujo de errores por mes</span>' + boton + '</div>';
   var aviso = erroresAvisoFueraDeMeses(avisoMes, visibles, marcados)
     ? '<p class="err-aviso" role="status"><span>Se guardó en <b>' + esc(_errMesLbl(avisoMes)) + '</b>, que no está entre los meses elegidos en «Meses» (arriba).</span> <button type="button" class="btn-sm" onclick="gdMesesTodos()">Ver todos los meses</button></p>' : '';
@@ -156,12 +158,16 @@ function erroresVerObservacion(camp, id) {
 //    filtrada por el mes elegido, compacta y con scroll, con Editar y Borrar (Borrar
 //    sigue pidiendo confirmacion: primer clic «¿Borrar?», segundo clic borra).
 //  - Al guardar o borrar, la pestaña Errores de atras se actualiza sola.
-var _errEd = { camp: null, mes: '', id: null, asesoras: [], vista: 'registrar', borrador: null, planes: {} };
+// Fase 347 (B3): Borrar solo para el administrador y Reportes (d.puedeBorrar); quien no
+// edita (Reportes) ve solo la lista del mes, sin Registrar ni Editar.
+var _errEd = { camp: null, mes: '', id: null, asesoras: [], vista: 'registrar', borrador: null, planes: {}, puedeEditar: true, puedeBorrar: false };
 async function erroresAbrirEditor(camp, mes) {
   var st = _errEstado[camp] || {};
-  _errEd = { camp: camp, mes: mes || st.mes || _errHoyMes(), id: null, asesoras: [], vista: 'registrar', borrador: null, planes: {} };
-  try { _errEd.asesoras = ((await apiRequest('GET', '/calidad/errores/asesoras?campana=' + encodeURIComponent(camp))) || {}).asesoras || []; } catch (e) { _errEd.asesoras = []; }
-  _errAbrir('Agregar errores · ' + camp, '<div id="err-ed"></div>');
+  var d = _errDatos[camp] || {};
+  var edita = !!d.puedeEditar;
+  _errEd = { camp: camp, mes: mes || st.mes || _errHoyMes(), id: null, asesoras: [], vista: edita ? 'registrar' : 'lista', borrador: null, planes: {}, puedeEditar: edita, puedeBorrar: !!d.puedeBorrar };
+  if (edita) { try { _errEd.asesoras = ((await apiRequest('GET', '/calidad/errores/asesoras?campana=' + encodeURIComponent(camp))) || {}).asesoras || []; } catch (e) { _errEd.asesoras = []; } }
+  _errAbrir((edita ? 'Agregar errores · ' : 'Errores del mes · ') + camp, '<div id="err-ed"></div>');
   _errPintarEditor();
 }
 function _errPlanGuardado(mes) { var d = _errDatos[_errEd.camp] || { planes: {} }; return ((d.planes || {})[mes] || {}).texto || ''; }
@@ -185,7 +191,8 @@ function _errPintarEditor(mensaje) {
   var asesoras = _errEd.asesoras.slice();
   if (bo.asesor && asesoras.indexOf(bo.asesor) === -1) asesoras.unshift(bo.asesor);
   var mesLbl = esc(_errMesLbl(_errEd.mes));
-  var enLista = _errEd.vista === 'lista';
+  var enLista = _errEd.vista === 'lista' || !_errEd.puedeEditar;
+  var acciones = _errEd.puedeEditar || _errEd.puedeBorrar;
   var tab = function (clave, id, texto) {
     var on = _errEd.vista === clave;
     return '<button type="button" role="tab" class="gd-subtab-btn' + (on ? ' on' : '') + '" id="err-tab-' + id + '" aria-controls="err-pan-' + id + '" aria-selected="' + on + '" tabindex="' + (on ? '0' : '-1') + '" data-vista="' + clave + '" onclick="erroresVista(this.dataset.vista)" onkeydown="erroresTeclaTab(event)">' + texto + '</button>';
@@ -193,12 +200,12 @@ function _errPintarEditor(mensaje) {
   host.innerHTML =
     (mensaje ? '<p class="err-msg" role="status">' + esc(mensaje) + '</p>' : '') +
     '<div class="ca-filtros err-form"><label class="ca-filtro">Mes <input type="month" id="err-f-mes" value="' + esc(_errEd.mes) + '" onchange="erroresCambiaMesEditor(this.value)"></label></div>' +
-    '<div class="gd-subtabs err-tabs" role="tablist" aria-label="Errores de ' + mesLbl + '">' +
+    (_errEd.puedeEditar ? '<div class="gd-subtabs err-tabs" role="tablist" aria-label="Errores de ' + mesLbl + '">' +
       tab('registrar', 'reg', edit ? 'Editar error' : 'Registrar') +
       tab('lista', 'lista', 'Errores del mes (' + regs.length + ')') +
-    '</div>' +
+    '</div>' : '<h3 class="err-solo-lista" id="err-tab-lista" tabindex="-1">Errores de ' + mesLbl + ' (' + regs.length + ')</h3>') +
     // Registrar: error + plan, un solo «Guardar».
-    '<div role="tabpanel" id="err-pan-reg" aria-labelledby="err-tab-reg"' + (enLista ? ' hidden' : '') + '>' +
+    (!_errEd.puedeEditar ? '' : '<div role="tabpanel" id="err-pan-reg" aria-labelledby="err-tab-reg"' + (enLista ? ' hidden' : '') + '>' +
       '<div class="ca-filtros err-form">' +
         '<label class="ca-filtro">Asesora <select id="err-f-asesor">' +
           '<option value="">' + (asesoras.length ? '— Elige la asesora —' : 'Sin asesoras: regístralas en Usuarios del sistema') + '</option>' +
@@ -214,12 +221,12 @@ function _errPintarEditor(mensaje) {
         '<button type="button" class="btn-primary err-guardar" onclick="erroresGuardar()">Guardar</button>' +
         (edit ? '<button type="button" class="btn-cancel" onclick="erroresCancelarEdicion()">Cancelar edición</button>' : '') +
       '</div>' +
-    '</div>' +
+    '</div>') +
     // Errores del mes: compacto, con scroll, Editar y Borrar.
-    '<div role="tabpanel" id="err-pan-lista" aria-labelledby="err-tab-lista"' + (enLista ? '' : ' hidden') + '>' +
-      (regs.length ? '<div class="err-lista" tabindex="0" aria-label="Errores registrados en ' + mesLbl + '"><table class="aurora-rank-table err-lista-tabla"><thead><tr><th>Asesora</th><th>Cant.</th><th>Observación</th><th><span class="sr-only">Acciones</span></th></tr></thead><tbody>' + regs.map(function (r) {
+    '<div' + (_errEd.puedeEditar ? ' role="tabpanel"' : '') + ' id="err-pan-lista" aria-labelledby="err-tab-lista"' + (enLista ? '' : ' hidden') + '>' +
+      (regs.length ? '<div class="err-lista" tabindex="0" aria-label="Errores registrados en ' + mesLbl + '"><table class="aurora-rank-table err-lista-tabla"><thead><tr><th>Asesora</th><th>Cant.</th><th>Observación</th>' + (acciones ? '<th><span class="sr-only">Acciones</span></th>' : '') + '</tr></thead><tbody>' + regs.map(function (r) {
         return '<tr><td>' + esc(textoFormatoNombre(r.asesor)) + '<div class="cpl-ayuda">' + esc(r.creadoPorNombre) + (r.editadoPorNombre ? ' (editó ' + esc(r.editadoPorNombre) + ')' : '') + '</div></td><td>' + r.cantidad + '</td><td class="ca-mot">' + esc(r.observacion || '—') + '</td>' +
-          '<td class="err-acc"><button type="button" class="btn-sm" onclick="erroresEditar(' + r.id + ')">Editar</button> <button type="button" class="btn-sm err-borrar" data-id="' + r.id + '" onclick="erroresBorrar(this)">Borrar</button></td></tr>';
+          (acciones ? '<td class="err-acc">' + (_errEd.puedeEditar ? '<button type="button" class="btn-sm" onclick="erroresEditar(' + r.id + ')">Editar</button>' : '') + (_errEd.puedeEditar && _errEd.puedeBorrar ? ' ' : '') + (_errEd.puedeBorrar ? '<button type="button" class="btn-sm err-borrar" data-id="' + r.id + '" onclick="erroresBorrar(this)">Borrar</button>' : '') + '</td>' : '') + '</tr>';
       }).join('') + '</tbody></table></div>' : '<p class="ca-vacio">Sin errores en ' + mesLbl + '.</p>') +
     '</div>';
 }

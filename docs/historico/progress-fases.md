@@ -20834,3 +20834,11 @@ Reunión con Edwin del 12/11, opción a (decisión del usuario): un monitoreo de
 - Arreglo (decisión del usuario): `errores.sinCodigoFinal()` quita un código de 3 o más cifras al final, después de un espacio o una tabulación. `nombreReal()` primero busca el nombre tal cual en los alias y después sin el código. La lista y lo que se guarda quedan con el nombre limpio. No se cambió ningún dato.
 - Queda un par que el código no junta: un usuario con una letra cambiada en el apellido. **Pendiente del usuario**: corregir ese nombre en Usuarios, por la interfaz.
 - Pruebas: `fase347-errores-asesoras-unicas` (3).
+
+### Parte 3: borrar errores, solo el administrador y Reportes (v1.180.3, 2026-11-12)
+
+- Pedido del usuario: el supervisor ya no borra errores. Borrar queda solo para el administrador y Reportes con acceso al cliente.
+- **Servidor**: `puedeBorrar()` en `routes/errores.js`. `DELETE /calidad/errores/:id` responde 403 a todos los demás (supervisor, cliente y Reportes sin acceso a Aurora). `GET /calidad/errores` devuelve `puedeBorrar`.
+- **Interfaz** (decisión del usuario): Reportes ve el botón «Errores del mes», que abre solo la lista del mes con Borrar (con la confirmación de dos clics), sin Registrar ni Editar y sin pedir la lista de asesoras. El supervisor sigue con «Agregar errores», Registrar y Editar, sin Borrar. El administrador lo tiene todo.
+- Pruebas: `fase347-errores-borrar-admin-reportes` (4). Se ajustaron `fase284` (el supervisor recibe 403 al borrar) y `fase286`.
+- Visual local (base temporal, datos inventados, Brave): admin, supervisor y Reportes en 375/768/1440, claro y oscuro. Botones, Borrar/Editar/Registrar según el rol, Reportes borra con la confirmación, sin scroll horizontal y sin errores de consola.
