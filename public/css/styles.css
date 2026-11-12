@@ -2473,21 +2473,23 @@ div.ca-bar-fila{cursor:default}
 
 /* Fase 348 (G, PROPUESTA): menu lateral izquierdo plegable en los dashboards de cliente, como el de
    Televentas SURA (gd-menu-lateral.js). Solo con #gd-modal.gd-menu-lateral (clientes de la lista);
-   desde 901 px. En 900 px o menos, las pestañas de siempre. */
+   desde 901 px. En 900 px o menos, las pestañas de siempre. El boton y el menu van en la MISMA
+   celda (fila 3): si el menu fuera en una fila aparte, al crecer el tablero (que abarcaba las dos)
+   la fila del boton crecia y el menu saltaba 4 px (job pantallas de CI, salto de pestañas). */
 .gd-menu-tog{display:none}
 #gd-modal .gd-menu-ico{display:none} /* en 900 px o menos, las pestañas de siempre: sin icono */
 @media (min-width:901px){
-  #gd-modal.gd-menu-lateral{display:grid;grid-template-columns:220px minmax(0,1fr);grid-template-rows:auto auto auto 1fr;align-content:start}
+  #gd-modal.gd-menu-lateral{display:grid;grid-template-columns:220px minmax(0,1fr);grid-template-rows:auto auto 1fr;align-content:start}
   #gd-modal.gd-menu-lateral > .aurora-header,#gd-modal.gd-menu-lateral > #gd-kpis{grid-column:1/-1}
-  #gd-modal.gd-menu-lateral > .gd-menu-tog{grid-column:1;grid-row:3;display:inline-flex;align-items:center;gap:6px;justify-self:start;margin:12px 0 0 12px;height:32px;padding:0 10px;border:1px solid var(--c-border);border-radius:var(--r-sm);background:var(--c-surface);color:var(--c-text-2);font:inherit;font-size:var(--fs-small);font-weight:600;cursor:pointer;position:sticky;top:calc(var(--gd-header-h,0px) + 12px);z-index:var(--z-sticky-tabs)}
+  #gd-modal.gd-menu-lateral > .gd-menu-tog{grid-column:1;grid-row:3;align-self:start;display:inline-flex;align-items:center;gap:6px;justify-self:start;margin:12px 0 0 12px;height:32px;padding:0 10px;border:1px solid var(--c-border);border-radius:var(--r-sm);background:var(--c-surface);color:var(--c-text-2);font:inherit;font-size:var(--fs-small);font-weight:600;cursor:pointer;position:sticky;top:calc(var(--gd-header-h,0px) + 12px);z-index:var(--z-sticky-tabs)}
   #gd-modal.gd-menu-lateral > .gd-menu-tog:hover{border-color:var(--c-primary-mid);color:var(--c-primary)}
-  #gd-modal.gd-menu-lateral > #gd-tabs{grid-column:1;grid-row:4;align-self:start;position:sticky;top:calc(var(--gd-header-h,0px) + 56px);display:flex;flex-direction:column;gap:6px;padding:14px 10px;margin:8px 0 16px;border:1px solid var(--c-border);border-left:0;border-bottom:1px solid var(--c-border);border-radius:0 var(--r-lg) var(--r-lg) 0;max-height:calc(100dvh - var(--gd-header-h,0px) - 80px);overflow-y:auto;overflow-x:hidden}
+  #gd-modal.gd-menu-lateral > #gd-tabs{grid-column:1;grid-row:3;align-self:start;position:sticky;top:calc(var(--gd-header-h,0px) + 56px);display:flex;flex-direction:column;gap:6px;padding:14px 10px;margin:52px 0 16px;border:1px solid var(--c-border);border-left:0;border-bottom:1px solid var(--c-border);border-radius:0 var(--r-lg) var(--r-lg) 0;max-height:calc(100dvh - var(--gd-header-h,0px) - 80px);overflow-y:auto;overflow-x:hidden}
   #gd-modal.gd-menu-lateral > #gd-tabs::before{content:"MENÚ";font-size:var(--fs-note);font-weight:700;letter-spacing:.12em;color:var(--c-text-muted);padding:0 12px 6px}
   #gd-modal.gd-menu-lateral #gd-tabs .atab{display:flex;align-items:center;gap:10px;width:100%;min-height:44px;padding:0 12px;margin:0;border:0;border-radius:var(--r-md);white-space:normal;text-align:left;line-height:1.25}
   #gd-modal.gd-menu-lateral #gd-tabs .atab.atab-active{background:var(--c-brand);color:var(--c-on-brand)}
   #gd-modal.gd-menu-lateral #gd-tabs .atab[class*="gd-tab-sec-"]::before{display:none}
   #gd-modal.gd-menu-lateral #gd-tabs .gd-menu-ico{display:block;width:18px;height:18px;flex:0 0 18px}
-  #gd-modal.gd-menu-lateral > #gd-panels{grid-column:2;grid-row:3/span 2;min-width:0}
+  #gd-modal.gd-menu-lateral > #gd-panels{grid-column:2;grid-row:3;min-width:0}
   #gd-modal.gd-menu-lateral.gd-menu-plegado{grid-template-columns:auto minmax(0,1fr)}
   #gd-modal.gd-menu-lateral.gd-menu-plegado > #gd-tabs{display:none}
 }
