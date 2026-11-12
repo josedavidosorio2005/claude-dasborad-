@@ -5,6 +5,19 @@ la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
 
+
+## v1.179.0 — Noviembre 2026
+
+**Fase 345 (parte 2): Televentas de SURA con los colores nuevos.**
+
+- Las gráficas, leyendas, barras y recuadros del tablero Televentas usan la misma paleta que el resto
+  de la plataforma, en claro y oscuro.
+- Las pestañas y los botones activos van en el verde azulado de la marca, con letra blanca bien
+  legible también en tema oscuro.
+- Los estados no cambian: la barra de avance verde, amarilla y roja y los lotes A, B y C siguen igual.
+- El tablero que entregó el supervisor no se modificó: los colores se aplican desde afuera, así que
+  se conservan aunque se vuelva a generar.
+
 ## v1.178.0 — Noviembre 2026
 
 **Fase 345: colores nuevos en toda la plataforma (paleta «Segura para daltonismo»).**

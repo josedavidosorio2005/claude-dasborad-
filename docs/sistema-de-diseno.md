@@ -37,7 +37,13 @@ archivo.
   `#220F6C`, rosa → `#CB4893`, teal → `#186261`, índigo → `#3A4688`; oscuro, violeta `#B39DEB` →
   `#7D6CEF`, rosa → `#E77EB3`, teal → `#60DCDC`, índigo `#9AA8F0` → `#6F96EB`. El azul y el marrón
   quedan como se eligieron.
-- **Televentas SURA** toma la paleta desde afuera (Fase 345, PR 2).
+- **Televentas SURA** (Fase 345, PR 2) toma la paleta **desde afuera**: `sura-televentas-paleta-logic.js`
+  genera una hoja que `sura-televentas.js` agrega al Shadow DOM después de la del tablero (que sale
+  del HTML del supervisor y no se toca). Cambia por la paleta los rellenos y trazos SVG, las leyendas,
+  las barras, los acentos `--mc`/`--fc` (solo tonos base 1–6) y los números de las gráficas
+  (`--serie-texto-N`). El acento del tablero (`--ac`), que va de fondo con letra blanca, y los
+  botones activos de segmento usan el primario de marca. **Estados sin cambio**: la barra de avance
+  g/y/r y los lotes A/B/C de `#ialotes`. Medido en `fase345-televentas-paleta.test.js`.
 
 ## Los 2 sistemas de color (nunca se mezclan)
 
