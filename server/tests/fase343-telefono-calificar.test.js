@@ -31,7 +31,7 @@ test('formulario: el telefono sale en ORLANT, en las genericas y en las plantill
   assert.deepEqual(k({ campana: 'CLINICA AURORA', campos: [{ k: 'asesor' }, { k: 'fecha' }, { k: 'telefono' }, { k: 'codificacion' }, { k: 'idLlamada' }] }), ['asesor', 'fecha', 'codificacion', 'idLlamada', 'telefono']);
   assert.ok(!k({ campana: 'SURA', campos: [{ k: 'asesor' }, { k: 'idLlamada' }] }).includes('telefono'), 'una plantilla que no lo trae sigue sin el');
   const cc2 = PUB('js/calidad-calificar.js');
-  assert.match(cc2, /telefono: _cc2Val\('telefono'\)/, 'se manda al guardar');
+  assert.match(cc2, /telefono: document\.getElementById\('cc2-f-telefono'\) \? _cc2Val\('telefono'\) : undefined/, 'se manda solo si el formulario tiene el campo (si no, editar no borra el guardado)');
   assert.match(cc2, /set\('telefono', m\.telefono\)/, 'se llena al editar');
 });
 

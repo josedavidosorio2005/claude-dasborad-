@@ -13,7 +13,8 @@ sepan que hay nuevo, que se corrigio y que falta.
 - Lo ven solo quienes califican (Calidad, Supervisor, Reportes y administrador) dentro del Módulo de
   Calidad. El cliente y el asesor nunca lo ven: el asesor ya no lo ve en «Mis resultados».
 - La carga masiva por Excel sigue leyendo y guardando la columna TELEFONO, como siempre.
-- No se borró ni se cambió ningún teléfono ya guardado.
+- No se borró ni se cambió ningún teléfono ya guardado. Al editar un monitoreo con una plantilla que no
+  trae el campo teléfono, el que ya tenía se conserva.
 
 ## v1.175.0 — Noviembre 2026
 

@@ -285,7 +285,8 @@ async function cc2Guardar() {
     fecha: _cc2Val('fecha') || calFechaHoyLocal(),
     canal: _cc2Val('canal') || 'LLAMADA', // Fase 318: ORLANT elige el canal; las demas, Llamada como siempre
     idLlamada: _cc2Val('idLlamada'),
-    telefono: _cc2Val('telefono'),
+    // Fase 343: solo si el formulario tiene el campo; sin el, se omite y editar no borra el guardado.
+    telefono: document.getElementById('cc2-f-telefono') ? _cc2Val('telefono') : undefined,
     codificacion: _cc2Val('codificacion'),
     observaciones: _cc2Val('observaciones'),
     answers: answers,
