@@ -20796,3 +20796,12 @@ Decisión del usuario (12/11): paleta 3 de la propuesta de paletas (basada en Ok
 - **ORLANT**: solo colores; cifras, textos y estructura iguales.
 - **Pendiente anotado**: las celdas del mapa de calor de Flujo por hora distinguen el nivel solo por color (tienen leyenda); agregarles un marcador cambiaría su contenido.
 - Pruebas: `fase345-paleta` (10) y `helpers-paleta.js`, que lee `paleta.css` para que ninguna prueba tenga colores escritos; ajustadas `fase133-paleta-graficas`, `fase133-parte6`, `fase145`, `fase164-*`, `fase171`, `fase206`, `fase297` y `fase304`. Visual local (base demo sintética): ORLANT, Mobilize, Calidad y Televentas en 375/768/1440, claro y oscuro, sin errores de consola.
+
+
+## Fase 345 — PR 2: Televentas SURA con la paleta, desde afuera (v1.179.0, 2026-11-12)
+
+- `public/js/sura-televentas-paleta-logic.js` (lógica pura) genera la capa: cada color del tablero, a su serie de la plataforma (`PAL` en orden 1–12, más los 2 tonos de «Meta vs. producción» para que no repita color); acentos decorativos `--mc`/`--fc` a los 6 tonos base por parecido; números de gráfica a `--serie-texto-N`; los botones «Asesores» y «＋ Agregar», al secundario. `--ac` (fondo con letra blanca) y `.seg .btn.on`, al primario de marca: corrige letra blanca sobre tonos claros en tema oscuro (antes también pasaba con `#3fa8cc`).
+- Estados sin cambio: barra de avance (`#12a37f`/`#e0a800`/`#d64545`, solo se cambian las leyendas `.lg` y las barras con borde de 4 px) y lotes A/B/C (`#ialotes`, restaurados con un selector de id).
+- `sura-televentas.js` agrega `<style data-paleta="plataforma">` después del `<link>` de la hoja del tablero; `sura-televentas-app.js`/`.css` y `scripts/sura` no cambian (la prueba lo verifica con `git diff`).
+- Pendiente anotado en `docs/pendientes.md`: el mapa de calor de Flujo por hora (nivel solo por color). Decidido sin cambio: el marrón frente al semáforo con daltonismo.
+- Pruebas `fase345-televentas-paleta` (4). Visual local con ventas sintéticas de agosto a octubre (los generadores de las pruebas): Cumplimiento, Agentes y Detalle ventas en 375/768/1440, claro y oscuro, sin errores de consola.

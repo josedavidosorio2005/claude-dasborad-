@@ -682,6 +682,15 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 
 ## 3. Técnico, sin dueño (costo y riesgo ya estimado — nada se aplica sin pedirlo)
 
+- **Mapa de calor de Flujo por hora: el nivel solo por color** (Fase 345, 12/11/2026; el usuario
+  pidió dejarlo pendiente, sin cambiar). Las celdas (Alto / Medio / Bajo, y el rojo de Abandonadas)
+  se distinguen solo por el color; la leyenda de arriba explica los tramos. Para WCAG 1.4.1 haría
+  falta un marcador o texto por celda (p. ej. ▲/●/▽ junto al número), lo que cambia el contenido de
+  la tabla. Costo: bajo (`flujo-hora.js`, una prueba). Riesgo: la tabla se vuelve más ancha a 375 px.
+- **Marrón de la paleta frente al semáforo con daltonismo** — decidido, sin cambio (Fase 345): con
+  daltonismo rojo-verde, el marrón `#7A5C2E` / `#D9B27A` se parece al rojo y al verde del semáforo
+  (ΔE 4–7). Se deja así porque el semáforo siempre lleva símbolo y texto.
+
 - **Revisión de bugs del 07/11** (`docs/revision-bugs-2026-11-07.md`) — **HECHOS** el 07/11
   (Fases 287–293, v1.144.1–v1.144.7, PRs #710–#716): #5 privacidad de Calidad para el cliente,
   #11 fechas en la revisión de datos de pacientes, #12 «72,97 %», #13 «Ninguno» = Todos en

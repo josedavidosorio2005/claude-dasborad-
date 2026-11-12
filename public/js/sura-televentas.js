@@ -91,7 +91,9 @@ var STV_CSS_CARGANDO =
 // Hoja del Shadow DOM con la version del build (como los ?v= de index.html).
 function _stvHojaCss() {
   var v = (typeof window !== 'undefined' && window.__BUILD_ID__) ? '?v=' + encodeURIComponent(window.__BUILD_ID__) : '';
-  return '<style>' + STV_CSS_CARGANDO + '</style><link rel="stylesheet" href="css/sura-televentas-app.css' + v + '">';
+  // Fase 345: la paleta de la plataforma se aplica DESPUES de la hoja del tablero (sin tocarla).
+  var paleta = typeof stvPaletaCss === 'function' ? '<style data-paleta="plataforma">' + stvPaletaCss() + '</style>' : '';
+  return '<style>' + STV_CSS_CARGANDO + '</style><link rel="stylesheet" href="css/sura-televentas-app.css' + v + '">' + paleta;
 }
 
 // Fase 273: estado de carga del tablero. estado: 'cargando' (indicador),
