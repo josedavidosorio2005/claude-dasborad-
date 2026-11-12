@@ -5,7 +5,7 @@
 // sin tocar ninguna regla de negocio.
 const express = require('express');
 const db = require('../db');
-const { requireActor, isFullAdmin, can, canLoadData, canLoadAnyModule, campaignAccess, supervisorCarga } = require('../auth');
+const { requireActor, isFullAdmin, can, canLoadData, canLoadAnyModule, campaignAccess, supervisorCarga, esCampanaInterna } = require('../auth');
 
 // Fase 283: las cargas genericas (dashboard_cargas) las hace quien tiene cargarDatos
 // (global, como siempre) o un SUPERVISOR con clientes supervisados -- a ese, solo
@@ -49,6 +49,7 @@ router.use(['/dashboard', '/dashboards'], (req, res, next) => {
 function clienteAccess(actor, cliente) {
   if (isFullAdmin(actor)) return true;
   if (!actor || !actor.perms) return false;
+  if (esCampanaInterna(cliente)) return false; // Fase W1: replica interna, solo el administrador completo
   return (
     actor.perms['cliente_' + cliente] === true || actor.perms['campana_' + cliente] === true
   );
@@ -125,7 +126,8 @@ router.get(
   wrap((req, res) => {
     const a = req.actor;
     const veTodos = isFullAdmin(a) || can(a, 'gestionPermisos') || can(a, 'crearUsuarios') || can(a, 'editarUsuarios');
-    const suyo = (c) => veTodos || clienteAccess(a, c);
+    // Fase W1: quien gestiona usuarios ve todos los clientes MENOS los internos (solo el admin completo).
+    const suyo = (c) => (veTodos && (isFullAdmin(a) || !esCampanaInterna(c))) || clienteAccess(a, c);
     const rows = db.prepare('SELECT cliente FROM dashboards_config WHERE activo = 1 ORDER BY cliente').all();
     res.json({
       clientes: rows.map((r) => r.cliente).filter(suyo),

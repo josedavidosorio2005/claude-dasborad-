@@ -5,7 +5,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const db = require('../db');
 const config = require('../config');
-const { requireAuth, requirePermission, requireActor, isFullAdmin, can } = require('../auth');
+const { requireAuth, requirePermission, requireActor, isFullAdmin, can, esCampanaInterna } = require('../auth');
 const { validate, schemas } = require('../validation');
 const { wrap, nowStr, logEvent, actorLabel, toPublicUser, MASTER_ADMIN_USER } = require('./shared');
 
@@ -69,6 +69,22 @@ function accesosSinEscalar(actor, nuevos, actuales) {
 }
 const ERROR_ACCESOS = 'Solo puedes dar acceso a clientes, campañas o plantillas a los que tú tienes acceso';
 
+// Fase W1 (docs/plan-api-wolkvox.md, sec. 1.2): a una campaña interna (replica de pruebas
+// de la API) no se le da acceso a nadie, ni siquiera desde el administrador: la ve solo el
+// administrador completo. Rechaza cliente_/campana_/supervisa_ en true y asesorCampana.
+const RE_PERM_CAMPANA = /^(cliente|campana|supervisa)_(.+)$/;
+// Solo cuentan las llaves que PASAN a true (como accesosSinEscalar): una ya guardada no
+// bloquea editar al usuario (y las funciones de acceso la ignoran igual).
+function accesoACampanaInterna(perms, asesorCampana, actuales) {
+  if (asesorCampana && esCampanaInterna(asesorCampana)) return true;
+  const a = actuales || {};
+  return Object.keys(perms || {}).some((k) => {
+    const m = RE_PERM_CAMPANA.exec(k);
+    return !!m && perms[k] === true && a[k] !== true && esCampanaInterna(m[2]);
+  });
+}
+const ERROR_INTERNA = 'Esa campaña es interna (solo la ve el administrador): no se le puede dar acceso a ningún usuario';
+
 router.get(
   '/users',
   requireActor,
@@ -128,6 +144,7 @@ router.post(
     }
     if (!permsGestionSinCambio(req.actor, perms, {})) return res.status(403).json({ error: ERROR_PERMS_GESTION });
     if (!accesosSinEscalar(req.actor, perms, {})) return res.status(403).json({ error: ERROR_ACCESOS });
+    if (accesoACampanaInterna(perms, asesorCampana, {})) return res.status(400).json({ error: ERROR_INTERNA }); // Fase W1
     const exists = db.prepare('SELECT id FROM users WHERE user = ? COLLATE NOCASE').get(user); // Fase 310: sin distinguir mayusculas
     if (exists) return res.status(409).json({ error: 'Ese usuario ya existe' });
 
@@ -197,6 +214,8 @@ router.put(
     if (perms !== undefined && !accesosSinEscalar(req.actor, perms, JSON.parse(row.perms || '{}'))) {
       return res.status(403).json({ error: ERROR_ACCESOS });
     }
+    if (accesoACampanaInterna(perms, asesorCampana, JSON.parse(row.perms || '{}'))) return res.status(400).json({ error: ERROR_INTERNA }); // Fase W1
+
 
     const newHash = password ? await bcrypt.hash(password, 10) : row.password_hash;
     const effectiveRol = rol ?? row.rol;
@@ -313,6 +332,8 @@ router.put(
     if (!accesosSinEscalar(req.actor, req.body.perms, JSON.parse(row.perms || '{}'))) {
       return res.status(403).json({ error: ERROR_ACCESOS });
     }
+    if (accesoACampanaInterna(req.body.perms, null, JSON.parse(row.perms || '{}'))) return res.status(400).json({ error: ERROR_INTERNA }); // Fase W1
+
     db.prepare('UPDATE users SET perms = ? WHERE id = ?').run(JSON.stringify(applyRolePermDefaults(row.rol, req.body.perms)), id); // Fase 291
     logEvent('PERMISOS', row, actorLabel(req.actor), 'Permisos actualizados');
     res.json({ ok: true });

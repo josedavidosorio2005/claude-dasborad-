@@ -54,9 +54,13 @@ test('sin ningun cliente: listas vacias', async () => {
   assert.deepEqual(await clientesDe(tokenDe('f154inv', 'INVENTARIO', { Inventario: true })), vacio);
 });
 
-test('el administrador y quien gestiona usuarios ven todos', async () => {
+// Fase W1: el administrador ve todos; quien gestiona usuarios, todos MENOS los internos
+// (la replica de pruebas de la API la ve solo el administrador completo).
+const sinInternos = (t) => { const fuera = (n) => n === 'MOBILIZE PRUEBAS API'; return Object.fromEntries(Object.entries(t).map(([k, v]) => [k, v.filter((n) => !fuera(n))])); };
+test('el administrador ve todos; quien gestiona usuarios, todos menos los internos', async () => {
   assert.ok(todos().registro.length >= 2, 'el registro de prueba tiene varios clientes');
+  assert.ok(todos().registro.includes('MOBILIZE PRUEBAS API'));
   assert.deepEqual(await clientesDe(signToken({ isMasterAdmin: true, rol: 'ADMIN' })), todos());
-  assert.deepEqual(await clientesDe(tokenDe('f154aux', 'AUX_ADMIN', { editarUsuarios: true })), todos());
-  assert.deepEqual(await clientesDe(tokenDe('f154aux2', 'AUX_ADMIN', { gestionPermisos: true })), todos());
+  assert.deepEqual(await clientesDe(tokenDe('f154aux', 'AUX_ADMIN', { editarUsuarios: true })), sinInternos(todos()));
+  assert.deepEqual(await clientesDe(tokenDe('f154aux2', 'AUX_ADMIN', { gestionPermisos: true })), sinInternos(todos()));
 });

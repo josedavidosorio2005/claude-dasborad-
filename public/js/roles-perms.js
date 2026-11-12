@@ -70,7 +70,7 @@ function filterPermUsers(){renderPermTable(currentRole,document.getElementById('
 function allDashPermsOn(u){
   var ok=DASH_MODULES.every(function(m){return u.perms[m.key]===true;});
   if(!ok||u.rol!=='CLIENTES_DASH') return ok;
-  return CLIENTES_LIST.every(function(c){return u.perms['cliente_'+c]===true;});
+  return clientesAsignables(CLIENTES_LIST).every(function(c){return u.perms['cliente_'+c]===true;}); // Fase W1
 }
 
 function renderPermTable(roleKey,filter){
@@ -83,7 +83,7 @@ function renderPermTable(roleKey,filter){
   var thead=document.getElementById('perm-thead');
   var tbody=document.getElementById('perm-tbody');
   var cols=DASH_MODULES.map(function(m){return {key:m.key,label:m.label};});
-  if(roleKey==='CLIENTES_DASH') CLIENTES_LIST.forEach(function(c){cols.push({key:'cliente_'+c,label:c});});
+  if(roleKey==='CLIENTES_DASH') clientesAsignables(CLIENTES_LIST).forEach(function(c){cols.push({key:'cliente_'+c,label:c});}); // Fase W1
   thead.innerHTML='<th class="col-user">Usuario</th><th class="col-all">Acceso total</th>'+
     cols.map(function(c){return '<th>'+c.label+'</th>';}).join('');
   if(!ru.length){tbody.innerHTML='';noRes.classList.remove('hidden');return;}
@@ -125,7 +125,7 @@ function toggleAllPerms(el){
   var uid=parseInt(el.dataset.uid), val=el.checked, roleKey=el.dataset.role;
   var u=users.find(function(x){return x.id===uid;}); if(!u) return;
   var cols=DASH_MODULES.map(function(m){return m.key;});
-  if(roleKey==='CLIENTES_DASH') CLIENTES_LIST.forEach(function(c){cols.push('cliente_'+c);});
+  if(roleKey==='CLIENTES_DASH') clientesAsignables(CLIENTES_LIST).forEach(function(c){cols.push('cliente_'+c);}); // Fase W1
   cols.forEach(function(k){u.perms[k]=val;});
   document.querySelectorAll('#prow-'+uid+' .mini-toggle input').forEach(function(cb){cb.checked=val;});
   persistPerms(u, 'acceso total', val?'Todos activados':'Todos desactivados');

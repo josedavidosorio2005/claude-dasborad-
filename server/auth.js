@@ -193,9 +193,16 @@ function requireActor(req, res, next) {
 // plataforma nunca tuvo granularidad por sede en ningun otro modulo, y
 // dashboards_config.vista ya trataba a HOSPITAL LA MARIA como un solo
 // dashboard con ambas sedes visibles desde antes de esta migracion).
+// Fase W1: una campaña interna (replica de pruebas de la API) es SOLO del administrador
+// completo, aunque el permiso este marcado (incluso metido directo en la base).
+function esCampanaInterna(campana) {
+  return require('./clientes-registro').esCampanaInterna(db, campana);
+}
+
 function campaignAccess(actor, campana) {
   if (isFullAdmin(actor)) return true;
   if (!actor || !actor.perms) return false;
+  if (esCampanaInterna(campana)) return false; // Fase W1
   return actor.perms['campana_' + campana] === true || actor.perms['cliente_' + campana] === true;
 }
 
@@ -204,6 +211,7 @@ function campaignAccess(actor, campana) {
 function canEvaluateCampaign(actor, campana) {
   if (isFullAdmin(actor)) return true;
   if (!actor || (actor.rol !== 'CALIDAD' && actor.rol !== 'SUPERVISOR')) return false;
+  if (esCampanaInterna(campana)) return false; // Fase W1
   return actor.perms && actor.perms['campana_' + campana] === true;
 }
 
@@ -215,6 +223,7 @@ function canEvaluateCampaign(actor, campana) {
 function canVerCalidadEncuestas(actor, campana) {
   if (isFullAdmin(actor)) return true;
   if (!actor || !actor.perms || actor.rol === 'ASESOR' || actor.rol === 'CLIENTES_DASH') return false;
+  if (esCampanaInterna(campana)) return false; // Fase W1
   if (actor.perms['campana_' + campana] !== true) return false;
   return canEvaluateCampaign(actor, campana) || actor.perms.Calidad === true;
 }
@@ -244,6 +253,7 @@ function canUsePlantilla(actor, plantillaId, plantilla) {
 function canManageMonitoreos(actor, campana) {
   if (isFullAdmin(actor)) return true;
   if (!actor || actor.rol !== 'REPORTES') return false;
+  if (esCampanaInterna(campana)) return false; // Fase W1
   return actor.perms && actor.perms['campana_' + campana] === true;
 }
 
@@ -339,6 +349,7 @@ function requireDataLoader(req, res, next) {
 }
 
 module.exports = {
+  esCampanaInterna, // Fase W1
   signToken,
   revocarToken,
   requireAuth,

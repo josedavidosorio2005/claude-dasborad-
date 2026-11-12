@@ -1,6 +1,8 @@
 # Plan — integración con la API de Wolkvox (Fase 330, 10/11/2026)
 
-**Estado:** solo plan. No se construyó nada, no se llamó a la API y no se tocó producción.
+**Estado:** W0 (este plan) hecho. **W1** (réplica oculta, sin API) hecha en su PR, esperando el OK del
+usuario para crear la réplica en producción (la crea una migración al desplegar). Todavía no se
+llamó a la API.
 Este documento no tiene tokens, números de servidor, URLs reales, nombres ni datos de
 clientes (el repo es público). Donde hace falta una URL se escribe `<servidor>` y
 `<reporte>`.

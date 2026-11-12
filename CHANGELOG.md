@@ -4,6 +4,17 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+
+## v1.177.0 — Noviembre 2026
+
+**Fase W1: copia oculta de Mobilize para probar la conexión con Wolkvox.**
+
+- Se crea el tablero «MOBILIZE PRUEBAS API», igual al de Mobilize pero vacío y sin Calidad. Todavía
+  no se conecta con Wolkvox: eso viene en la siguiente fase.
+- Solo lo ve el administrador. Nadie más lo ve ni lo abre, aunque por error tenga el permiso marcado,
+  y no se le puede dar acceso a ningún usuario.
+- El Mobilize real no cambia en nada.
+
 ## v1.175.1 — Noviembre 2026
 
 **Fase 343: Calidad — vuelve el teléfono al calificar.**

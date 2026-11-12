@@ -5102,6 +5102,53 @@ function orlantCalidadSoloNueva() {
 }
 runOnceMigration('fase332_orlant_calidad_solo_nueva_v1', orlantCalidadSoloNueva);
 
+// Fase W1 (docs/plan-api-wolkvox.md, sec. 1.1 y 1.2; nombre aprobado por el usuario el
+// 12/11): replica OCULTA de Mobilize para probar la API de Wolkvox, «MOBILIZE PRUEBAS API».
+// Sin conexion a Wolkvox (eso es la Fase W2). Fila nueva en el registro con los modulos de
+// Mobilize que salen de Wolkvox (sin Calidad ni el resumen por asesor), los parametros que
+// Mobilize tiene HOY mas `interno: true` (las funciones de acceso la cierran a todos menos al
+// administrador completo, aunque alguien tenga el permiso), y su tablero con la misma
+// plantilla de Mobilize, VACIO. No toca ninguna fila de MOBILIZE, no crea usuarios, permisos,
+// datos ni plantillas de Calidad. Idempotente: si la fila o el tablero ya existen, no hace nada.
+const REPLICA_API = {
+  nombre: 'MOBILIZE PRUEBAS API',
+  titulo: 'Mobilize pruebas API',
+  modulos: ['flujo_llamadas', 'tipificacion', 'llamadas_unicas', 'flujo_hora', 'encuesta'],
+};
+function crearReplicaMobilizeApi() {
+  const { generarLayout, PERFILES_ACTUALES } = require('./plantillas-cliente');
+  const base = PERFILES_ACTUALES.MOBILIZE;
+  const perfil = Object.assign({}, base, {
+    nombre: REPLICA_API.nombre,
+    titulo: REPLICA_API.titulo,
+    modulos: REPLICA_API.modulos,
+    visibles: (base.visibles || []).filter((m) => REPLICA_API.modulos.includes(m)),
+  });
+  const mob = db.prepare("SELECT parametros, logo FROM clientes_registro WHERE nombre = 'MOBILIZE'").get();
+  let parametros = {};
+  try { parametros = mob && mob.parametros ? JSON.parse(mob.parametros) : {}; } catch (e) { parametros = {}; }
+  // Copia de los parametros de Mobilize + interno (y de quien es replica).
+  parametros = Object.assign({}, parametros, { interno: true, replicaDe: 'MOBILIZE' });
+  const now = new Date().toISOString();
+  const maxOrden = db.prepare('SELECT COALESCE(MAX(orden), 0) AS m FROM clientes_registro').get().m;
+  db.transaction(() => {
+    db.prepare(
+      `INSERT OR IGNORE INTO clientes_registro
+         (nombre, orden, dashboard, modulos, parametros, logo, activo, createdAt, updatedAt)
+       VALUES (?, ?, 1, ?, ?, ?, 1, ?, ?)`
+    ).run(REPLICA_API.nombre, maxOrden + 1, JSON.stringify(REPLICA_API.modulos), JSON.stringify(parametros), mob ? mob.logo : null, now, now);
+    if (!db.prepare('SELECT 1 FROM dashboards_config WHERE cliente = ?').get(REPLICA_API.nombre)) {
+      const cfg = generarLayout(perfil);
+      db.prepare(
+        `INSERT INTO dashboards_config (cliente, titulo, vista, secciones, layout, activo, createdAt, updatedAt)
+         VALUES (?, ?, NULL, ?, ?, 1, ?, ?)`
+      ).run(REPLICA_API.nombre, cfg.titulo, JSON.stringify(cfg.secciones), JSON.stringify(cfg.layout), now, now);
+    }
+  })();
+  if (!config.isTest) console.log('[db] Migracion faseW1_replica_mobilize_api_v1 aplicada.');
+}
+runOnceMigration('faseW1_replica_mobilize_api_v1', crearReplicaMobilizeApi);
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {
@@ -5196,3 +5243,5 @@ module.exports.TABLAS_SIN_VERSION_DATOS = TABLAS_SIN_VERSION_DATOS;
 // Fase 155: idem (prueba que la migracion es idempotente).
 module.exports.recalcularPctAtencionAbandono = recalcularPctAtencionAbandono;
 module.exports.orlantCalidadSoloNueva = orlantCalidadSoloNueva; // Fase 332: prueba de idempotencia
+module.exports.crearReplicaMobilizeApi = crearReplicaMobilizeApi; // Fase W1
+module.exports.REPLICA_API = REPLICA_API;
