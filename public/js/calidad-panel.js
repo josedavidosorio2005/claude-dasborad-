@@ -328,8 +328,12 @@ function _cmpDialogo() {
     ov = document.createElement('div');
     ov.className = 'cc2-ov'; ov.id = 'cmp-ov'; ov.hidden = true;
     ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-labelledby', 'cmp-ov-t');
-    ov.innerHTML = '<div class="cc2-dlg ca-dlg-ancho"><h3 id="cmp-ov-t"></h3><div id="cmp-ov-b"></div><div class="modal-btns"><button type="button" class="btn-primary" onclick="_cmpCerrar()">Cerrar</button></div></div>';
-    ov.addEventListener('click', function (e) { if (e.target === ov) _cmpCerrar(); });
+    // Fase 348 (D): X arriba a la derecha (siempre a la vista), clic afuera y Escape CIERRAN la ventana;
+    // el boton de abajo, si el monitoreo se abrio desde la lista, vuelve a ella.
+    ov.innerHTML = '<div class="cc2-dlg ca-dlg-ancho"><div class="cmp-dlg-cab"><h3 id="cmp-ov-t"></h3>' +
+      '<button type="button" class="cmp-x" aria-label="Cerrar" title="Cerrar (Esc)" onclick="_cmpCerrarTodo()"><span aria-hidden="true">×</span></button></div>' +
+      '<div id="cmp-ov-b"></div><div class="modal-btns"><button type="button" class="btn-primary" id="cmp-ov-abajo" onclick="_cmpCerrar()">Cerrar</button></div></div>';
+    ov.addEventListener('click', function (e) { if (e.target === ov) _cmpCerrarTodo(); });
   }
   // Fase 335: con Televentas abierto (dialogo con el resto de la pagina inerte), el dialogo va adentro.
   var host = document.querySelector('#stv-overlay.show #stv-modal') || document.getElementById('gd-overlay') || document.body;
@@ -342,18 +346,25 @@ function _cmpAbrir(titulo, html) {
   if (ov.hidden) _cmpFoco = document.activeElement; // dentro del dialogo (Detalle por mes -> monitoreo) se conserva el de afuera
   document.getElementById('cmp-ov-t').textContent = titulo;
   document.getElementById('cmp-ov-b').innerHTML = html;
+  var abajo = document.getElementById('cmp-ov-abajo');
+  if (abajo) abajo.textContent = _cmpVolverA ? 'Volver a la lista' : 'Cerrar';
   ov.hidden = false;
   ov.querySelector('.modal-btns button').focus();
 }
 var _cmpVolverA = null; // Fase 274: detalle abierto desde "Detalle por mes" -> al cerrar, se vuelve a la lista
 function _cmpCerrar() {
   if (_cmpVolverA) { var v = _cmpVolverA; _cmpVolverA = null; _cmpDetalleMes(v.camp, v.mes, v.q); return; }
+  _cmpCerrarTodo();
+}
+// Fase 348 (D): cierra la ventana del todo (sin volver a la lista).
+function _cmpCerrarTodo() {
+  _cmpVolverA = null;
   var ov = document.getElementById('cmp-ov'); if (ov) ov.hidden = true;
   if (_cmpFoco && _cmpFoco.focus) _cmpFoco.focus();
 }
 document.addEventListener('keydown', function (e) {
   var ov = document.getElementById('cmp-ov');
-  if (e.key === 'Escape' && ov && !ov.hidden) { e.stopPropagation(); _cmpCerrar(); }
+  if (e.key === 'Escape' && ov && !ov.hidden) { e.stopPropagation(); _cmpCerrarTodo(); } // Fase 348 (D): Escape cierra
 }, true);
 function _cmpVer(camp, id) {
   var m = ((CAL_DB[camp] || {}).monitoreos || []).find(function (x) { return x.id === id; });

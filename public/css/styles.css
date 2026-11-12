@@ -1978,6 +1978,13 @@ div.ca-bar-fila{cursor:default}
 .ca-imp{background:var(--c-surface-alt);border-radius:var(--r-sm);padding:8px 10px;font-size:var(--fs-small);display:flex;flex-direction:column;gap:3px}
 .ca-imp>div{display:flex;justify-content:space-between}
 .ca-dlg-ancho{max-width:720px}
+/* Fase 348 (D): ventana del panel de Calidad del dashboard con X arriba a la derecha, siempre a la
+   vista al bajar por el contenido (cabecera pegada arriba dentro del dialogo). */
+.cmp-dlg-cab{position:sticky;top:-20px;z-index:var(--z-sticky-header);display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin:-20px -20px 10px;padding:16px 16px 8px 20px;background:var(--c-surface);border-radius:var(--r-lg) var(--r-lg) 0 0}
+.cmp-dlg-cab h3{margin:6px 0 0}
+.cmp-x{flex:0 0 auto;width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--c-border);border-radius:var(--r-sm);background:var(--c-surface);color:var(--c-text-2);font-size:var(--fs-kpi);line-height:1;cursor:pointer}
+.cmp-x:hover{color:var(--c-primary);border-color:var(--c-primary-mid)}
+@media (max-width:768px){.cmp-x{width:44px;height:44px}}
 .ca-det-cab{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:10px}
 .ca-det-datos{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px 12px;margin:0 0 12px}
 .ca-det-datos dt{font-size:var(--fs-note);color:var(--c-text-muted)}
