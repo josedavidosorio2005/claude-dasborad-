@@ -212,6 +212,14 @@ function canEvaluateCampaign(actor, campana) {
 // campaña (administrador, supervisor, CALIDAD, Reportes, Gerencia, lideres con
 // el modulo Calidad) -- nunca el ASESOR ni la cuenta de cliente. Calificarlas
 // exige ademas canEvaluateCampaign (como cualquier monitoreo).
+// Fase 151 / 343 / 344: el telefono del cliente final (monitoreos y Calidad de encuestas)
+// solo lo reciben los roles que califican o revisan Calidad (CALIDAD, SUPERVISOR, REPORTES)
+// y el administrador. Nunca el ASESOR, la cuenta de cliente (CLIENTES_DASH) ni GERENCIA.
+const ROLES_VEN_TELEFONO = ['CALIDAD', 'SUPERVISOR', 'REPORTES'];
+function puedeVerTelefono(actor) {
+  return isFullAdmin(actor) || (!!actor && ROLES_VEN_TELEFONO.includes(actor.rol));
+}
+
 function canVerCalidadEncuestas(actor, campana) {
   if (isFullAdmin(actor)) return true;
   if (!actor || !actor.perms || actor.rol === 'ASESOR' || actor.rol === 'CLIENTES_DASH') return false;
@@ -339,6 +347,8 @@ function requireDataLoader(req, res, next) {
 }
 
 module.exports = {
+  ROLES_VEN_TELEFONO,
+  puedeVerTelefono,
   signToken,
   revocarToken,
   requireAuth,

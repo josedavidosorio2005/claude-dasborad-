@@ -71,7 +71,9 @@ test('lista: una fila por llamada con todas sus preguntas falladas; sin ID apart
   assert.equal(a.estado, 'pendiente');
   assert.equal(a.monitoreo, null);
   assert.deepEqual(r.body.conteo, { pendientes: 3, resueltas: 0, sinId: 1 });
-  assert.ok(!JSON.stringify(r.body).match(/tel[eé]fono|"ani"/i), 'sin telefonos');
+  // Fase 344: el administrador recibe el telefono (ANI) de cada fila; estas encuestas se cargaron sin ANI -> ''.
+  assert.equal(r.body.verTelefono, true);
+  assert.ok(r.body.filas.every((f) => f.telefono === ''), 'sin ANI, telefono vacio (se ve «—»)');
   const n = await request(app).get('/api/calidad/encuestas/monitoreo/conteo').query({ campana: 'MOBILIZE' }).set(H(evB.token));
   assert.deepEqual(n.body, { activa: true, pendientes: 3 });
   const o = await request(app).get('/api/calidad/encuestas/monitoreo/conteo').query({ campana: 'ORLANT' }).set(H(admin));

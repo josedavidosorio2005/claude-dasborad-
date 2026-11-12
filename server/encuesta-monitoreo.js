@@ -13,6 +13,9 @@
 // - Bloqueo "la esta calificando otra persona": una fila por llamada con
 //   vencimiento (BLOQUEO_MS). Se renueva mientras el formulario esta abierto
 //   y se libera al guardar o cancelar.
+// - Fase 344: el telefono (ANI) de la encuesta sale SOLO con opts.verTelefono (la ruta
+//   lo pide con puedeVerTelefono: CALIDAD, SUPERVISOR, Reportes, administrador). Por
+//   defecto no sale. '' = la encuesta se cargo sin ANI (se ve «—»).
 // Logica de base de datos sin Express.
 'use strict';
 
@@ -91,7 +94,8 @@ function monitoreoResumen(m) {
 // Lista de llamadas mal calificadas. estado: 'pendientes' | 'resueltas' | 'todas'.
 // pregunta (opcional): solo las que fallaron ESA pregunta (boton "Monitoreo"
 // de la Encuesta). Devuelve { reglas, filas, conteo: { pendientes, resueltas, sinId } }.
-function listar(db, q, actor) {
+function listar(db, q, actor, opts) {
+  const verTelefono = !!(opts && opts.verTelefono);
   const reglasTodas = reglasDe(db, q.campana);
   if (!reglasTodas.length) return { reglas: [], filas: [], conteo: { pendientes: 0, resueltas: 0, sinId: 0 } };
   const reglas = q.pregunta ? reglasTodas.filter((r) => r.pregunta === q.pregunta) : reglasTodas;
@@ -103,7 +107,7 @@ function listar(db, q, actor) {
   const sinId = db.prepare(`SELECT COUNT(*) AS n FROM encuestas WHERE ${where} AND connId = ''`).get(params).n;
   // Una fila por CONN_ID (si un mismo ID aparece dos veces, la primera por fecha).
   const filas = db.prepare(
-    `SELECT connId, fecha, hora, agente, skill, q1, q2, q3, q4 FROM encuestas
+    `SELECT connId, fecha, hora, agente, skill, q1, q2, q3, q4, telefono FROM encuestas
       WHERE ${where} AND connId <> '' ORDER BY fecha DESC, id DESC`
   ).all(params);
   const vistos = new Set();
@@ -132,7 +136,7 @@ function listar(db, q, actor) {
     if (q.estado === 'pendientes' && m) continue;
     if (q.estado === 'resueltas' && !m) continue;
     const b = !m ? bloqueos.get(f.connId) : null;
-    out.push({
+    const fila = {
       connId: f.connId,
       fecha: f.fecha,
       hora: f.hora || '',
@@ -143,7 +147,9 @@ function listar(db, q, actor) {
       estado,
       bloqueo: b ? { nombre: b.nombre, propio: esDelActor(b, actor), expira: new Date(b.expira).toISOString() } : null,
       monitoreo: m ? monitoreoResumen(m) : null,
-    });
+    };
+    if (verTelefono) fila.telefono = f.telefono || '';
+    out.push(fila);
   }
   return { reglas: reglasTodas, filas: out.slice(0, LIMITE_LISTA), conteo: { pendientes, resueltas, sinId } };
 }
@@ -157,7 +163,7 @@ function llamadaMalCalificada(db, campana, connId) {
   const reglas = reglasDe(db, campana);
   if (!reglas.length) return null;
   const f = db.prepare(
-    "SELECT connId, fecha, hora, agente, skill, q1, q2, q3, q4 FROM encuestas WHERE campana = ? AND connId = ? AND connId <> '' ORDER BY fecha, id LIMIT 1"
+    "SELECT connId, fecha, hora, agente, skill, q1, q2, q3, q4, telefono FROM encuestas WHERE campana = ? AND connId = ? AND connId <> '' ORDER BY fecha, id LIMIT 1"
   ).get(campana, connId);
   if (!f) return null;
   const fallas = fallasDeFila(f, reglas);
@@ -205,6 +211,38 @@ function validarParaGuardar(db, { campana, connId, actor }) {
   return null;
 }
 
+// Fase 344: telefono (ANI) de la encuesta de esa llamada ('' si no tiene). Para guardarlo
+// con el monitoreo cuando el formulario no lo trae.
+function telefonoDeLlamada(db, campana, connId) {
+  const f = db.prepare("SELECT telefono FROM encuestas WHERE campana = ? AND connId = ? AND connId <> '' AND telefono <> '' ORDER BY fecha, id LIMIT 1").get(campana, connId);
+  return f ? f.telefono : '';
+}
+
+// Fase 344: que le haria a Calidad de encuestas volver a subir una base (sin escribir).
+// La carga reemplaza campaña + desde..hasta; los monitoreos se enlazan por CONN_ID (texto),
+// asi que un monitoreo solo pierde su llamada si ese CONN_ID ya no viene en el archivo.
+// filasNuevas: objetos { fecha, connId, q1..q4, telefono }. null si la campaña no tiene reglas.
+function impactoRecarga(db, { campana, desde, hasta, filasNuevas }) {
+  const reglas = reglasDe(db, campana);
+  if (!reglas.length) return null;
+  const fallan = (f) => !!f.connId && fallasDeFila(f, reglas).length > 0;
+  const todas = db.prepare('SELECT fecha, connId, q1, q2, q3, q4 FROM encuestas WHERE campana = ?').all(campana);
+  const antes = new Set(todas.filter(fallan).map((f) => f.connId));
+  const despues = new Set(todas.filter((f) => (f.fecha < desde || f.fecha > hasta) && fallan(f)).map((f) => f.connId));
+  filasNuevas.filter(fallan).forEach((f) => despues.add(f.connId));
+  const mon = new Set(db.prepare('SELECT encuestaConnId FROM monitoreos WHERE campana = ? AND encuestaConnId IS NOT NULL').all(campana).map((m) => m.encuestaConnId));
+  const cuenta = (set, conMon) => [...set].filter((c) => mon.has(c) === conMon).length;
+  return {
+    pendientesAntes: cuenta(antes, false),
+    pendientesDespues: cuenta(despues, false),
+    resueltasAntes: cuenta(antes, true),
+    resueltasDespues: cuenta(despues, true),
+    // Monitoreos que hoy tienen su llamada y despues de la carga no la tendrian (deberia ser 0).
+    monitoreosSinLlamada: [...antes].filter((c) => mon.has(c) && !despues.has(c)).length,
+    conTelefono: filasNuevas.filter((f) => !!f.telefono).length,
+  };
+}
+
 function borrarBloqueo(db, campana, connId) {
   db.prepare('DELETE FROM encuesta_monitoreo_bloqueos WHERE campana = ? AND connId = ?').run(campana, connId);
 }
@@ -223,4 +261,6 @@ module.exports = {
   liberar,
   validarParaGuardar,
   borrarBloqueo,
+  telefonoDeLlamada,
+  impactoRecarga,
 };

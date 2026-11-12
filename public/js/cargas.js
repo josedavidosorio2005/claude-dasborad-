@@ -1058,7 +1058,8 @@ function _cargasEstadoLabel(r){
     extra = ' — '+r.dias+' día(s); '+encuestaResumenTexto(r.conteos);
     // Fase 193: columnas que se usaron y filas con ID de llamada (de las filas que entran, ya filtradas por mes en el Centro).
     if(r.columnasUsadas) extra += '; columnas usadas: '+r.columnasUsadas.join(', ')+(r.columnasIgnoradas ? ' ('+r.columnasIgnoradas+' columna(s) del archivo no se leen)' : '')+
-      '; con ID de llamada '+r.filas.filter(function(f){ return !!f[8]; }).length+' de '+r.filas.length;
+      '; con ID de llamada '+r.filas.filter(function(f){ return !!f[8]; }).length+' de '+r.filas.length+
+      '; con teléfono (ANI) '+r.filas.filter(function(f){ return !!f[10]; }).length+' de '+r.filas.length; // Fase 344
   }
   var reconocida = r.reconocidaPorEncabezadosComo ? ' (hoja "'+esc(r.reconocidaPorEncabezadosComo)+'" reconocida como '+esc(r.titulo)+')' : '';
   return '<span style="color:var(--c-success-dark)">OK — '+r.filas.length+' fila(s)'+(r.avisos && r.avisos.length ? ', '+r.avisos.length+' aviso(s)' : '')+esc(extra)+'</span>'+reconocida;
@@ -1500,6 +1501,7 @@ async function _cargasGuardarEncuesta(cliente, r){
     var msg = 'Se van a guardar '+impacto.filasNuevas+' encuesta(s) del '+_agendasFmtFechaCorta(impacto.desde)+' al '+_agendasFmtFechaCorta(impacto.hasta)+
       ' ('+impacto.dias+' día(s)).\n'+encuestaResumenTexto(impacto.conteos)+'.\n\n'+
       (impacto.filasExistentes > 0 ? 'Esto REEMPLAZA '+impacto.filasExistentes+' encuesta(s) ya cargadas en esas fechas.\n\n' : 'No hay encuestas cargadas en esas fechas.\n\n')+
+      (impacto.calidadEncuestas ? encuestaImpactoCalidadTexto(impacto.calidadEncuestas, impacto.filasNuevas)+'\n\n' : '')+ // Fase 344
       '¿Continuar?';
     if(!confirm(msg)) return { ok:false, mensaje: 'No se guardó nada; las encuestas anteriores siguen igual.' };
   }catch(e){ return { ok:false, mensaje: e.message }; }

@@ -21,14 +21,14 @@ test('lector: CONN_ID se lee como texto; TELEPHONE sigue sin leerse; sin CONN_ID
     ['Asesor Dos', 'SKILL A', '2026-09-02 10:00', 7, 3, 2, 3, '-', '-', '3000000001'],
   ]);
   assert.deepEqual(con.filas, [
-    ['2026-09-01', 'Asesor Uno', 'SKILL A', 9, 5, 1, 5, 'Excelente', 'ABC-123-XYZ', '10:00'], // Fase 331: + hora
-    ['2026-09-02', 'Asesor Dos', 'SKILL A', 7, 3, 2, 3, '', '', '10:00'],
+    ['2026-09-01', 'Asesor Uno', 'SKILL A', 9, 5, 1, 5, 'Excelente', 'ABC-123-XYZ', '10:00', ''], // Fase 331: + hora; Fase 344: + telefono (TELEPHONE no es ANI -> '')
+    ['2026-09-02', 'Asesor Dos', 'SKILL A', 7, 3, 2, 3, '', '', '10:00', ''],
   ]);
-  assert.ok(!JSON.stringify(con.filas).includes('3000000000'), 'el telefono nunca viaja');
+  assert.ok(!JSON.stringify(con.filas).includes('3000000000'), 'TELEPHONE nunca viaja (Fase 344: solo ANI)');
   assert.ok(!con.avisos.some((a) => /CONN_ID/.test(a)));
 
   const sin = L.encuestaParseFilas([HEADER, ['Asesor Uno', 'SKILL A', '2026-09-01 10:00', 9, 5, 1, 5, 'Excelente']]);
-  assert.deepEqual(sin.filas, [['2026-09-01', 'Asesor Uno', 'SKILL A', 9, 5, 1, 5, 'Excelente', '', '10:00']]);
+  assert.deepEqual(sin.filas, [['2026-09-01', 'Asesor Uno', 'SKILL A', 9, 5, 1, 5, 'Excelente', '', '10:00', '']]);
   assert.ok(sin.avisos.includes('El archivo no trae la columna CONN_ID: los comentarios quedan sin ID de llamada.'));
 });
 
@@ -47,7 +47,8 @@ test('API: la carga guarda CONN_ID y los comentarios lo devuelven; una carga con
   const vieja = await request(app).post('/api/calidad/encuestas/carga').set(auth(admin)).send({ campana: 'MOBILIZE', filas: [['2025-05-01', 'Asesor Uno', 'SKILL A', 9, 5, 1, 5, 'Bien']] });
   assert.equal(vieja.status, 201, JSON.stringify(vieja.body));
   assert.equal(db.prepare("SELECT connId FROM encuestas WHERE campana = 'MOBILIZE' AND fecha = '2025-05-01'").get().connId, '');
-  assert.ok(!db.prepare('PRAGMA table_info(encuestas)').all().some((x) => /tel/i.test(x.name)), 'la tabla sigue sin telefono');
+  // Fase 344: la tabla tiene telefono (ANI), pero los comentarios nunca lo devuelven.
+  assert.ok(lista.every((x) => !('telefono' in x)), 'los comentarios no llevan telefono');
 });
 
 test('vista: columna "ID de llamada" en la lista de comentarios y en el Excel', () => {

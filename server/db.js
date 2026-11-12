@@ -5076,6 +5076,16 @@ runOnceMigration('fase331_encuestas_hora_v1', () => {
   if (!cols.includes('hora')) db.exec("ALTER TABLE encuestas ADD COLUMN hora TEXT NOT NULL DEFAULT ''");
 });
 
+// Fase 344 (pedido del usuario, 12/11, reemplaza la regla «sin telefono» de la Fase 131
+// solo para esta tabla): telefono (ANI) de la encuesta, para que Calidad ubique la llamada.
+// Solo ADD COLUMN con '' por defecto (no toca ninguna fila): las ya cargadas quedan sin
+// telefono hasta que se vuelva a subir ese mes. Solo lo devuelve Calidad de encuestas a
+// quien califica (puedeVerTelefono); «Descargar lo cargado» lo excluye por nombre.
+runOnceMigration('fase344_encuestas_telefono_v1', () => {
+  const cols = db.prepare('PRAGMA table_info(encuestas)').all().map((c) => c.name);
+  if (!cols.includes('telefono')) db.exec("ALTER TABLE encuestas ADD COLUMN telefono TEXT NOT NULL DEFAULT ''");
+});
+
 // Fase 332 (reporte del supervisor, 11/11): en ORLANT › Calidad salian a la vez el
 // bloque de antes (indicadores, torta «Distribucion de clasificacion» y barras
 // «Promedio de calidad por asesor») y «Resultado de los monitoreos». Los dos leen

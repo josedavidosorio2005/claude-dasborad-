@@ -4,6 +4,22 @@ Este archivo explica, en palabras simples, que cambia en cada version de
 la plataforma. No es un documento tecnico: es para que Edwin y Jairo
 sepan que hay nuevo, que se corrigio y que falta.
 
+## v1.176.0 — Noviembre 2026
+
+**Fase 344: Mobilize — el teléfono en «Calidad de encuestas».**
+
+- Al subir la base de la Encuesta (HistIVR) se guarda también el teléfono de la llamada (columna ANI).
+- En «Calidad de encuestas» el teléfono sale en Pendientes y en Resueltas, con su botón «Copiar»; al
+  calificar aparece junto al ID de la llamada (y se llena solo si el formulario tiene ese campo), y queda
+  guardado con el monitoreo (también se ve en la lista de Monitoreos).
+- Lo ven solo quienes califican: Calidad, Supervisor, Reportes y el administrador. El cliente y el asesor
+  nunca lo ven: ni en el dashboard › Encuesta, ni en la ventana «Monitoreo», ni en las exportaciones
+  (tampoco en «Descargar lo cargado»).
+- Las encuestas ya cargadas no tienen teléfono: se ve «—» y se califican igual con el ID. Aparece al
+  volver a subir ese mes en Cargar Datos.
+- Antes de guardar una base de Encuesta, el aviso dice cómo quedan los pendientes y las resueltas y si
+  algún monitoreo ya hecho se quedaría sin su llamada.
+
 ## v1.175.1 — Noviembre 2026
 
 **Fase 343: Calidad — vuelve el teléfono al calificar.**

@@ -2,7 +2,9 @@
 // Parte B). Escritura (reemplazo por campaña + rango de fechas, una sola
 // transaccion) y agregacion en SQL -- el dashboard nunca descarga filas
 // crudas, salvo la lista de comentarios con texto. El archivo de origen
-// (Wolkvox, hoja HistIVR) no trae telefonos y esta tabla tampoco los tiene.
+// (Wolkvox, hoja HistIVR) trae el telefono (ANI): desde la Fase 344 se guarda en
+// `telefono`, que SOLO sale en Calidad de encuestas para quienes califican -- ninguna
+// consulta de este archivo (resumen, comentarios, FCR) lo devuelve.
 'use strict';
 const { respaldarAntesDeCambiar } = require('./cargas-versiones');
 
@@ -14,7 +16,7 @@ function nowStr() {
 
 // Orden FIJO del payload -- igual a ENCUESTA_ORDEN_ARRAY
 // (public/js/encuesta-logic.js) y encuestaFilaArraySchema (validation.js).
-const CAMPOS_FILA = ['fecha', 'agente', 'skill', 'q1', 'q2', 'q3', 'q4', 'comentario', 'connId', 'hora']; // Fase 331: + hora
+const CAMPOS_FILA = ['fecha', 'agente', 'skill', 'q1', 'q2', 'q3', 'q4', 'comentario', 'connId', 'hora', 'telefono']; // Fase 331: + hora; Fase 344: + telefono
 
 // Mismos rangos que ENCUESTA_PREGUNTAS (encuesta-logic.js).
 const PREGUNTAS = [
@@ -83,8 +85,8 @@ function cargarEncuestas(db, { campana, archivoNombre, cargadoPorNombre, filas }
   const { desde, hasta } = rangoFechas(filasObj);
   const del = db.prepare('DELETE FROM encuestas WHERE campana = ? AND fecha >= ? AND fecha <= ?');
   const insert = db.prepare(
-    `INSERT INTO encuestas (campana, fecha, agente, skill, q1, q2, q3, q4, comentario, connId, hora, archivoNombre, cargadoPorNombre, createdAt)
-     VALUES (@campana, @fecha, @agente, @skill, @q1, @q2, @q3, @q4, @comentario, @connId, @hora, @archivoNombre, @cargadoPorNombre, @createdAt)`
+    `INSERT INTO encuestas (campana, fecha, agente, skill, q1, q2, q3, q4, comentario, connId, hora, telefono, archivoNombre, cargadoPorNombre, createdAt)
+     VALUES (@campana, @fecha, @agente, @skill, @q1, @q2, @q3, @q4, @comentario, @connId, @hora, @telefono, @archivoNombre, @cargadoPorNombre, @createdAt)`
   );
   let borradas = 0;
   db.transaction(() => {
@@ -94,7 +96,7 @@ function cargarEncuestas(db, { campana, archivoNombre, cargadoPorNombre, filas }
     for (const f of filasObj) {
       insert.run({
         campana, fecha: f.fecha, agente: f.agente || '', skill: f.skill || '',
-        q1: f.q1, q2: f.q2, q3: f.q3, q4: f.q4, comentario: f.comentario || '', connId: f.connId || '', hora: f.hora || '',
+        q1: f.q1, q2: f.q2, q3: f.q3, q4: f.q4, comentario: f.comentario || '', connId: f.connId || '', hora: f.hora || '', telefono: f.telefono || '',
         archivoNombre: archivoNombre || '', cargadoPorNombre: cargadoPorNombre || '-', createdAt: ts,
       });
     }
@@ -176,6 +178,7 @@ function encuestasFcrPorMes(db, q) {
 
 module.exports = {
   CAMPOS_FILA,
+  filaArrayAObjeto, // Fase 344
   PREGUNTAS,
   FCR_BASES,
   impactoEncuestas,

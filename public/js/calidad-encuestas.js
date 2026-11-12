@@ -9,7 +9,8 @@
 // llamada (encuestaConnId). El bloqueo se renueva mientras el formulario siga
 // abierto y se libera al guardar o al cancelar. El servidor decide todo
 // (acceso, bloqueo, un solo monitoreo por llamada); esto solo lo muestra.
-// Sin telefonos (regla de la Fase 131).
+// Fase 344: con el telefono (ANI) de la encuesta, solo si el servidor lo manda (verTelefono:
+// CALIDAD, SUPERVISOR, Reportes, administrador). Sin telefono se ve «—» y se califica con el ID.
 var _cen = { activa: false, estado: 'pendientes', datos: null, abierta: null, timer: null, campana: null };
 
 function _cenEsc(v) { return esc(v == null ? '' : v); }
@@ -68,12 +69,13 @@ async function cenRender() {
   if (!d.filas.length) {
     html += '<p class="cen-vacio">' + (_cen.estado === 'pendientes' ? 'No hay llamadas pendientes por escuchar.' : 'Todavía no hay llamadas resueltas.') + '</p>';
   } else {
-    html += '<div class="cen-tabla-wrap"><table class="aurora-rank-table cen-tabla"><thead><tr><th>Fecha</th><th>Hora</th><th>ID de la llamada</th><th>Agente</th><th>Preguntas mal calificadas</th>' +
+    html += '<div class="cen-tabla-wrap"><table class="aurora-rank-table cen-tabla"><thead><tr><th>Fecha</th><th>Hora</th><th>ID de la llamada</th>' + (d.verTelefono ? '<th>Teléfono</th>' : '') + '<th>Agente</th><th>Preguntas mal calificadas</th>' +
       (_cen.estado === 'resueltas' ? '<th>Nota</th><th>Observación</th><th>Evaluador</th>' : '<th><span class="sr-only">Acción</span></th>') + '</tr></thead><tbody>' +
-      d.filas.map(function (f) { return _cenFilaHtml(f, d.puedeCalificar); }).join('') + '</tbody></table></div>';
+      d.filas.map(function (f) { return _cenFilaHtml(f, d.puedeCalificar, !!d.verTelefono); }).join('') + '</tbody></table></div>';
   }
   var avisos = [];
   if (c.sinId) avisos.push(cenAvisoSinId(c.sinId));
+  if (d.verTelefono && d.filas.some(function (f) { return !f.telefono; })) avisos.push('Las encuestas cargadas antes de esta versión no tienen teléfono (se ve «—»; se califican igual con el ID): aparece al volver a subir ese mes en Cargar Datos.'); // Fase 344
   if (sinHora) avisos.push('Las encuestas cargadas antes de esta versión no tienen hora: aparece al volver a subir ese mes en Cargar Datos.');
   if (avisos.length) html += '<p class="cen-aviso">' + avisos.map(_cenEsc).join('<br>') + '</p>';
   cont.innerHTML = html;
@@ -98,8 +100,15 @@ function _cenIdHtml(connId) {
   return '<span class="cen-id"><code>' + _cenEsc(v) + '</code><button type="button" class="btn-sm cen-copiar" data-conn="' + _cenEsc(v) + '" aria-label="Copiar el ID de la llamada">Copiar</button></span>';
 }
 
-function _cenFilaHtml(f, puedeCalificar) {
+// Fase 344: telefono con su boton Copiar; «—» si la encuesta se cargo sin ANI.
+function _cenTelHtml(tel) {
+  if (!tel) return '<span class="cen-sin-tel">—<span class="sr-only"> sin teléfono</span></span>';
+  return '<span class="cen-id"><code>' + _cenEsc(tel) + '</code><button type="button" class="btn-sm cen-copiar" data-conn="' + _cenEsc(tel) + '" data-que="tel" aria-label="Copiar el teléfono">Copiar</button></span>';
+}
+
+function _cenFilaHtml(f, puedeCalificar, verTel) {
   var celdas = '<td>' + _cenEsc(cenFecha(f.fecha)) + '</td><td>' + _cenEsc(f.hora || '—') + '</td><td>' + _cenIdHtml(f.connId) + '</td>' +
+    (verTel ? '<td>' + _cenTelHtml(f.telefono) + '</td>' : '') +
     '<td>' + _cenEsc(f.agente ? textoFormatoNombre(f.agente) : '—') + '</td><td><span class="cen-fallas">' + _cenEsc(cenFallasTexto(f.fallas)) + '</span></td>';
   if (f.estado === 'resuelta') {
     var m = f.monitoreo || {};
@@ -118,18 +127,19 @@ document.addEventListener('click', function (ev) {
   var t = ev.target;
   if (!t || !t.closest) return;
   var cp = t.closest('.cen-copiar');
-  if (cp) { cenCopiar(cp.getAttribute('data-conn')); return; }
+  if (cp) { cenCopiar(cp.getAttribute('data-conn'), cp.getAttribute('data-que')); return; }
   var ab = t.closest('.cen-abrir');
   if (ab) cenAbrir(ab.getAttribute('data-conn'));
 });
 
-async function cenCopiar(texto) {
+async function cenCopiar(texto, que) {
+  var cosa = que === 'tel' ? 'el teléfono' : 'el ID de la llamada'; // Fase 344
   try {
     if (navigator.clipboard && navigator.clipboard.writeText) await navigator.clipboard.writeText(texto);
     else throw new Error('sin portapapeles');
-    showToast('ID de la llamada copiado');
+    showToast(que === 'tel' ? 'Teléfono copiado' : 'ID de la llamada copiado');
   } catch (e) {
-    showToast('No se pudo copiar: selecciona el ID y cópialo a mano', 'error');
+    showToast('No se pudo copiar: selecciona ' + cosa + ' y cópialo a mano', 'error');
   }
 }
 
@@ -167,6 +177,7 @@ function _cenPrellenar(ll) {
   // Fase 340: un solo formulario (el comun, #cf2).
   var setVal = function (id, v) { var el = document.getElementById(id); if (el) el.value = v; };
   setVal('cc2-f-idLlamada', cenIdVisible(ll.connId)); // Fase 336: como se ve (el vinculo va aparte, con el original)
+  if (ll.telefono) setVal('cc2-f-telefono', ll.telefono); // Fase 344: si la plantilla trae el campo
   // Asesor: solo si coincide con un usuario ASESOR de la campaña; si no, lo elige el evaluador.
   var sel = document.getElementById('cc2-f-asesor');
   if (!sel) return;
@@ -188,6 +199,7 @@ function _cenPintarBanner() {
   b.innerHTML =
     '<div class="cen-banner-txt"><strong>Calificando una llamada de Calidad de encuestas</strong>' +
       '<dl class="cen-datos"><div><dt>ID de la llamada</dt><dd>' + _cenIdHtml(ll.connId) + '</dd></div>' +
+      ('telefono' in ll ? '<div><dt>Teléfono</dt><dd>' + _cenTelHtml(ll.telefono) + '</dd></div>' : '') + // Fase 344
       '<div><dt>Fecha</dt><dd>' + _cenEsc(cenFecha(ll.fecha)) + '</dd></div>' +
       '<div><dt>Hora</dt><dd>' + _cenEsc(ll.hora || '—') + '</dd></div>' +
       '<div><dt>Agente</dt><dd>' + _cenEsc(ll.agente ? textoFormatoNombre(ll.agente) : '—') + '</dd></div>' +

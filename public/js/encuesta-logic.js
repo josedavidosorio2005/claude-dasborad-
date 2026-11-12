@@ -10,15 +10,16 @@
 //     fila de textos sueltos antes): se busca en las primeras filas.
 //   - "-", "--" o celda vacia = sin respuesta (NULL). Un valor fuera de rango
 //     (ej. 11 en la pregunta 1) tambien queda sin respuesta, con aviso.
-//   - Solo se leen las columnas de ENCUESTA_COLUMNAS: si una version futura
-//     del archivo trae telefonos o datos del cliente final, se ignoran aqui,
-//     en el navegador, y nunca viajan al servidor.
+//   - Solo se leen las columnas de ENCUESTA_COLUMNAS: el resto de datos del
+//     cliente final se ignora aqui, en el navegador, y nunca viaja al servidor.
+//     (Fase 344: el telefono ANI SI se lee, solo para Calidad -- ver abajo.)
 //   - Los textos de las preguntas NO se leen del archivo (columnas J/K): son
 //     configuracion (ENCUESTA_PREGUNTAS), con la ortografia corregida.
 // Fase 193: la base de Edwin es ahora el export HistIVR COMPLETO (25
 // columnas, encabezado en la fila 1): se sube tal cual. De ahi solo se leen
-// las 9 de ENCUESTA_COLUMNAS; ANI (telefono), AGENT_DNI, CUSTOMER_ID y el
-// resto (Q05-Q10, RESULT, FEELING...) se ignoran por nombre.
+// las de ENCUESTA_COLUMNAS; AGENT_DNI, CUSTOMER_ID y el resto (Q05-Q10,
+// RESULT, FEELING...) se ignoran por nombre. Desde la Fase 344 tambien se lee
+// ANI (telefono), que solo ven quienes califican en Calidad.
 'use strict';
 
 var _encuestaFechaLimites = (typeof require === 'function') ? require('./fecha-limites-logic.js') : (typeof window !== 'undefined' ? window : this);
@@ -34,14 +35,20 @@ var ENCUESTA_COLUMNAS = [
   { key: 'comentario', label: 'VOICE_MESSAGE', obligatoria: false },
   // Fase 184 (pedido del usuario, Mobilize): ID de la llamada, para ubicar
   // cada comentario en Wolkvox. Opcional: un archivo viejo sin CONN_ID deja
-  // el campo vacio (nunca se cruza con el CDR). El telefono sigue sin leerse.
+  // el campo vacio (nunca se cruza con el CDR).
   { key: 'connId', label: 'CONN_ID', obligatoria: false },
+  // Fase 344 (pedido del usuario, 12/11): el telefono (ANI) se lee y se guarda para que
+  // Calidad ubique la llamada. Lo ven solo quienes califican (CALIDAD, SUPERVISOR,
+  // Reportes, administrador); el cliente y el asesor nunca. Opcional: sin ANI, '' .
+  { key: 'telefono', label: 'ANI', obligatoria: false },
 ];
 // Orden fijo del payload compacto -- debe coincidir con CAMPOS_FILA
 // (server/encuestas.js) y encuestaFilaArraySchema (validation.js).
 // Fase 331: + hora (HH:MM de DATE, '' si no se pudo leer) para ubicar la grabacion.
-var ENCUESTA_ORDEN_ARRAY = ['fecha', 'agente', 'skill', 'q1', 'q2', 'q3', 'q4', 'comentario', 'connId', 'hora'];
+// Fase 344: + telefono (ANI, '' si no vino) al final.
+var ENCUESTA_ORDEN_ARRAY = ['fecha', 'agente', 'skill', 'q1', 'q2', 'q3', 'q4', 'comentario', 'connId', 'hora', 'telefono'];
 var ENCUESTA_CONN_ID_MAX = 100;
+var ENCUESTA_TELEFONO_MAX = 40;
 var ENCUESTA_COMENTARIO_MAX = 1000;
 
 // Textos para mostrar (pedido del usuario, ortografia corregida). `valores`
@@ -231,7 +238,8 @@ function encuestaParseFilas(aoa) {
     var agente = _encuestaNorm(row[map.agente]).slice(0, 200);
     var skill = _encuestaNorm(row[map.skill]).slice(0, 200);
     var connId = map.connId === undefined || _encuestaSinRespuesta(row[map.connId]) ? '' : _encuestaNorm(row[map.connId]).slice(0, ENCUESTA_CONN_ID_MAX);
-    filas.push([fecha, _encuestaSinRespuesta(agente) ? '' : agente, _encuestaSinRespuesta(skill) ? '' : skill, resp.q1, resp.q2, resp.q3, resp.q4, comentario, connId, encuestaParseHora(row[map.fecha])]);
+    var telefono = map.telefono === undefined || _encuestaSinRespuesta(row[map.telefono]) ? '' : _encuestaNorm(row[map.telefono]).slice(0, ENCUESTA_TELEFONO_MAX);
+    filas.push([fecha, _encuestaSinRespuesta(agente) ? '' : agente, _encuestaSinRespuesta(skill) ? '' : skill, resp.q1, resp.q2, resp.q3, resp.q4, comentario, connId, encuestaParseHora(row[map.fecha]), telefono]);
     dias[fecha] = true;
   }
   if (map.connId === undefined && filas.length) avisos.push('El archivo no trae la columna CONN_ID: los comentarios quedan sin ID de llamada.');
@@ -245,6 +253,7 @@ function encuestaParseFilas(aoa) {
     desde: lista[0] || null, hasta: lista[lista.length - 1] || null,
     columnasUsadas: columnasUsadas, columnasIgnoradas: Math.max(0, columnasArchivo - columnasUsadas.length),
     conConnId: filas.filter(function (f) { return !!f[8]; }).length,
+    conTelefono: filas.filter(function (f) { return !!f[10]; }).length, // Fase 344
   };
 }
 
@@ -393,6 +402,20 @@ function encuestaNps(datos) {
   };
 }
 
+// Fase 344: texto para confirmar una carga, con lo que le pasaria a Calidad de encuestas
+// (c = impacto.calidadEncuestas del servidor, o null si la campaña no tiene esa funcion).
+function encuestaImpactoCalidadTexto(c, filasNuevas) {
+  if (!c) return '';
+  var t = 'Calidad de encuestas: pendientes ' + c.pendientesAntes + ' → ' + c.pendientesDespues +
+    '; resueltas ' + c.resueltasAntes + ' → ' + c.resueltasDespues + '.';
+  if (c.monitoreosSinLlamada > 0) {
+    t += '\nATENCIÓN: ' + c.monitoreosSinLlamada + ' monitoreo(s) ya hechos quedarían sin su llamada en la lista (ese ID no viene en el archivo). ' +
+      'Los monitoreos no se borran, pero revisa que sea el archivo correcto antes de continuar.';
+  }
+  t += '\nTeléfono (ANI): ' + (c.conTelefono || 0) + ' de ' + (filasNuevas || 0) + ' fila(s).';
+  return t;
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     ENCUESTA_NPS_NOTA: ENCUESTA_NPS_NOTA,
@@ -423,5 +446,6 @@ if (typeof module !== 'undefined' && module.exports) {
     encuestaFcrFraccion: encuestaFcrFraccion,
     encuestaFcrBase: encuestaFcrBase,
     encuestaFcrNota: encuestaFcrNota,
+    encuestaImpactoCalidadTexto: encuestaImpactoCalidadTexto, // Fase 344
   };
 }

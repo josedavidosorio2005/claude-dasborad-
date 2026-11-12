@@ -25,7 +25,7 @@ Wolkvox: Reportes → numeral 4 (hoja "HistIVR<fecha>"), export completo de 25 c
 | SKILL_NAME | Sí | Línea o skill. |  |
 | DATE | Sí | Fecha de la encuesta. |  |
 | CONN_ID | No | ID de la llamada en Wolkvox. Sale junto a cada comentario y en el Excel; si un archivo no lo trae, queda vacío. |  |
-| ANI | No | Viene en el export de Wolkvox; el sistema nunca la lee ni la guarda. |  |
+| ANI | No | Teléfono de la llamada. Solo lo ven quienes califican en Calidad de encuestas (nunca el cliente ni el asesor); si un archivo no lo trae, se ve «—». |  |
 | CUSTOMER_ID | No | Viene en el export de Wolkvox; el sistema nunca la lee ni la guarda. |  |
 | Q01 | Sí | Pregunta 1, de 0 a 10. "-" = sin respuesta. |  |
 | Q02 | Sí | Pregunta 2, de 1 a 5. |  |

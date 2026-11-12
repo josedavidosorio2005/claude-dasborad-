@@ -1175,6 +1175,8 @@ const encuestaFilaArraySchema = z.tuple([
   z.string().trim().max(100).optional(),
   // Fase 331: hora de la llamada (HH:MM, '' si no se pudo leer). Opcional al final.
   z.string().trim().regex(/^(?:(?:[01]\d|2[0-3]):[0-5]\d)?$/, { message: 'hora debe ser HH:MM' }).optional(),
+  // Fase 344: telefono (ANI, '' si no vino). Opcional al final. Solo lo ven quienes califican.
+  z.string().trim().max(40).optional(),
 ]);
 
 const encuestasCargaBody = z.object({
