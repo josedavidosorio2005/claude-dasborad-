@@ -7,6 +7,17 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.180.0 — Noviembre 2026
+
+**Fase 346: la fecha de la llamada en los monitoreos de Calidad de encuestas.**
+
+- Un monitoreo hecho desde «Calidad de encuestas» cuenta en el mes en que se calificó, igual que
+  los demás monitoreos.
+- Al lado de su fecha aparece «Llamada del DD/MM», con el día de la llamada que se calificó. Se ve
+  en el dashboard (Detalle por mes y Resumen por asesor) y en el módulo de Calidad (Monitoreos y
+  Resueltas).
+- No se cambió ningún dato guardado: la fecha de la llamada se toma de la encuesta.
+
 ## v1.179.1 — Noviembre 2026
 
 **Fase 345 (cierre): la paleta queda solo en su archivo.**

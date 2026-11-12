@@ -2429,3 +2429,6 @@ div.ca-bar-fila{cursor:default}
 /* Boton suave: «Ver datos» de cada grafica. */
 .btn-sm.btn-ver-datos{background:var(--btn-suave-bg);color:var(--btn-suave-fg);border:1px solid var(--btn-suave-borde);}
 .btn-sm.btn-ver-datos:hover:not([disabled]){background:var(--btn-suave-bg);border-color:var(--btn-suave-fg);color:var(--btn-suave-fg);}
+
+/* Fase 346: «Llamada del DD/MM» junto a la fecha de un monitoreo de Calidad de encuestas. */
+.ce-llamada{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:999px;font-size:var(--fs-note);font-weight:600;white-space:nowrap;color:var(--btn-suave-fg);background:var(--btn-suave-bg);border:1px solid var(--btn-suave-borde)}

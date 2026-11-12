@@ -443,7 +443,7 @@ function renderCalMonitoreosTable(){
   } else {
     arr.forEach(function(m){
       var canalLbl = calEstadoHtml(m.canal==='WPP' ? '💬 WPP' : '📞 Llamada');
-      html += '<tr><td>'+esc(textoFormatoNombre(m.asesor))+(m.origen==='encuesta'?' <span class="cen-marca" title="Monitoreo originado en una encuesta mal calificada">Encuesta</span>':'')+'</td><td>'+esc(m.fecha||'-')+'</td><td>'+canalLbl+'</td><td>'+esc(m.idLlamada||'-')+'</td>'+(verTel?'<td>'+esc(m.telefono||'—')+'</td>':'')+'<td>'+esc(m.codificacion||'-')+'</td><td>'+esc(m.evaluador||'-')+'</td>'+
+      html += '<tr><td>'+esc(textoFormatoNombre(m.asesor))+(m.origen==='encuesta'?' <span class="cen-marca" title="Monitoreo originado en una encuesta mal calificada">Encuesta</span>':'')+'</td><td>'+(typeof ceFechaConLlamadaHtml==='function'?ceFechaConLlamadaHtml(m,esc):esc(m.fecha||'-'))+'</td><td>'+canalLbl+'</td><td>'+esc(m.idLlamada||'-')+'</td>'+(verTel?'<td>'+esc(m.telefono||'—')+'</td>':'')+'<td>'+esc(m.codificacion||'-')+'</td><td>'+esc(m.evaluador||'-')+'</td>'+
         '<td class="peak">'+m.puntaje+'</td><td>'+calEstadoHtml(m.clasificacion)+'</td><td>'+m.fallos+'</td><td>'+calEstadoHtml(m.nivelCritico)+'</td>'+
         (conAcciones?('<td class="cal-acciones">'+
           ((canManage || (puedeAlguno && cc2PuedeEditar(m)))?'<button class="btn-sm btn-edit" onclick="editarMonitoreo('+m.id+')">Editar</button> ':'')+
@@ -767,7 +767,7 @@ function verSupervisionLider(camp, mes, liderNombre){
   } else {
     misMon.forEach(function(m){
       var canalLbl = calEstadoHtml(m.canal==='WPP' ? '💬 WPP' : '📞 Llamada');
-      html += '<tr><td>'+esc(m.fecha||'-')+'</td><td>'+esc(textoFormatoNombre(m.asesor))+'</td><td>'+canalLbl+'</td><td class="peak">'+m.puntaje+'</td><td>'+calEstadoHtml(m.clasificacion)+'</td><td>'+calEstadoHtml(m.nivelCritico)+'</td></tr>';
+      html += '<tr><td>'+(typeof ceFechaConLlamadaHtml==='function'?ceFechaConLlamadaHtml(m,esc):esc(m.fecha||'-'))+'</td><td>'+esc(textoFormatoNombre(m.asesor))+'</td><td>'+canalLbl+'</td><td class="peak">'+m.puntaje+'</td><td>'+calEstadoHtml(m.clasificacion)+'</td><td>'+calEstadoHtml(m.nivelCritico)+'</td></tr>';
     });
   }
   document.getElementById('sl-monitoreos-table').innerHTML = html;

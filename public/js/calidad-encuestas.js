@@ -107,7 +107,12 @@ function _cenTelHtml(tel) {
 }
 
 function _cenFilaHtml(f, puedeCalificar, verTel) {
-  var celdas = '<td>' + _cenEsc(cenFecha(f.fecha)) + '</td><td>' + _cenEsc(f.hora || '—') + '</td><td>' + _cenIdHtml(f.connId) + '</td>' +
+  // Fase 346: en Resueltas la fecha es la del MONITOREO (cuenta en ese mes) y al lado «Llamada del DD/MM».
+  var mon = f.estado === 'resuelta' ? (f.monitoreo || {}) : null;
+  var fechaCelda = mon && mon.fecha && typeof ceFechaConLlamadaHtml === 'function'
+    ? ceFechaConLlamadaHtml({ fechaLlamada: f.fecha }, _cenEsc, cenFecha(mon.fecha))
+    : _cenEsc(cenFecha(f.fecha));
+  var celdas = '<td>' + fechaCelda + '</td><td>' + _cenEsc(f.hora || '—') + '</td><td>' + _cenIdHtml(f.connId) + '</td>' +
     (verTel ? '<td>' + _cenTelHtml(f.telefono) + '</td>' : '') +
     '<td>' + _cenEsc(f.agente ? textoFormatoNombre(f.agente) : '—') + '</td><td><span class="cen-fallas">' + _cenEsc(cenFallasTexto(f.fallas)) + '</span></td>';
   if (f.estado === 'resuelta') {

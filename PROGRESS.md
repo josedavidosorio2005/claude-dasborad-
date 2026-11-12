@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.179.1` (ver `server/package.json`, expuesta en
+- **Versión**: `1.180.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -524,6 +524,7 @@ mismo orden):
 - Fase W1 — réplica oculta «MOBILIZE PRUEBAS API» (solo el administrador, sin API), creada en producción con el OK del usuario (v1.177.0, 2026-11-12)
 - Fase 345 — paleta 3 «Segura para daltonismo» en toda la plataforma, en un solo archivo (public/css/paleta.css) (v1.178.0, 2026-11-12)
 - Fase 345 (PR 2) — Televentas SURA con la paleta, aplicada desde afuera sin tocar el HTML del supervisor (v1.179.0, 2026-11-12)
+- Fase 346 — Calidad de encuestas: el monitoreo cuenta en el mes de la calificación y todas las listas de Calidad muestran «Llamada del DD/MM» (sin cambiar datos guardados) (v1.180.0, 2026-11-12)
 - Fase 309 — Revisión de seguridad: el cliente ya no recibe el nombre de los líderes en `GET /metas`; resto en `docs/revision-seguridad-2026-11-09.md` (v1.154.1, 2026-11-10)
 - Fase 308 — Revisión antes de la reunión con clientes y pendientes del supervisor (solo docs, 2026-11-10)
 - Fase 307 — Calidad para que los líderes evalúen: ORLANT conserva su Calidad y suma «Resultado de los monitoreos» al final; Aurora ya lo tenía (se muestra con el primer monitoreo) (v1.154.0, 2026-11-10)
