@@ -78,7 +78,7 @@ function _cenPintarLista() {
   var idLista = 'cen-' + _cen.estado;
   var conTel = !!d.verTelefono && clBuscaTelefono(d.filas);
   var filasVis = clBuscar(idLista, d.filas, clCamposEncuesta, conTel);
-  if (d.filas.length) html += '<div class="ca-filtros">' + clBuscadorHtml(idLista, conTel) + '</div>';
+  if (d.filas.length) html += '<div class="ca-filtros">' + clBuscadorHtml(idLista, conTel) + clBotonPantallaHtml() + '</div>'; // Fase 348 (C5)
   if (!d.filas.length) {
     html += '<p class="cen-vacio">' + (_cen.estado === 'pendientes' ? 'No hay llamadas pendientes por escuchar.' : 'Todavía no hay llamadas resueltas.') + '</p>';
   } else if (!filasVis.length) {

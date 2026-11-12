@@ -7,6 +7,16 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.183.0 — Noviembre 2026
+
+**Fase 348 (C5): las listas de Calidad en pantalla completa.**
+
+- Monitoreos, Detalle por mes y Calidad de encuestas tienen un botón «Pantalla completa» al lado
+  del buscador: la lista ocupa toda la ventana y se ve más cómoda.
+- Para volver: el mismo botón («Salir de pantalla completa») o la tecla Esc. Cerrar el módulo
+  también la quita.
+- Editar, Cambiar fecha y el detalle de un monitoreo siguen funcionando en pantalla completa.
+
 ## v1.182.2 — Noviembre 2026
 
 **Fase 348 (C4): cada campaña empieza limpia en el Módulo de Calidad.**

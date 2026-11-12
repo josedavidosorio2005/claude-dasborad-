@@ -1149,6 +1149,9 @@ td.kpi-red{background:rgba(231,76,60,.14);color:var(--c-danger-text);font-weight
 #calidad-modal.motion-modal-hidden,#detalle-monitoreo-modal.motion-modal-hidden,#supervisar-lider-modal.motion-modal-hidden,#cargas-modal.motion-modal-hidden,#dashcfg-modal.motion-modal-hidden,#gd-modal.motion-modal-hidden{
   opacity:0;transform:scale(0.97);
 }
+/* Fase 348 (C5): con una lista en pantalla completa (calidad-listas.js) el modulo no puede tener
+   transform (ni su transicion): encerraria al position:fixed de la tarjeta. */
+#calidad-modal.cl-con-pantalla{transform:none;transition:none}
 
 /* Overlays de los modulos Inventario / Gerencia / Gestion Humana.
    (Inventario y Gerencia no tenian regla propia — quedaban como bloque suelto
@@ -2456,3 +2459,7 @@ div.ca-bar-fila{cursor:default}
 @media (max-width:768px){.cl-acc-btns{flex-direction:column;align-items:stretch}.cl-acc-btns .btn-sm{min-height:36px}}
 /* Fase 348: el buscador de las listas, con ancho para leer su ayuda completa («…o teléfono»). */
 .cl-buscar input{width:340px;max-width:100%}
+
+/* Fase 348 (C5): una lista del Modulo de Calidad en pantalla completa (calidad-listas.js). */
+.aurora-card.cl-pantalla{position:fixed;inset:0;z-index:var(--z-panel);border-radius:0;overflow:auto;padding:16px 20px 24px;box-shadow:none}
+.cl-pantalla-btn{min-height:44px;align-self:flex-end}
