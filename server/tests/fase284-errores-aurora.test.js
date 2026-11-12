@@ -95,7 +95,8 @@ test('editar y borrar con registro de quien lo hizo; sin datos de pacientes', as
   assert.equal(e.status, 200); assert.equal(e.body.cantidad, 3); assert.equal(e.body.editadoPorNombre, 'Cuenta Sintética');
   // Fase 347: la observacion ya puede traer un documento (fase347-errores-observacion-documentos); el plan de accion no.
   assert.equal((await request(app).put('/api/calidad/errores/plan').set(H(sup)).send({ campana: AURORA, mes: '2026-10', texto: 'Llamar al 3001234567' })).status, 400);
-  assert.equal((await request(app).delete('/api/calidad/errores/' + c.body.id).set(H(sup))).status, 200);
+  assert.equal((await request(app).delete('/api/calidad/errores/' + c.body.id).set(H(sup))).status, 403, 'Fase 347: el supervisor ya no borra');
+  assert.equal((await request(app).delete('/api/calidad/errores/' + c.body.id).set(H(await tokenFor('admin', MASTER_PASSWORD)))).status, 200);
   const hist = db.prepare("SELECT accion, detalle FROM historial WHERE accion LIKE 'ERROR_AGENDAMIENTO_%' ORDER BY id DESC LIMIT 3").all();
   assert.deepEqual(hist.map((h) => h.accion), ['ERROR_AGENDAMIENTO_BORRADO', 'ERROR_AGENDAMIENTO_EDITADO', 'ERROR_AGENDAMIENTO_CREADO']);
   assert.ok(hist.every((h) => !/confirmar/.test(h.detalle)), 'el historial no copia la observacion');

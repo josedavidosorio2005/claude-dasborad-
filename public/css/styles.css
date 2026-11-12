@@ -2307,6 +2307,7 @@ div.ca-bar-fila{cursor:default}
 /* Fase 286: sub-pestañas del editor (Registrar / Errores del mes), lista compacta con scroll y aviso de MESES */
 .err-tabs{margin:4px 0 12px}
 .err-tabs .gd-subtab-btn{min-height:44px}
+.err-solo-lista{margin:4px 0 12px;font-size:var(--fs-body);font-weight:700;color:var(--c-text)} /* Fase 347: Reportes ve solo la lista */
 .err-plan-lbl{margin-top:12px}
 .err-lista{max-height:min(320px,45vh);overflow:auto;border:1px solid var(--c-border);border-radius:var(--r-sm)}
 .err-lista:focus-visible{outline:2px solid var(--c-primary);outline-offset:2px}
