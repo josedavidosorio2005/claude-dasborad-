@@ -2445,3 +2445,14 @@ div.ca-bar-fila{cursor:default}
 .cl-tam{display:inline-flex;align-items:center;gap:6px}
 .cl-tam select{min-height:44px;padding:4px 8px;border:1px solid var(--c-border-control);border-radius:var(--r-sm);background:var(--c-surface);color:var(--c-text);font:inherit}
 @media (max-width:600px){.cl-pie{justify-content:center}.cl-rango{flex:1 1 100%;text-align:center}}
+
+/* Fase 348 (C3): la columna de acciones (Editar, Cambiar fecha, Eliminar, Calificar) queda fija a la
+   derecha de la tabla: se ve sin depender del scroll horizontal (con mouse no se veia en ORLANT). */
+.aurora-rank-table th.cl-acc,.aurora-rank-table td.cl-acc{position:sticky;right:0;z-index:var(--z-sticky-col);border-left:1px solid var(--c-border)}
+.aurora-rank-table th.cl-acc{background:var(--c-brand)}
+.aurora-rank-table td.cl-acc{background:var(--c-surface)}
+.aurora-rank-table tr:nth-child(even) td.cl-acc{background:var(--c-surface-subtle)}
+.cl-acc-btns{display:flex;flex-wrap:nowrap;gap:4px;justify-content:flex-start}
+@media (max-width:768px){.cl-acc-btns{flex-direction:column;align-items:stretch}.cl-acc-btns .btn-sm{min-height:36px}}
+/* Fase 348: el buscador de las listas, con ancho para leer su ayuda completa («…o teléfono»). */
+.cl-buscar input{width:340px;max-width:100%}

@@ -87,7 +87,7 @@ function _cenPintarLista() {
     // Fase 348 (C1): de a 10 (o 20) filas; Pendientes y Resueltas llevan cada una su pagina.
     var corte = clCortar(idLista, filasVis);
     html += '<div class="cen-tabla-wrap"><table class="aurora-rank-table cen-tabla"><thead><tr><th>Fecha</th><th>Hora</th><th>ID de la llamada</th>' + (d.verTelefono ? '<th>Teléfono</th>' : '') + '<th>Agente</th><th>Preguntas mal calificadas</th>' +
-      (_cen.estado === 'resueltas' ? '<th>Nota</th><th>Observación</th><th>Evaluador</th>' : '<th><span class="sr-only">Acción</span></th>') + '</tr></thead><tbody>' +
+      (_cen.estado === 'resueltas' ? '<th>Nota</th><th>Observación</th><th>Evaluador</th>' : '<th class="cl-acc"><span class="sr-only">Acción</span></th>') + '</tr></thead><tbody>' +
       corte.filas.map(function (f) { return _cenFilaHtml(f, d.puedeCalificar, !!d.verTelefono); }).join('') + '</tbody></table></div>' +
       clPieHtml(idLista, corte.pg);
   }
@@ -144,7 +144,7 @@ function _cenFilaHtml(f, puedeCalificar, verTel) {
   var accion = e.tipo === 'calificar'
     ? '<button type="button" class="btn-primary btn-sm cen-abrir" data-conn="' + _cenEsc(f.connId) + '">' + _cenEsc(e.texto) + '</button>'
     : '<span class="cen-estado cen-estado-' + e.tipo + '">' + _cenEsc(e.texto) + '</span>';
-  return '<tr>' + celdas + '<td>' + accion + '</td></tr>';
+  return '<tr>' + celdas + '<td class="cl-acc">' + accion + '</td></tr>'; // Fase 348 (C3): siempre a la vista
 }
 
 // Copiar y abrir por delegacion (sin onclick con el ID dentro del HTML).

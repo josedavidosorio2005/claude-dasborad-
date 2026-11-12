@@ -7,6 +7,16 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.182.1 — Noviembre 2026
+
+**Fase 348 (C3): los botones de cada monitoreo siempre a la vista.**
+
+- En Monitoreos, la columna con Editar, Cambiar fecha y Eliminar queda fija a la derecha de la
+  tabla. Ya no hay que correr la tabla hacia el lado para encontrarla (con el mouse no se veía en ORLANT).
+- Lo mismo con el botón Calificar en Calidad de encuestas › Pendientes.
+- En celulares y tabletas los botones van uno debajo del otro, para que la columna ocupe poco.
+- El buscador es más ancho, para que se lea completa su ayuda.
+
 ## v1.182.0 — Noviembre 2026
 
 **Fase 348 (C2): buscador en las listas de Calidad.**
