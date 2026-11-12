@@ -442,7 +442,7 @@ function renderCalMonitoreosTable(){
   clPonerBuscador(document.getElementById('cal-monitoreos-buscar'), 'mon', conTelBusca);
   var totalSinBuscar = arr.length;
   arr = clBuscar('mon', arr, clCamposMonitoreo, conTelBusca);
-  var html = '<tr><th>Asesor</th><th>Fecha</th><th>Canal</th><th>ID/Llamada</th>'+(verTel?'<th>Teléfono</th>':'')+'<th>Codificacion</th><th>Evaluador</th><th>Puntaje</th><th>Clasificacion</th><th>Fallos</th><th>Nivel Critico</th>'+(conAcciones?'<th></th>':'')+'</tr>';
+  var html = '<tr><th>Asesor</th><th>Fecha</th><th>Canal</th><th>ID/Llamada</th>'+(verTel?'<th>Teléfono</th>':'')+'<th>Codificacion</th><th>Evaluador</th><th>Puntaje</th><th>Clasificacion</th><th>Fallos</th><th>Nivel Critico</th>'+(conAcciones?'<th class="cl-acc"><span class="sr-only">Acciones</span></th>':'')+'</tr>'; // Fase 348 (C3): columna fija a la derecha
   // Fase 348 (C1): 10 filas por pagina (o 20); los KPIs siguen contando todas.
   var corte = clCortar('mon', arr);
   if(arr.length===0){
@@ -452,10 +452,10 @@ function renderCalMonitoreosTable(){
       var canalLbl = calEstadoHtml(m.canal==='WPP' ? '💬 WPP' : '📞 Llamada');
       html += '<tr><td>'+esc(textoFormatoNombre(m.asesor))+(m.origen==='encuesta'?' <span class="cen-marca" title="Monitoreo originado en una encuesta mal calificada">Encuesta</span>':'')+'</td><td>'+(typeof ceFechaConLlamadaHtml==='function'?ceFechaConLlamadaHtml(m,esc):esc(m.fecha||'-'))+'</td><td>'+canalLbl+'</td><td>'+esc(m.idLlamada||'-')+'</td>'+(verTel?'<td>'+esc(m.telefono||'—')+'</td>':'')+'<td>'+esc(m.codificacion||'-')+'</td><td>'+esc(m.evaluador||'-')+'</td>'+
         '<td class="peak">'+m.puntaje+'</td><td>'+calEstadoHtml(m.clasificacion)+'</td><td>'+m.fallos+'</td><td>'+calEstadoHtml(m.nivelCritico)+'</td>'+
-        (conAcciones?('<td class="cal-acciones">'+
+        (conAcciones?('<td class="cal-acciones cl-acc"><div class="cl-acc-btns">'+
           ((canManage || (puedeAlguno && cc2PuedeEditar(m)))?'<button class="btn-sm btn-edit" onclick="editarMonitoreo('+m.id+')">Editar</button> ':'')+
           (calPuedeCambiarFecha(m)?'<button class="btn-sm" onclick="calCambiarFecha('+m.id+')">Cambiar fecha</button> ':'')+
-          (canManage?'<button class="btn-sm btn-delete" onclick="calMonitoreosDelete('+m.id+')">Eliminar</button>':'')+'</td>'):'')+'</tr>';
+          (canManage?'<button class="btn-sm btn-delete" onclick="calMonitoreosDelete('+m.id+')">Eliminar</button>':'')+'</div></td>'):'')+'</tr>';
     });
   }
   document.getElementById('cal-monitoreos-table').innerHTML = html;
