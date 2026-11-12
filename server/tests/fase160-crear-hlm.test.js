@@ -100,7 +100,8 @@ test('una base nueva termina todas las migraciones con HLM, creada despues de la
     'fase331_encuesta_monitoreo_v1', // Fase 331: tablas y columna nuevas de Calidad de encuestas (solo siembra reglas de MOBILIZE)
     'fase331_encuestas_hora_v1', // Fase 331 (PR 2): columna hora en encuestas (ADD COLUMN, sin tocar filas)
     'fase344_encuestas_telefono_v1', // Fase 344: columna telefono (ANI) en encuestas (ADD COLUMN, sin tocar filas)
-    'fase332_orlant_calidad_solo_nueva_v1']; // Fase 332: los 3 paneles viejos de Calidad de ORLANT ocultos (no toca Aurora/HLM)
+    'fase332_orlant_calidad_solo_nueva_v1', // Fase 332: los 3 paneles viejos de Calidad de ORLANT ocultos (no toca Aurora/HLM)
+    'faseW1_replica_mobilize_api_v1']; // Fase W1: replica interna de Mobilize (fila nueva; no toca Aurora/HLM)
   assert.deepEqual(orden.slice(iHlm + 1).filter((n) => !POSTERIORES.includes(n)), [], 'ninguna migracion vieja corre despues de crear HLM');
   const r = reg.leerRegistro(db).find((c) => c.nombre === HLM);
   assert.ok(r, 'HLM en el registro de clientes');
@@ -135,10 +136,10 @@ test('ORLANT, MOBILIZE y Aurora no cambian', () => {
     assert.equal(JSON.stringify(cfgDe(c)), JSON.stringify(generarLayout(PERFILES_ACTUALES[c])), c);
   }
   assert.deepEqual(cfgDe(AURORA), auroraEsperada()); // Fase 220
-  const r = reg.leerRegistro(db).filter((c) => c.nombre !== HLM && c.nombre !== AURORA && c.nombre !== 'SURA'); // Fase 215
+  const r = reg.leerRegistro(db).filter((c) => c.nombre !== HLM && c.nombre !== AURORA && c.nombre !== 'SURA' && c.nombre !== 'MOBILIZE PRUEBAS API'); // Fase W1: la replica en faseW1-replica-interna // Fase 215
   assert.deepEqual(r.map((c) => ({ nombre: c.nombre, modulos: c.modulos, parametros: c.parametros, logo: c.logo })),
     reg.REGISTRO_INICIAL.map((c) => ({ nombre: c.nombre, modulos: c.modulos, parametros: c.parametros, logo: c.logo })));
-  assert.deepEqual(reg.listaClientes(db), ['ORLANT', 'MOBILIZE', AURORA, HLM, 'SURA']); // Fase 215: SURA despues de HLM
+  assert.deepEqual(reg.listaClientes(db), ['ORLANT', 'MOBILIZE', AURORA, HLM, 'SURA', 'MOBILIZE PRUEBAS API']); // Fase W1: replica al final // Fase 215: SURA despues de HLM
 });
 
 test('sin usuarios ni permisos nuevos', () => {

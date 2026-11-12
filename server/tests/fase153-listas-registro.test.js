@@ -45,7 +45,8 @@ test('las listas derivadas del registro son IDENTICAS a las fijas de antes', () 
   assert.deepEqual(JSON.parse(JSON.stringify(derivarListasRegistro(REGISTRO_CLIENTES))), ANTES);
   // Y con el registro real de la base (lo que recibe el navegador).
   // Fase 160: en la base tambien estan Aurora y HLM (Flujo de WhatsApp, sin el resto de ORLANT).
-  const conBase = JSON.parse(JSON.stringify(derivarListasRegistro(reg.registroParaNavegador(db))));
+  // Fase W1: la replica interna (solo admin) se prueba en faseW1-replica-interna; aqui, lo de siempre.
+  const conBase = JSON.parse(JSON.stringify(derivarListasRegistro(reg.registroParaNavegador(db).filter((c) => !c.parametros.interno))));
   assert.deepEqual(conBase.traficoWhatsapp, ['ORLANT', 'CLINICA AURORA', 'HOSPITAL LA MARIA']);
   // Fase 220: Aurora tambien carga el CDR de Tipificacion (llamadas y WhatsApp).
   // Fase 229: HLM tambien (CDR de Tipificacion y WhatsApp por rangos).
@@ -69,7 +70,7 @@ test('GET /api/dashboard/clientes trae el registro (modulos, parametros, logo)',
   const t = await tokenFor('admin', MASTER_PASSWORD);
   const r = await request(app).get('/api/dashboard/clientes').set({ Authorization: 'Bearer ' + t });
   assert.equal(r.status, 200);
-  assert.deepEqual(r.body.registro.map((c) => c.nombre), ['ORLANT', 'MOBILIZE', 'CLINICA AURORA', 'HOSPITAL LA MARIA', 'SURA']); // Fase 153 (P3) + Fase 160 + Fase 215
+  assert.deepEqual(r.body.registro.map((c) => c.nombre), ['ORLANT', 'MOBILIZE', 'CLINICA AURORA', 'HOSPITAL LA MARIA', 'SURA', 'MOBILIZE PRUEBAS API']); // Fase 153 (P3) + Fase 160 + Fase 215 + Fase W1 (solo admin)
   r.body.registro.forEach((c) => assert.deepEqual(Object.keys(c).sort(), ['logo', 'modulos', 'nombre', 'parametros']));
 });
 

@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.176.0` (ver `server/package.json`, expuesta en
+- **Versión**: `1.177.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -521,6 +521,7 @@ mismo orden):
 - Fase 342 — Calidad: la plantilla principal de cada campaña queda habilitada sola para quien la supervisa o la califica, aunque tenga otras marcadas (v1.175.0, 2026-11-11)
 - Fase 343 — Calidad: vuelve el teléfono a «Calificar» (al lado del ID) y se guarda; solo lo ven quienes califican, nunca el cliente ni el asesor (v1.175.1, 2026-11-11)
 - Fase 344 — Mobilize: el teléfono (ANI) de la Encuesta se guarda y sale en «Calidad de encuestas» solo a quienes califican; recarga segura (v1.176.0, 2026-11-12)
+- Fase W1 — réplica oculta «MOBILIZE PRUEBAS API» (solo el administrador, sin API); se mezcla solo con el OK del usuario (v1.177.0)
 - Fase 309 — Revisión de seguridad: el cliente ya no recibe el nombre de los líderes en `GET /metas`; resto en `docs/revision-seguridad-2026-11-09.md` (v1.154.1, 2026-11-10)
 - Fase 308 — Revisión antes de la reunión con clientes y pendientes del supervisor (solo docs, 2026-11-10)
 - Fase 307 — Calidad para que los líderes evalúen: ORLANT conserva su Calidad y suma «Resultado de los monitoreos» al final; Aurora ya lo tenía (se muestra con el primer monitoreo) (v1.154.0, 2026-11-10)

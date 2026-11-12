@@ -213,7 +213,7 @@ function syncSupervisa(rol, user){
   if(cd) cd.style.display=esSup?'none':'';
   if(!esSup) return;
   var marcados=user ? supervisorClientesIniciales(user.rol, user.perms, CLIENTES_LIST) : [];
-  document.getElementById('mu-supervisa-grid').innerHTML=CLIENTES_LIST.map(function(c){
+  document.getElementById('mu-supervisa-grid').innerHTML=clientesAsignables(CLIENTES_LIST).map(function(c){ // Fase W1: sin internas
     return '<label class="client-perm-item"><input type="checkbox" data-supervisa="'+esc(c)+'" '+(marcados.indexOf(c)!==-1?'checked':'')+'>'+esc(c)+'</label>';
   }).join('');
 }
@@ -248,7 +248,7 @@ function buildAsesorCampanaSelect(existingCampana){
 
 function buildClientCheckboxes(existingPerms){
   var grid=document.getElementById('mu-client-perm-grid');
-  grid.innerHTML=CLIENTES_LIST.map(function(c){
+  grid.innerHTML=clientesAsignables(CLIENTES_LIST).map(function(c){ // Fase W1: sin internas
     // Fase 222: usuario nuevo o cambio de rol -> nada marcado (antes todo).
     var checked=existingPerms?existingPerms['cliente_'+c]===true:false;
     return '<label class="client-perm-item">'+

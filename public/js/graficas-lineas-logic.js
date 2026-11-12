@@ -125,7 +125,7 @@ function pestanasOrdenCliente(tabs, cliente) {
 // Fase 305: clientes cuyo tablero lleva los botones (sub-pestañas y vistas)
 // resaltados como Aurora › Agendas (claro negro/blanco, oscuro blanco/negro,
 // activo azul con ✓). Solo MOBILIZE; ORLANT se ve igual que siempre.
-var GD_CLIENTES_BOTONES_RESALTADOS = ['MOBILIZE'];
+var GD_CLIENTES_BOTONES_RESALTADOS = ['MOBILIZE', 'MOBILIZE PRUEBAS API']; // Fase W1: la replica se ve igual que Mobilize
 function gdBotonesResaltados(cliente) {
   return GD_CLIENTES_BOTONES_RESALTADOS.indexOf(_glNorm(cliente)) !== -1;
 }

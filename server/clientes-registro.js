@@ -183,6 +183,16 @@ function asesorVisibleClienteEnModulo(db, campana, modulo) {
   return !!modulo && lista.includes(modulo);
 }
 
+// Fase W1 (docs/plan-api-wolkvox.md, sec. 1.2): una campaña INTERNA (parametros.interno
+// = true, hoy solo la replica «MOBILIZE PRUEBAS API») la ve y la usa SOLO el administrador
+// completo, aunque alguien tenga el permiso marcado. Se revisa en cada funcion de acceso
+// (auth.js, clienteAccess) y en las listas. Cualquier fila (activa o no) cuenta.
+function esCampanaInterna(db, nombre) {
+  if (typeof nombre !== 'string' || !nombre) return false;
+  const r = db.prepare('SELECT parametros FROM clientes_registro WHERE nombre = ?').get(nombre);
+  return !!r && _json(r.parametros, {}).interno === true;
+}
+
 // Lo que el navegador necesita para armar sus listas por modulo
 // (public/js/registro-clientes.js): sin fechas ni orden interno.
 function registroParaNavegador(db) {
@@ -214,4 +224,5 @@ module.exports = {
   leerRegistro,
   listaClientes,
   campanasCalidad,
+  esCampanaInterna, // Fase W1
 };

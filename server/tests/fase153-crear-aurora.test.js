@@ -97,7 +97,8 @@ test('una base nueva termina todas las migraciones con Aurora, creada despues de
     'fase331_encuesta_monitoreo_v1', // Fase 331: tablas y columna nuevas de Calidad de encuestas (solo siembra reglas de MOBILIZE)
     'fase331_encuestas_hora_v1', // Fase 331 (PR 2): columna hora en encuestas (ADD COLUMN, sin tocar filas)
     'fase344_encuestas_telefono_v1', // Fase 344: columna telefono (ANI) en encuestas (ADD COLUMN, sin tocar filas)
-    'fase332_orlant_calidad_solo_nueva_v1']; // Fase 332: los 3 paneles viejos de Calidad de ORLANT ocultos (no toca Aurora/HLM)
+    'fase332_orlant_calidad_solo_nueva_v1', // Fase 332: los 3 paneles viejos de Calidad de ORLANT ocultos (no toca Aurora/HLM)
+    'faseW1_replica_mobilize_api_v1']; // Fase W1: replica interna de Mobilize (fila nueva; no toca Aurora/HLM)
   assert.deepEqual(orden.slice(iAur + 1).filter((n) => !POSTERIORES.includes(n)), [], 'ninguna migracion vieja corre despues de crear Aurora');
   assert.ok(fila(), 'Aurora sigue ahi al final');
   const r = reg.leerRegistro(db).find((c) => c.nombre === AURORA);
@@ -143,7 +144,7 @@ test('sin plantilla de Calidad (no se inventan items) y sin usuarios ni permisos
 
 test('ORLANT y MOBILIZE no cambian: registro igual a la semilla y dashboards iguales a la foto', () => {
   // Fase 160: HLM se prueba en fase160-crear-hlm.test.js.
-  const r = reg.leerRegistro(db).filter((c) => c.nombre !== AURORA && c.nombre !== 'HOSPITAL LA MARIA' && c.nombre !== 'SURA'); // Fase 215: SURA en fase215-sura-televentas
+  const r = reg.leerRegistro(db).filter((c) => c.nombre !== AURORA && c.nombre !== 'HOSPITAL LA MARIA' && c.nombre !== 'SURA' && c.nombre !== 'MOBILIZE PRUEBAS API'); // Fase W1: la replica en faseW1-replica-interna // Fase 215: SURA en fase215-sura-televentas
   assert.deepEqual(r.map((c) => ({ nombre: c.nombre, modulos: c.modulos, parametros: c.parametros, logo: c.logo })),
     reg.REGISTRO_INICIAL.map((c) => ({ nombre: c.nombre, modulos: c.modulos, parametros: c.parametros, logo: c.logo })));
   for (const c of ['ORLANT', 'MOBILIZE']) {
@@ -152,7 +153,7 @@ test('ORLANT y MOBILIZE no cambian: registro igual a la semilla y dashboards igu
     assert.equal(JSON.stringify(actual), JSON.stringify(generarLayout(PERFILES_ACTUALES[c])), c);
   }
   // Aurora va despues de los dos en las listas.
-  assert.deepEqual(reg.listaClientes(db).slice(0, 3), ['ORLANT', 'MOBILIZE', AURORA]);
+  assert.deepEqual(reg.listaClientes(db).slice(0, 3), ['ORLANT', 'MOBILIZE', AURORA]); // (la replica interna de la Fase W1 va al final)
 });
 
 test('idempotente: correrla otra vez no duplica ni pisa un cambio del admin', () => {

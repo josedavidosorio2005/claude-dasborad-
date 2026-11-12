@@ -10,7 +10,7 @@
 const express = require('express');
 const db = require('../db');
 const calc = require('../calidad-logic');
-const { requireActor, isFullAdmin, campaignAccess, canEvaluateCampaign, canManageMonitoreos, canUsePlantilla, canLoadCampaign, puedeCargarAlgunaCampana, canVerCalidadEncuestas, puedeVerTelefono } = require('../auth');
+const { requireActor, isFullAdmin, campaignAccess, canEvaluateCampaign, canManageMonitoreos, canUsePlantilla, canLoadCampaign, puedeCargarAlgunaCampana, canVerCalidadEncuestas, puedeVerTelefono, esCampanaInterna } = require('../auth');
 const encMon = require('../encuesta-monitoreo'); // Fase 331
 const { validate, schemas } = require('../validation');
 const { cargarNivelServicioDiario } = require('../nivel-servicio-diario');
@@ -131,6 +131,7 @@ const familiaDe = (row) => row.familiaId || row.id;
 // diccionario de "Mis resultados"); el resto, segun su acceso de siempre.
 function puedeVerPlantillasDe(actor, campana) {
   if (campaignAccess(actor, campana)) return true;
+  if (esCampanaInterna(campana)) return false; // Fase W1
   return !!actor && actor.rol === 'ASESOR' && !!actor.asesorCampana && actor.asesorCampana === campana;
 }
 

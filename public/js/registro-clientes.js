@@ -84,6 +84,17 @@ function aplicarRegistroClientes(registro) {
   LISTAS_REGISTRO = derivarListasRegistro(registro);
 }
 
+// Fase W1: una campaña interna (parametros.interno, la replica de pruebas de la API) la ve
+// solo el administrador completo; nunca sale como casilla de acceso de un usuario (el
+// servidor la rechaza igual, 400).
+function esClienteInterno(nombre, registro) {
+  var r = (registro || REGISTRO_CLIENTES || []).filter(function (c) { return c && c.nombre === nombre; })[0];
+  return !!(r && r.parametros && r.parametros.interno === true);
+}
+function clientesAsignables(lista, registro) {
+  return (lista || []).filter(function (c) { return !esClienteInterno(c, registro); });
+}
+
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { REGISTRO_CLIENTES: REGISTRO_CLIENTES, derivarListasRegistro: derivarListasRegistro };
+  module.exports = { REGISTRO_CLIENTES: REGISTRO_CLIENTES, derivarListasRegistro: derivarListasRegistro, esClienteInterno: esClienteInterno, clientesAsignables: clientesAsignables };
 }
