@@ -93,8 +93,7 @@ test('editar y borrar con registro de quien lo hizo; sin datos de pacientes', as
   const c = await request(app).post('/api/calidad/errores').set(H(sup)).send({ campana: AURORA, mes: '2026-10', asesor: 'Asesora Uno', cantidad: 2, observacion: 'Dos citas sin confirmar.' });
   const e = await request(app).put('/api/calidad/errores/' + c.body.id).set(H(sup)).send({ cantidad: 3 });
   assert.equal(e.status, 200); assert.equal(e.body.cantidad, 3); assert.equal(e.body.editadoPorNombre, 'Cuenta Sintética');
-  const malo = await request(app).post('/api/calidad/errores').set(H(sup)).send({ campana: AURORA, mes: '2026-10', asesor: 'Asesora Uno', observacion: 'Paciente con documento 1036 555 777' });
-  assert.equal(malo.status, 400); assert.match(malo.body.error, /datos de pacientes/);
+  // Fase 347: la observacion ya puede traer un documento (fase347-errores-observacion-documentos); el plan de accion no.
   assert.equal((await request(app).put('/api/calidad/errores/plan').set(H(sup)).send({ campana: AURORA, mes: '2026-10', texto: 'Llamar al 3001234567' })).status, 400);
   assert.equal((await request(app).delete('/api/calidad/errores/' + c.body.id).set(H(sup))).status, 200);
   const hist = db.prepare("SELECT accion, detalle FROM historial WHERE accion LIKE 'ERROR_AGENDAMIENTO_%' ORDER BY id DESC LIMIT 3").all();

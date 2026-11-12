@@ -4,7 +4,7 @@
 // base: los registra el supervisor (o el administrador) en la plataforma, por mes y
 // por asesora, con su observacion; cada mes lleva su «Plan de acción». Ningun
 // dato de paciente: solo mes, asesora, cantidad y observacion (que se revisa para
-// no guardar documentos ni telefonos). Quien crea, edita o borra queda registrado.
+// no guardar documentos ni telefonos; desde la Fase 347 solo el plan de accion). Quien crea, edita o borra queda registrado.
 'use strict';
 
 const { cargarAliasMapa, resolverAlias, aliasNorm } = require('./alias-asesores');
@@ -110,7 +110,8 @@ function validar(db, campana, b, parcial) {
   if (!parcial || b.observacion !== undefined) {
     const o = String(b.observacion || '').trim();
     if (o.length > OBS_MAX) return { error: 'La observación puede tener hasta ' + OBS_MAX + ' caracteres' };
-    if (pareceDatoPaciente(o)) return { error: mensajeDatoPaciente('La observación', o) }; // Fase 288: dice que numero
+    // Fase 347 (pedido del usuario, 12/11): la observacion de un error SI puede traer cedulas o
+    // numeros de documento (antes se rechazaba, Fases 284/287/288). El plan de accion sigue revisado.
     out.observacion = o;
   }
   return { datos: out };

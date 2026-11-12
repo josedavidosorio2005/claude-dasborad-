@@ -207,7 +207,7 @@ function _errPintarEditor(mensaje) {
         '<label class="ca-filtro">Cantidad <input type="number" id="err-f-cant" min="1" max="500" step="1" value="' + esc(String(bo.cantidad || '1')) + '" inputmode="numeric"></label>' +
       '</div>' +
       '<p class="cpl-ayuda">Cantidad 1 = un error individual. Para varios errores iguales, pon la cantidad y una sola observación.</p>' +
-      '<label class="ca-filtro err-obs-campo">Observación <textarea id="err-f-obs" maxlength="1000" rows="3" placeholder="Qué pasó (sin nombres, documentos ni teléfonos de pacientes)">' + esc(bo.observacion || '') + '</textarea></label>' +
+      '<label class="ca-filtro err-obs-campo">Observación <textarea id="err-f-obs" maxlength="1000" rows="3" placeholder="Qué pasó">' + esc(bo.observacion || '') + '</textarea></label>' +
       '<label class="ca-filtro err-obs-campo err-plan-lbl">Plan de acción de ' + mesLbl + ' <textarea id="err-f-plan" class="err-plan-campo" maxlength="4000" rows="4" placeholder="Qué se va a hacer este mes para corregir los errores">' + esc(plan) + '</textarea></label>' +
       '<p class="cpl-ayuda">«Guardar» guarda juntos el error y el plan de acción. Para guardar solo el plan, deja la asesora sin elegir.</p>' +
       '<div class="modal-btns" style="justify-content:flex-start">' +

@@ -20816,3 +20816,14 @@ Reunión con Edwin del 12/11, opción a (decisión del usuario): un monitoreo de
 - **Servidor**: `encuesta-monitoreo.fechasLlamada(db, campana, connIds)` devuelve `{ connId: fecha }` (la primera fecha de la encuesta enlazada, en lotes de 400, solo lectura). `conFechaLlamada()` en `routes/calidad.js` agrega `fechaLlamada` a los monitoreos con `encuestaConnId` en `GET /monitoreos` y en la lista propia del asesor, con una consulta por campaña. No hay columna nueva ni migración: ningún dato guardado cambia.
 - **Interfaz**: `ceFechaConLlamadaHtml()` (`calidad-equipo-logic.js`) pinta la fecha y la pastilla `.ce-llamada` «Llamada del DD/MM» (colores del botón suave de la paleta). La usan dashboard › Detalle por mes y Resumen por asesor (`calidad-panel.js`), módulo › Monitoreos y supervisión del líder (`calidad.js`) y Resueltas (`calidad-encuestas.js`, donde la fecha pasa a ser la del monitoreo).
 - Pruebas: `fase346-fecha-llamada-encuesta` (4), datos sintéticos.
+
+- **Verificación en producción (v1.180.0, solo lectura, Brave con sesión de administrador, cualquier petición que no fuera GET bloqueada):** ORLANT sigue en 153 monitoreos y promedio 95.52. Mobilize tiene 2 monitoreos de encuesta y los 2 traen `fechaLlamada`; ningún monitoreo normal la trae (Aurora, HLM y SURA tienen 0 de encuesta). La pastilla sale en dashboard › Detalle por mes y Resumen por asesor y en módulo › Monitoreos y Resueltas (una por fila, 2/2). Revisado en 375/768/1440, claro y oscuro: sin scroll horizontal, sin errores de consola, 0 escrituras.
+
+
+## Fase 347 — Aurora › Errores (punto B de la reunión del 12/11)
+
+### Parte 1: la observación acepta documentos (v1.180.1, 2026-11-12)
+
+- Pedido del usuario: quitar el bloqueo que impedía guardar un error cuando la observación trae cédulas o números de documento. `errores.validar()` ya no pasa la observación por `pareceDatoPaciente` (crear, editar y «Guardar»). Como la regla no distingue una cédula de un teléfono, también pasan los teléfonos. El plan de acción del mes y las observaciones de monitoreos (`routes/calidad.js`) siguen revisados. Se quitó del formulario el texto «sin nombres, documentos ni teléfonos de pacientes».
+- Pruebas: `fase347-errores-observacion-documentos` (3). Se ajustaron `fase284`, `fase286` y `fase288`, que esperaban el rechazo.
+- Diagnóstico de la parte 2 (solo lectura en producción): la lista de «Agregar errores» de Aurora tiene 9 nombres. 4 son usuarios ASESOR cuyo nombre se guardó con «tabulación + código» al final (uno, además, con una letra cambiada en el apellido), 4 son los mismos nombres limpios de «Usuarios del sistema» (con los errores guardados) y 1 solo tiene alias. ORLANT (19) y Mobilize (3), que usan solo los usuarios ASESOR, no tienen duplicados.
