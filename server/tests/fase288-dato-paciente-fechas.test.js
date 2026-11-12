@@ -24,13 +24,11 @@ test('el mensaje dice el campo y el numero rechazado', () => {
   assert.match(m, /datos de pacientes/);
 });
 
-test('Errores y monitoreos: la fecha con guiones se guarda; el documento se rechaza con el numero en el mensaje', async () => {
+test('Errores y monitoreos: la fecha con guiones se guarda; en monitoreos el documento se rechaza con el numero en el mensaje', async () => {
   const admin = await tokenFor('admin', MASTER_PASSWORD);
   const ok = await request(app).post('/api/calidad/errores').set(H(admin)).send({ campana: 'CLINICA AURORA', mes: '2026-10', asesor: 'Asesora Inventada', observacion: 'Cita del 15-10-2026 en la sede equivocada' });
   assert.equal(ok.status, 201, JSON.stringify(ok.body));
-  const malo = await request(app).post('/api/calidad/errores').set(H(admin)).send({ campana: 'CLINICA AURORA', mes: '2026-10', asesor: 'Asesora Inventada', observacion: 'Paciente 1036 555 777' });
-  assert.equal(malo.status, 400);
-  assert.match(malo.body.error, /«1036 555 777»/);
+  // Fase 347: en Errores la observacion con documento ya se guarda (ver fase347-errores-observacion-documentos).
   const answers = Object.fromEntries(Array.from({ length: 17 }, (_, i) => [String(i + 1), 'SI']));
   const base = { campana: 'ORLANT', asesor: 'Asesor Inventado', fecha: '2026-10-15', answers };
   assert.equal((await request(app).post('/api/monitoreos').set(H(admin)).send({ ...base, observaciones: 'Llamada del 2026-10-15 10:30, bien.' })).status, 201);

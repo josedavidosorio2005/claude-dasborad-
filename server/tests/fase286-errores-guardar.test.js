@@ -56,8 +56,6 @@ test('o los dos o ninguno: si el plan trae un dato de paciente, el error tampoco
   const r = await guardar(admin, { campana: AURORA, mes: '2026-05', error: { asesor: 'Asesora Inventada C', cantidad: 1, observacion: 'Bien.' }, plan: 'Llamar al 3001234567' });
   assert.equal(r.status, 400); assert.match(r.body.error, /datos de pacientes/);
   assert.equal(cuentaFilas('2026-05'), antes, 'el error no quedo guardado');
-  const r2 = await guardar(admin, { campana: AURORA, mes: '2026-05', error: { asesor: 'Asesora Inventada C', observacion: 'Documento 1036 555 777' }, plan: 'Plan inventado.' });
-  assert.equal(r2.status, 400);
   assert.ok(!(await resumen(admin)).planes['2026-05'], 'el plan no quedo guardado');
 });
 

@@ -7,6 +7,14 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.180.1 — Noviembre 2026
+
+**Fase 347 (parte 1): Errores de Aurora, la observación ya acepta documentos.**
+
+- En «Agregar errores», la observación se puede guardar aunque traiga cédulas o números de
+  documento (antes salía un aviso y no dejaba guardar).
+- El plan de acción del mes y las observaciones de los monitoreos de Calidad siguen igual que antes.
+
 ## v1.180.0 — Noviembre 2026
 
 **Fase 346: la fecha de la llamada en los monitoreos de Calidad de encuestas.**
