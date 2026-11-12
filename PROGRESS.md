@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.180.3` (ver `server/package.json`, expuesta en
+- **Versión**: `1.185.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -528,6 +528,14 @@ mismo orden):
 - Fase 347 — Aurora › Errores: la observación de un error ya acepta cédulas y números de documento (el plan de acción sigue revisado) (v1.180.1, 2026-11-12)
 - Fase 347 (parte 2) — Aurora › Errores: «Agregar errores» muestra una sola vez a cada asesora (el código pegado al final del nombre del usuario ya no la duplica) (v1.180.2, 2026-11-12)
 - Fase 347 (parte 3) — Aurora › Errores: borrar un error queda solo para el administrador y Reportes (el supervisor registra y edita; Reportes ve «Errores del mes» con Borrar) (v1.180.3, 2026-11-12)
+- Fase 348 (C1) — listas del Módulo de Calidad (Monitoreos, Detalle por mes, Calidad de encuestas) de a 10 filas, con opción de 20 y paginación (v1.181.0, 2026-11-12)
+- Fase 348 (C2) — buscador en esas listas por ID, asesor, fecha y teléfono (el teléfono solo para quien califica; el servidor nunca lo manda a los demás) (v1.182.0, 2026-11-12)
+- Fase 348 (C3) — la columna de acciones (Editar, Cambiar fecha, Eliminar, Calificar) siempre a la vista, fija a la derecha (v1.182.1, 2026-11-12)
+- Fase 348 (C4) — al cambiar de campaña en Calidad, página, búsqueda, filtros y scroll vuelven al inicio (el mes se queda) (v1.182.2, 2026-11-12)
+- Fase 348 (C5) — listas de Calidad en pantalla completa (Esc sale sin cerrar el módulo) (v1.183.0, 2026-11-12)
+- Fase 348 (D) — ventana de Calidad del dashboard con X arriba a la derecha, clic afuera y Esc (v1.183.1, 2026-11-12)
+- Fase 348 (F) — Televentas SURA: «Quitar todos / Agregar todos» en Mes y Resultado de validación, desde afuera (v1.184.0, 2026-11-12)
+- Fase 348 (E) — tema claro: tarjetas, KPIs y gráficas con sombra suave y aro (el oscuro y la paleta sin cambio) (v1.185.0, 2026-11-12)
 - Fase 309 — Revisión de seguridad: el cliente ya no recibe el nombre de los líderes en `GET /metas`; resto en `docs/revision-seguridad-2026-11-09.md` (v1.154.1, 2026-11-10)
 - Fase 308 — Revisión antes de la reunión con clientes y pendientes del supervisor (solo docs, 2026-11-10)
 - Fase 307 — Calidad para que los líderes evalúen: ORLANT conserva su Calidad y suma «Resultado de los monitoreos» al final; Aurora ya lo tenía (se muestra con el primer monitoreo) (v1.154.0, 2026-11-10)
