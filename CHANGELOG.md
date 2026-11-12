@@ -7,6 +7,15 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.181.0 — Noviembre 2026
+
+**Fase 348 (C1): las listas de Calidad, de a 10 filas.**
+
+- En el Módulo de Calidad, las listas de Monitoreos, Detalle por mes y Calidad de encuestas
+  (Pendientes y Resueltas) muestran 10 filas por página. Se puede elegir 20 en «Filas por página».
+- Abajo de cada lista se ve cuántas hay (por ejemplo «11–20 de 53») y los botones para pasar de página.
+- Los totales y promedios de arriba siguen contando todos los monitoreos, no solo los de la página.
+
 ## v1.180.3 — Noviembre 2026
 
 **Fase 347 (parte 3): Errores de Aurora, borrar solo el administrador y Reportes.**
