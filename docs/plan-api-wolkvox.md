@@ -1,8 +1,9 @@
 # Plan — integración con la API de Wolkvox (Fase 330, 10/11/2026)
 
-**Estado:** W0 (este plan) hecho. **W1** (réplica oculta, sin API) hecha en su PR, esperando el OK del
-usuario para crear la réplica en producción (la crea una migración al desplegar). Todavía no se
-llamó a la API.
+**Estado:** W0 (este plan) y **W1** (réplica oculta, sin API) hechas: la réplica existe en producción
+desde la v1.177.0 (12/11/2026, con el OK del usuario). Todavía no se llamó a la API. **W2** espera
+el token y el número de servidor en SSM (sección 3), la ruta y los parámetros de Postman sin token,
+el límite de la licencia y si Wolkvox exige lista blanca de IP.
 Este documento no tiene tokens, números de servidor, URLs reales, nombres ni datos de
 clientes (el repo es público). Donde hace falta una URL se escribe `<servidor>` y
 `<reporte>`.
