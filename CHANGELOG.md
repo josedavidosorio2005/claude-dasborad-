@@ -7,6 +7,16 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.184.0 — Noviembre 2026
+
+**Fase 348 (F): Televentas SURA, «Quitar todos / Agregar todos» en los filtros.**
+
+- En los filtros generales de Televentas, Mes y Resultado de validación tienen un botón para quitar
+  o volver a marcar todas las opciones de una vez. El tablero se actualiza igual que al marcarlas
+  una por una.
+- Si todas están marcadas dice «Quitar todos»; si falta alguna, «Agregar todos».
+- El tablero original de Televentas no se modificó: el botón se agrega desde la plataforma.
+
 ## v1.183.1 — Noviembre 2026
 
 **Fase 348 (D): la ventana de Calidad del dashboard se cierra fácil.**
