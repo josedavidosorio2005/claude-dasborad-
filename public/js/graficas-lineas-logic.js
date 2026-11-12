@@ -77,7 +77,7 @@ function variacionSentido(p) {
 // y verde. La variacion mes a mes (sube/baja) SI es un estado (mejora/empeora): sigue en verde y
 // rojo del semaforo, siempre con ▲/▼ y el signo. `paleta` opcional (pruebas); si no, PC.
 function graficasLineasColores(oscuro, paleta) {
-  var pc = (paleta && paleta.length) ? paleta : (typeof PC !== 'undefined' && PC.length ? PC : ['#0072B2', '#220F6C', '#CB4893']);
+  var pc = (paleta && paleta.length) ? paleta : (typeof PC !== 'undefined' && PC.length ? PC : ['#4f6f7d']); // sin paleta: gris neutro (la paleta vive solo en paleta.css)
   var estado = oscuro
     ? { sube: '#4ade80', baja: '#f87171', igual: '#8fb4bf' }
     : { sube: '#15803d', baja: '#c0392b', igual: '#4f6f7d' };

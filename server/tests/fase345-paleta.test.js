@@ -115,3 +115,15 @@ test('excepciones: Aurora/HLM y Lineas internas a la paleta; Agendas de Aurora c
   assert.match(PUB('js/agendas-usuaria-logic.js'), /claro: \{ total: '#0a2540', citas: '#1565c0'/, 'AU_PALETA (azul de Aurora) se respeta');
   assert.match(PUB('css/styles.css'), /--c-actualizacion:#FF8C1A/);
 });
+
+test('ningun color de la paleta escrito fuera de paleta.css (ni como respaldo)', () => {
+  const hex = [...new Set(PAL.claro.series.concat(PAL.oscuro.series, PAL.claro.texto, PAL.oscuro.texto).map((h) => h.toLowerCase()))];
+  const raiz = path.join(__dirname, '..', '..', 'public');
+  const walk = (d) => fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? (e.name === 'vendor' ? [] : walk(path.join(d, e.name))) : [path.join(d, e.name)]));
+  const fuera = [];
+  for (const f of walk(raiz).filter((x) => /.(js|css|html)$/.test(x) && !x.endsWith('paleta.css'))) {
+    const src = fs.readFileSync(f, 'utf8').toLowerCase();
+    hex.filter((h) => src.includes(h)).forEach((h) => fuera.push(path.relative(raiz, f) + ' ' + h));
+  }
+  assert.deepEqual(fuera, []);
+});
