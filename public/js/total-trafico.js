@@ -97,7 +97,7 @@ function _ttDibujarLineas(i, filas){
   var linea = function(label, data, color, orden){
     return { type: 'line', label: label, data: data, borderColor: color, backgroundColor: color, pointBackgroundColor: color,
       borderWidth: 2.5, pointRadius: 4, pointHoverRadius: 6, tension: 0.2, fill: false, order: orden,
-      datalabels: { color: color } };
+      datalabels: { color: (typeof colorTextoSerie === 'function' ? colorTextoSerie(color) : color) } }; // Fase 345: texto >= 4,5:1
   };
   var ds = [
     linea('Total (llamadas + WhatsApp ingresados)', s.total, col.total, 1),

@@ -45,7 +45,7 @@ function _abBarrasH(canvasId, etiquetas, datos, color, formato) {
   o.indexAxis = 'y';
   o.plugins.legend = { display: false };
   o.plugins.tooltip = { callbacks: { label: function (ctx) { return formato(ctx.parsed.x); } } };
-  if (o.plugins.datalabels) Object.assign(o.plugins.datalabels, { anchor: 'end', align: 'end', clamp: true, color: color, formatter: function (v) { return formato(v); } });
+  if (o.plugins.datalabels) Object.assign(o.plugins.datalabels, { anchor: 'end', align: 'end', clamp: true, color: (typeof colorTextoSerie === 'function' ? colorTextoSerie(color) : color), formatter: function (v) { return formato(v); } });
   // Pantalla angosta: trozos mas cortos y letra menor, para que el nombre completo no se recorte.
   var angosta = typeof window !== 'undefined' && window.innerWidth < 600;
   o.scales = Object.assign({}, o.scales, {

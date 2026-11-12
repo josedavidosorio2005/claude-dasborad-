@@ -58,12 +58,9 @@ const path = require('path');
 const vm = require('vm');
 const C = require('../../public/js/contraste-logic.js');
 const CHARTS = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'js', 'charts.js'), 'utf8');
-const lista = (nombre) => {
-  const ini = CHARTS.indexOf('var ' + nombre + '=[');
-  assert.ok(ini >= 0, nombre);
-  const txt = CHARTS.slice(ini + ('var ' + nombre + '=').length, CHARTS.indexOf(']', ini) + 1);
-  return JSON.parse(txt.replace(/'/g, '"'));
-};
+// Fase 345: la paleta vive en public/css/paleta.css (series 1-12 = PC, 13-20 = PC_EXTRA).
+const PAL = require('./helpers-paleta');
+const lista = (nombre) => ({ PC: PAL.claro.PC, PC_DARK: PAL.oscuro.PC, PC_EXTRA_CLARO: PAL.claro.EXTRA, PC_EXTRA_DARK: PAL.oscuro.EXTRA }[nombre]);
 
 test('PC_EXTRA: 8 colores por tema, >=3:1 contra las superficies, sin semaforo y distintos (deltaE >= 12) de PC y entre si', () => {
   const casos = [[lista('PC'), lista('PC_EXTRA_CLARO'), ['#ffffff', '#f7fbfd']], [lista('PC_DARK'), lista('PC_EXTRA_DARK'), ['#132c35', '#17343e']]];
@@ -76,8 +73,7 @@ test('PC_EXTRA: 8 colores por tema, >=3:1 contra las superficies, sin semaforo y
       todos.push(h);
     }
   }
-  assert.match(CHARTS, /PC=PC_DARK; PC_EXTRA=PC_EXTRA_DARK;/);
-  assert.match(CHARTS, /PC_EXTRA=PC_EXTRA_CLARO;\n    CHART_GRID=/);
+  assert.ok(CHARTS.includes('PC = p.series.slice(0, 12); PC_EXTRA = p.series.slice(12, 20);'), 'charts.js toma PC y PC_EXTRA de paleta.css');
 });
 
 test('tipificacionSinRepetirConExtra: los repetidos toman un color extra libre; los demas no cambian', () => {

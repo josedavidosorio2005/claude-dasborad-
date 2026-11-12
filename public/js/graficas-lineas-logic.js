@@ -72,14 +72,16 @@ function variacionSentido(p) {
   return r > 0 ? 'sube' : (r < 0 ? 'baja' : 'igual');
 }
 
-// Colores pedidos: Total azul, Llamadas naranja, WhatsApp verde (excepción
-// documentada en docs/sistema-de-diseno.md: no son semáforo aquí, son series
-// con nombre en la leyenda). Todos >= 3:1 contra el fondo de la tarjeta en
-// los 2 temas (server/tests/fase297-graficas-lineas.test.js).
-function graficasLineasColores(oscuro) {
-  return oscuro
-    ? { total: '#60a5fa', llamadas: '#fbbf24', whatsapp: '#4ade80', sube: '#4ade80', baja: '#f87171', igual: '#8fb4bf' }
-    : { total: '#1d5fa8', llamadas: '#b45309', whatsapp: '#15803d', sube: '#15803d', baja: '#c0392b', igual: '#4f6f7d' };
+// Fase 345 (paleta 3, decision del usuario 12/11): Total, Llamadas y WhatsApp son las series
+// 1, 2 y 3 de la paleta de la plataforma (paleta.css, via PC de charts.js), ya no azul, naranja
+// y verde. La variacion mes a mes (sube/baja) SI es un estado (mejora/empeora): sigue en verde y
+// rojo del semaforo, siempre con ▲/▼ y el signo. `paleta` opcional (pruebas); si no, PC.
+function graficasLineasColores(oscuro, paleta) {
+  var pc = (paleta && paleta.length) ? paleta : (typeof PC !== 'undefined' && PC.length ? PC : ['#0072B2', '#220F6C', '#CB4893']);
+  var estado = oscuro
+    ? { sube: '#4ade80', baja: '#f87171', igual: '#8fb4bf' }
+    : { sube: '#15803d', baja: '#c0392b', igual: '#4f6f7d' };
+  return { total: pc[0], llamadas: pc[1] || pc[0], whatsapp: pc[2] || pc[0], sube: estado.sube, baja: estado.baja, igual: estado.igual };
 }
 
 // Orden de las pestañas de Aurora y HLM (Fase 300, corrige la 297: Total tráfico

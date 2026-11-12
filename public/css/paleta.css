@@ -1,0 +1,47 @@
+/* paleta.css — Fase 345: paleta 3 «Segura para daltonismo» (basada en Okabe-Ito, sin los
+   tonos del semaforo), elegida por el usuario el 12/11/2026 y ajustada para que pase la
+   medicion con daltonismo del proyecto (docs/sistema-de-diseno.md, «Paleta de la plataforma»).
+
+   ES EL UNICO LUGAR DE LA PALETA. Para cambiarla se toca solo este archivo:
+   - las graficas la leen en charts.js (aplicarTemaCharts -> PC, PC_EXTRA, colorSerie);
+   - styles.css usa los tokens de botones, pestanas y foco;
+   - Televentas SURA la toma por herencia de variables CSS (sura-televentas.js).
+
+   Reglas (medidas en server/tests/fase345-paleta.test.js con contraste-logic.js):
+   - series: >= 3:1 contra --c-surface / --c-surface-subtle / --c-bg de su tema (WCAG 1.4.11);
+   - las 8 primeras, deltaE CIELAB >= 12 entre si con vision normal y con protanopia,
+     deuteranopia y tritanopia simuladas; las 20, >= 12 con vision normal;
+   - 1/2/3 (principal, secundaria, linea): deltaE >= 40 entre si; 1/2 >= 30 con daltonismo;
+   - nunca verde, ambar ni rojo: esos son del semaforo (solo estados);
+   - --serie-texto-N: el tono de la serie N para TEXTO (etiquetas de datos), >= 4,5:1.
+     El rosa de grafica del tema claro (--serie-3, 4,30:1) nunca va en texto ni de fondo
+     de un boton con letra blanca: en texto se usa --serie-texto-3 (#A8377F, 5,40:1).
+   Las series 7 a 20 son variantes mas claras u oscuras de los mismos 6 tonos. */
+:root{
+  /* Series, tema claro (1 azul, 2 violeta, 3 rosa, 4 teal, 5 marron, 6 indigo; 7-20 variantes) */
+  --serie-1:#0072B2; --serie-2:#220F6C; --serie-3:#CB4893; --serie-4:#186261; --serie-5:#7A5C2E; --serie-6:#3A4688;
+  --serie-7:#3C3420; --serie-8:#7D51E1; --serie-9:#2912ED; --serie-10:#510B33; --serie-11:#AF7892; --serie-12:#24263D;
+  --serie-13:#1C0CA1; --serie-14:#3B60CE; --serie-15:#7B87A7; --serie-16:#8F144E; --serie-17:#095171; --serie-18:#121549;
+  --serie-19:#73445B; --serie-20:#98487E;
+  /* Tonos para texto de cada serie base (>= 4,5:1 contra las superficies claras) */
+  --serie-texto-1:#0072B2; --serie-texto-2:#220F6C; --serie-texto-3:#A8377F; --serie-texto-4:#186261; --serie-texto-5:#7A5C2E; --serie-texto-6:#3A4688;
+
+  /* Botones (propuesta 3). El primario es el teal de marca y no cambia con el tema. */
+  --btn-primario-bg:#004150; --btn-primario-fg:#ffffff;                                   /* 11,22:1 */
+  --btn-secundario-bg:#ffffff; --btn-secundario-fg:#0072B2; --btn-secundario-borde:#0072B2; /* 5,19:1 */
+  --btn-suave-bg:#eaf4fb; --btn-suave-fg:#00507d; --btn-suave-borde:#bcdcf0;               /* 7,71:1 (borde decorativo) */
+  /* Acento de la interfaz: pestana activa, foco, bordes al pasar el mouse (= serie 1) */
+  --acento:#0072B2; --acento-texto:#0072B2; --acento-suave:#eaf4fb;
+}
+:root[data-theme="dark"]{
+  --serie-1:#56B4E9; --serie-2:#7D6CEF; --serie-3:#E77EB3; --serie-4:#60DCDC; --serie-5:#D9B27A; --serie-6:#6F96EB;
+  --serie-7:#F10F81; --serie-8:#E5DCC8; --serie-9:#CBC2EB; --serie-10:#519CA4; --serie-11:#B7E5F6; --serie-12:#2A7BEE;
+  --serie-13:#A48CF2; --serie-14:#BDACF6; --serie-15:#4282B8; --serie-16:#8CA3D4; --serie-17:#8EC7C2; --serie-18:#80B8D1;
+  --serie-19:#AFF8F1; --serie-20:#15A0EF;
+  --serie-texto-1:#56B4E9; --serie-texto-2:#A097F4; --serie-texto-3:#E77EB3; --serie-texto-4:#60DCDC; --serie-texto-5:#D9B27A; --serie-texto-6:#8AA8EF;
+
+  --btn-primario-bg:#004150; --btn-primario-fg:#ffffff;
+  --btn-secundario-bg:#132c35; --btn-secundario-fg:#56B4E9; --btn-secundario-borde:#56B4E9; /* 6,32:1 */
+  --btn-suave-bg:#122f42; --btn-suave-fg:#cfe9f8; --btn-suave-borde:#2c5a78;                /* 11,03:1 */
+  --acento:#56B4E9; --acento-texto:#56B4E9; --acento-suave:#122f42;
+}

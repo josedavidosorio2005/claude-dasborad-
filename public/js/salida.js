@@ -325,7 +325,7 @@ function _salDibujarLinea(canvasId, filas, canal, tituloEje, linea){
   var ds = [{ type: 'line', label: tituloEje, data: valores, borderColor: color, backgroundColor: color, pointBackgroundColor: color,
     borderWidth: 2.5, pointRadius: 4, pointHoverRadius: 6, tension: 0.2, fill: false,
     datalabels: { labels: {
-      valor: { align: 'top', anchor: 'center', offset: 4, color: color, font: { size: 12, weight: 'bold' },
+      valor: { align: 'top', anchor: 'center', offset: 4, color: (typeof colorTextoSerie === 'function' ? colorTextoSerie(color) : color), font: { size: 12, weight: 'bold' },
         formatter: function(v){ return v===null||v===undefined ? '' : gdFmtValor(v); } },
       variacion: { align: 'bottom', anchor: 'center', offset: 6, font: { size: 11, weight: 'bold' },
         backgroundColor: function(){ return CHART_DL_BG; },
