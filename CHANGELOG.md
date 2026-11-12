@@ -7,6 +7,15 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.182.2 — Noviembre 2026
+
+**Fase 348 (C4): cada campaña empieza limpia en el Módulo de Calidad.**
+
+- Al cambiar de campaña, las listas vuelven a la página 1, sin la búsqueda ni el filtro de origen de
+  la campaña anterior, y la pantalla vuelve arriba (antes se quedaba en la misma posición).
+- Calidad de encuestas vuelve a Pendientes y el Diccionario a la plantilla de la campaña.
+- El mes elegido arriba se mantiene.
+
 ## v1.182.1 — Noviembre 2026
 
 **Fase 348 (C3): los botones de cada monitoreo siempre a la vista.**

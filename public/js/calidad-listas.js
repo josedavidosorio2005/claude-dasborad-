@@ -41,6 +41,19 @@ function clSinResultadosTexto(id) {
 }
 function clRegistrar(id, pintar) { _clPintar[id] = pintar; }
 
+// Fase 348 (C4): al cambiar de campaña ninguna lista se queda con la pagina, la busqueda ni las
+// filas por pagina de la campaña anterior.
+function clReiniciarVista() {
+  Object.keys(_clEstado).forEach(function (k) { delete _clEstado[k]; });
+  if (typeof _clQTimer !== 'undefined') clearTimeout(_clQTimer);
+}
+// El scroll del modulo y el horizontal de cada tabla vuelven al inicio.
+function clReiniciarScroll(contenedor) {
+  if (!contenedor) return;
+  contenedor.scrollTop = 0;
+  Array.prototype.forEach.call(contenedor.querySelectorAll('[style*="overflow-x"], .cen-tabla-wrap'), function (w) { w.scrollLeft = 0; });
+}
+
 // Corta la lista segun el estado de esa lista. Devuelve { filas, pg }.
 function clCortar(id, lista) {
   var e = clEstado(id);

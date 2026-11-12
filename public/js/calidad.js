@@ -350,6 +350,9 @@ async function onCalMesChange(){
 async function onCalCampanaChange(){
   if(typeof cenAlSalirDelModulo==='function') cenAlSalirDelModulo(); // Fase 331
   _ccampana = document.getElementById('cal-campana-sel').value;
+  // Fase 348 (C4): la vista de la campaña anterior no se arrastra (pagina, busqueda, origen,
+  // Pendientes/Resueltas, plantilla del Diccionario y scroll). El mes elegido arriba si se queda.
+  calReiniciarVistaListas();
   await loadCalData(_ccampana, _cmesFiltro || undefined);
   populateCalMesSelect();
   renderCalItemsForm();
@@ -357,7 +360,15 @@ async function onCalCampanaChange(){
   renderCalCodifCampoForm('');
   _calActualizarTabCarga();
   switchCalTab(_ctab);
+  clReiniciarScroll(document.getElementById('calidad-modal')); // Fase 348 (C4)
   if(typeof cenActualizarTab==='function') cenActualizarTab(); // Fase 331
+}
+function calReiniciarVistaListas(){
+  clReiniciarVista();
+  var os = document.getElementById('cal-origen-sel'); if(os) os.value = '';
+  if(typeof _cen!=='undefined'){ _cen.estado = 'pendientes'; _cen.datos = null; }
+  if(typeof _ca!=='undefined') _ca.plantillaId = null;
+  clReiniciarScroll(document.getElementById('calidad-modal'));
 }
 
 // Fase 340: el formulario viejo de Calificar se retiro (un solo formulario: calidad-calificar.js).
