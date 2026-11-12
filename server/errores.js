@@ -45,18 +45,31 @@ function crearTablas(db) {
   `);
 }
 
-// Nombre real de la asesora (alias de "Usuarios del sistema").
+// Fase 347 (B1): en Aurora, usuarios ASESOR quedaron con el nombre pegado de una hoja de
+// calculo, «NOMBRE<tab>12656» (codigo al final), y salian dos veces en la lista: asi y con
+// el nombre limpio de "Usuarios del sistema". Se quita el codigo final (3 o mas cifras
+// despues de un espacio o tabulacion); un nombre sin codigo final no cambia.
+function sinCodigoFinal(nombre) {
+  const t = String(nombre || '').trim();
+  return t.replace(/\s+\d{3,}$/, '').trim() || t;
+}
+
+// Nombre real de la asesora (alias de "Usuarios del sistema"), sin codigo final.
 function nombreReal(db, campana, asesor) {
-  return resolverAlias(cargarAliasMapa(db, campana), String(asesor || '').trim()) || String(asesor || '').trim();
+  const mapa = cargarAliasMapa(db, campana);
+  const crudo = String(asesor || '').trim();
+  if (mapa[aliasNorm(crudo)] !== undefined) return mapa[aliasNorm(crudo)]; // el alias tal cual (puede ser un codigo)
+  return resolverAlias(mapa, sinCodigoFinal(crudo));
 }
 
 // Asesoras para la lista del formulario: los nombres reales de los alias de la
-// campaña, los usuarios ASESOR de la campaña y las que ya tienen errores.
+// campaña, los usuarios ASESOR de la campaña y las que ya tienen errores, una sola
+// vez cada una (Fase 347: el usuario ASESOR se junta con su nombre limpio).
 function asesorasDe(db, campana) {
   const vistos = new Map();
   const add = (n) => { const v = String(n || '').trim(); if (v && !vistos.has(aliasNorm(v))) vistos.set(aliasNorm(v), v); };
   db.prepare('SELECT DISTINCT canonico AS v FROM alias_asesores WHERE campana = ?').all(campana).forEach((r) => add(r.v));
-  db.prepare("SELECT nombre AS v FROM users WHERE rol = 'ASESOR' AND active = 1 AND asesorCampana = ?").all(campana).forEach((r) => add(r.v));
+  db.prepare("SELECT nombre AS v FROM users WHERE rol = 'ASESOR' AND active = 1 AND asesorCampana = ?").all(campana).forEach((r) => add(nombreReal(db, campana, r.v)));
   db.prepare('SELECT DISTINCT asesor AS v FROM errores_agendamiento WHERE campana = ?').all(campana).forEach((r) => add(nombreReal(db, campana, r.v)));
   return [...vistos.values()].sort((a, b) => a.localeCompare(b, 'es'));
 }
@@ -191,4 +204,4 @@ function guardarJunto(db, campana, b, actor, ahora) {
   return out;
 }
 
-module.exports = { OBS_MAX, PLAN_MAX, CANTIDAD_MAX, crearTablas, pareceDatoPaciente, nombreReal, asesorasDe, resumen, crear, editar, borrar, guardarPlan, guardarJunto };
+module.exports = { OBS_MAX, PLAN_MAX, CANTIDAD_MAX, crearTablas, pareceDatoPaciente, sinCodigoFinal, nombreReal, asesorasDe, resumen, crear, editar, borrar, guardarPlan, guardarJunto };

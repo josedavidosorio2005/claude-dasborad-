@@ -7,6 +7,14 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.180.2 — Noviembre 2026
+
+**Fase 347 (parte 2): Errores de Aurora, cada asesora una sola vez.**
+
+- En «Agregar errores», la lista de asesoras ya no repite a la misma persona (una con el código
+  al final del nombre y otra sin él). Queda una sola vez, con su nombre.
+- No se cambió ningún dato guardado.
+
 ## v1.180.1 — Noviembre 2026
 
 **Fase 347 (parte 1): Errores de Aurora, la observación ya acepta documentos.**

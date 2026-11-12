@@ -20827,3 +20827,10 @@ Reunión con Edwin del 12/11, opción a (decisión del usuario): un monitoreo de
 - Pedido del usuario: quitar el bloqueo que impedía guardar un error cuando la observación trae cédulas o números de documento. `errores.validar()` ya no pasa la observación por `pareceDatoPaciente` (crear, editar y «Guardar»). Como la regla no distingue una cédula de un teléfono, también pasan los teléfonos. El plan de acción del mes y las observaciones de monitoreos (`routes/calidad.js`) siguen revisados. Se quitó del formulario el texto «sin nombres, documentos ni teléfonos de pacientes».
 - Pruebas: `fase347-errores-observacion-documentos` (3). Se ajustaron `fase284`, `fase286` y `fase288`, que esperaban el rechazo.
 - Diagnóstico de la parte 2 (solo lectura en producción): la lista de «Agregar errores» de Aurora tiene 9 nombres. 4 son usuarios ASESOR cuyo nombre se guardó con «tabulación + código» al final (uno, además, con una letra cambiada en el apellido), 4 son los mismos nombres limpios de «Usuarios del sistema» (con los errores guardados) y 1 solo tiene alias. ORLANT (19) y Mobilize (3), que usan solo los usuarios ASESOR, no tienen duplicados.
+
+### Parte 2: una sola vez cada asesora en «Agregar errores» (v1.180.2, 2026-11-12)
+
+- Causa, confirmada en producción (solo lectura): 4 usuarios ASESOR de Aurora tienen el nombre guardado como «NOMBRE<tab>código», pegado de una hoja de cálculo. `asesorasDe()` los sumaba aparte del nombre limpio de «Usuarios del sistema», que es donde están los errores. ORLANT y Mobilize no tienen el problema: su lista de Calidad sale solo de los usuarios ASESOR.
+- Arreglo (decisión del usuario): `errores.sinCodigoFinal()` quita un código de 3 o más cifras al final, después de un espacio o una tabulación. `nombreReal()` primero busca el nombre tal cual en los alias y después sin el código. La lista y lo que se guarda quedan con el nombre limpio. No se cambió ningún dato.
+- Queda un par que el código no junta: un usuario con una letra cambiada en el apellido. **Pendiente del usuario**: corregir ese nombre en Usuarios, por la interfaz.
+- Pruebas: `fase347-errores-asesoras-unicas` (3).
