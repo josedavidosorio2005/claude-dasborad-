@@ -1371,6 +1371,7 @@ function renderGenericHeader(){
   // este cliente y modulo; solo para quien puede cargar (nunca el cliente).
   var btnAct = document.getElementById('gd-actualizar-btn');
   if (btnAct) btnAct.classList.toggle('hidden', !(typeof canLoadAnyModule === 'function' && canLoadAnyModule() && typeof openCentroCargas === 'function'));
+  if (typeof wvPruebaPintarBoton === 'function') wvPruebaPintarBoton(_gd.cliente); // Fase W2: solo admin y solo la replica interna
   document.getElementById('gd-title').textContent = _gd.config.titulo || _gd.cliente;
   // Fase 283: el supervisor abre el tablero desde su portal, en su vista (no la del cliente).
   var vistaSup = document.getElementById('gd-vista-sup');

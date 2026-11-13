@@ -1,9 +1,11 @@
 # Plan — integración con la API de Wolkvox (Fase 330, 10/11/2026)
 
 **Estado:** W0 (este plan) y **W1** (réplica oculta, sin API) hechas: la réplica existe en producción
-desde la v1.177.0 (12/11/2026, con el OK del usuario). Todavía no se llamó a la API. **W2** espera
-el token y el número de servidor en SSM (sección 3), la ruta y los parámetros de Postman sin token,
-el límite de la licencia y si Wolkvox exige lista blanca de IP.
+desde la v1.177.0 (12/11/2026, con el OK del usuario). **W2** (13/11/2026): cliente de la API en
+el servidor (`server/wolkvox.js`) y botón «Probar conexión», solo para el administrador y solo en la
+réplica (sección 8). La plataforma todavía no ha llamado a la API real: falta que el usuario guarde el
+token y el servidor (sección 3) y use el botón. Si Wolkvox exige lista blanca de IP, se verá en esa
+primera prueba.
 Este documento no tiene tokens, números de servidor, URLs reales, nombres ni datos de
 clientes (el repo es público). Donde hace falta una URL se escribe `<servidor>` y
 `<reporte>`.
@@ -13,12 +15,12 @@ clientes (el repo es público). Donde hace falta una URL se escribe `<servidor>`
 | Tema | Lo que sabemos | Por confirmar (antes de la Fase W2) |
 |---|---|---|
 | Método | GET | — |
-| URL | Incluye el número del servidor de la operación y los parámetros del reporte (`https://<servidor>…/<reporte>?…`) | Ruta exacta y nombre de cada parámetro (se copian de la colección de Postman, **sin** el token) |
-| Autenticación | Encabezado `wolkvox-token`, un token por operación, creado en Manager | ¿El token vence? ¿Se puede rotar sin cortar el servicio? ¿Exige IP de origen en lista blanca? |
-| Límite de uso | Según el licenciamiento | Número exacto (¿por día, por hora, por minuto?) y qué responde al pasarlo (¿429?) |
+| URL | **Confirmado en Postman (13/11):** `https://<servidor>.wolkvox.com/api/v2/reports_manager.php?api=<reporte>&date_ini=AAAAMMDDHHMMSS&date_end=AAAAMMDDHHMMSS` | El valor de `api` de cada reporte que no sea el CDR (sección 2) |
+| Autenticación | **Confirmado:** encabezado `wolkvox-token` (exactamente ese nombre), un token por operación, creado en Manager | ¿El token vence? ¿Se puede rotar sin cortar el servicio? ¿Exige IP de origen en lista blanca? (en Postman, desde el equipo del usuario, funcionó) |
+| Límite de uso | **Confirmado:** 3000 consultas por día por token. La plataforma se pone un tope propio de 2800 (`WOLKVOX_MAX_CONSULTAS_DIA`) para dejar margen a Postman, que gasta del mismo token | Qué responde Wolkvox al pasarlo (¿429?) y a qué hora se reinicia el día |
 | Fechas | `AAAAMMDDHHMMSS`, 24 h; la inicial y la final en el **mismo mes** | Zona horaria (¿hora Colombia?), y si la final es incluyente |
 | Reportes | Los mismos de Manager › Reports (skills, CDR, agentes, chats…) | Nombre del reporte de la API para cada archivo de la sección 2 |
-| Respuesta | JSON, probado en Postman (reporte por skill, 200) | Nombres de los campos (¿iguales a las columnas del Excel?), formato de % y tiempos, paginación, tamaño máximo |
+| Respuesta | **Confirmado:** 200 con un JSON `{ code, error, msg, data }`; `msg` dice «N records were found» y `data` es la lista de registros. En `cdr_1` se vieron `agent_name`, `date`, `destiny`, `telephone`, `cost`, `time_seg`, `time_min`, `cod_act`, `description_cod_act` y otros: los nombres de las columnas del Excel, en minúscula | Formato de % y tiempos, paginación y tamaño máximo de `data` |
 
 ## 1. Campaña réplica oculta: «MOBILIZE PRUEBAS API»
 
@@ -115,6 +117,23 @@ Siguen aceptándose las plantillas viejas que el supervisor armaba a mano (Llama
 `AGENT_NAME`, `DATE`, `TELEPHONE`, `SKILL_NAME`, y Llamadas de salida con `TIPO` o
 `SKILL_ID`). Con la API ya no harían falta.
 
+### 2.1 Reporte de la API para cada archivo que hoy se sube a mano (W2, 13/11/2026)
+
+Lo único confirmado es el CDR (`api=cdr_1`, probado en Postman). El resto queda como pregunta para
+Edwin: el nombre del reporte en la API (el valor de `api`) y un ejemplo de los **nombres** de sus
+campos, sin datos.
+
+| Archivo que se sube hoy en Mobilize | Fila de la sección 2 | Reporte de la API (`api=`) | Estado | Preguntas para Edwin |
+|---|---|---|---|---|
+| **Flujo** de llamadas: cola por skill **por día** (`HistQueue…`) | 1 | — | Sin confirmar | ¿Qué reporte de la API es el de cola por skill por día? ¿Trae `skill_name`, `inbound_calls`, `answer_calls`, `abandon_calls`, `service_level_20sec`, `asa`, `aht`? ¿El nivel de servicio viene en % o en número de llamadas? |
+| **Flujo por hora**: cola por skill **por hora** (`HistQueue…`) | 2 | — | Sin confirmar | ¿Es el mismo reporte del flujo con otro parámetro (por hora) o un reporte aparte? ¿Cómo viene la hora (`hour` 0–23, o dentro de `date`)? |
+| **CDR**, «1. Detalle de las llamadas» (`HistCDR…`): Tipificación, Eficacia, contestadas únicas y conectadas de salida | 3 | **`cdr_1`** | **Confirmado en Postman** (200, `msg` «N records were found»; campos vistos: `agent_name`, `date`, `destiny`, `telephone`, `cost`, `time_seg`, `time_min`, `cod_act`, `description_cod_act` y otros) | ¿Trae `skill_name`, `type_interaction`, `hung_up` y `skill_id` (la plataforma los necesita)? ¿`date` trae también la hora (hoy el Excel la tiene en `HORA`)? ¿Hay tope de registros por respuesta o paginación? (el CDR del mes pasa de 15.000 filas) |
+| **Abandonadas**: «2. Detalle de llamadas abandonadas» (`HistQueue…`) | 4 | — | Sin confirmar | ¿Qué reporte es? ¿Trae `ani`, `skill_name`, `result` y `type_interaction`? |
+| **No conectadas**: «5. Detalle de las llamadas no conectadas» (`HistCDR…`) | 5 | — | Sin confirmar | ¿Es `cdr_5` (por la numeración del menú) u otro? ¿Trae `agent_name`, `ring_time` y `result`? |
+| **Encuesta** post-llamada, «4.» (`HistIVR…`) | 6 | — | Sin confirmar | ¿Qué reporte es? ¿Las preguntas vienen como `q01`…`q04`? ¿Trae `voice_message` (comentario) y `conn_id`? |
+
+En todos: ¿las fechas de la respuesta están en hora Colombia? ¿`date_end` es incluyente?
+
 **Lo que necesito del supervisor en esta tabla:** para cada fila, el nombre del reporte de la
 API y un ejemplo de su respuesta con **datos inventados**, o solo los nombres de los campos.
 Así se ve si los campos se llaman igual que las columnas del Excel.
@@ -132,10 +151,17 @@ Así se ve si los campos se llaman igual que las columnas del Excel.
   Más adelante, `WOLKVOX_<OPERACION>_…` para cada operación nueva. `server/secrets.js` se
   amplía para leer las claves que empiezan por `WOLKVOX_`, sin tener que listarlas una por
   una.
-- **Por confirmar:** si producción arranca hoy con `SSM_PARAM_PREFIX` o con `app.env`. Si es
-  `app.env`, los dos valores van ahí, en la instancia, con permisos `600`. Lo carga el
-  usuario por la consola de AWS o por SSH, nunca por un workflow del repo, y se documenta en
-  `docs/infraestructura.md` **sin** los valores.
+- **Confirmado (W2):** producción arranca con `SSM_PARAM_PREFIX` definido en `app.env` (lo
+  muestran las corridas en modo `revisar` del workflow `dominio-produccion.yml` del 09/10 y del
+  13/10/2026), y `bootstrap.js` lee todos los parámetros bajo ese prefijo. Desde W2,
+  `server/secrets.js` copia al entorno los que empiezan por `WOLKVOX_` (el log de arranque muestra
+  solo los nombres). Los dos parámetros los crea el usuario en la consola de AWS, nunca un workflow
+  del repo; el proceso los lee al arrancar, así que hay que crearlos **antes** del deploy de W2 (o
+  esperar al deploy siguiente). Respaldo si algún día SSM no sirviera: los mismos dos valores en
+  `app.env` de la instancia, con permisos `600`.
+- **En local** (`NODE_ENV=development`), el token y el servidor van en
+  `server/data/wolkvox.local.env`, ignorado por git (`server/data/` y `*.env` están en
+  `.gitignore`). En las pruebas (`NODE_ENV=test`) ese archivo nunca se lee y nunca se sale a la red.
 - **El código** (`server/wolkvox.js`) arma la URL en memoria y manda el token solo en el
   encabezado `wolkvox-token`. Los logs y el historial dicen «Wolkvox Mobilize: reporte X,
   01–10/11, 200, 1.234 filas, 2,1 s». Nunca registran la URL, el token, el número de
@@ -277,3 +303,34 @@ que esté aprobado.
 7. ¿Con qué frecuencia quiere el supervisor ver el mes en curso actualizado?
 8. ¿La réplica debe tener también Calidad (monitoreos), o solo lo de Wolkvox?
 9. ¿Se pide también el día de hoy, que está incompleto, o solo hasta ayer?
+
+## 8. Fase W2: lo que se construyó (13/11/2026)
+
+- **`server/wolkvox.js`** (cliente, solo en el servidor):
+  - arma `https://<servidor>.wolkvox.com/api/v2/reports_manager.php?api=…&date_ini=…&date_end=…`
+    en memoria y manda el token **solo** en el encabezado `wolkvox-token`. El servidor solo se
+    acepta como nombre corto (letras, números y guiones), nunca como una URL;
+  - **tiempo máximo** de espera por consulta: 30 s (`WOLKVOX_TIEMPO_MAXIMO_MS`), conexión y
+    cuerpo incluidos;
+  - **fechas** `AAAAMMDDHHMMSS` reales, en orden y **dentro del mismo mes**; si no, no se consulta;
+  - **contador** por operación y día (hora Colombia) en la tabla `wolkvox_uso`. Cada consulta se
+    cuenta **antes** de hacerla. Al llegar al tope (2800 por defecto, nunca más de 3000) no se
+    llama más hasta el día siguiente;
+  - **errores con texto fijo** (sin configurar, rango, tope, tiempo agotado, sin conexión, token
+    rechazado 401/403, 429, otro código, JSON inválido). Nunca se reenvía el mensaje original, que
+    puede traer la URL;
+  - **el log** dice solo «[wolkvox] MOBILIZE cdr_1 200 N filas 1.2 s»: nada de URL, token,
+    servidor ni cuerpo.
+- **`server/routes/wolkvox.js`**: `GET /api/wolkvox/estado` y `POST /api/wolkvox/probar`. Solo el
+  administrador completo (403 para los demás, aunque tengan el permiso de la réplica) y solo una
+  campaña **interna** con operación de Wolkvox: hoy solo `MOBILIZE PRUEBAS API` → operación
+  `MOBILIZE`. El Mobilize real y los demás clientes dan 404. «Probar» pide `cdr_1` de una hora
+  (08:00 a 08:59) del día elegido (ayer, por defecto), con 30 s de espera mínima entre pruebas.
+  Responde **solo** el código HTTP, `code`, `msg`, cuántas filas y los **nombres** de los campos;
+  nunca un valor. Queda una línea en el Historial (`WOLKVOX_PRUEBA`, sin secretos ni valores).
+- **Botón «Probar conexión»** en el encabezado del tablero, oculto salvo para el administrador
+  completo en una campaña interna (`public/js/wolkvox-prueba.js`). Pinta todo con `textContent`.
+- **Todavía no se guarda nada de la API** en las tablas de la réplica: eso empieza en W3.
+- **Pruebas** (`faseW2-wolkvox.test.js`, con un Wolkvox falso y datos inventados): fechas, URL y
+  encabezado, tiempo agotado, errores sin secretos, log sin secretos, tope, respuesta sin valores,
+  permisos por rol, 404 para clientes reales, carga desde SSM y botón oculto.
