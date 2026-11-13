@@ -549,6 +549,7 @@ mismo orden):
 - Fase 352 (cierre) — A, B, D y C en producción (v1.193.0); verificación de solo lectura: 61 bien, 0 escrituras; ORLANT sep+oct 153 / 95,52 (solo docs, 2026-11-13)
 - Fase 353 — Calidad: «Enlazar monitoreos a usuario» (solo admin, sugerencia sin enlace automático, Historial y deshacer); el Excel y el calificar enlazan por id el nombre exacto y la vista previa avisa del que no coincide; migración de exactos (v1.194.0, 2026-11-13)
 - Fase 353b — nombres «exactos» sin distinguir mayúsculas con tilde/Ñ ni espacios especiales (nombre_clave en SQLite) en Excel, calificar y portal; texto de la herramienta corregido; migración v2 de exactos (v1.194.1, 2026-11-13)
+- Fase 353 (cierre) — los 8 monitoreos del reporte de Edwin enlazados por la herramienta (única escritura autorizada); ORLANT 164 con id / 30 sin id; sep+oct 153 / 95,52 (solo docs, 2026-11-13)
 - Fase 309 — Revisión de seguridad: el cliente ya no recibe el nombre de los líderes en `GET /metas`; resto en `docs/revision-seguridad-2026-11-09.md` (v1.154.1, 2026-11-10)
 - Fase 308 — Revisión antes de la reunión con clientes y pendientes del supervisor (solo docs, 2026-11-10)
 - Fase 307 — Calidad para que los líderes evalúen: ORLANT conserva su Calidad y suma «Resultado de los monitoreos» al final; Aurora ya lo tenía (se muestra con el primer monitoreo) (v1.154.0, 2026-11-10)

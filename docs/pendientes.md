@@ -9,6 +9,12 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 
 ## 1. Esperando una decisión tuya
 
+- **ORLANT: 30 monitoreos de 3 nombres sin usuario ASESOR** (Fase 353, 13/11/2026). No se parecen a
+  ningún usuario, de ningún rol ni campaña: nunca han tenido usuario. Uno tiene 8 (septiembre y octubre),
+  otro 6 (septiembre y octubre) y otro 16 (solo septiembre). Sus monitoreos cuentan en Calidad, pero no
+  llegan a ningún Portal Asesor. Si siguen en la campaña: se crea el usuario ASESOR de ORLANT y se enlazan
+  en Calidad › Configuración › «Enlazar monitoreos a usuario». Si ya no están, no hay nada que hacer.
+  Decide el usuario con Edwin. Los nombres se ven solo en la plataforma, nunca en el repo.
 - ~~**Nombre completo de la cuenta de Edwin**~~ — **HECHO** (06/11, con tu OK):
   por Administración › Usuarios › Editar, solo el campo «Nombre completo»
   («edwin» → «Edwin García»); usuario, rol, estado y permisos sin cambio. El
@@ -682,6 +688,15 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 
 ## 3. Técnico, sin dueño (costo y riesgo ya estimado — nada se aplica sin pedirlo)
 
+- **La misma comparación de nombres en otras dos partes** (revisión de la Fase 353b, 13/11/2026; no se
+  tocó):
+  - El conteo «propios» del evaluador (`/monitoreos/total`) compara con `lower()` de SQLite en
+    monitoreos viejos sin id de evaluador: a alguien con mayúscula con tilde le faltarían algunos.
+  - Las listas y resúmenes de Calidad en el navegador separan en dos filas a la misma persona si su
+    nombre tiene un espacio doble o especial.
+
+  Costo: bajo (usar `nombre_clave()` y `claveNombre()`). Riesgo: bajo. Errores de Aurora y los alias
+  no se ven afectados.
 - **Portal del supervisor › Calidad: recuadro de una campaña sin plantilla** (Fase 352 C,
   13/11/2026). Los recuadros salen del registro de campañas de Calidad, y el módulo solo ofrece las
   que tienen plantilla principal activa. Si una campaña del registro no tuviera plantilla, su
