@@ -21062,3 +21062,11 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
 
 - En producción: #810 (Fase 354, 1.195.0) y #811 (Fase 354b, 1.196.0); producción responde 1.196.0.
 - **Verificación en Brave pendiente:** el intento en producción (solo lectura, todo lo que no fuera GET bloqueado salvo el login) no llegó a verificar nada: la primera ventana se cerró antes del inicio de sesión y el reintento se quedó colgado; se detuvo a pedido del usuario y se cerraron sus procesos. No se envió ninguna escritura. Queda para el lunes 16/11 (ver `docs/pendientes.md`).
+
+## Fase W2 — Wolkvox: token local y parámetros en SSM, verificación en producción pendiente (solo docs, 2026-11-13)
+
+- **Local:** se creó `server/data/wolkvox.local.env` (ignorado por git; el usuario pegó el token, que nunca se mostró). «Probar conexión» en «MOBILIZE PRUEBAS API», con una instancia local aislada: diagnóstico sí/sí/sí; código 200, «1 records were found», 1 fila, campos `agent_id, agent_name, campaign_id, cod_act, cod_act_2, comment, conn_id, cost, customer_id, date, description_cod_act, description_cod_act_2, destiny, hang_up, skill_id, skill_name, telephone, time_min, time_seg, type_interaction`. El token no apareció en el registro local.
+- **SSM:** no se pudo por AWS CLI (el equipo no lo tiene) ni por un workflow (el rol del deploy no escribe en SSM y ampliar IAM no estaba autorizado). Con el OK del usuario, fue el camino c): el usuario creó los dos parámetros SecureString en la consola.
+- **Producción:** se volvió a correr el último deploy en verde (`0e1417e`, sin cambiar código) y respondió 1.196.0. `/wolkvox/estado` de la réplica dice **no / no / no** (token, servidor, formato), así que no se hizo la prueba. Pasos a revisar en `docs/pendientes.md`.
+- **Seguridad:** solo lectura; Brave con todo lo que no fuera GET bloqueado, salvo el inicio y el cierre de sesión (0 bloqueadas). El Mobilize real no cambió (78 filas de nivel de servicio antes y después) y la sesión se cerró.
+- **Por qué se colgaron los primeros intentos en Brave (HLM y W2):** el script esperaba `currentUser` distinto de null, pero el administrador maestro deja `currentUser = null`, así que nunca detectaba el inicio de sesión. Se corrigió esperando `authToken`.
