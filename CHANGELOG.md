@@ -7,6 +7,16 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.187.1 — Noviembre 2026
+
+**Fase W2: la ventana «Probar conexión» dice qué falta.**
+
+- Si la conexión con Wolkvox no está lista, la ventana muestra tres respuestas de sí o no: si
+  encontró el token, si encontró el servidor y si el servidor está bien escrito. Nunca muestra los
+  valores.
+- Los espacios que queden al principio o al final al pegar el token o el servidor ya no cuentan.
+- Solo lo ve el administrador, en el tablero de pruebas.
+
 ## v1.187.0 — Noviembre 2026
 
 **Fase 348 (G): menú lateral en el dashboard de Mobilize.**

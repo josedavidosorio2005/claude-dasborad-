@@ -21,7 +21,12 @@ function _wvEl(id) { return document.getElementById(id); }
 function _wvTexto(id, t) { var e = _wvEl(id); if (e) e.textContent = t; }
 
 function _wvPintarEstado(e) {
-  _wvTexto('wv-estado-config', e.configurado ? 'Sí' : 'No — falta guardar el token y el servidor');
+  _wvTexto('wv-estado-config', e.configurado ? 'Sí' : 'No');
+  // Diagnostico (solo si/no, nunca valores): que revisar en SSM o en el archivo local.
+  var d = e.diagnostico, sn = function (v) { return v ? 'Sí' : 'No'; };
+  var diag = _wvEl('wv-diagnostico');
+  if (diag) diag.classList.toggle('hidden', !!e.configurado || !d);
+  if (d) { _wvTexto('wv-d-token', sn(d.tokenEncontrado)); _wvTexto('wv-d-servidor', sn(d.servidorEncontrado)); _wvTexto('wv-d-formato', sn(d.servidorFormatoValido)); }
   _wvTexto('wv-estado-uso', e.usoHoy + ' de ' + e.tope + ' (límite de Wolkvox: ' + e.limiteLicencia + ' por día)');
   var btn = _wvEl('wv-probar-btn');
   if (btn) btn.disabled = !e.configurado;
