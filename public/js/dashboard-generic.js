@@ -1781,7 +1781,7 @@ function renderGenericTabs(){
     var sec = gdSeccionDeTipo(t.panels && t.panels[0] && t.panels[0].tipo);
     return '<button class="atab'+(sec ? ' gd-tab-sec-'+sec : '')+'" data-gdtab="'+esc(t.key)+'">'+esc(t.label)+'</button>';
   }).join('');
-  if(typeof gdMenuLateralAplicar === 'function') gdMenuLateralAplicar(_gd.cliente); // Fase 348 (G) / 349: menu lateral, solo los clientes de la lista (Mobilize, Aurora y HLM)
+  if(typeof gdMenuLateralAplicar === 'function') gdMenuLateralAplicar(_gd.cliente); // Fase 348 (G) / 349 / 350: menu lateral, solo los clientes de la lista (Mobilize, Aurora, HLM y ORLANT)
 }
 
 // La navegacion por pestanas usa data-gdtab (no un onclick con texto libre).

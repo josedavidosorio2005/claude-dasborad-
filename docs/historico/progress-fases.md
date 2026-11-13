@@ -20905,3 +20905,11 @@ Pedido del usuario: empezar W2 de `docs/plan-api-wolkvox.md`, solo para «MOBILI
 - **Lo que ve cada persona no cambia:** el menú se arma con las pestañas que ya se dibujan para quien mira (`_gdTabsVisibles`, mismos permisos). «Gestión líneas internas» sigue como botón aparte, en el encabezado (`#gd-li-wrap`).
 - **Pruebas:** `fase349-menu-lateral-aurora-hlm` (3) y la de la Fase 348 G actualizada (3 clientes; ORLANT, SURA y la réplica no).
 - **Visual local** (copia de la base demo, Brave): Aurora y HLM a 375/768/1440 en claro y oscuro (abierto, plegado y vuelto a abrir a 1440; pestañas de siempre a 768 y 375), sin salto al cargar, ícono en cada pestaña, «Gestión líneas internas» en el encabezado; ORLANT sin menú y Mobilize igual; 0 errores de consola. Job `pantallas` local sin hallazgos.
+
+## Fase 350 — Menú lateral también en ORLANT (v1.189.0, 2026-11-13)
+
+- **Excepción al congelamiento de ORLANT**, aprobada por escrito por el usuario el 13/11: solo navegación. No cambia nada más (mismas pestañas, mismo orden, mismas cifras, mismos permisos, mismo contenido).
+- **ORLANT usa el tablero genérico** (`openGenericDashboard`), así que bastó agregarlo a `GD_MENU_LATERAL_CLIENTES`. Ícono propio para «Efectividad de Citas» (`i-trending-up`; antes habría compartido el de Agendamiento). Las 9 pestañas quedan con íconos distintos; los de Mobilize, Aurora y HLM no cambian.
+- **Foto de antes en producción** (1.188.0, solo lectura, Brave con sesión de administrador, 0 escrituras): 9 pestañas y 15 vistas contando sub-pestañas, guardadas solo como huellas SHA-256 del texto del panel y de los datos de cada gráfica (nunca el contenido, fuera del repo). Calidad: septiembre + octubre 153 / 95,52; total 194.
+- **Local** (copia de la base demo): mismas huellas antes y después en todas las vistas; menú en 375/768/1440, claro y oscuro, sin salto al cargar ni scroll horizontal; job `pantallas` sin hallazgos.
+- **Pruebas:** `fase350-menu-lateral-orlant` (4) y la de la Fase 348 G actualizada (4 clientes).

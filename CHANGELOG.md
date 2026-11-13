@@ -7,6 +7,17 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.189.0 — Noviembre 2026
+
+**Fase 350: el menú lateral, también en ORLANT.**
+
+- En el computador, las pestañas de ORLANT pasan a un menú a la izquierda, igual que en Mobilize,
+  Clínica Aurora y Hospital La María: un ícono en cada opción y un botón para plegarlo y volverlo
+  a abrir.
+- Solo cambia dónde están las pestañas: son las mismas, en el mismo orden, con las mismas cifras y
+  los mismos permisos.
+- En el celular y la tableta, las pestañas siguen arriba.
+
 ## v1.188.0 — Noviembre 2026
 
 **Fase 349: el menú lateral, también en Clínica Aurora y Hospital La María.**

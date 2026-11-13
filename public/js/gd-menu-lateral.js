@@ -5,15 +5,18 @@
 // quedan las pestañas de siempre arriba.
 //
 // SOLO para los clientes de GD_MENU_LATERAL_CLIENTES. Fase 349 (13/11, pedido del usuario): ademas
-// de Mobilize, Clinica Aurora y Hospital La Maria. ORLANT no; SURA tampoco (Televentas ya tiene su
-// menu). El menu se arma con las pestañas que ya se dibujaron para quien mira: mismas pestañas y
-// mismos permisos. «Gestión líneas internas» no es pestaña (boton aparte del encabezado, #gd-li-btn).
-var GD_MENU_LATERAL_CLIENTES = ['MOBILIZE', 'CLINICA AURORA', 'HOSPITAL LA MARIA'];
+// de Mobilize, Clinica Aurora y Hospital La Maria. Fase 350 (13/11, excepcion al congelamiento de
+// ORLANT aprobada por el usuario, solo navegacion): tambien ORLANT. SURA no (Televentas ya tiene su
+// menu). El menu se arma con las pestañas que ya se dibujaron para quien mira: mismas pestañas,
+// mismo orden y mismos permisos. «Gestión líneas internas» no es pestaña (boton aparte, #gd-li-btn).
+var GD_MENU_LATERAL_CLIENTES = ['MOBILIZE', 'CLINICA AURORA', 'HOSPITAL LA MARIA', 'ORLANT'];
 
 // Logica pura: icono de cada pestaña segun su nombre (los del sprite img/iconos/lucide.svg). Gana
 // la PRIMERA que coincida. Fase 349: Errores, Inasistencia y Total tráfico con icono propio, y
-// «salida» antes de «WhatsApp» (Aurora: «Llamadas y WhatsApp de salida»). Mobilize queda igual.
+// «salida» antes de «WhatsApp» (Aurora: «Llamadas y WhatsApp de salida»). Fase 350: «Efectividad de
+// Citas» (ORLANT) con icono propio, distinto del de Agendamiento. Mobilize, Aurora y HLM quedan igual.
 var GD_MENU_ICONOS = [
+  [/efectividad/i, 'i-trending-up'],
   [/calidad/i, 'i-circle-check'],
   [/error/i, 'i-triangle-alert'],
   [/inasist/i, 'i-ban'],
