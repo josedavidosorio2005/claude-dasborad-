@@ -21013,3 +21013,16 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
 
   Además, se corrigió el texto de la herramienta («Mismo nombre que…»), y la migración `fase353_monitoreos_enlace_exacto_v2` repite la regla de exactos con `nombre_clave()`; en producción tocan los 13 que faltaron.
 - **Pruebas:** `fase353b-nombres-tildes` (4), con nombres inventados con tilde, Ñ, espacio sin quiebre y espacio de ancho cero.
+
+### Cierre de la Fase 353 (2026-11-13)
+
+- **Enlaces manuales que no se guardaron:** el usuario intentó enlazar los 3 grupos con la herramienta, pero la verificación encontró que ninguno había llegado a producción (0 `MONITOREOS_ENLAZADOS` en el Historial). Lo más probable es que faltara el segundo clic de confirmación. Los grupos de 7 y 6 los enlazó después la migración v2 de 353b.
+- **Única escritura autorizada:** el usuario autorizó enlazar el grupo de 8 de la asesora del reporte de Edwin, por la interfaz y en un solo inicio de sesión de administrador. El script solo dejó pasar un `POST /api/calidad/enlace` con ese grupo y ese usuario; todo lo demás quedaba bloqueado.
+  - **Antes de confirmar:** había un solo grupo de 1 letra, con 8 monitoreos (5 de septiembre y 3 de octubre), y el usuario sugerido era un ASESOR activo de ORLANT.
+  - **Clics:** Calidad › ORLANT › Configuración, luego «Usar», «Enlazar» y confirmar. Mensaje: «8 monitoreos enlazados…».
+  - El flujo se ensayó antes en la copia local de la base demo, con datos inventados, incluido «Deshacer».
+- **Verificación** (solo lectura, en la misma sesión, cerrada al final):
+  - El Historial tiene `MONITOREOS_ENLAZADOS` con 8 ids, al usuario sugerido, y los 8 quedaron en su usuario.
+  - ORLANT tiene **164 monitoreos con id y 30 sin id**, y septiembre + octubre siguen en **153 / 95,52**.
+  - Resultado: 1 escritura, 0 bloqueadas y 0 errores de consola.
+- **Quedan** 30 monitoreos de 3 nombres que nunca tuvieron usuario ASESOR (ver `docs/pendientes.md`).
