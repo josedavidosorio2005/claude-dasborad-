@@ -262,6 +262,7 @@ async function openSuraTeleventas(cliente) {
   try {
     var perm = await _stv.app.cargar();
     _stvCalidadMontar(_stv.root, cliente); // Fase 335: pestaña Calidad (antes de elegir la primera)
+    if (typeof stvTodosMontar === 'function') stvTodosMontar(_stv.root); // Fase 348 (F): «Quitar todos / Agregar todos» en Mes y Validación
     _stvAplicarPermisos(perm);
     await _stvCalidadPermiso(_stv.root, cliente);
     _stv.listo = true;

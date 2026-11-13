@@ -32,8 +32,11 @@ test('G: se aplica al dibujar las pestañas y el CSS solo actua con .gd-menu-lat
   const html = PUB('index.html');
   assert.ok(html.indexOf('js/gd-menu-lateral.js') < html.indexOf('js/dashboard-generic.js"'));
   const css = PUB('css/styles.css');
-  const b = css.slice(css.indexOf('/* Fase 348 (G, PROPUESTA)'));
-  const media = b.slice(b.indexOf('@media (min-width:901px){'));
+  // Solo el bloque de G: termina donde cierra su @media (una linea con solo «}»), aunque despues
+  // vengan otros bloques (E va al final porque su prueba lee hasta el final del archivo).
+  const desde = css.slice(css.indexOf('/* Fase 348 (G, PROPUESTA)'));
+  const b = desde.slice(0, desde.search(/\n\}\s*\n/) + 2);
+  const media = b.slice(b.indexOf('@media (min-width:901px){'), -1);
   const reglas = media.slice(media.indexOf('{') + 1).split('}').map((r) => r.split('{')[0].trim()).filter(Boolean);
   for (const s of reglas) for (const p of s.split(',')) assert.match(p.trim(), /^#gd-modal\.gd-menu-lateral/, p);
   assert.doesNotMatch(b, /#[0-9a-f]{3,8}\b/i, 'sin colores escritos');

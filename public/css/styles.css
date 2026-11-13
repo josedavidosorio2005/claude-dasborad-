@@ -111,6 +111,10 @@
      Calidad/Cargas/constructor de dashboards) antes de nombrarlo -- cero
      cambio visual, solo deja de estar duplicado. */
   --shadow-xl:0 20px 60px rgba(var(--shadow-rgb),0.35);
+  /* Fase 348 (E): sombra y aro de las tarjetas, solo los usa el tema claro (reglas al final). */
+  --e-aro:0 0 0 1px rgba(var(--shadow-rgb),0.13);
+  --e-sombra:0 1px 3px rgba(var(--shadow-rgb),0.08),0 6px 18px rgba(var(--shadow-rgb),0.12);
+  --e-sombra-suave:0 1px 2px rgba(var(--shadow-rgb),0.07),0 3px 10px rgba(var(--shadow-rgb),0.09);
 
   /* Tipografía */
   --font-sans:'Quicksand','Segoe UI',system-ui,-apple-system,Roboto,sans-serif;
@@ -2496,3 +2500,17 @@ div.ca-bar-fila{cursor:default}
   #gd-modal.gd-menu-lateral.gd-menu-plegado{grid-template-columns:auto minmax(0,1fr)}
   #gd-modal.gd-menu-lateral.gd-menu-plegado > #gd-tabs{display:none}
 }
+
+/* Fase 348 (E): TEMA CLARO — las tarjetas y bloques se confundian con el fondo (gris muy claro contra
+   blanco). Sombra suave en dos capas + un aro de 1px casi invisible que marca el borde, y un poco
+   mas de aire entre tarjetas. Solo en claro (el oscuro no cambia) y sin colores nuevos: las sombras
+   (--e-aro, --e-sombra, --e-sombra-suave, en :root) salen de --shadow-rgb, que ya existe. Los colores de public/css/paleta.css no se tocan. */
+:root:not([data-theme="dark"]) .aurora-card,
+:root:not([data-theme="dark"]) .section-card,
+:root:not([data-theme="dark"]) .stat-card,
+:root:not([data-theme="dark"]) .aurora-chart-card,
+:root:not([data-theme="dark"]) .aurora-table-card{box-shadow:var(--e-aro),var(--e-sombra)}
+:root:not([data-theme="dark"]) .aurora-kpi{background:var(--c-surface);box-shadow:var(--e-aro),var(--e-sombra-suave)}
+:root:not([data-theme="dark"]) .gd-grafica{box-shadow:var(--e-sombra-suave)}
+:root:not([data-theme="dark"]) .aurora-kpis{gap:12px}
+:root:not([data-theme="dark"]) .gd-sec > .aurora-card + .aurora-card{margin-top:18px}

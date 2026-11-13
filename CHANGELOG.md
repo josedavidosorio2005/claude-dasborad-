@@ -7,6 +7,25 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.185.0 — Noviembre 2026
+
+**Fase 348 (E): en el tema claro las tarjetas se distinguen del fondo.**
+
+- En el tema claro, las tarjetas, los cuadros de las gráficas y los indicadores tienen una sombra
+  suave y un borde muy fino, para que no se confundan con el fondo. Hay un poco más de espacio
+  entre los indicadores.
+- El tema oscuro y los colores de las gráficas no cambian.
+
+## v1.184.0 — Noviembre 2026
+
+**Fase 348 (F): Televentas SURA, «Quitar todos / Agregar todos» en los filtros.**
+
+- En los filtros generales de Televentas, Mes y Resultado de validación tienen un botón para quitar
+  o volver a marcar todas las opciones de una vez. El tablero se actualiza igual que al marcarlas
+  una por una.
+- Si todas están marcadas dice «Quitar todos»; si falta alguna, «Agregar todos».
+- El tablero original de Televentas no se modificó: el botón se agrega desde la plataforma.
+
 ## v1.183.1 — Noviembre 2026
 
 **Fase 348 (D): la ventana de Calidad del dashboard se cierra fácil.**
