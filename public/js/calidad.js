@@ -646,6 +646,7 @@ function renderCalConfig(){
   }
   document.getElementById('cal-permisos-table').innerHTML = html;
   renderCalCodificacionesAdmin();
+  if(typeof renderCalEnlace==='function') renderCalEnlace(); // Fase 353
 }
 
 // Fase 95 (tema B): pantalla de admin del catalogo de codificaciones,

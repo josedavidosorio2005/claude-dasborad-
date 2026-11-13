@@ -174,6 +174,8 @@ declarar(['POST /monitoreos'], 'calidadEval');
 declarar(['POST /monitoreos/bulk'], 'calidadEval');
 declarar(['PUT /monitoreos/:id', 'DELETE /monitoreos/:id'], 'calidadManage');
 declarar(['PUT /monitoreos/:id/asesor'], 'admin');
+declarar(['POST /monitoreos/revisar-asesores'], 'calidadEval'); // Fase 353: vista previa de nombres sin usuario (solo lee)
+declarar(['GET /calidad/enlace', 'POST /calidad/enlace', 'POST /calidad/enlace/revertir'], 'admin'); // Fase 353
 declarar(['GET /wolkvox/estado', 'POST /wolkvox/probar'], 'admin'); // Fase W2: solo admin y solo la replica interna (404 para las demas)
 declarar(['PUT /monitoreos/:id/fecha'], 'calidadManage'); // Fase 337: quien lo califico, Reportes o admin (fase337-fecha-del-monitoreo.test.js) // Fase 333: corregir solo el asesor "Invalid Date" (fase333-sin-asesor.test.js)
 declarar(['GET /calidad/codificaciones'], 'scopedRead');

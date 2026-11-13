@@ -973,6 +973,14 @@ async function procesarArchivoConsolidado(input){
     return;
   }
 
+  // Fase 353: Calidad -- los nombres que no coinciden exacto con un usuario ASESOR de la campaña.
+  for(var ie=0; ie<_cargasResultados.length; ie++){
+    var re = _cargasResultados[ie];
+    if(re.tipo==='calidad' && re.filas && re.filas.length && typeof calEnlaceAvisosCarga==='function'){
+      re.avisos = (await calEnlaceAvisosCarga(cliente, re.filas)).concat(re.avisos || []);
+    }
+  }
+
   _renderPreviewCarga();
 }
 
@@ -1130,7 +1138,8 @@ async function _cargasGuardarSeccion(cliente, periodo, r){
 async function _cargasGuardarCalidad(cliente, r){
   try{
     var resp = await apiRequest('POST','/monitoreos/bulk', { campana: cliente, archivoNombre: _cargasArchivoNombre, filas: r.filas });
-    return { ok:true, mensaje: (resp.insertadas||0)+' nueva(s), '+(resp.actualizadas||0)+' actualizada(s), '+(resp.omitidas||0)+' omitida(s)' };
+    var sinU = (resp.sinUsuario||[]).length; // Fase 353
+    return { ok:true, mensaje: (resp.insertadas||0)+' nueva(s), '+(resp.actualizadas||0)+' actualizada(s), '+(resp.omitidas||0)+' omitida(s)'+(sinU ? '; '+sinU+' nombre(s) de asesor sin usuario (enlázalos en Calidad › Configuración)' : '') };
   }catch(e){ return { ok:false, mensaje: e.message }; }
 }
 

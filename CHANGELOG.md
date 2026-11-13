@@ -7,6 +7,22 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.194.0 — Noviembre 2026
+
+**Fase 353: los monitoreos le llegan a cada asesora aunque su nombre esté escrito distinto.**
+
+- Una asesora veía 0 monitoreos en su Portal Asesor porque en Calidad su nombre tenía una letra
+  de diferencia. El portal solo encontraba el nombre escrito exactamente igual.
+- Nuevo en Calidad › Configuración (solo el administrador): «Enlazar monitoreos a usuario». Muestra
+  los nombres que no tienen usuario, cuántos monitoreos tiene cada uno por mes y, si hay un
+  usuario muy parecido, lo sugiere. El administrador elige el usuario y confirma; nada se enlaza
+  solo. El nombre pasa a ser el del usuario; la nota y la fecha no cambian. Se puede deshacer y
+  queda en el Historial.
+- Al subir el Excel de Calidad, la vista previa avisa de los nombres que no coinciden con un
+  usuario ASESOR de la campaña, con la sugerencia si hay una parecida.
+- Cuando el nombre sí coincide (al subir el Excel o al calificar), el monitoreo queda unido al
+  usuario: ya no se pierde si después se corrige el nombre del usuario.
+
 ## v1.193.0 — Noviembre 2026
 
 **Fase 352 (C): Calidad se abre tocando la campaña.**

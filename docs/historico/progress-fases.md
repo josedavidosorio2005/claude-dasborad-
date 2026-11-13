@@ -20971,3 +20971,24 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - **D:** en Aurora › Errores, «Plan de acción del mes» es un botón aparte de «Agregar errores». Su ventana tiene X, mes y texto, no pide asesora y cabe en la pantalla. La X la cierra y el tablero sigue abierto. Aurora no tiene planes guardados en producción, así que no había ninguno que mostrar. Que un plan guardado aparezca en su mes lo cubre la prueba `fase352-d-plan-accion`. No se guardó ni se borró nada.
   - **ORLANT:** septiembre + octubre siguen en 153 monitoreos y 95,52.
 - **Hallazgo** (anotado en `docs/pendientes.md` §3): si una campaña del registro de Calidad no tuviera plantilla, su recuadro abriría otra campaña. No pasa en producción, donde las 5 tienen plantilla. Solo se vio en la copia local de la base demo.
+
+## Fase 353 — Monitoreos que no llegaban al Portal Asesor (v1.194.0, 2026-11-13)
+
+- **Reporte de Edwin:** una asesora veía 0 en su Portal Asesor, pero en Calidad tenía 3 monitoreos en octubre. El nombre del monitoreo y el del usuario tenían una letra de diferencia (L doble contra una sola).
+- **Causa:** un monitoreo llega al portal por `asesorUserId`, o, sin id, solo si el nombre es exacto (sin distinguir mayúsculas ni espacios al borde) en la misma campaña (`GET /monitoreos/mios`, Fases 95 y 102). El formulario de calificar guarda el id, pero la carga por Excel (`POST /monitoreos/bulk`) nunca lo guardaba.
+- **Diagnóstico en producción** (solo lectura, un inicio de sesión de administrador, 0 escrituras):
+  - ORLANT: 194 monitoreos. 41 enlazados por id y 115 solo por nombre exacto. Quedan 38 sin enlazar: 8 de 1 asesora casi igual (1 letra), 30 de 3 nombres sin usuario parecido y 0 «Sin asesor».
+  - MOBILIZE (36), Aurora (3) y SURA (63): todos enlazados por id. Hospital La María: sin monitoreos.
+  - El caso de Edwin es el único casi igual: la L doble. Son 8 monitoreos, 5 de septiembre y 3 de octubre, y el usuario no tenía ninguno enlazado.
+  - ORLANT septiembre + octubre: 153 / 95,52.
+- **Hecho** (aprobado por el usuario: enlazar por id y corregir el nombre; migración de exactos con dry-run):
+  - `server/enlace-asesor.js`: compara nombres por exacto, mayúsculas, tildes y espacios, orden de los nombres, y 1 o 2 letras. El parecido solo **sugiere**, y si dos usuarios empatan no sugiere a nadie. Enlazar sin intervención solo pasa con un nombre exacto y un único usuario ASESOR activo de la campaña.
+  - Carga por Excel: cada fila queda con `asesorUserId` si el nombre es exacto. Al actualizar una fila que ya existía, solo se llena el id si faltaba. La respuesta trae `sinUsuario`.
+  - `POST /monitoreos/revisar-asesores` es de solo lectura: la vista previa del módulo y del Centro de cargas avisa de los nombres sin usuario, con su sugerencia, antes de guardar.
+  - Calificar: sin id válido, se enlaza si el nombre es exacto.
+  - «Enlazar monitoreos a usuario» (Calidad › Configuración, solo el administrador), con `GET` y `POST /calidad/enlace` y `POST /calidad/enlace/revertir`:
+    - Muestra cada grupo de texto sin usuario con sus meses y la sugerencia, que se aplica con un botón «Usar».
+    - Se confirma con dos clics. Cambia `asesorUserId` y el nombre del asesor; nota, respuestas, fecha, evaluador y `updatedAt` no cambian.
+    - Queda en el Historial (`MONITOREOS_ENLAZADOS` y `MONITOREOS_ENLACE_DESHECHO`, con los ids).
+  - Migración `fase353_monitoreos_enlace_exacto_v1`: enlaza por id los monitoreos con nombre exacto a un único usuario activo de su campaña. No cambia el texto.
+- **Pruebas:** `fase353-enlazar-monitoreos` (6), con datos inventados; `fase118-matriz-acceso` declara las 4 rutas nuevas.

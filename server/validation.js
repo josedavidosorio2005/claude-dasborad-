@@ -304,6 +304,25 @@ const monitoreoBulkBody = z.object({
     }),
 });
 
+// Fase 353: enlazar monitoreos a su usuario ASESOR. El texto del asesor va tal cual esta
+// guardado (sin recortar), porque se busca con igualdad exacta.
+const textoAsesorGuardado = z.string(reqStr('El asesor es obligatorio')).min(1).max(200).refine((v) => v.trim().length > 0, 'El asesor es obligatorio');
+const revisarNombresBody = z.strictObject({
+  campana: campanaSchema,
+  asesores: z.array(z.string().max(200)).max(2000, 'Demasiadas filas en un solo archivo (maximo 2000)'),
+});
+const enlaceQuery = z.object({ campana: campanaSchema });
+const enlazarBody = z.strictObject({
+  campana: campanaSchema,
+  asesor: textoAsesorGuardado,
+  userId: z.number({ error: 'Elige el usuario' }).int().positive('Elige el usuario'),
+});
+const deshacerEnlaceBody = z.strictObject({
+  campana: campanaSchema,
+  asesor: textoAsesorGuardado,
+  ids: z.array(z.number().int().positive()).min(1).max(5000),
+});
+
 // Fase 337: cambiar solo la fecha de un monitoreo (PUT /monitoreos/:id/fecha). El servidor ademas
 // revisa que no sea futura ni anterior a 2020 (errorFechaMonitoreo, routes/calidad.js).
 const cambiarFechaMonitoreoBody = z.object({ fecha: fechaSchema }).strict();
@@ -1753,6 +1772,7 @@ module.exports = {
     createMonitoreoBody,
     updateMonitoreoBody,
     corregirAsesorBody, // Fase 333
+    revisarNombresBody, enlaceQuery, enlazarBody, deshacerEnlaceBody, // Fase 353
     cambiarFechaMonitoreoBody, // Fase 337
     importarPlantillaBody,
     plantillaDescripcionesBody, // Fase 316

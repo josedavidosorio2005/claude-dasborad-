@@ -61,7 +61,9 @@ async function procesarArchivoMonitoreos(input){
   if(res.error){ showToast(res.error, 'error'); input.value=''; return; }
 
   _cmParsed = { campana: _ccampana, archivoNombre: file.name, filas: res.filas };
-  _renderPreviewMonitoreos(file.name, res.filas, res.avisos||[]);
+  // Fase 353: avisa de los nombres que no coinciden exacto con un usuario ASESOR (no llegarian a su portal).
+  var avEnlace = typeof calEnlaceAvisosCarga === 'function' ? await calEnlaceAvisosCarga(_ccampana, res.filas) : [];
+  _renderPreviewMonitoreos(file.name, res.filas, avEnlace.concat(res.avisos||[]));
 }
 
 function _renderPreviewMonitoreos(nombre, filas, avisos){
@@ -93,7 +95,9 @@ async function guardarMonitoreosMasivo(){
   try{
     resp = await withButtonLoading(btn, 'Guardando...', function(){ return apiRequest('POST','/monitoreos/bulk', _cmParsed); });
   }catch(e){ showToast(e.message, 'error'); return; }
-  showToast('Carga guardada: '+(resp.insertadas||0)+' nueva(s), '+(resp.actualizadas||0)+' actualizada(s), '+(resp.omitidas||0)+' omitida(s).');
+  var sinU = (resp.sinUsuario||[]).length; // Fase 353
+  showToast('Carga guardada: '+(resp.insertadas||0)+' nueva(s), '+(resp.actualizadas||0)+' actualizada(s), '+(resp.omitidas||0)+' omitida(s).'+
+    (sinU ? ' '+sinU+' nombre(s) de asesor sin usuario: enlázalos en Configuración.' : ''), sinU ? 'error' : undefined);
   cancelarPreviewMonitoreos();
   await loadCalData(_ccampana, _cmesFiltro || undefined);
   renderCalKpis();
