@@ -10,11 +10,10 @@ const L = require('../../public/js/gd-menu-lateral.js');
 
 const PUB = (f) => fs.readFileSync(path.join(__dirname, '..', '..', 'public', f), 'utf8');
 
-test('G: solo Mobilize tiene el menu lateral (ORLANT y los demas, no)', () => {
-  assert.deepEqual(L.GD_MENU_LATERAL_CLIENTES, ['MOBILIZE']);
-  assert.equal(L.gdMenuLateralActivo('MOBILIZE'), true);
-  assert.equal(L.gdMenuLateralActivo('mobilize'), true);
-  for (const c of ['ORLANT', 'CLINICA AURORA', 'HOSPITAL LA MARIA', 'SURA', '', null]) assert.equal(L.gdMenuLateralActivo(c), false, String(c));
+test('G: menu lateral en Mobilize y, desde la Fase 349, Aurora y HLM (ORLANT, SURA y la replica no)', () => {
+  assert.deepEqual(L.GD_MENU_LATERAL_CLIENTES, ['MOBILIZE', 'CLINICA AURORA', 'HOSPITAL LA MARIA']);
+  for (const c of ['MOBILIZE', 'mobilize', 'CLINICA AURORA', 'HOSPITAL LA MARIA']) assert.equal(L.gdMenuLateralActivo(c), true, c);
+  for (const c of ['ORLANT', 'SURA', 'MOBILIZE PRUEBAS API', '', null]) assert.equal(L.gdMenuLateralActivo(c), false, String(c));
 });
 
 test('G: cada pestaña de Mobilize con su icono del sprite', () => {

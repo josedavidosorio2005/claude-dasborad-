@@ -4,19 +4,26 @@
 // 44 px por opcion) y un boton la pliega para dar todo el ancho al tablero. En 900 px o menos se
 // quedan las pestañas de siempre arriba.
 //
-// SOLO para los clientes de GD_MENU_LATERAL_CLIENTES (hoy, solo Mobilize). Agregar un
-// cliente a la lista es lo unico que hace falta para extenderlo, cuando se apruebe.
-var GD_MENU_LATERAL_CLIENTES = ['MOBILIZE'];
+// SOLO para los clientes de GD_MENU_LATERAL_CLIENTES. Fase 349 (13/11, pedido del usuario): ademas
+// de Mobilize, Clinica Aurora y Hospital La Maria. ORLANT no; SURA tampoco (Televentas ya tiene su
+// menu). El menu se arma con las pestañas que ya se dibujaron para quien mira: mismas pestañas y
+// mismos permisos. «Gestión líneas internas» no es pestaña (boton aparte del encabezado, #gd-li-btn).
+var GD_MENU_LATERAL_CLIENTES = ['MOBILIZE', 'CLINICA AURORA', 'HOSPITAL LA MARIA'];
 
-// Logica pura: icono de cada pestaña segun su nombre (los del sprite img/iconos/lucide.svg).
+// Logica pura: icono de cada pestaña segun su nombre (los del sprite img/iconos/lucide.svg). Gana
+// la PRIMERA que coincida. Fase 349: Errores, Inasistencia y Total tráfico con icono propio, y
+// «salida» antes de «WhatsApp» (Aurora: «Llamadas y WhatsApp de salida»). Mobilize queda igual.
 var GD_MENU_ICONOS = [
   [/calidad/i, 'i-circle-check'],
+  [/error/i, 'i-triangle-alert'],
+  [/inasist/i, 'i-ban'],
+  [/total/i, 'i-gauge'],
+  [/unicas|únicas|salida/i, 'i-contact'],
   [/encuesta|whatsapp/i, 'i-message-circle'],
   [/tipific/i, 'i-layout-dashboard'],
   [/hora/i, 'i-chart-column'],
-  [/unicas|únicas|salida/i, 'i-contact'],
   [/llamada|flujo|tr[aá]fico/i, 'i-phone'],
-  [/agend|cita|inasist/i, 'i-target'],
+  [/agend|cita/i, 'i-target'],
 ];
 function gdMenuIcono(label) {
   var t = String(label || '');
