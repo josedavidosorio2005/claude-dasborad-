@@ -21045,3 +21045,20 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - Calidad: no se construyó nada; las sedes no tienen el módulo todavía y la Calidad de HLM sigue en el padre.
 - **Pruebas:** `fase354-hlm-sedes` (6) con datos inventados; actualizadas las que fijaban listas exactas de clientes, diálogos, menú y regla de salida, y las de tráfico/skills que cargaban directo a HLM (ahora a una sede, o con la librería para el mecanismo viejo de `sede`).
 - **Visual local** (copia de la base demo, Brave, datos inventados: Castilla 3.032 llamadas, Sede 33 14.744): elegir sede y tablero de cada sede, administrador y cliente, claro y oscuro, 375/768/1440; foco dentro de la pantalla de sedes, Escape la cierra, sin scroll horizontal, 0 errores de consola (salvo el 403 provocado a propósito al pedir el padre como cliente).
+
+## Fase 354b — HLM: «Datos anteriores» de agosto en solo lectura (v1.196.0, 2026-11-13)
+
+- **Pedido (13/11):** arreglo temporal en su propio PR. Mientras las sedes de HLM estén vacías, quien hoy ve HLM (cliente, supervisores y Calidad) sigue viendo lo de agosto.
+- **Cambio:**
+  - Opción `parametros.datosAnteriores = { visible, etiqueta }` del padre en el registro de clientes. La migración idempotente `fase354b_hlm_datos_anteriores_v1` la prende con la etiqueta «Datos anteriores (agosto, sin separar por sede)». Para apagarla cuando agosto esté repartido: una migración nueva con `visible: false` (no editar esta; si la opción ya existe, no se vuelve a prender).
+  - Pantalla de sedes: tercer botón, punteado y menos destacado, «… · solo lectura», para quien tiene `cliente_`/`campana_` de HLM (quien solo tiene una sede no lo ve). El administrador sigue viendo «Sin sede».
+  - `GET /api/dashboard/HOSPITAL LA MARIA`: abre para quien tiene acceso a HLM solo con la opción prendida; apagada, solo el administrador (como en la Fase 354).
+  - Solo lectura: las cargas a HLM sin sede siguen en 400; `canLoadCampaign` niega el padre a todos menos al administrador (skills de WhatsApp, salida, etc.); el tablero oculta «Actualizar datos» y el encabezado dice «… · solo lectura».
+- **Pruebas:** `fase354b-hlm-datos-anteriores` (4, datos inventados); ajustadas `fase354-hlm-sedes` (el padre ahora abre para quien ve HLM) y las listas de migraciones de `fase153-crear-aurora`/`fase160-crear-hlm`. Suite 3116/3116; `npm audit` 0.
+- **Visual local** (instancia aislada con base temporal, Brave, CLIENTES_DASH con HLM): botón visible y tablero con «solo lectura», sin «Actualizar datos», a 375/768/1440, sin errores de consola ni scroll horizontal.
+- **PR #811**, CI en verde, mezclado con `--match-head-commit` (SHA de `ls-remote` = API = local); CI de `main` y deploy en verde; `/api/health` responde **1.196.0**.
+
+## Fase 354 (cierre) — bitácora (solo docs, 2026-11-13)
+
+- En producción: #810 (Fase 354, 1.195.0) y #811 (Fase 354b, 1.196.0); producción responde 1.196.0.
+- **Verificación en Brave pendiente:** el intento en producción (solo lectura, todo lo que no fuera GET bloqueado salvo el login) no llegó a verificar nada: la primera ventana se cerró antes del inicio de sesión y el reintento se quedó colgado; se detuvo a pedido del usuario y se cerraron sus procesos. No se envió ninguna escritura. Queda para el lunes 16/11 (ver `docs/pendientes.md`).

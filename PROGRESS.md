@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.195.0` (ver `server/package.json`, expuesta en
+- **Versión**: `1.196.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -42,7 +42,7 @@ narrativo de cada fase, fase por fase, vive en
 - **Clientes**: **ORLANT** y **MOBILIZE** tienen datos reales.
   **Hospital La María** (Fase 160) tiene el Flujo de agosto (Fase 163)
   y desde la Fase 354 se divide en **Sede Castilla** y **Sede 33** (dos campañas hijas,
-  `HOSPITAL LA MARIA - CASTILLA` / `- SEDE 33`; lo de agosto queda «Sin sede», solo admin); **Clínica Aurora** (Fase 153) tiene
+  `HOSPITAL LA MARIA - CASTILLA` / `- SEDE 33`; lo de agosto queda «Sin sede»; desde la Fase 354b, mientras las sedes estén vacías, quien ve HLM lo abre como «Datos anteriores», en solo lectura); **Clínica Aurora** (Fase 153) tiene
   Tráfico de Llamadas y de WhatsApp cargados y, desde la Fase 220, las mismas
   pestañas que ORLANT para la salida: Tráfico de Llamadas, Tráfico de
   WhatsApp y Total tráfico visibles; Tipificación y Llamadas y WhatsApp de
@@ -552,6 +552,8 @@ mismo orden):
 - Fase 353b — nombres «exactos» sin distinguir mayúsculas con tilde/Ñ ni espacios especiales (nombre_clave en SQLite) en Excel, calificar y portal; texto de la herramienta corregido; migración v2 de exactos (v1.194.1, 2026-11-13)
 - Fase 353 (cierre) — los 8 monitoreos del reporte de Edwin enlazados por la herramienta (única escritura autorizada); ORLANT 164 con id / 30 sin id; sep+oct 153 / 95,52 (solo docs, 2026-11-13)
 - Fase 354 — Hospital La María por sede: pantalla para elegir «Sede Castilla» / «Sede 33», cada sede su campaña hija con sus pestañas, cargas y permisos; lo de antes queda «Sin sede» (solo admin) (v1.195.0, 2026-11-13)
+- Fase 354b — HLM: tercer botón «Datos anteriores (agosto, sin separar por sede)», solo lectura, para quien ve HLM mientras las sedes estén vacías; opción `datosAnteriores` para apagarlo (v1.196.0, 2026-11-13)
+- Fase 354 (cierre) — #810 y #811 en producción (v1.196.0); la verificación en Brave del botón y de agosto (12.087 / 14.202) queda para el lunes 16/11 (solo docs, 2026-11-13)
 - Fase 309 — Revisión de seguridad: el cliente ya no recibe el nombre de los líderes en `GET /metas`; resto en `docs/revision-seguridad-2026-11-09.md` (v1.154.1, 2026-11-10)
 - Fase 308 — Revisión antes de la reunión con clientes y pendientes del supervisor (solo docs, 2026-11-10)
 - Fase 307 — Calidad para que los líderes evalúen: ORLANT conserva su Calidad y suma «Resultado de los monitoreos» al final; Aurora ya lo tenía (se muestra con el primer monitoreo) (v1.154.0, 2026-11-10)
