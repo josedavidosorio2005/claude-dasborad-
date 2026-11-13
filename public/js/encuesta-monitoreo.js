@@ -87,7 +87,8 @@ function encMonContenidoHtml(d, pregunta) {
         '<td>' + esc(f.agente ? textoFormatoNombre(f.agente) : '—') + '</td><td><span class="cen-fallas">' + esc(cenFallasTexto(f.fallas)) + '</span></td>' +
         '<td>' + _encMonEstadoHtml(f) + '</td>' +
         '<td class="peak">' + (f.monitoreo ? esc(m.puntaje != null ? m.puntaje : '—') + (m.clasificacion ? ' ' + calEstadoHtml(m.clasificacion) : '') : '—') + '</td>' +
-        '<td class="cen-obs">' + esc(f.monitoreo ? (m.observaciones || '—') : '—') + '</td></tr>';
+        // Fase 352 (B): la observacion en una ventana, no completa en la fila.
+        '<td class="cen-obs">' + (f.monitoreo ? verObsBotonHtml(m.observaciones, 'Llamada del ' + cenFecha(f.fecha)) : '—') + '</td></tr>';
     }).join('') + '</tbody></table></div>';
   return html + _encMonAvisoSinId(d);
 }

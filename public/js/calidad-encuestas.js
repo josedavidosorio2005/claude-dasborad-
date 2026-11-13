@@ -138,7 +138,7 @@ function _cenFilaHtml(f, puedeCalificar, verTel) {
   if (f.estado === 'resuelta') {
     var m = f.monitoreo || {};
     return '<tr>' + celdas + '<td class="peak">' + _cenEsc(m.puntaje != null ? m.puntaje : '—') + (m.clasificacion ? ' ' + calEstadoHtml(m.clasificacion) : '') + '</td>' +
-      '<td class="cen-obs">' + _cenEsc(m.observaciones || '—') + '</td><td>' + _cenEsc(m.evaluador || '—') + '</td></tr>';
+      '<td class="cen-obs">' + verObsBotonHtml(m.observaciones, 'Llamada del ' + cenFecha(f.fecha)) + '</td><td>' + _cenEsc(m.evaluador || '—') + '</td></tr>'; // Fase 352 (B)
   }
   var e = cenEstadoFila(f, puedeCalificar);
   var accion = e.tipo === 'calificar'

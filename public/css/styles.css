@@ -2522,6 +2522,14 @@ div.ca-bar-fila{cursor:default}
 .wv-campos .wv-campo{border:1px solid var(--c-border);border-radius:var(--r-pill);padding:3px 10px;color:var(--c-text);font-family:ui-monospace,Consolas,monospace}
 @media (max-width:480px){.wv-estado{grid-template-columns:minmax(0,1fr)}.wv-estado dd{margin-bottom:6px}}
 
+/* Fase 352 (B): «Ver observación» (ver-observacion.js) y X arriba en las ventanas de Calidad que no la tenian. Solo tokens. */
+.vobs-btn{white-space:nowrap;min-height:36px}
+.vobs-dlg{width:640px;max-width:calc(100vw - 32px)}
+.vobs-texto{white-space:pre-wrap;overflow-wrap:anywhere;max-height:60vh;overflow:auto;line-height:1.6;font-size:var(--fs-body);color:var(--c-text);padding:4px 2px}
+.modal.modal-con-x{position:relative}
+.modal.modal-con-x > h3{padding-right:52px}
+.modal.modal-con-x > .modal-x{position:absolute;top:14px;right:14px}
+
 /* Fase 348 (E): TEMA CLARO — las tarjetas y bloques se confundian con el fondo (gris muy claro contra
    blanco). Sombra suave en dos capas + un aro de 1px casi invisible que marca el borde, y un poco
    mas de aire entre tarjetas. Solo en claro (el oscuro no cambia) y sin colores nuevos: las sombras
