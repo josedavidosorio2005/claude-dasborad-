@@ -20897,3 +20897,11 @@ Pedido del usuario: empezar W2 de `docs/plan-api-wolkvox.md`, solo para «MOBILI
 - **Qué hace:** `wolkvox.diagnostico()` y el campo `diagnostico` de `/wolkvox/estado` dan solo tres booleanos: `tokenEncontrado`, `servidorEncontrado` y `servidorFormatoValido`. Nunca valores ni largos, y solo para el administrador completo (403 para los demás, 404 para el Mobilize real). La ventana «Probar conexión» los muestra cuando falta algo.
 - **Además:** se quitan los espacios y saltos de línea al principio y al final del token y del servidor (los que quedan al pegar). Un servidor escrito como URL o con `.wolkvox.com` sigue siendo inválido a propósito.
 - **Pruebas:** `faseW2-diagnostico` (4).
+
+## Fase 349 — Menú lateral también en Clínica Aurora y Hospital La María (v1.188.0, 2026-11-13)
+
+- **Pedido del usuario:** extender el menú lateral plegable de Mobilize (Fase 348 G) a Clínica Aurora y Hospital La María, en un solo PR. ORLANT no se toca; SURA tampoco (Televentas ya tiene su menú).
+- **Cambio:** `GD_MENU_LATERAL_CLIENTES = ['MOBILIZE', 'CLINICA AURORA', 'HOSPITAL LA MARIA']`. Los íconos se eligen por el nombre de la pestaña; se agregaron Errores (`i-triangle-alert`), Inasistencia (`i-ban`, antes compartía el de Agendas) y Total tráfico (`i-gauge`), y «salida» va antes que «WhatsApp» para que «Llamadas y WhatsApp de salida» tenga el de salida. Los íconos de Mobilize quedan iguales (la prueba de la Fase 348 lo comprueba).
+- **Lo que ve cada persona no cambia:** el menú se arma con las pestañas que ya se dibujan para quien mira (`_gdTabsVisibles`, mismos permisos). «Gestión líneas internas» sigue como botón aparte, en el encabezado (`#gd-li-wrap`).
+- **Pruebas:** `fase349-menu-lateral-aurora-hlm` (3) y la de la Fase 348 G actualizada (3 clientes; ORLANT, SURA y la réplica no).
+- **Visual local** (copia de la base demo, Brave): Aurora y HLM a 375/768/1440 en claro y oscuro (abierto, plegado y vuelto a abrir a 1440; pestañas de siempre a 768 y 375), sin salto al cargar, ícono en cada pestaña, «Gestión líneas internas» en el encabezado; ORLANT sin menú y Mobilize igual; 0 errores de consola. Job `pantallas` local sin hallazgos.

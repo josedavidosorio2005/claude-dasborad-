@@ -7,6 +7,18 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.188.0 — Noviembre 2026
+
+**Fase 349: el menú lateral, también en Clínica Aurora y Hospital La María.**
+
+- En el computador, las pestañas de Clínica Aurora y de Hospital La María pasan a un menú a la
+  izquierda, igual que en Mobilize: con un ícono en cada opción, y con un botón para plegarlo y
+  volverlo a abrir.
+- Agendas, Inasistencia, Encuestas y Errores tienen cada una su ícono.
+- El botón «Gestión líneas internas» sigue arriba, donde estaba.
+- Cada persona ve las mismas pestañas de antes: solo cambia dónde aparecen.
+- En el celular y la tableta, las pestañas siguen arriba. ORLANT y SURA no cambian.
+
 ## v1.187.1 — Noviembre 2026
 
 **Fase W2: la ventana «Probar conexión» dice qué falta.**
