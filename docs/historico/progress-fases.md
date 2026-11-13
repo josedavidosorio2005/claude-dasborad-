@@ -20882,3 +20882,11 @@ Pedido del usuario: empezar W2 de `docs/plan-api-wolkvox.md`, solo para «MOBILI
 - **Pruebas:** `faseW2-wolkvox` (17, Wolkvox falso y datos inventados). Se declararon las 2 rutas como `admin` en `fase118-matriz-acceso`.
 - **Visual local** (copia de la base demo, Wolkvox falso, Brave): 375/768/1440, claro y oscuro; botón solo en la réplica y solo para el administrador; la ventana dentro de la pantalla, foco en la fecha, Esc la cierra sin cerrar el tablero y devuelve el foco al botón; ningún valor en pantalla; SUPERVISOR, CLIENTES_DASH y AUX_ADMIN no ven la réplica (403). Sin errores de consola salvo el 429 provocado a propósito con la segunda prueba seguida.
 - **Pendiente:** que el usuario guarde el token y el servidor (local y SSM), el merge con su OK y la primera prueba real desde producción.
+
+### Fase 348 (G): menú lateral de Mobilize, aprobado e implementado (v1.187.0, 2026-11-13)
+
+- **Aprobación:** el usuario aprobó la propuesta el 13/11 («quiero que quede implementado en Mobilize»). Solo Mobilize (`GD_MENU_LATERAL_CLIENTES = ['MOBILIZE']`); no se extiende a Aurora, HLM ni SURA, y ORLANT no se toca. La réplica de pruebas de la API tampoco lo tiene.
+- **Qué hace:** desde 901 px las pestañas pasan a un menú a la izquierda (con «MENÚ», ícono y 44 px por opción), pegado bajo el encabezado; un botón lo pliega y la plataforma lo recuerda en ese navegador. En 900 px o menos, las pestañas de siempre.
+- **El salto de 4 px del job `pantallas`** (165 → 169 px abriendo Mobilize primero): en el primer cuadro `--gd-header-h` trae una medida vieja (109) y en el siguiente la real (113). El menú es `sticky` con `top` = encabezado + 56 px, pero su posición natural es encabezado + 52 px (su margen). Con 113, el sticky lo empujaba 4 px. Ahora el `top` es + 52 px, igual al margen. Se reprodujo en local antes del cambio con el mismo script de CI.
+- **Mezcla con `main`** (sin force): en `styles.css` los bloques nuevos van antes del de E, porque la prueba de E lee hasta el final del archivo. La prueba de G lee solo su propio bloque. En `index.html` quedan los dos scripts (`gd-menu-lateral.js` y `wolkvox-prueba.js`) antes de `dashboard-generic.js`.
+- **Pruebas:** `fase348-g-menu-lateral-propuesta` (3).

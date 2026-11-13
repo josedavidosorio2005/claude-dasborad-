@@ -7,6 +7,17 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.187.0 — Noviembre 2026
+
+**Fase 348 (G): menú lateral en el dashboard de Mobilize.**
+
+- En el computador (pantallas de más de 900 px), las pestañas del dashboard de Mobilize pasan a un
+  menú a la izquierda, con un ícono en cada opción, como el de Televentas de SURA.
+- El botón de arriba del menú lo pliega para dar todo el ancho a las gráficas, y lo vuelve a abrir.
+  La plataforma recuerda si lo dejaste plegado.
+- En el celular y la tableta, las pestañas siguen arriba, como siempre.
+- Solo cambia Mobilize: ORLANT, Aurora, Hospital La María y SURA quedan igual.
+
 ## v1.186.0 — Noviembre 2026
 
 **Fase W2: primera conexión con Wolkvox, solo en el tablero de pruebas.**

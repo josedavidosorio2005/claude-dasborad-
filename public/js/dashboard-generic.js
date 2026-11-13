@@ -1781,6 +1781,7 @@ function renderGenericTabs(){
     var sec = gdSeccionDeTipo(t.panels && t.panels[0] && t.panels[0].tipo);
     return '<button class="atab'+(sec ? ' gd-tab-sec-'+sec : '')+'" data-gdtab="'+esc(t.key)+'">'+esc(t.label)+'</button>';
   }).join('');
+  if(typeof gdMenuLateralAplicar === 'function') gdMenuLateralAplicar(_gd.cliente); // Fase 348 (G): menu lateral, solo los clientes de la lista (hoy Mobilize)
 }
 
 // La navegacion por pestanas usa data-gdtab (no un onclick con texto libre).
