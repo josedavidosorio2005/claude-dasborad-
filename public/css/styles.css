@@ -2530,6 +2530,10 @@ div.ca-bar-fila{cursor:default}
 .modal.modal-con-x > h3{padding-right:52px}
 .modal.modal-con-x > .modal-x{position:absolute;top:14px;right:14px}
 
+/* Fase 352 (D): «Plan de acción del mes» aparte, junto a «Agregar errores». Solo tokens. */
+.err-botones{display:inline-flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
+#err-p-texto{min-height:160px;line-height:1.5}
+
 /* Fase 348 (E): TEMA CLARO — las tarjetas y bloques se confundian con el fondo (gris muy claro contra
    blanco). Sombra suave en dos capas + un aro de 1px casi invisible que marca el borde, y un poco
    mas de aire entre tarjetas. Solo en claro (el oscuro no cambia) y sin colores nuevos: las sombras

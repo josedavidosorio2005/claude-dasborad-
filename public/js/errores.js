@@ -55,6 +55,9 @@ function _erroresPintar(camp) {
   // Fase 347: Reportes (borra, pero no registra) abre solo la lista «Errores del mes».
   var boton = d.puedeEditar ? '<button type="button" class="btn-primary err-agregar" data-camp="' + cs + '" onclick="erroresAbrirEditor(this.dataset.camp)">Agregar errores</button>'
     : d.puedeBorrar ? '<button type="button" class="btn-primary err-agregar" data-camp="' + cs + '" onclick="erroresAbrirEditor(this.dataset.camp)">Errores del mes</button>' : '';
+  // Fase 352 (D, reunion con Edwin del 13/11): el plan de accion del mes, aparte de «Agregar errores».
+  // Lo escriben el supervisor y el administrador; Reportes lo puede borrar. El cliente solo lo lee abajo.
+  if (d.puedeEditar || d.puedeBorrar) boton = '<span class="err-botones">' + boton + '<button type="button" class="btn-cancel err-plan-btn" data-camp="' + cs + '" onclick="erroresAbrirPlan(this.dataset.camp)">Plan de acción del mes</button></span>';
   var cab = '<div class="aurora-card-title err-cab"><span>Flujo de errores por mes</span>' + boton + '</div>';
   var aviso = erroresAvisoFueraDeMeses(avisoMes, visibles, marcados)
     ? '<p class="err-aviso" role="status"><span>Se guardó en <b>' + esc(_errMesLbl(avisoMes)) + '</b>, que no está entre los meses elegidos en «Meses» (arriba).</span> <button type="button" class="btn-sm" onclick="gdMesesTodos()">Ver todos los meses</button></p>' : '';
@@ -108,7 +111,7 @@ function _errDialogo() {
     ov = document.createElement('div');
     ov.className = 'cc2-ov'; ov.id = 'err-ov'; ov.hidden = true;
     ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-labelledby', 'err-ov-t');
-    ov.innerHTML = '<div class="cc2-dlg ca-dlg-ancho"><h3 id="err-ov-t"></h3><div id="err-ov-b"></div><div class="modal-btns"><button type="button" class="btn-cancel" onclick="erroresCerrar()">Cerrar</button></div></div>';
+    ov.innerHTML = '<div class="cc2-dlg ca-dlg-ancho"><div class="cmp-dlg-cab"><h3 id="err-ov-t"></h3><button type="button" class="cmp-x" aria-label="Cerrar" title="Cerrar (Esc)" onclick="erroresCerrar()"><span aria-hidden="true">×</span></button></div><div id="err-ov-b"></div><div class="modal-btns"><button type="button" class="btn-cancel" onclick="erroresCerrar()">Cerrar</button></div></div>';
     ov.addEventListener('click', function (e) { if (e.target === ov) erroresCerrar(); });
   }
   var host = document.getElementById('gd-overlay') || document.body;
@@ -122,7 +125,8 @@ function _errAbrir(titulo, html) {
   document.getElementById('err-ov-t').textContent = titulo;
   document.getElementById('err-ov-b').innerHTML = html;
   ov.hidden = false;
-  var f = ov.querySelector('select, input, textarea, button'); if (f) f.focus();
+  // Fase 352 (D): primero un campo del contenido (la X de arriba no se lleva el foco).
+  var f = document.getElementById('err-ov-b').querySelector('select, input, textarea, button') || ov.querySelector('button'); if (f) f.focus();
 }
 function erroresCerrar() {
   var ov = document.getElementById('err-ov'); if (ov) ov.hidden = true;
@@ -180,14 +184,12 @@ function _errRegistrosMes(mes) {
 function _errLeerFormulario() {
   var as = document.getElementById('err-f-asesor'); if (!as) return;
   _errEd.borrador = { asesor: as.value, cantidad: document.getElementById('err-f-cant').value, observacion: document.getElementById('err-f-obs').value };
-  var pl = document.getElementById('err-f-plan'); if (pl) _errEd.planes[_errEd.mes] = pl.value;
 }
 function _errPintarEditor(mensaje) {
   var host = document.getElementById('err-ed'); if (!host) return;
   var edit = _errEd.id ? _errRegistro(_errEd.camp, _errEd.id) : null;
   var bo = _errEd.borrador || { asesor: '', cantidad: '1', observacion: '' };
   var regs = _errRegistrosMes(_errEd.mes);
-  var plan = Object.prototype.hasOwnProperty.call(_errEd.planes, _errEd.mes) ? _errEd.planes[_errEd.mes] : _errPlanGuardado(_errEd.mes);
   var asesoras = _errEd.asesoras.slice();
   if (bo.asesor && asesoras.indexOf(bo.asesor) === -1) asesoras.unshift(bo.asesor);
   var mesLbl = esc(_errMesLbl(_errEd.mes));
@@ -204,7 +206,7 @@ function _errPintarEditor(mensaje) {
       tab('registrar', 'reg', edit ? 'Editar error' : 'Registrar') +
       tab('lista', 'lista', 'Errores del mes (' + regs.length + ')') +
     '</div>' : '<h3 class="err-solo-lista" id="err-tab-lista" tabindex="-1">Errores de ' + mesLbl + ' (' + regs.length + ')</h3>') +
-    // Registrar: error + plan, un solo «Guardar».
+    // Registrar: solo el error (Fase 352 D: el plan va en «Plan de acción del mes»).
     (!_errEd.puedeEditar ? '' : '<div role="tabpanel" id="err-pan-reg" aria-labelledby="err-tab-reg"' + (enLista ? ' hidden' : '') + '>' +
       '<div class="ca-filtros err-form">' +
         '<label class="ca-filtro">Asesora <select id="err-f-asesor">' +
@@ -215,8 +217,7 @@ function _errPintarEditor(mensaje) {
       '</div>' +
       '<p class="cpl-ayuda">Cantidad 1 = un error individual. Para varios errores iguales, pon la cantidad y una sola observación.</p>' +
       '<label class="ca-filtro err-obs-campo">Observación <textarea id="err-f-obs" maxlength="1000" rows="3" placeholder="Qué pasó">' + esc(bo.observacion || '') + '</textarea></label>' +
-      '<label class="ca-filtro err-obs-campo err-plan-lbl">Plan de acción de ' + mesLbl + ' <textarea id="err-f-plan" class="err-plan-campo" maxlength="4000" rows="4" placeholder="Qué se va a hacer este mes para corregir los errores">' + esc(plan) + '</textarea></label>' +
-      '<p class="cpl-ayuda">«Guardar» guarda juntos el error y el plan de acción. Para guardar solo el plan, deja la asesora sin elegir.</p>' +
+      '<p class="cpl-ayuda">El plan de acción del mes se escribe aparte, en «Plan de acción del mes».</p>' + // Fase 352 (D)
       '<div class="modal-btns" style="justify-content:flex-start">' +
         '<button type="button" class="btn-primary err-guardar" onclick="erroresGuardar()">Guardar</button>' +
         (edit ? '<button type="button" class="btn-cancel" onclick="erroresCancelarEdicion()">Cancelar edición</button>' : '') +
@@ -276,8 +277,6 @@ async function _errRecargar(mensaje, mesGuardado, avisar) {
 async function erroresGuardar() {
   _errLeerFormulario();
   var bo = _errEd.borrador, mes = _errEd.mes;
-  var plan = _errEd.planes[mes];
-  var planCambio = plan !== undefined && plan.trim() !== _errPlanGuardado(mes).trim();
   var cuerpo = { campana: _errEd.camp, mes: mes };
   if (bo.asesor) {
     var cant = parseInt(bo.cantidad, 10);
@@ -287,17 +286,14 @@ async function erroresGuardar() {
   } else if (bo.observacion.trim() || _errEd.id) {
     showToast('Elige la asesora del error', 'error'); return;
   }
-  if (planCambio) cuerpo.plan = plan;
-  if (!cuerpo.error && !planCambio) { showToast('Elige la asesora o escribe el plan de acción', 'error'); return; }
+  if (!cuerpo.error) { showToast('Elige la asesora del error', 'error'); return; }
   var btn = document.querySelector('#err-ed .err-guardar'); if (btn) btn.disabled = true;
   try { await apiRequest('POST', '/calidad/errores/guardar', cuerpo); }
   catch (e) { if (btn) btn.disabled = false; showToast(e.message, 'error'); return; }
   var partes = [];
   if (cuerpo.error) partes.push((_errEd.id ? 'error actualizado' : (cuerpo.error.cantidad === 1 ? '1 error' : cuerpo.error.cantidad + ' errores')) + ' de ' + textoFormatoNombre(cuerpo.error.asesor));
-  if (planCambio) partes.push(plan.trim() ? 'plan de acción' : 'plan de acción borrado');
   _errEd.id = null;
   _errEd.borrador = { asesor: '', cantidad: '1', observacion: '' };
-  delete _errEd.planes[mes];
   await _errRecargar('Guardado en ' + _errMesLbl(mes) + ': ' + partes.join(' y ') + '.', mes, true);
 }
 async function erroresBorrar(btn) {
@@ -309,6 +305,73 @@ async function erroresBorrar(btn) {
   if (_errEd.id === id) { _errEd.id = null; _errEd.borrador = { asesor: '', cantidad: '1', observacion: '' }; }
   await _errRecargar('Error borrado.', _errEd.mes, false);
   var t = document.getElementById('err-tab-lista'); if (t) t.focus();
+}
+
+// ── Fase 352 (D, reunion con Edwin del 13/11): «Plan de acción del mes», aparte de los errores ──
+// El plan de mejora general del equipo para un mes, sin asesora. Se guarda donde siempre
+// (errores_plan_accion, uno por campaña y mes): los planes ya escritos aparecen aqui tal cual.
+// El supervisor y el administrador escriben y editan; el administrador y Reportes borran.
+var ERR_PLAN_MAX = 4000;
+var _errPl = { camp: null, mes: '', borradores: {}, puedeEditar: false, puedeBorrar: false };
+function erroresAbrirPlan(camp, mes) {
+  var st = _errEstado[camp] || {};
+  var d = _errDatos[camp] || {};
+  _errPl = { camp: camp, mes: mes || st.mes || _errHoyMes(), borradores: {}, puedeEditar: !!d.puedeEditar, puedeBorrar: !!d.puedeBorrar };
+  _errAbrir('Plan de acción del mes · ' + camp, '<div id="err-plan-ed"></div>');
+  _errPintarPlan();
+  var t = document.getElementById(_errPl.puedeEditar ? 'err-p-texto' : 'err-p-mes'); if (t) t.focus();
+}
+function _errPlanDe(mes) { var d = _errDatos[_errPl.camp] || { planes: {} }; return (d.planes || {})[mes] || null; }
+function _errPlanLeer() { var t = document.getElementById('err-p-texto'); if (t && _errPl.puedeEditar) _errPl.borradores[_errPl.mes] = t.value; }
+function _errPintarPlan(mensaje) {
+  var host = document.getElementById('err-plan-ed'); if (!host) return;
+  var guardado = _errPlanDe(_errPl.mes);
+  var texto = Object.prototype.hasOwnProperty.call(_errPl.borradores, _errPl.mes) ? _errPl.borradores[_errPl.mes] : (guardado ? guardado.texto : '');
+  var mesLbl = esc(_errMesLbl(_errPl.mes));
+  host.innerHTML =
+    (mensaje ? '<p class="err-msg" role="status">' + esc(mensaje) + '</p>' : '') +
+    '<div class="ca-filtros err-form"><label class="ca-filtro">Mes <input type="month" id="err-p-mes" value="' + esc(_errPl.mes) + '" onchange="erroresPlanCambiaMes(this.value)"></label></div>' +
+    '<p class="cpl-ayuda">El plan de mejora general del equipo para ' + mesLbl + '. No es de una asesora: los errores de cada una se registran en «Agregar errores».</p>' +
+    '<label class="ca-filtro err-obs-campo">Plan de acción de ' + mesLbl +
+      ' <textarea id="err-p-texto" class="err-plan-campo" maxlength="' + ERR_PLAN_MAX + '" rows="8"' + (_errPl.puedeEditar ? '' : ' readonly') + ' placeholder="Qué va a hacer el equipo este mes para corregir los errores">' + esc(texto) + '</textarea></label>' +
+    (guardado ? '<p class="cpl-ayuda">Actualizado por ' + esc(guardado.actualizadoPorNombre) + ' · ' + esc(guardado.actualizadoEn) + '</p>' : '<p class="cpl-ayuda">Todavía no hay plan de acción para ' + mesLbl + '.</p>') +
+    '<div class="modal-btns" style="justify-content:flex-start">' +
+      (_errPl.puedeEditar ? '<button type="button" class="btn-primary err-plan-guardar" onclick="erroresGuardarPlan()">Guardar plan</button>' : '') +
+      (_errPl.puedeBorrar && guardado ? '<button type="button" class="btn-cancel err-plan-borrar" onclick="erroresBorrarPlan(this)">Borrar plan</button>' : '') +
+    '</div>';
+}
+function erroresPlanCambiaMes(v) {
+  if (!/^\d{4}-\d{2}$/.test(v)) return;
+  _errPlanLeer();
+  _errPl.mes = v;
+  _errPintarPlan();
+}
+async function _errPlanRecargar(mensaje) {
+  var camp = _errPl.camp;
+  try { _errDatos[camp] = await apiRequest('GET', '/calidad/errores?campana=' + encodeURIComponent(camp)); } catch (e) {}
+  var st = _errEstado[camp] || (_errEstado[camp] = { clave: _errClave(), mes: '' });
+  st.mes = _errPl.mes; st.avisoMes = _errPl.mes;
+  _erroresPintar(camp);
+  _errPintarPlan(mensaje);
+}
+async function erroresGuardarPlan() {
+  _errPlanLeer();
+  var mes = _errPl.mes, t = String(_errPl.borradores[mes] || '').trim();
+  if (!t) { showToast(_errPl.puedeBorrar ? 'Escribe el plan de acción, o usa «Borrar plan»' : 'Escribe el plan de acción', 'error'); return; }
+  var btn = document.querySelector('#err-plan-ed .err-plan-guardar'); if (btn) btn.disabled = true;
+  try { await apiRequest('PUT', '/calidad/errores/plan', { campana: _errPl.camp, mes: mes, texto: t }); }
+  catch (e) { if (btn) btn.disabled = false; showToast(e.message, 'error'); return; }
+  delete _errPl.borradores[mes];
+  await _errPlanRecargar('Plan de acción de ' + _errMesLbl(mes) + ' guardado.');
+}
+async function erroresBorrarPlan(btn) {
+  if (btn.dataset.armado !== '1') { btn.dataset.armado = '1'; btn.textContent = '¿Borrar el plan?'; setTimeout(function () { if (btn.isConnected) { btn.dataset.armado = ''; btn.textContent = 'Borrar plan'; } }, 4000); return; }
+  var mes = _errPl.mes;
+  btn.disabled = true;
+  try { await apiRequest('DELETE', '/calidad/errores/plan?campana=' + encodeURIComponent(_errPl.camp) + '&mes=' + encodeURIComponent(mes)); }
+  catch (e) { btn.disabled = false; showToast(e.message, 'error'); return; }
+  delete _errPl.borradores[mes];
+  await _errPlanRecargar('Plan de acción de ' + _errMesLbl(mes) + ' borrado.');
 }
 
 // Exportar: errores por mes y por asesora del mes que se mira (sin las observaciones).
