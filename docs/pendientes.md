@@ -682,6 +682,13 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 
 ## 3. Técnico, sin dueño (costo y riesgo ya estimado — nada se aplica sin pedirlo)
 
+- **Portal del supervisor › Calidad: recuadro de una campaña sin plantilla** (Fase 352 C,
+  13/11/2026). Los recuadros salen del registro de campañas de Calidad, y el módulo solo ofrece las
+  que tienen plantilla principal activa. Si una campaña del registro no tuviera plantilla, su
+  recuadro abriría el módulo en la primera campaña de la persona, no en la suya. Hoy no pasa en
+  producción: las 5 campañas tienen plantilla (verificado el 13/11). Se vio solo en la copia local
+  de la base demo, donde 3 campañas no tienen plantilla. Arreglo posible: no mostrar el recuadro, o
+  mostrarlo como «Sin plantilla de Calidad». Costo: bajo (`session.js`, una prueba). Riesgo: bajo.
 - **Mapa de calor de Flujo por hora: el nivel solo por color** (Fase 345, 12/11/2026; el usuario
   pidió dejarlo pendiente, sin cambiar). Las celdas (Alto / Medio / Bajo, y el rojo de Abandonadas)
   se distinguen solo por el color; la leyenda de arriba explica los tramos. Para WCAG 1.4.1 haría
