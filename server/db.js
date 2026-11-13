@@ -5159,6 +5159,16 @@ function crearReplicaMobilizeApi() {
 }
 runOnceMigration('faseW1_replica_mobilize_api_v1', crearReplicaMobilizeApi);
 
+// Fase 353 (C, aprobado por el usuario el 13/11 con dry-run): los monitoreos sin usuario cuyo
+// asesor coincide EXACTO (mayusculas y espacios al borde aparte) con un UNICO usuario ASESOR
+// activo de su campaña quedan enlazados por id. Hoy ya llegan al portal por nombre; con el id no
+// se pierden si luego se corrige el nombre del usuario. No cambia el texto, la nota ni la fecha.
+// Nunca enlaza por parecido (eso es la herramienta del administrador, POST /calidad/enlace).
+runOnceMigration('fase353_monitoreos_enlace_exacto_v1', () => {
+  const n = require('./enlace-asesor').enlazarExactos(db);
+  if (!config.isTest) console.log('[db] Migracion fase353_monitoreos_enlace_exacto_v1: ' + n + ' monitoreo(s) enlazado(s) por nombre exacto.');
+});
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {

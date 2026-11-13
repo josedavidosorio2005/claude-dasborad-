@@ -1206,6 +1206,11 @@
         <div class="qi-preview" id="cf-cronograma-preview"></div>
         <p style="font-size:0.78rem;color:var(--c-text-muted);margin-top:8px">El cronograma completo (líder, asesores, días laborales, metas semanales, WhatsApp/Chat) se programa mes a mes desde Admin &gt; Cronograma y Metas de Monitoreo.</p>
       </div>
+      <div class="aurora-card" id="cal-enlace-card" hidden>
+        <div class="aurora-card-title">Enlazar monitoreos a usuario</div>
+        <p class="cpl-ayuda">Monitoreos de esta campaña que no están enlazados a un usuario ASESOR: no le llegan a su Portal Asesor. Elige el usuario de cada nombre y confirma. El nombre del asesor pasa a ser el del usuario; la nota, las respuestas y la fecha no cambian. Queda en el Historial.</p>
+        <div id="cal-enlace"></div>
+      </div>
       <div class="aurora-card">
         <div class="aurora-card-title">Usuarios con acceso a esta campaña (rol CALIDAD)</div>
         <table class="aurora-rank-table" id="cal-permisos-table"></table>
@@ -2025,6 +2030,7 @@
 <script src="js/calidad-plantillas.js"></script>
 <script src="js/calidad-carga-masiva-logic.js"></script>
 <script src="js/calidad-carga-masiva.js"></script>
+<script src="js/calidad-enlace.js"></script>
 <script src="js/metas.js"></script>
 <script src="js/umbrales.js"></script>
 <script src="js/reportes.js"></script>

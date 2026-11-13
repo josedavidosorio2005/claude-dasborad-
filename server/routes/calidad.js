@@ -31,6 +31,7 @@ function errorFechaMonitoreo(fecha) {
 }
 const { wrap, nowStr, logEvent, actorLabel } = require('./shared');
 const { aplicarAliasAFilas } = require('../alias-asesores');
+const enlace = require('../enlace-asesor'); // Fase 353
 const camposLib = require('../calidad-campos'); // Fase 252
 const importLib = require('../calidad-plantilla-import'); // Fase 253
 const clientesRegistro = require('../clientes-registro');
@@ -666,7 +667,8 @@ router.post(
     const fecha = b.fecha ? String(b.fecha).trim() : fechaLimitesHoyColombia();
     const errFecha = errorFechaMonitoreo(fecha);
     if (errFecha) return res.status(400).json({ error: errFecha });
-    const asesorUserId = resolverAsesorUserId(b.asesorUserId, b.asesor, b.campana);
+    // Fase 353: sin id valido, se enlaza si el nombre es EXACTO a un unico usuario ASESOR activo.
+    const asesorUserId = resolverAsesorUserId(b.asesorUserId, b.asesor, b.campana) || enlace.idPorNombreExacto(db, b.campana, b.asesor);
     // Fase 95 (tema B): si la campana ya tiene catalogo de codificaciones,
     // el valor debe estar en la lista activa; si no tiene catalogo
     // todavia, sigue siendo texto libre (igual que hasta ahora).
@@ -774,10 +776,10 @@ router.post(
     );
     const insertar = db.prepare(
       `INSERT INTO monitoreos
-         (campana, asesor, fecha, mes, canal, idLlamada, telefono, codificacion,
+         (campana, asesor, asesorUserId, fecha, mes, canal, idLlamada, telefono, codificacion,
           evaluador, evaluadorUserId, answers, puntaje, clasificacion, fallos,
           nivelCritico, observaciones, createdAt)
-       VALUES (@campana,@asesor,@fecha,@mes,@canal,@idLlamada,@telefono,@codificacion,
+       VALUES (@campana,@asesor,@asesorUserId,@fecha,@mes,@canal,@idLlamada,@telefono,@codificacion,
                @evaluador,@evaluadorUserId,@answers,@puntaje,@clasificacion,@fallos,
                @nivelCritico,@observaciones,@createdAt)`
     );
@@ -786,7 +788,7 @@ router.post(
          canal=@canal, telefono=@telefono, codificacion=@codificacion, evaluador=@evaluador,
          evaluadorUserId=@evaluadorUserId, answers=@answers, puntaje=@puntaje,
          clasificacion=@clasificacion, fallos=@fallos, nivelCritico=@nivelCritico,
-         observaciones=@observaciones
+         observaciones=@observaciones, asesorUserId=COALESCE(asesorUserId, @asesorUserId)
        WHERE id=@id`
     );
 
@@ -794,6 +796,10 @@ router.post(
     let actualizadas = 0;
     let omitidas = 0;
     const avisos = [];
+    // Fase 353: cada fila queda enlazada a su usuario si el nombre es EXACTO (un solo usuario
+    // ASESOR activo de la campaña). Las que no, se avisan en la respuesta (sinUsuario).
+    const idDe = new Map();
+    const idPorNombre = (n) => { if (!idDe.has(n)) idDe.set(n, enlace.idPorNombreExacto(db, b.campana, n)); return idDe.get(n); };
 
     const tx = db.transaction((filas) => {
       filas.forEach((fila, idx) => {
@@ -812,6 +818,7 @@ router.post(
         const payload = {
           campana: b.campana,
           asesor: fila.asesor,
+          asesorUserId: idPorNombre(fila.asesor),
           fecha: fila.fecha,
           mes: calc.monthKey(fila.fecha),
           canal: fila.canal,
@@ -851,7 +858,82 @@ router.post(
       req.actor,
       `Carga masiva "${b.archivoNombre || 'sin nombre'}": ${insertadas} nueva(s), ${actualizadas} actualizada(s), ${omitidas} omitida(s)`
     );
-    res.status(201).json({ insertadas, actualizadas, omitidas, avisos, filasUnificadasPorAlias: alias.filasUnificadas, asesoresUnificadosPorAlias: alias.asesoresUnificados });
+    const sinUsuario = enlace.revisarNombres(db, b.campana, alias.filas.map((f) => f.asesor)); // Fase 353
+    res.status(201).json({ insertadas, actualizadas, omitidas, avisos, filasUnificadasPorAlias: alias.filasUnificadas, asesoresUnificadosPorAlias: alias.asesoresUnificados, sinUsuario });
+  })
+);
+
+// Fase 353: vista previa de una carga de Calidad: que nombres NO quedarian enlazados a un usuario
+// ASESOR (no llegarian a su Portal Asesor) y la sugerencia si hay una sola parecida. Solo lee.
+router.post(
+  '/monitoreos/revisar-asesores',
+  requireActor,
+  validate(schemas.revisarNombresBody),
+  wrap((req, res) => {
+    const b = req.body;
+    if (!canEvaluateCampaign(req.actor, b.campana)) {
+      return res.status(403).json({ error: 'No tiene permiso para evaluar esta campana' });
+    }
+    const alias = aplicarAliasAFilas(db, b.campana, b.asesores.map((a) => ({ asesor: String(a).trim() })), 'asesor');
+    res.json({ sinUsuario: enlace.revisarNombres(db, b.campana, alias.filas.map((f) => f.asesor)) });
+  })
+);
+
+// Fase 353: «Enlazar monitoreos a usuario» (solo el administrador). Lista los monitoreos sin
+// usuario de una campaña, agrupados por el texto del asesor, con la sugerencia si hay una sola
+// parecida. Enlazar lo decide el administrador grupo por grupo: nunca se enlaza por parecido solo.
+router.get(
+  '/calidad/enlace',
+  requireActor,
+  validate(schemas.enlaceQuery, 'query'),
+  wrap((req, res) => {
+    if (!isFullAdmin(req.actor)) return res.status(403).json({ error: 'Solo el administrador puede enlazar monitoreos' });
+    res.json(enlace.pendientes(db, req.query.campana));
+  })
+);
+
+// Enlaza al usuario elegido TODOS los monitoreos sin usuario de esa campaña cuyo asesor dice
+// exactamente ese texto, y el texto pasa a ser el nombre del usuario (decision del usuario,
+// 13/11). No cambian la nota, las respuestas, la fecha, el evaluador ni updatedAt. Al Historial.
+router.post(
+  '/calidad/enlace',
+  requireActor,
+  validate(schemas.enlazarBody),
+  wrap((req, res) => {
+    if (!isFullAdmin(req.actor)) return res.status(403).json({ error: 'Solo el administrador puede enlazar monitoreos' });
+    const b = req.body;
+    const u = db.prepare("SELECT id, nombre FROM users WHERE id = ? AND rol = 'ASESOR' AND active = 1 AND asesorCampana = ?").get(b.userId, b.campana);
+    if (!u) return res.status(400).json({ error: 'Ese usuario no es un ASESOR activo de esta campaña' });
+    const ids = db.prepare('SELECT id FROM monitoreos WHERE campana = ? AND asesor = ? AND asesorUserId IS NULL ORDER BY id').all(b.campana, b.asesor).map((r) => r.id);
+    if (!ids.length) return res.status(404).json({ error: 'No hay monitoreos sin usuario con ese nombre en esta campaña' });
+    const upd = db.prepare('UPDATE monitoreos SET asesorUserId = ?, asesor = ? WHERE id = ? AND asesorUserId IS NULL');
+    db.transaction(() => ids.forEach((id) => upd.run(u.id, u.nombre, id)))();
+    logCalEvent('MONITOREOS_ENLAZADOS', u.nombre, b.campana, req.actor,
+      `${ids.length} monitoreo(s) enlazado(s) al usuario #${u.id}; antes decían «${b.asesor}» (sin cambiar notas ni fechas). Ids: ${ids.join(', ')}`);
+    res.json({ enlazados: ids.length, ids, usuario: { id: u.id, nombre: u.nombre }, antes: b.asesor });
+  })
+);
+
+// Deshace un enlace recien hecho: esos monitoreos vuelven a quedar sin usuario y con el texto de
+// antes. Solo si todos siguen enlazados al mismo usuario (nadie los cambio despues). Al Historial.
+router.post(
+  '/calidad/enlace/revertir',
+  requireActor,
+  validate(schemas.deshacerEnlaceBody),
+  wrap((req, res) => {
+    if (!isFullAdmin(req.actor)) return res.status(403).json({ error: 'Solo el administrador puede enlazar monitoreos' });
+    const b = req.body;
+    const ph = b.ids.map(() => '?').join(',');
+    const rows = db.prepare(`SELECT id, asesorUserId, asesor FROM monitoreos WHERE campana = ? AND id IN (${ph})`).all(b.campana, ...b.ids);
+    const usuarios = new Set(rows.map((r) => r.asesorUserId));
+    if (rows.length !== b.ids.length || usuarios.size !== 1 || rows[0].asesorUserId == null) {
+      return res.status(409).json({ error: 'Esos monitoreos ya cambiaron: no se puede deshacer' });
+    }
+    const upd = db.prepare('UPDATE monitoreos SET asesorUserId = NULL, asesor = ? WHERE id = ?');
+    db.transaction(() => rows.forEach((r) => upd.run(b.asesor, r.id)))();
+    logCalEvent('MONITOREOS_ENLACE_DESHECHO', rows[0].asesor, b.campana, req.actor,
+      `${rows.length} monitoreo(s) vuelven a quedar sin usuario, con el texto «${b.asesor}». Ids: ${b.ids.join(', ')}`);
+    res.json({ deshechos: rows.length });
   })
 );
 

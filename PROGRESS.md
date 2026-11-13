@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.193.0` (ver `server/package.json`, expuesta en
+- **Versión**: `1.194.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -547,6 +547,7 @@ mismo orden):
 - Fase 352 (D) — Aurora › Errores: «Plan de acción del mes» aparte de «Agregar errores» (sin asesora); borrar el plan, solo administrador y Reportes; los planes guardados no cambian (v1.192.0, 2026-11-13)
 - Fase 352 (C) — Portal del supervisor › Calidad: un recuadro por campaña (meta y avance) que abre directo su Calidad, con clic, Enter o Espacio; sin «Abrir Módulo de Calidad» (v1.193.0, 2026-11-13)
 - Fase 352 (cierre) — A, B, D y C en producción (v1.193.0); verificación de solo lectura: 61 bien, 0 escrituras; ORLANT sep+oct 153 / 95,52 (solo docs, 2026-11-13)
+- Fase 353 — Calidad: «Enlazar monitoreos a usuario» (solo admin, sugerencia sin enlace automático, Historial y deshacer); el Excel y el calificar enlazan por id el nombre exacto y la vista previa avisa del que no coincide; migración de exactos (v1.194.0, 2026-11-13)
 - Fase 309 — Revisión de seguridad: el cliente ya no recibe el nombre de los líderes en `GET /metas`; resto en `docs/revision-seguridad-2026-11-09.md` (v1.154.1, 2026-11-10)
 - Fase 308 — Revisión antes de la reunión con clientes y pendientes del supervisor (solo docs, 2026-11-10)
 - Fase 307 — Calidad para que los líderes evalúen: ORLANT conserva su Calidad y suma «Resultado de los monitoreos» al final; Aurora ya lo tenía (se muestra con el primer monitoreo) (v1.154.0, 2026-11-10)
