@@ -101,7 +101,7 @@ test('una base nueva termina todas las migraciones con Aurora, creada despues de
     'faseW1_replica_mobilize_api_v1', // Fase W1: replica interna de Mobilize (fila nueva; no toca Aurora/HLM)
     'fase353_monitoreos_enlace_exacto_v1', // Fase 353: solo llena monitoreos.asesorUserId por nombre exacto (no toca Aurora/HLM)
     'fase353_monitoreos_enlace_exacto_v2', // Fase 353b
-    'fase354_hlm_sedes_v1']; // Fase 354: crea las 2 sedes de HLM (filas nuevas) y agrega parametros.sedes al padre // Fase 353b: lo mismo con nombre_clave() (tildes, Ñ, espacios especiales)
+    'fase354_hlm_sedes_v1', 'fase354b_hlm_datos_anteriores_v1']; // Fase 354b: prende «Datos anteriores» en parametros del padre // Fase 354: crea las 2 sedes de HLM (filas nuevas) y agrega parametros.sedes al padre // Fase 353b: lo mismo con nombre_clave() (tildes, Ñ, espacios especiales)
   assert.deepEqual(orden.slice(iAur + 1).filter((n) => !POSTERIORES.includes(n)), [], 'ninguna migracion vieja corre despues de crear Aurora');
   assert.ok(fila(), 'Aurora sigue ahi al final');
   const r = reg.leerRegistro(db).find((c) => c.nombre === AURORA);

@@ -5240,6 +5240,24 @@ function crearSedesHospitalLaMaria() {
 }
 runOnceMigration('fase354_hlm_sedes_v1', crearSedesHospitalLaMaria);
 
+// Fase 354b (arreglo temporal, pedido del usuario el 13/11): mientras las sedes de HLM esten
+// vacias, quien ve HLM sigue viendo lo de agosto con un tercer boton en la pantalla de sedes,
+// en solo lectura. Opcion parametros.datosAnteriores del padre; para APAGARLA cuando agosto
+// este repartido, una migracion nueva que ponga visible: false (no editar esta). Solo agrega
+// la opcion si no existe; no toca datos ni usuarios. Idempotente.
+function prenderDatosAnterioresHlm() {
+  const { HLM_NOMBRE } = require('./clientes-registro');
+  const r = db.prepare('SELECT parametros FROM clientes_registro WHERE nombre = ?').get(HLM_NOMBRE);
+  if (!r) return;
+  let p = {};
+  try { p = JSON.parse(r.parametros || '{}'); } catch (e) { p = {}; }
+  if (p.datosAnteriores) return;
+  p.datosAnteriores = { visible: true, etiqueta: 'Datos anteriores (agosto, sin separar por sede)' };
+  db.prepare('UPDATE clientes_registro SET parametros = ?, updatedAt = ? WHERE nombre = ?').run(JSON.stringify(p), new Date().toISOString(), HLM_NOMBRE);
+  if (!config.isTest) console.log('[db] Migracion fase354b_hlm_datos_anteriores_v1 aplicada.');
+}
+runOnceMigration('fase354b_hlm_datos_anteriores_v1', prenderDatosAnterioresHlm);
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {
@@ -5337,3 +5355,4 @@ module.exports.orlantCalidadSoloNueva = orlantCalidadSoloNueva; // Fase 332: pru
 module.exports.crearReplicaMobilizeApi = crearReplicaMobilizeApi; // Fase W1
 module.exports.REPLICA_API = REPLICA_API;
 module.exports.crearSedesHospitalLaMaria = crearSedesHospitalLaMaria; // Fase 354: prueba de idempotencia
+module.exports.prenderDatosAnterioresHlm = prenderDatosAnterioresHlm; // Fase 354b

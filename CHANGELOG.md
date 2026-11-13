@@ -7,6 +7,17 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.196.0 — Noviembre 2026
+
+**Fase 354b: Hospital La María, los datos de agosto se siguen viendo mientras se reparten.**
+
+- Mientras las dos sedes no tengan datos, la pantalla de elegir sede muestra un tercer botón,
+  más discreto: «Datos anteriores (agosto, sin separar por sede)». Abre el tablero de siempre,
+  con lo de agosto, para quien hoy ve Hospital La María (cliente, supervisores y Calidad).
+- Ese tablero es solo para mirar: no tiene «Actualizar datos» y la plataforma sigue rechazando
+  cualquier base que se intente subir a Hospital La María sin sede.
+- Es temporal: cuando agosto quede repartido entre las sedes, se apaga y el botón desaparece.
+
 ## v1.195.0 — Noviembre 2026
 
 **Fase 354: Hospital La María por sede (Sede Castilla y Sede 33).**

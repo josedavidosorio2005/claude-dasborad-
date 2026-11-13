@@ -83,9 +83,27 @@ function clientesParaTarjetas(lista, registro, perms, esAdmin) {
   });
 }
 
+// Fase 354b (arreglo temporal): «Datos anteriores» del padre (lo cargado antes de separar
+// las sedes), en solo lectura, mientras las sedes esten vacias. Opcion del registro:
+// parametros.datosAnteriores = { visible, etiqueta }. null si esta apagada o no existe.
+function datosAnterioresDe(registro, padre) {
+  var c = (registro || []).find(function (x) { return x && x.nombre === padre; });
+  var d = _sedesParam(c, 'datosAnteriores');
+  if (!d || typeof d !== 'object' || d.visible !== true) return null;
+  return { etiqueta: (typeof d.etiqueta === 'string' && d.etiqueta) || 'Datos anteriores (sin separar por sede)' };
+}
+
+// ¿Puede esta persona (no administrador) abrir los «Datos anteriores» del padre? Opcion
+// prendida y acceso al padre (cliente_/campana_): la misma regla que el servidor.
+function puedeVerDatosAnteriores(registro, padre, perms) {
+  if (!datosAnterioresDe(registro, padre)) return false;
+  return !!(perms && (perms['cliente_' + padre] === true || perms['campana_' + padre] === true));
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     sedesDe: sedesDe, padreDeSede: padreDeSede, sedeEtiqueta: sedeEtiqueta,
     permisosConSedes: permisosConSedes, sedesVisibles: sedesVisibles, clientesParaTarjetas: clientesParaTarjetas,
+    datosAnterioresDe: datosAnterioresDe, puedeVerDatosAnteriores: puedeVerDatosAnteriores, // Fase 354b
   };
 }

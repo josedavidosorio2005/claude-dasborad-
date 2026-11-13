@@ -35,9 +35,16 @@ function gdAbrirSelectorSede(padre) {
   }).join('') || '<div class="empty-state"><div class="es-title">Sin sedes asignadas</div>' +
     '<div class="es-hint">Solicita al administrador acceso a una sede.</div></div>';
   var extra = document.getElementById('sede-sin-sede');
-  extra.innerHTML = esAdmin
-    ? '<button type="button" class="sede-sin-btn" onclick="gdAbrirSinSede()">Sin sede <span class="sede-sin-nota">· lo cargado antes de separar las sedes · solo administrador</span></button>'
-    : '';
+  // Fase 354b (arreglo temporal): mientras las sedes esten vacias, quien ve el padre abre
+  // «Datos anteriores» (agosto, sin separar por sede) en solo lectura. Opcion del registro.
+  var ant = datosAnterioresDe(reg, padre);
+  if (esAdmin) {
+    extra.innerHTML = '<button type="button" class="sede-sin-btn" onclick="gdAbrirSinSede()">Sin sede <span class="sede-sin-nota">· lo cargado antes de separar las sedes · solo administrador</span></button>';
+  } else if (ant && puedeVerDatosAnteriores(reg, padre, perms)) {
+    extra.innerHTML = '<button type="button" class="sede-sin-btn" onclick="gdAbrirSinSede()">' + esc(ant.etiqueta) + ' <span class="sede-sin-nota">· solo lectura</span></button>';
+  } else {
+    extra.innerHTML = '';
+  }
   if (typeof closeClientsModal === 'function') closeClientsModal();
   document.getElementById('sede-modal-overlay').classList.add('show');
 }
@@ -52,7 +59,9 @@ function gdAbrirSede(campana) {
 }
 
 function gdAbrirSinSede() {
-  if (!_selSedeEsAdmin() || !_selSedePadre) return;
+  if (!_selSedePadre) return;
+  var perms = (typeof currentUser !== 'undefined' && currentUser && currentUser.perms) || {};
+  if (!_selSedeEsAdmin() && !puedeVerDatosAnteriores(_selSedeRegistro(), _selSedePadre, perms)) return;
   closeSelectorSede();
   openGenericDashboard(_selSedePadre);
 }
@@ -69,7 +78,8 @@ function gdPintarSede(cliente) {
     pill.textContent = sedeEtiqueta(reg, cliente);
     pill.className = 'gd-sede';
   } else if (esPadre) {
-    pill.textContent = 'Sin sede · solo administrador';
+    var ant = !_selSedeEsAdmin() && datosAnterioresDe(reg, cliente);
+    pill.textContent = ant ? ant.etiqueta + ' · solo lectura' : 'Sin sede · solo administrador';
     pill.className = 'gd-sede gd-sede-sin';
   }
   pill.classList.toggle('hidden', !(padre || esPadre));
