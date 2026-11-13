@@ -58,18 +58,37 @@ function _operacionValida(op) { return typeof op === 'string' && /^[A-Z0-9_]{1,4
 
 // { token, servidor } o null. `servidor` es solo el nombre corto (letras, numeros y guiones):
 // nunca una URL, para que nadie pueda desviar la consulta a otro dominio.
+// Fase W2 (diagnostico): los espacios y saltos de linea al principio o al final (los que quedan al
+// pegar en la consola de AWS o en un archivo) se quitan; nunca son parte de un token ni de un servidor.
+function _leer(env, operacion, sufijo) {
+  const v = env['WOLKVOX_' + operacion + '_' + sufijo];
+  return typeof v === 'string' ? v.trim() : '';
+}
+const _SERVIDOR_VALIDO = /^[a-z0-9-]{1,40}$/i;
 function credenciales(operacion, env) {
   env = env || process.env;
   if (!_operacionValida(operacion)) return null;
   _cargarArchivoLocal(env);
-  const token = env['WOLKVOX_' + operacion + '_TOKEN'];
-  const servidor = env['WOLKVOX_' + operacion + '_SERVIDOR'];
+  const token = _leer(env, operacion, 'TOKEN');
+  const servidor = _leer(env, operacion, 'SERVIDOR');
   if (!token || !servidor) return null;
-  if (!/^[a-z0-9-]{1,40}$/i.test(servidor)) return null;
+  if (!_SERVIDOR_VALIDO.test(servidor)) return null;
   if (/[\r\n]/.test(token)) return null;
   return { token, servidor };
 }
 function estaConfigurado(operacion, env) { return credenciales(operacion, env) !== null; }
+// Solo si/no, nunca un valor ni un largo: para que el administrador sepa que revisar en SSM.
+function diagnostico(operacion, env) {
+  env = env || process.env;
+  if (!_operacionValida(operacion)) return { tokenEncontrado: false, servidorEncontrado: false, servidorFormatoValido: false };
+  _cargarArchivoLocal(env);
+  const servidor = _leer(env, operacion, 'SERVIDOR');
+  return {
+    tokenEncontrado: _leer(env, operacion, 'TOKEN') !== '',
+    servidorEncontrado: servidor !== '',
+    servidorFormatoValido: servidor !== '' && _SERVIDOR_VALIDO.test(servidor),
+  };
+}
 
 // ── Fechas: AAAAMMDDHHMMSS, 24 h, dentro del mismo mes ──
 function _parteFecha(s) {
@@ -237,6 +256,7 @@ module.exports = {
   WolkvoxError,
   credenciales,
   estaConfigurado,
+  diagnostico,
   errorRango,
   fechaWolkvox,
   asegurarTablas,

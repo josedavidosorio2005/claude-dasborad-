@@ -20890,3 +20890,10 @@ Pedido del usuario: empezar W2 de `docs/plan-api-wolkvox.md`, solo para «MOBILI
 - **El salto de 4 px del job `pantallas`** (165 → 169 px abriendo Mobilize primero): en el primer cuadro `--gd-header-h` trae una medida vieja (109) y en el siguiente la real (113). El menú es `sticky` con `top` = encabezado + 56 px, pero su posición natural es encabezado + 52 px (su margen). Con 113, el sticky lo empujaba 4 px. Ahora el `top` es + 52 px, igual al margen. Se reprodujo en local antes del cambio con el mismo script de CI.
 - **Mezcla con `main`** (sin force): en `styles.css` los bloques nuevos van antes del de E, porque la prueba de E lee hasta el final del archivo. La prueba de G lee solo su propio bloque. En `index.html` quedan los dos scripts (`gd-menu-lateral.js` y `wolkvox-prueba.js`) antes de `dashboard-generic.js`.
 - **Pruebas:** `fase348-g-menu-lateral-propuesta` (3).
+
+### Fase W2 (diagnóstico): qué falta en la configuración de Wolkvox (v1.187.1, 2026-11-13)
+
+- **Por qué:** después del deploy de la 1.186.0, `GET /api/wolkvox/estado` respondió `configurado: false` en producción, aunque el usuario ya había creado los dos parámetros SecureString en SSM. El servidor arrancó bien (SSM respondió), así que la plataforma no encontró los parámetros o descartó alguno. Para saber cuál sin mostrar valores, el usuario pidió este diagnóstico.
+- **Qué hace:** `wolkvox.diagnostico()` y el campo `diagnostico` de `/wolkvox/estado` dan solo tres booleanos: `tokenEncontrado`, `servidorEncontrado` y `servidorFormatoValido`. Nunca valores ni largos, y solo para el administrador completo (403 para los demás, 404 para el Mobilize real). La ventana «Probar conexión» los muestra cuando falta algo.
+- **Además:** se quitan los espacios y saltos de línea al principio y al final del token y del servidor (los que quedan al pegar). Un servidor escrito como URL o con `.wolkvox.com` sigue siendo inválido a propósito.
+- **Pruebas:** `faseW2-diagnostico` (4).

@@ -41,6 +41,7 @@ router.get(
     if (!op) return;
     res.json({
       configurado: wv.estaConfigurado(op),
+      diagnostico: wv.diagnostico(op), // solo si/no: token encontrado, servidor encontrado, servidor con formato valido
       usoHoy: wv.usoDelDia(db, op),
       tope: wv.topeDiario(),
       limiteLicencia: wv.LIMITE_LICENCIA_DIA,
