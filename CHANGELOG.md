@@ -7,6 +7,21 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.191.0 — Noviembre 2026
+
+**Fase 352 (B): la observación de un monitoreo se lee en su propia ventana.**
+
+- En las listas de Calidad, la observación ya no se escribe completa dentro de la fila. Ahora hay
+  un botón «Ver observación» que la abre en una ventana.
+  - Es así en el dashboard (pestaña Calidad: «Llamadas con fallas» y «Detalle por mes»), en la
+    ventana «Monitoreo» de la Encuesta de Mobilize y en «Calidad de encuestas › Resueltas».
+- La ventana se cierra con la X de arriba, con un clic afuera o con la tecla Escape. Si estaba
+  encima de otra ventana, esa otra sigue abierta.
+- Cada perfil ve lo mismo que antes: el cliente sigue sin ver las observaciones.
+- Cuatro ventanas de Calidad que solo tenían un botón abajo (el criterio de un ítem, el detalle
+  de un monitoreo, «Cambiar fecha del monitoreo» y la ventana «Monitoreo» de la Encuesta) ahora
+  tienen también la X arriba.
+
 ## v1.190.0 — Noviembre 2026
 
 **Fase 352 (A): en Calidad › Calificar se puede escribir una retroalimentación larga.**

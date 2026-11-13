@@ -148,14 +148,17 @@ function _cmpRender(p, i) {
   // el ultimo guardado); «Ver más» despliega todas y «Ver menos» las recoge. El total, en el titulo.
   var CMP_LIMITE = 10;
   var verTodas = !!_cmpVerTodas[camp];
+  // Fase 352 (B): columna «Observación» con un boton, solo si alguna fila la trae (el cliente nunca la recibe).
+  var conObs = typeof verObsHay === 'function' && verObsHay(fallas);
   var filasFallas = (verTodas ? fallas : fallas.slice(0, CMP_LIMITE)).map(function (m) {
     var c = caClase(Number(m.puntaje));
     return '<tr class="ca-click" tabindex="0" role="button" aria-label="Ver el detalle del monitoreo del ' + esc(m.fecha || '') + '" onclick="_cmpVer(\'' + cs + '\',' + m.id + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();_cmpVer(\'' + cs + '\',' + m.id + ')}">' +
       '<td>' + ceFechaConLlamadaHtml(m, esc) + '</td>' + (ve ? '<td><b>' + esc(_cmpNombre(m.asesor)) + '</b></td>' : '') + '<td>' + esc(m.idLlamada || '-') + '</td>' +
-      '<td><span class="cc2-pill cc2-' + c.k + '">' + _caPct(m.puntaje) + '</span></td><td class="ca-mot">' + esc((m.extras && m.extras.motivo) || _cmpMotivo(m, pl)) + '</td></tr>';
+      '<td><span class="cc2-pill cc2-' + c.k + '">' + _caPct(m.puntaje) + '</span></td><td class="ca-mot">' + esc((m.extras && m.extras.motivo) || _cmpMotivo(m, pl)) + '</td>' +
+      (conObs ? '<td>' + verObsBotonHtml(m.observaciones, 'Monitoreo del ' + (m.fecha || '')) + '</td>' : '') + '</tr>';
   }).join('');
   var llamadas = '<div class="aurora-card"><div class="aurora-card-title">Llamadas con fallas (' + fallas.length + ')</div>' +
-    (fallas.length ? '<p class="cpl-ayuda">Haz clic en una llamada para ver su detalle.</p><div style="overflow-x:auto"><table class="aurora-rank-table"><tr><th>Fecha</th>' + (ve ? '<th>Asesor</th>' : '') + '<th>ID llamada</th><th>Nota</th><th>Motivo de afectación</th></tr>' + filasFallas + '</table></div>' +
+    (fallas.length ? '<p class="cpl-ayuda">Haz clic en una llamada para ver su detalle.</p><div style="overflow-x:auto"><table class="aurora-rank-table"><tr><th>Fecha</th>' + (ve ? '<th>Asesor</th>' : '') + '<th>ID llamada</th><th>Nota</th><th>Motivo de afectación</th>' + (conObs ? '<th>Observación</th>' : '') + '</tr>' + filasFallas + '</table></div>' +
         (fallas.length > CMP_LIMITE ? '<button type="button" class="btn-cancel cmp-dicc cmp-vermas" data-camp="' + cs + '" aria-expanded="' + verTodas + '" onclick="_cmpMostrarTodas(this.dataset.camp)">' + (verTodas ? 'Ver menos' : 'Ver más (' + (fallas.length - CMP_LIMITE) + ')') + '</button>' : '')
       : '<p class="ca-vacio">Ninguna llamada con fallas en el periodo seleccionado.</p>') + '</div>';
 
@@ -254,6 +257,7 @@ function _cmpPintarDetalle(enfocarBuscar) {
   var c = _cmpCtx[_cmpDlg.camp]; var host = document.getElementById('cmp-dlg-cuerpo'); if (!c || !host) return;
   var d = ceDetalleMes(c.arr, _cmpDlg.mes, c.ve ? _cmpDlg.q : '');
   var cs = esc(_cmpDlg.camp);
+  var conObs = typeof verObsHay === 'function' && verObsHay(d.lista); // Fase 352 (B)
   host.innerHTML = '<div class="ca-filtros">' + _cmpMesSelect(ceMesesDetalle(c.arr), _cmpDlg.mes, '_cmpDetalleCambiaMes') +
       (c.ve ? '<label class="ca-filtro">Asesor <input type="search" id="cmp-dlg-q" placeholder="Buscar por nombre del asesor" value="' + esc(_cmpDlg.q) + '" oninput="_cmpDlg.q=this.value;_cmpPintarDetalle(true)"></label>' : '') + '</div>' +
     '<div class="ca-kpis"><div class="ca-kpi"><b>' + d.total + '</b><span>Monitoreos</span></div>' +
@@ -261,13 +265,14 @@ function _cmpPintarDetalle(enfocarBuscar) {
       '<div class="ca-kpi"><b>' + esc(d.promedio === null ? '—' : d.clase.t) + '</b><span>Clasificación</span></div>' +
       '<div class="ca-kpi"><b>' + d.incompletos + '</b><span>Incompletos</span></div></div>' +
     '<p class="cpl-ayuda">Monitoreos · ' + esc(ceMesLabel(_cmpDlg.mes)) + (_cmpDlg.q && c.ve ? ' · ' + esc(_cmpDlg.q.trim()) : '') + '. Toca un monitoreo para ver la plantilla completa.</p>' +
-    '<div style="overflow-x:auto"><table class="aurora-rank-table"><tr><th>Fecha</th>' + (c.ve ? '<th>Asesor</th>' : '') + '<th>ID llamada</th><th>Código gestión</th><th>Evaluador</th><th>Calificación</th><th>Motivo de afectación</th></tr>' +
+    '<div style="overflow-x:auto"><table class="aurora-rank-table"><tr><th>Fecha</th>' + (c.ve ? '<th>Asesor</th>' : '') + '<th>ID llamada</th><th>Código gestión</th><th>Evaluador</th><th>Calificación</th><th>Motivo de afectación</th>' + (conObs ? '<th>Observación</th>' : '') + '</tr>' +
       (d.lista.length ? d.lista.map(function (m) {
         var k = ceClase(m.puntaje === null || m.puntaje === undefined ? null : Number(m.puntaje));
         return '<tr class="ca-click" tabindex="0" role="button" onclick="_cmpVer(\'' + cs + '\',' + m.id + ')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();_cmpVer(\'' + cs + '\',' + m.id + ')}">' +
           '<td>' + ceFechaConLlamadaHtml(m, esc) + '</td>' + (c.ve ? '<td><b>' + esc(_cmpNombre(m.asesor)) + '</b></td>' : '') + '<td>' + esc(m.idLlamada || '-') + '</td><td>' + esc(m.codificacion || '-') + '</td><td>' + esc(m.evaluador || '-') + '</td>' +
-          '<td><span class="cc2-pill cc2-' + k.k + '">' + (m.puntaje === null || m.puntaje === undefined ? 'Incompleto' : cePct(Number(m.puntaje))) + '</span></td><td class="ca-mot">' + esc((m.extras && m.extras.motivo) || _cmpMotivo(m, c.pl) || (m.puntaje === null || m.puntaje === undefined ? '' : 'Sin afectaciones')) + '</td></tr>';
-      }).join('') : '<tr><td colspan="7" class="ca-vacio">' + (_cmpDlg.q ? 'Ningún monitoreo de ese asesor en este mes.' : 'Sin monitoreos en este mes.') + '</td></tr>') + '</table></div>';
+          '<td><span class="cc2-pill cc2-' + k.k + '">' + (m.puntaje === null || m.puntaje === undefined ? 'Incompleto' : cePct(Number(m.puntaje))) + '</span></td><td class="ca-mot">' + esc((m.extras && m.extras.motivo) || _cmpMotivo(m, c.pl) || (m.puntaje === null || m.puntaje === undefined ? '' : 'Sin afectaciones')) + '</td>' +
+          (conObs ? '<td>' + verObsBotonHtml(m.observaciones, 'Monitoreo del ' + (m.fecha || '')) + '</td>' : '') + '</tr>';
+      }).join('') : '<tr><td colspan="' + (7 + (conObs ? 1 : 0)) + '" class="ca-vacio">' + (_cmpDlg.q ? 'Ningún monitoreo de ese asesor en este mes.' : 'Sin monitoreos en este mes.') + '</td></tr>') + '</table></div>';
   if (enfocarBuscar) { var q = document.getElementById('cmp-dlg-q'); if (q) { q.focus(); q.setSelectionRange(q.value.length, q.value.length); } }
 }
 function _cmpDetalleCambiaMes(v) { _cmpDlg.mes = v; _cmpPintarDetalle(); }

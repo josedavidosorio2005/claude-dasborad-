@@ -491,7 +491,7 @@ function _calFechaDialogo(){
     ov = document.createElement('div');
     ov.className = 'cc2-ov'; ov.id = 'cal-fecha-ov'; ov.hidden = true;
     ov.setAttribute('role','dialog'); ov.setAttribute('aria-modal','true'); ov.setAttribute('aria-labelledby','cal-fecha-t');
-    ov.innerHTML = '<div class="cc2-dlg"><h3 id="cal-fecha-t">Cambiar fecha del monitoreo</h3><p class="cpl-ayuda" id="cal-fecha-info"></p>'+
+    ov.innerHTML = '<div class="cc2-dlg"><div class="cmp-dlg-cab"><h3 id="cal-fecha-t">Cambiar fecha del monitoreo</h3><button type="button" class="cmp-x" aria-label="Cerrar" title="Cerrar (Esc)" onclick="calCerrarFecha()"><span aria-hidden="true">×</span></button></div><p class="cpl-ayuda" id="cal-fecha-info"></p>'+
       '<label class="cc2-f"><span class="cc2-lt">Fecha del monitoreo</span><input type="date" id="cal-fecha-in" min="2020-01-01"></label>'+
       '<p class="cpl-ayuda">Solo cambia la fecha: las respuestas y el puntaje quedan igual. El monitoreo pasa al mes de la fecha nueva y el cambio queda en el historial.</p>'+
       '<div class="modal-btns"><button type="button" class="btn-cancel" onclick="calCerrarFecha()">Cancelar</button><button type="button" class="btn-primary" id="cal-fecha-ok" onclick="calGuardarFecha()">Guardar fecha</button></div></div>';

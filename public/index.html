@@ -908,8 +908,9 @@
 
 <!-- Fase 331 (PR 4): "Monitoreo" de una pregunta de la Encuesta de Mobilize (encuesta-monitoreo.js). Patron A3b, solo lectura. -->
 <div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-encuesta-monitoreo-title" id="modal-encuesta-monitoreo">
-  <div class="modal enc-mon-modal">
+  <div class="modal enc-mon-modal modal-con-x">
     <h3 id="modal-encuesta-monitoreo-title">Monitoreo</h3>
+    <button type="button" class="cmp-x modal-x" aria-label="Cerrar" title="Cerrar (Esc)" onclick="encMonCerrar()"><span aria-hidden="true">×</span></button><!-- Fase 352 (B): X arriba -->
     <div id="enc-mon-cuerpo"></div>
     <div class="modal-btns">
       <button class="btn-primary" onclick="encMonCerrar()">Cerrar</button>
@@ -1227,14 +1228,14 @@
   <!-- Fase 254: dialogos del formulario Calificar -->
   <div class="cc2-ov" id="cc2-ov-criterio" hidden role="dialog" aria-modal="true" aria-labelledby="cc2-criterio-t">
     <div class="cc2-dlg">
-      <h3 id="cc2-criterio-t"></h3>
+      <div class="cmp-dlg-cab"><h3 id="cc2-criterio-t"></h3><button type="button" class="cmp-x" aria-label="Cerrar" title="Cerrar (Esc)" onclick="cc2CerrarDialogo('cc2-ov-criterio')"><span aria-hidden="true">×</span></button></div><!-- Fase 352 (B): X arriba -->
       <div id="cc2-criterio-b"></div>
       <div class="modal-btns"><button type="button" class="btn-primary" onclick="cc2CerrarDialogo('cc2-ov-criterio')">Entendido</button></div>
     </div>
   </div>
   <div class="cc2-ov" id="ca-ov-detalle" hidden role="dialog" aria-modal="true" aria-labelledby="ca-ov-detalle-t">
     <div class="cc2-dlg ca-dlg-ancho">
-      <h3 id="ca-ov-detalle-t">Monitoreo</h3>
+      <div class="cmp-dlg-cab"><h3 id="ca-ov-detalle-t">Monitoreo</h3><button type="button" class="cmp-x" aria-label="Cerrar" title="Cerrar (Esc)" onclick="cc2CerrarDialogo('ca-ov-detalle')"><span aria-hidden="true">×</span></button></div><!-- Fase 352 (B): X arriba -->
       <div id="ca-ov-detalle-b"></div>
       <div class="modal-btns"><button type="button" class="btn-primary" onclick="cc2CerrarDialogo('ca-ov-detalle')">Cerrar</button></div>
     </div>
@@ -2010,6 +2011,7 @@
 <script src="js/calidad-analisis-logic.js"></script>
 <script src="js/calidad-analisis.js"></script>
 <script src="js/calidad-equipo-logic.js"></script>
+<script src="js/ver-observacion.js"></script>
 <script src="js/calidad-panel.js"></script>
 <script src="js/errores.js"></script>
 <script src="js/calidad-calificar-logic.js"></script>
