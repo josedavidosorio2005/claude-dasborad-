@@ -103,14 +103,16 @@ test('una base nueva termina todas las migraciones con HLM, creada despues de la
     'fase332_orlant_calidad_solo_nueva_v1', // Fase 332: los 3 paneles viejos de Calidad de ORLANT ocultos (no toca Aurora/HLM)
     'faseW1_replica_mobilize_api_v1', // Fase W1: replica interna de Mobilize (fila nueva; no toca Aurora/HLM)
     'fase353_monitoreos_enlace_exacto_v1', // Fase 353: solo llena monitoreos.asesorUserId por nombre exacto (no toca Aurora/HLM)
-    'fase353_monitoreos_enlace_exacto_v2']; // Fase 353b: lo mismo con nombre_clave() (tildes, Ñ, espacios especiales)
+    'fase353_monitoreos_enlace_exacto_v2', // Fase 353b
+    'fase354_hlm_sedes_v1']; // Fase 354: crea las 2 sedes de HLM (filas nuevas) y agrega parametros.sedes al padre // Fase 353b: lo mismo con nombre_clave() (tildes, Ñ, espacios especiales)
   assert.deepEqual(orden.slice(iHlm + 1).filter((n) => !POSTERIORES.includes(n)), [], 'ninguna migracion vieja corre despues de crear HLM');
   const r = reg.leerRegistro(db).find((c) => c.nombre === HLM);
   assert.ok(r, 'HLM en el registro de clientes');
   // Fase 229: + WhatsApp por rangos, Salida y Tipificacion (fase229_hlm_como_orlant_v1).
   assert.deepEqual(r.modulos, ['flujo_llamadas', 'flujo_whatsapp', 'whatsapp_tiempos', 'salida', 'tipificacion', 'calidad']);
   assert.equal(r.dashboard, true);
-  assert.deepEqual(r.parametros.sedes, [], 'las sedes quedan por definir');
+  // Fase 354 (Edwin, 13/11): las sedes quedaron definidas (Castilla y 33), cada una su campaña hija.
+  assert.deepEqual(r.parametros.sedes, reg.HLM_SEDES, 'las 2 sedes de la Fase 354');
   assert.equal(r.parametros.traficoDosHojas, false);
   assert.equal(r.parametros.asesorVisibleCliente, false);
 });
@@ -138,10 +140,10 @@ test('ORLANT, MOBILIZE y Aurora no cambian', () => {
     assert.equal(JSON.stringify(cfgDe(c)), JSON.stringify(generarLayout(PERFILES_ACTUALES[c])), c);
   }
   assert.deepEqual(cfgDe(AURORA), auroraEsperada()); // Fase 220
-  const r = reg.leerRegistro(db).filter((c) => c.nombre !== HLM && c.nombre !== AURORA && c.nombre !== 'SURA' && c.nombre !== 'MOBILIZE PRUEBAS API'); // Fase W1: la replica en faseW1-replica-interna // Fase 215
+  const r = reg.leerRegistro(db).filter((c) => c.nombre !== HLM && c.nombre !== AURORA && c.nombre !== 'SURA' && c.nombre !== 'MOBILIZE PRUEBAS API' && !c.parametros.sedeDe); // Fase 354: las sedes en fase354-hlm-sedes // Fase W1: la replica en faseW1-replica-interna // Fase 215
   assert.deepEqual(r.map((c) => ({ nombre: c.nombre, modulos: c.modulos, parametros: c.parametros, logo: c.logo })),
     reg.REGISTRO_INICIAL.map((c) => ({ nombre: c.nombre, modulos: c.modulos, parametros: c.parametros, logo: c.logo })));
-  assert.deepEqual(reg.listaClientes(db), ['ORLANT', 'MOBILIZE', AURORA, HLM, 'SURA', 'MOBILIZE PRUEBAS API']); // Fase W1: replica al final // Fase 215: SURA despues de HLM
+  assert.deepEqual(reg.listaClientes(db), ['ORLANT', 'MOBILIZE', AURORA, HLM, 'HOSPITAL LA MARIA - CASTILLA', 'HOSPITAL LA MARIA - SEDE 33', 'SURA', 'MOBILIZE PRUEBAS API']); // Fase 354: + las 2 sedes // Fase W1: replica al final // Fase 215: SURA despues de HLM
 });
 
 test('sin usuarios ni permisos nuevos', () => {

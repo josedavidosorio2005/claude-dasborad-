@@ -173,6 +173,10 @@ router.post(
       const sinAccesoCarga = campanasSinAcceso(req.actor, b.filas.map((f) => f.skillName));
       if (sinAccesoCarga.length) return rechazarSinAcceso(res, sinAccesoCarga);
       if (rechazarSkillsSinAsignar(req.actor, res, b.filas.map((f) => f.skillName))) return;
+      // Fase 354: una skill de un cliente con sedes (Hospital La Maria) no entra por esta pantalla de
+      // varios clientes: se sube desde Cargar Datos eligiendo la sede.
+      const conSedes = [...new Set(b.filas.map((f) => campanaActualDeSkill(f.skillName)))].filter((c) => c && require('../clientes-registro').tieneSedes(db, c));
+      if (conSedes.length) return res.status(400).json({ error: require('../auth').errorElegirSede(conSedes[0]).message });
     }
     const resultado = traficoSkills.cargarTrafico(db, {
       archivoNombre: b.archivoNombre || '',

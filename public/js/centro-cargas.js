@@ -20,9 +20,13 @@ function _ccMesActual() {
   return c.getUTCFullYear() + '-' + (c.getUTCMonth() < 9 ? '0' : '') + (c.getUTCMonth() + 1);
 }
 
+// Fase 354: un cliente con sedes (Hospital La Maria) se carga por sede: el padre solo lo ve el
+// administrador (para revisar o eliminar lo cargado antes de separar las sedes).
+function _ccTieneSedes(c) { return typeof sedesDe === 'function' && sedesDe((typeof REGISTRO_CLIENTES !== 'undefined' ? REGISTRO_CLIENTES : []), c).length > 0; }
 function _ccClientesQuePuedeCargar() {
   return (typeof CLIENTES_LIST !== 'undefined' ? CLIENTES_LIST : []).filter(function (c) {
     if (isFullAdmin()) return true;
+    if (_ccTieneSedes(c)) return false;
     var p = (currentUser && currentUser.perms) || {};
     return p['campana_' + c] === true || p['cliente_' + c] === true;
   });
@@ -36,7 +40,7 @@ async function openCentroCargas(cliente, moduloId) {
   _cc.anio = _cc.anio || Number(_ccMesActual().slice(0, 4));
   _cc.modulo = moduloId || null;
   var sel = document.getElementById('cc-cliente');
-  sel.innerHTML = clientes.map(function (c) { return '<option value="' + esc(c) + '">' + esc(c) + '</option>'; }).join('');
+  sel.innerHTML = clientes.map(function (c) { return '<option value="' + esc(c) + '">' + esc(c) + (_ccTieneSedes(c) ? ' (sin sede: lo cargado antes)' : '') + '</option>'; }).join('');
   sel.value = _cc.cliente;
   var anioAct = Number(_ccMesActual().slice(0, 4));
   document.getElementById('cc-anio').innerHTML = [anioAct, anioAct - 1, anioAct - 2].map(function (a) { return '<option value="' + a + '">' + a + '</option>'; }).join('');
@@ -94,6 +98,11 @@ async function _ccCargar() {
   if (gen !== _ccGeneracion) return;
   if (_cc.modulo && !_cc.modulos.some(function (m) { return m.id === _cc.modulo; })) _cc.modulo = null;
   _ccRender();
+  // Fase 354: en el padre de un cliente con sedes, el aviso de que se sube por sede.
+  if (typeof _ccTieneSedes === 'function' && _ccTieneSedes(_cc.cliente)) {
+    var sedes = sedesDe(REGISTRO_CLIENTES, _cc.cliente).map(function (x) { return '«' + x.campana + '»'; }).join(' o ');
+    body.insertAdjacentHTML('afterbegin', '<div class="cc-aviso" role="note">' + esc(_cc.cliente) + ' se carga por sede: elija ' + esc(sedes) + ' en Cliente. Aquí solo se revisa o elimina lo cargado antes de separar las sedes.</div>');
+  }
 }
 
 // Fase 218: «Cargar información» de SURA (sura-televentas.js, stvMontarCarga).

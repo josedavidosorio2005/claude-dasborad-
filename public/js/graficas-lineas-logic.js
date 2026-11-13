@@ -14,9 +14,9 @@
 'use strict';
 
 // Salida en lineas (con variacion mes a mes): Aurora y HLM.
-var GRAFICAS_LINEAS_CLIENTES = ['CLINICA AURORA', 'HOSPITAL LA MARIA'];
+var GRAFICAS_LINEAS_CLIENTES = ['CLINICA AURORA', 'HOSPITAL LA MARIA', 'HOSPITAL LA MARIA - CASTILLA', 'HOSPITAL LA MARIA - SEDE 33']; // Fase 354: + las 2 sedes de HLM
 // Total trafico en 3 lineas de ingreso: Aurora, HLM y, desde la Fase 300, ORLANT.
-var TOTAL_TRAFICO_LINEAS_CLIENTES = ['CLINICA AURORA', 'HOSPITAL LA MARIA', 'ORLANT'];
+var TOTAL_TRAFICO_LINEAS_CLIENTES = ['CLINICA AURORA', 'HOSPITAL LA MARIA', 'HOSPITAL LA MARIA - CASTILLA', 'HOSPITAL LA MARIA - SEDE 33', 'ORLANT']; // Fase 354
 
 function _glNorm(c) { return String(c || '').trim().toUpperCase(); }
 function graficasLineasAplica(campana) {

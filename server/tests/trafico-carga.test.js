@@ -167,18 +167,20 @@ test('Hospital La Maria: dos skills mapeadas a la MISMA campana con sedes distin
     .set(auth(admin))
     .send({ campana: 'HOSPITAL LA MARIA', sede: 'SEDE33' });
 
-  const res = await request(app)
-    .post('/api/calidad/trafico/carga')
-    .set(auth(admin))
-    .send({
-      filas: [
-        fila({ skillName: skillCastilla, fecha: '2026-08-05', totalLlamadas: 50, contestadas: 45 }),
-        fila({ skillName: skillSede33, fecha: '2026-08-05', totalLlamadas: 30, contestadas: 20 }),
-      ],
-    });
-  assert.equal(res.status, 201, JSON.stringify(res.body));
-  // UNA sola campana ahora (no 2 campanas falsas): ambas skills caen bajo "HOSPITAL LA MARIA".
-  assert.deepEqual(res.body.campanas, ['HOSPITAL LA MARIA']);
+  const filasHlm = [
+    fila({ skillName: skillCastilla, fecha: '2026-08-05', totalLlamadas: 50, contestadas: 45 }),
+    fila({ skillName: skillSede33, fecha: '2026-08-05', totalLlamadas: 30, contestadas: 20 }),
+  ];
+  // Fase 354: HLM ya no recibe cargas directas (ni por esta pantalla de varios clientes): se
+  // sube por sede, cada una su campaña. La ruta lo rechaza y no guarda nada.
+  const res = await request(app).post('/api/calidad/trafico/carga').set(auth(admin)).send({ filas: filasHlm });
+  assert.equal(res.status, 400, JSON.stringify(res.body));
+  assert.match(res.body.error, /se suben por sede/);
+  assert.equal(db.prepare('SELECT COUNT(*) n FROM calidad_nivel_servicio_diario WHERE skillName IN (?, ?)').get(skillCastilla, skillSede33).n, 0);
+  // El mecanismo de sede como atributo (consolidacion 2026-09-15) sigue sin mezclar sedes:
+  // se prueba con la libreria directa (lo ya cargado en HLM vive asi).
+  const lib = require('../trafico-skills').cargarTrafico(db, { archivoNombre: 'x.xlsx', cargadoPorNombre: 'test', filas: filasHlm });
+  assert.deepEqual(lib.campanas, ['HOSPITAL LA MARIA']);
 
   const todas = await request(app).get('/api/calidad/nivel-servicio/diario?campana=' + encodeURIComponent('HOSPITAL LA MARIA')).set(auth(admin));
   const filaCastilla = todas.body.find((r) => r.skillName === skillCastilla);
@@ -228,11 +230,9 @@ test('remapear una skill de una sede a otra mueve solo sus filas y recalcula el 
   const skill = 'SKILL HLM REMAP SEDE ' + Math.random().toString(36).slice(2, 6);
 
   await request(app).put('/api/calidad/trafico/skills/' + encodeURIComponent(skill)).set(auth(admin)).send({ campana: 'HOSPITAL LA MARIA', sede: 'CASTILLA' });
-  const carga = await request(app)
-    .post('/api/calidad/trafico/carga')
-    .set(auth(admin))
-    .send({ filas: [fila({ skillName: skill, fecha: '2026-09-01', totalLlamadas: 40, contestadas: 35 })] });
-  assert.equal(carga.status, 201);
+  // Fase 354: la carga directa a HLM se rechaza por la ruta; el dato se siembra con la libreria.
+  const carga = require('../trafico-skills').cargarTrafico(db, { archivoNombre: 'x.xlsx', cargadoPorNombre: 'test', filas: [fila({ skillName: skill, fecha: '2026-09-01', totalLlamadas: 40, contestadas: 35 })] });
+  assert.equal(carga.insertadas, 1);
 
   const map = await request(app)
     .put('/api/calidad/trafico/skills/' + encodeURIComponent(skill))

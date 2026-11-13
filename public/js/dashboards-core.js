@@ -65,7 +65,8 @@ function onDashBtn(key){
 function openClientsModal(){
   var grid=document.getElementById('clients-grid');
   var html='';
-  var clientesAccesibles=dashClientesVisibles(CLIENTES_LIST, currentUser, isFullAdmin());
+  // Fase 354: sin las sedes sueltas; el cliente con sedes sale si se ve alguna de ellas.
+  var clientesAccesibles=clientesParaTarjetas(CLIENTES_LIST, (typeof REGISTRO_CLIENTES !== 'undefined' ? REGISTRO_CLIENTES : []), currentUser && currentUser.perms, isFullAdmin());
   for(var i=0;i<clientesAccesibles.length;i++){
     var c=clientesAccesibles[i];
     // Fase 215: un cliente con tablero propio (SURA, Televentas) tambien esta listo.
@@ -88,6 +89,8 @@ function openClientByEl(el){
   var c = el.dataset.cliente;
   // Fase 215: SURA abre su tablero propio (sura-televentas.js), no el generico.
   if (typeof stvEsTeleventas === 'function' && stvEsTeleventas(c)) { openSuraTeleventas(c); return; }
+  // Fase 354: un cliente con sedes (Hospital La Maria) abre primero la pantalla de elegir sede.
+  if (typeof sedesDe === 'function' && sedesDe((typeof REGISTRO_CLIENTES !== 'undefined' ? REGISTRO_CLIENTES : []), c).length) { gdAbrirSelectorSede(c); return; }
   // Fase 3: cualquier cliente con dashboard configurado se abre con el modulo generico.
   if (BUILT_CLIENT_DASHBOARDS.indexOf(c) !== -1) { openGenericDashboard(c); return; }
   showToast('El dashboard de '+c+' esta en preparacion. Pronto lo veras aqui.');

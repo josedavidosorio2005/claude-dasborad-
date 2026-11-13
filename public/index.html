@@ -769,6 +769,21 @@
   </div>
 </div>
 
+<!-- Fase 354: elegir la sede (Hospital La Maria) antes de abrir el tablero. -->
+<div class="clients-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="sede-modal-title" aria-describedby="sede-modal-sub" id="sede-modal-overlay">
+  <div class="clients-modal sede-modal">
+    <div class="clients-modal-header">
+      <div>
+        <h3 id="sede-modal-title">Sedes</h3>
+        <p class="sede-modal-sub" id="sede-modal-sub">Elija la sede que quiere ver</p>
+      </div>
+      <button class="btn-close-modal" onclick="closeSelectorSede()">X Cerrar</button>
+    </div>
+    <div class="sede-grid" id="sede-grid"></div>
+    <div class="sede-sin-wrap" id="sede-sin-sede"></div>
+  </div>
+</div>
+
 <!-- MODAL: Crear/Editar usuario -->
 <div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-user-title" id="modal-user">
   <div class="modal">
@@ -963,6 +978,7 @@
         <div>
           <img id="gd-cliente-logo" class="gd-cliente-logo" src="" alt="" width="140" height="25" style="display:none">
           <h2 id="gd-title">Dashboard</h2>
+          <span id="gd-sede" class="gd-sede hidden"></span>
           <span id="gd-vista-sup" class="navbar-role gd-vista-sup hidden">Vista de supervisor</span>
           <div class="aurora-sub" id="gd-sub"></div>
           <div id="gd-ultima-act" class="gd-ultima-act" style="display:none"></div>
@@ -1001,6 +1017,8 @@
         <button class="aurora-close hidden" id="gd-actualizar-btn" aria-label="Actualizar datos" onclick="centroAbrirDesdeTablero()"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-refresh-cw"></use></svg> <span class="gd-btn-txt">Actualizar datos</span></button>
         <!-- Fase W2: probar la conexion con Wolkvox. Solo el administrador completo y solo en la replica interna (wolkvox-prueba.js); el servidor lo exige igual. -->
         <button class="aurora-close hidden" id="gd-wolkvox-btn" type="button" aria-haspopup="dialog" aria-label="Probar conexión con Wolkvox" onclick="wvPruebaAbrir()"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-phone"></use></svg> <span class="gd-btn-txt">Probar conexión</span></button>
+        <!-- Fase 354: volver a elegir la sede (solo en un cliente con sedes). -->
+        <button class="aurora-close hidden" id="gd-cambiar-sede-btn" type="button" aria-label="Cambiar sede" title="Cambiar sede" onclick="gdCambiarSede()"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-map-pin"></use></svg> <span class="gd-btn-txt">Cambiar sede</span></button>
         <button class="aurora-close" id="gd-export-btn" aria-label="Exportar" aria-haspopup="menu" aria-expanded="false" onclick="exportGenericDashboard()"><svg class="icono gd-icono-movil" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-download"></use></svg><span class="gd-btn-txt">Exportar</span></button>
         <!-- Fase 155: tema claro/oscuro dentro del tablero (el modal tapa la barra de arriba). Mismo mecanismo (theme.js): la clase theme-toggle lo sincroniza. -->
         <button class="aurora-close theme-toggle gd-tema-btn" id="gd-tema-btn" type="button" onclick="toggleTema()" aria-label="Cambiar tema" title="Cambiar tema"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-moon"></use></svg></button>
@@ -1993,6 +2011,7 @@
 <script src="js/registro-clientes.js"></script>
 <script src="js/dashboards-logic.js"></script>
 <script src="js/perfil-supervisor-logic.js"></script>
+<script src="js/sedes-logic.js"></script>
 <script src="js/state.js"></script>
 <script src="js/session.js"></script>
 <script src="js/toast-logic.js"></script>
@@ -2005,6 +2024,7 @@
 <script src="js/seguridad.js"></script>
 <script src="js/mi-cuenta.js"></script>
 <script src="js/dashboards-core.js"></script>
+<script src="js/selector-sede.js"></script>
 <script src="js/calidad-listas-logic.js"></script>
 <script src="js/calidad-listas.js"></script>
 <script src="js/calidad.js"></script>
