@@ -20945,3 +20945,13 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
 - **Ventanas de Calidad sin X arriba** (ahora la tienen): el criterio de un ítem (`cc2-ov-criterio`), el detalle de un monitoreo del módulo (`ca-ov-detalle`), «Cambiar fecha del monitoreo» (`cal-fecha-ov`) y la ventana «Monitoreo» de la Encuesta (`modal-encuesta-monitoreo`). Ya la tenían: el Módulo de Calidad, la ventana del panel del dashboard (Fase 348 D), el detalle de monitoreo del portal y la supervisión de un líder. El aviso «Faltan…» al guardar es una alerta que pide una acción y se deja sin X.
 - **Pruebas:** `fase352-b-ver-observacion` (4).
 - **Visual local** (copia de la base demo, ORLANT): 375/768/1440, claro y oscuro, 61 comprobaciones bien, 0 errores de consola.
+
+### D: «Plan de acción del mes» aparte en Aurora › Errores (v1.192.0, 2026-11-13)
+
+- **Antes:** el plan de acción del mes se escribía en el mismo formulario de «Agregar errores» (Fase 286: un solo «Guardar» para el error y el plan; sin asesora, se guardaba solo el plan). Cualquiera que pudiera escribir, el supervisor incluido, lo borraba dejándolo vacío.
+- **Ahora:** botón «Plan de acción del mes» al lado de «Agregar errores», con su propia ventana (mes y texto de hasta 4000 caracteres, sin asesora). «Agregar errores» queda solo para los errores y sigue actualizando sus gráficas.
+- **Permisos** (los mismos de Errores): el supervisor del cliente y el administrador escriben y editan el plan (`PUT /calidad/errores/plan`). Borrar es una acción aparte, `DELETE /calidad/errores/plan`, para el administrador y Reportes con acceso al cliente, con confirmación de dos clics. El supervisor recibe 403 si intenta dejarlo vacío, por `PUT` o por el «Guardar» de siempre. Reportes ve la ventana con el texto de solo lectura y «Borrar plan». El cliente no ve el botón y sigue leyendo el plan en la pestaña, como antes. Queda en el Historial (`ERRORES_PLAN_ACCION`).
+- **Planes ya guardados:** no hay migración. Ya vivían en su propia tabla, `errores_plan_accion`, uno por campaña y mes, sin asesora; la nueva ventana los muestra tal cual, en su mes. Una prueba lo comprueba con un plan guardado a la manera de antes (junto con un error).
+- **Además:** la ventana de Errores tiene X arriba, y al abrirla el foco va al primer campo (el texto del plan).
+- **Pruebas:** `fase352-d-plan-accion` (4); `fase118-matriz-acceso` declara la ruta nueva.
+- **Visual local** (copia de la base demo, administrador, plan inventado guardado y borrado solo en esa copia): 375/768/1440, claro y oscuro, 0 errores de consola.
