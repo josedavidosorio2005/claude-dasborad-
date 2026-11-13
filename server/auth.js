@@ -309,7 +309,10 @@ function supervisorPuedeCargarEn(actor, campana) {
 // Crear/borrar usuarios, contrasenas, campanas, umbrales, plantillas de Calidad y
 // la configuracion de tableros siguen siendo solo del administrador.
 function canLoadCampaign(actor, campana) {
-  return isFullAdmin(actor) || supervisorPuedeCargarEn(actor, campana);
+  if (isFullAdmin(actor)) return true;
+  // Fase 354b: el padre de un cliente con sedes («Datos anteriores») es de solo lectura para todos menos el administrador.
+  if (require('./clientes-registro').tieneSedes(db, campana)) return false;
+  return supervisorPuedeCargarEn(actor, campana);
 }
 // Antes de leer un registro por :id: quien no puede cargar en NINGUNA campana
 // recibe 403 sin saber si el id existe.

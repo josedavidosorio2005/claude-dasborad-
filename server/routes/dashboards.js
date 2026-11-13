@@ -351,7 +351,8 @@ router.get(
     }
     // Fase 354: el tablero del padre de un cliente con sedes («Sin sede»: lo cargado antes de
     // separar las sedes) es solo del administrador; los demas eligen su sede.
-    if (!isFullAdmin(req.actor) && clientesRegistro.tieneSedes(db, cliente)) {
+    // Fase 354b: salvo que la opcion «Datos anteriores» del padre este prendida (solo lectura).
+    if (!isFullAdmin(req.actor) && clientesRegistro.tieneSedes(db, cliente) && !clientesRegistro.datosAnterioresVisibles(db, cliente)) {
       return res.status(403).json({ error: 'Elija la sede para ver este tablero' });
     }
     const rows = db

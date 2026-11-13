@@ -98,7 +98,9 @@ test('tablero: quien ve HLM abre las 2 sedes; el padre («Sin sede») es solo de
   assert.equal(await abrir(admin, HLM), 200);
   assert.equal(await abrir(admin, CAS), 200);
   for (const t of [cliAmbas, supAmbas]) {
-    assert.equal(await abrir(t, HLM), 403, 'el padre no');
+    // Fase 354b: con «Datos anteriores» prendido (migracion), el padre se abre en solo lectura;
+    // con la opcion apagada vuelve a ser solo del administrador (fase354b-hlm-datos-anteriores).
+    assert.equal(await abrir(t, HLM), 200, 'el padre: datos anteriores');
     assert.equal(await abrir(t, CAS), 200);
     assert.equal(await abrir(t, S33), 200);
   }

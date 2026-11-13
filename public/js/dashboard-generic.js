@@ -1370,7 +1370,9 @@ function renderGenericHeader(){
   // Fase 153 (P2, maqueta): "Actualizar datos" abre el Centro de cargas en
   // este cliente y modulo; solo para quien puede cargar (nunca el cliente).
   var btnAct = document.getElementById('gd-actualizar-btn');
-  if (btnAct) btnAct.classList.toggle('hidden', !(typeof canLoadAnyModule === 'function' && canLoadAnyModule() && typeof openCentroCargas === 'function'));
+  // Fase 354b: los «Datos anteriores» de un cliente con sedes son de solo lectura (salvo el administrador).
+  var gdSoloLectura = typeof sedesDe === 'function' && sedesDe((typeof REGISTRO_CLIENTES !== 'undefined' ? REGISTRO_CLIENTES : []), _gd.cliente).length > 0 && !(typeof isFullAdmin === 'function' && isFullAdmin());
+  if (btnAct) btnAct.classList.toggle('hidden', gdSoloLectura || !(typeof canLoadAnyModule === 'function' && canLoadAnyModule() && typeof openCentroCargas === 'function'));
   if (typeof wvPruebaPintarBoton === 'function') wvPruebaPintarBoton(_gd.cliente); // Fase W2: solo admin y solo la replica interna
   document.getElementById('gd-title').textContent = _gd.config.titulo || _gd.cliente;
   if (typeof gdPintarSede === 'function') gdPintarSede(_gd.cliente); // Fase 354: en que sede se esta

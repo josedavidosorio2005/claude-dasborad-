@@ -233,8 +233,20 @@ function tieneSedes(db, nombre) {
   return Array.isArray(s) && s.some((x) => x && typeof x === 'object' && typeof x.campana === 'string');
 }
 
+// Fase 354b (arreglo temporal): mientras las sedes esten vacias, quien ve el padre sigue viendo
+// lo cargado antes de separarlas («Datos anteriores»), en solo lectura. Se controla con
+// parametros.datosAnteriores = { visible: true|false, etiqueta } del padre; se apaga con una
+// migracion (visible: false) cuando agosto este repartido. Sin la opcion: solo el administrador.
+function datosAnterioresVisibles(db, nombre) {
+  if (typeof nombre !== 'string' || !nombre) return false;
+  const r = db.prepare('SELECT parametros FROM clientes_registro WHERE nombre = ?').get(nombre);
+  const d = r ? _json(r.parametros, {}).datosAnteriores : null;
+  return !!(d && d.visible === true);
+}
+
 module.exports = {
   REGISTRO_INICIAL,
+  datosAnterioresVisibles, // Fase 354b
   HLM_NOMBRE, // Fase 354
   HLM_SEDES, // Fase 354
   tieneSedes, // Fase 354
