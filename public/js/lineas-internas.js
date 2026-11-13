@@ -86,7 +86,9 @@ function _liRenderFlujo(el, p, i, datos) {
   var o = loBar(null);
   o.plugins.legend = { position: 'bottom', labels: { font: { size: 12 }, boxWidth: 10, padding: 8 } };
   // Fase 314: la cantidad se ve SIEMPRE (antes se apagaba con mas de 12 barras), tambien el 0.
-  var et = liEtiquetasBarras(serie.puntos.length, (document.getElementById('gd-c' + i + '-li-flujo') || {}).clientWidth || window.innerWidth);
+  // Fase 351: tamaño y giro de los numeros con el ancho que tendria sin el menu lateral.
+  var elFlujo = document.getElementById('gd-c' + i + '-li-flujo');
+  var et = liEtiquetasBarras(serie.puntos.length, (elFlujo && (typeof gdAnchoSinMenu === 'function' ? gdAnchoSinMenu(elFlujo) : elFlujo.clientWidth)) || window.innerWidth);
   o.plugins.datalabels = Object.assign({}, o.plugins.datalabels, { display: et.display, clamp: true, clip: false,
     font: { size: et.tamano, weight: 'bold' },
     rotation: function (ctx) { return ctx.dataset.yAxisID === 'y2' ? 0 : et.rotacion; },
@@ -139,7 +141,8 @@ function _liRenderTorta(el, p, i, datos, tipo) {
     : '<div class="aurora-chart-wrap li-torta-wrap"><canvas id="gd-c' + i + '-li-torta"></canvas></div>'), { destacado: true });
   if (vacio) return;
   var wrap = el.querySelector('.li-torta-wrap');
-  var ancho = (wrap && wrap.clientWidth) || (typeof window !== 'undefined' ? window.innerWidth : 0);
+  // Fase 351: con el ancho que tendria sin el menu lateral (mismas porciones y leyenda que antes del menu).
+  var ancho = (wrap && (typeof gdAnchoSinMenu === 'function' ? gdAnchoSinMenu(wrap) : wrap.clientWidth)) || (typeof window !== 'undefined' ? window.innerWidth : 0);
   var porciones = tipificacionPorcionesTorta(res.todas, tipificacionMaxPorciones(ancho));
   var leyendaAbajo = ancho < 600;
   if (wrap) wrap.style.height = (leyendaAbajo ? 260 + porciones.length * 20 : Math.max(340, porciones.length * 18 + 60)) + 'px';

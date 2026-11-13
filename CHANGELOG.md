@@ -7,6 +7,16 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.189.1 — Noviembre 2026
+
+**Fase 351: la torta de Tipificación se ve igual que antes del menú lateral.**
+
+- Con el menú lateral abierto, la torta de Tipificación mostraba menos porciones (10 en vez de 15)
+  y pasaba la leyenda abajo, porque tenía menos espacio. Ahora muestra las mismas porciones que
+  antes y la leyenda al lado, con el menú abierto o plegado.
+- Lo mismo para las gráficas de «Gestión líneas internas» de Clínica Aurora.
+- Aplica en ORLANT, Mobilize, Clínica Aurora y Hospital La María. Las cifras no cambian.
+
 ## v1.189.0 — Noviembre 2026
 
 **Fase 350: el menú lateral, también en ORLANT.**

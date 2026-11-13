@@ -84,6 +84,29 @@ function gdMenuLateralPlegar(plegar, sinGuardar) {
   if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') setTimeout(function () { window.dispatchEvent(new Event('resize')); }, 0);
 }
 
+// Fase 351 (pedido del usuario): las graficas que deciden su forma por el ANCHO de su contenedor
+// (las tortas de Tipificación y de «Gestión líneas internas»: cuantas porciones y si la leyenda va
+// abajo; las barras de líneas internas: tamaño y giro de los numeros) calculan sus cortes con el
+// ancho que tendria el contenedor SIN la columna del menu, abierta o plegada. Asi se ven igual que
+// antes del menu. Logica pura: el contenedor ocupa la misma fraccion del panel con o sin menu.
+function gdAnchoEquivalente(ancho, anchoPanel, anchoMenu) {
+  var w = Number(ancho) || 0, p = Number(anchoPanel) || 0, m = Number(anchoMenu) || 0;
+  if (w <= 0 || p <= 0 || m <= 0) return w;
+  return Math.round(w * (p + m) / p);
+}
+// Con el DOM: el ancho del contenedor `el` como si no estuviera el menu. Sin menu (otros clientes,
+// o 900 px o menos, donde quedan las pestañas de siempre) devuelve su ancho tal cual.
+function gdAnchoSinMenu(el) {
+  var w = (el && el.clientWidth) || 0;
+  var modal = typeof document !== 'undefined' ? document.getElementById('gd-modal') : null;
+  var panels = typeof document !== 'undefined' ? document.getElementById('gd-panels') : null;
+  if (!w || !modal || !panels || !modal.classList.contains('gd-menu-lateral') || !panels.contains(el)) return w;
+  var cs = getComputedStyle(modal);
+  if (cs.display !== 'grid') return w;
+  var menu = panels.getBoundingClientRect().left - modal.getBoundingClientRect().left - (parseFloat(cs.paddingLeft) || 0) - (parseFloat(cs.borderLeftWidth) || 0);
+  return gdAnchoEquivalente(w, panels.clientWidth, menu);
+}
+
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { GD_MENU_LATERAL_CLIENTES: GD_MENU_LATERAL_CLIENTES, gdMenuIcono: gdMenuIcono, gdMenuLateralActivo: gdMenuLateralActivo };
+  module.exports = { GD_MENU_LATERAL_CLIENTES: GD_MENU_LATERAL_CLIENTES, gdMenuIcono: gdMenuIcono, gdMenuLateralActivo: gdMenuLateralActivo, gdAnchoEquivalente: gdAnchoEquivalente };
 }

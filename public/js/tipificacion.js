@@ -444,7 +444,8 @@ async function _tipificacionDibujarCanal(campana, i, canal, opciones){
   // caben legibles en este ancho; si no caben, "Otras" dice en el tooltip
   // cuales entran ahi. "Ver datos" y la tabla de detalle: el listado completo.
   var todas = resultado.todas || resultado.datos;
-  var anchoTorta = contHost.clientWidth || (typeof window !== 'undefined' ? window.innerWidth : 0);
+  // Fase 351: con el ancho que tendria sin el menu lateral (mismas porciones y leyenda que antes del menu).
+  var anchoTorta = (typeof gdAnchoSinMenu === 'function' ? gdAnchoSinMenu(contHost) : contHost.clientWidth) || (typeof window !== 'undefined' ? window.innerWidth : 0);
   var porciones = tipificacionPorcionesTorta(todas, tipificacionMaxPorciones(anchoTorta));
   var leyendaAbajo = anchoTorta < 600;
   var wrapTorta = contHost.querySelector ? contHost.querySelector('.aurora-chart-wrap') : null;
