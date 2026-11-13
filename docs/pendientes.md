@@ -9,6 +9,13 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 
 ## 1. Esperando una decisión tuya
 
+- **Lunes 16/11: verificar en producción la Fase 354b** (solo lectura; tú inicias sesión como
+  administrador; Brave, sin recargar). Que el botón «Datos anteriores (agosto, sin separar por sede)»
+  aparece en la pantalla de sedes de HLM para quien ve HLM (como admin se simula en el navegador, sin
+  escribir) y que agosto muestra **12.087 llamadas** y **14.202 chats**.
+- **Apagar «Datos anteriores» de HLM cuando agosto esté repartido entre las sedes** (Fase 354b). Una
+  migración nueva que pone `datosAnteriores.visible: false` en el padre: el botón desaparece y el
+  tablero del padre vuelve a ser solo del administrador. Depende de que Edwin diga de qué sede es agosto.
 - **ORLANT: 30 monitoreos de 3 nombres sin usuario ASESOR** (Fase 353, 13/11/2026). No se parecen a
   ningún usuario, de ningún rol ni campaña: nunca han tenido usuario. Uno tiene 8 (septiembre y octubre),
   otro 6 (septiembre y octubre) y otro 16 (solo septiembre). Sus monitoreos cuentan en Calidad, pero no
