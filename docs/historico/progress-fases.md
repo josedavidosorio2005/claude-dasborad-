@@ -20921,3 +20921,18 @@ Pedido del usuario: empezar W2 de `docs/plan-api-wolkvox.md`, solo para «MOBILI
 - **Cambio:** `gdAnchoEquivalente` (lógica pura) y `gdAnchoSinMenu(el)` en `gd-menu-lateral.js` (el contenedor ocupa la misma fracción del panel con o sin la columna del menú; sin menú, o en 900 px o menos, devuelve el ancho tal cual). Lo usan los tres lugares del tablero que miden el ancho de su contenedor: la torta de Tipificación (`tipificacion.js`), la torta y las barras de «Gestión líneas internas» (`lineas-internas.js`). Las demás gráficas usan el ancho de la ventana y no cambian con el menú; una prueba falla si otra empieza a medir su contenedor.
 - **Verificación previa al merge, en producción y solo lectura** (1.189.0, Brave con sesión de administrador; los archivos nuevos se inyectaron solo en ese navegador, 0 escrituras): ORLANT y Aurora en claro y oscuro, a 1440 px, con el menú abierto, plegado y sin menú: siempre 15 porciones y leyenda al lado, mismos datos; en ORLANT, la torta igual a la foto de antes del menú (1.188.0). La leyenda no se monta sobre la torta y no hay scroll horizontal (la torta conserva su tamaño; con el menú abierto queda menos espacio libre entre torta y leyenda).
 - **Pruebas:** `fase351-torta-ancho-sin-menu` (4).
+
+## Fase 352 — Reunión con Edwin del 13/11 (A a D)
+
+Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
+
+### A: textos largos en Calidad › Calificar (v1.190.0, 2026-11-13)
+
+- **Límites que había:**
+  - **Observaciones:** formulario 500 (`maxlength`), servidor 500 (`createMonitoreoBody` y `updateMonitoreoBody`), base `TEXT` sin límite.
+  - **Estrategia:** formulario 200, servidor 200 (`calidad-campos.js`).
+  - **Motivo de afectación y Causa:** formulario 300 y `calidad-campos.js` 300, pero el esquema de `extras` cortaba todo valor en 200. Entre 201 y 300 caracteres, el guardado fallaba con un error genérico.
+- **Ahora:** los cuatro hasta **2000** caracteres (`TEXTO_LARGO_CALIDAD_MAX`, unas 300 palabras), el mismo tope en el formulario, al crear, al editar y en `extras`. Los campos cortos (placa, ID de agente, tipificación del sistema…) no cambian. La base ya era `TEXT`: no hay migración ni cambia ningún dato guardado.
+- **Formulario** (`calidad-calificar.js`, el único formulario de Calificar, para todas las plantillas): casilla más alta (6 filas en Observaciones, 4 en los demás), se agranda en vertical, contador «N / 2.000 caracteres» asociado con `aria-describedby`, en color de aviso desde el 90 %. «Sugerir observación» corta en 2000; al editar, el contador muestra lo ya escrito.
+- **Pruebas:** `fase352-a-observaciones-largas` (4); en `validation.test.js` los límites pasan de 500/501 a 2000/2001.
+- **Visual local** (copia de la base demo con una plantilla inventada de SURA con los 4 campos): 375/768/1440, claro y oscuro, 0 escrituras, 0 errores de consola.

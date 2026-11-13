@@ -89,13 +89,14 @@ test('createMonitoreoBody: observaciones de 235 caracteres (el maximo real del a
   assert.equal(r.success, true);
 });
 
-test('createMonitoreoBody: observaciones de 500 caracteres SI pasa (limite exacto)', () => {
-  const r = schemas.createMonitoreoBody.safeParse({ ...monitoreoBase, observaciones: 'x'.repeat(500) });
+// Fase 352 (reunion con Edwin del 13/11): retroalimentacion larga, el limite pasa de 500 a 2000.
+test('createMonitoreoBody: observaciones de 2000 caracteres SI pasa (limite exacto, Fase 352)', () => {
+  const r = schemas.createMonitoreoBody.safeParse({ ...monitoreoBase, observaciones: 'x'.repeat(2000) });
   assert.equal(r.success, true);
 });
 
-test('createMonitoreoBody: observaciones de 501 caracteres NO pasa', () => {
-  const r = schemas.createMonitoreoBody.safeParse({ ...monitoreoBase, observaciones: 'x'.repeat(501) });
+test('createMonitoreoBody: observaciones de 2001 caracteres NO pasa', () => {
+  const r = schemas.createMonitoreoBody.safeParse({ ...monitoreoBase, observaciones: 'x'.repeat(2001) });
   assert.equal(r.success, false);
 });
 
@@ -104,8 +105,9 @@ test('updateMonitoreoBody: observaciones de 235 caracteres SI pasa', () => {
   assert.equal(r.success, true);
 });
 
-test('updateMonitoreoBody: observaciones de 501 caracteres NO pasa', () => {
-  const r = schemas.updateMonitoreoBody.safeParse({ observaciones: 'x'.repeat(501) });
+test('updateMonitoreoBody: observaciones de 2001 caracteres NO pasa (Fase 352; antes 501)', () => {
+  assert.equal(schemas.updateMonitoreoBody.safeParse({ observaciones: 'x'.repeat(2000) }).success, true);
+  const r = schemas.updateMonitoreoBody.safeParse({ observaciones: 'x'.repeat(2001) });
   assert.equal(r.success, false);
 });
 

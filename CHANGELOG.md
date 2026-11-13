@@ -7,6 +7,18 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.190.0 — Noviembre 2026
+
+**Fase 352 (A): en Calidad › Calificar se puede escribir una retroalimentación larga.**
+
+- Observaciones, Estrategia, Motivo de afectación y Causa admiten ahora hasta 2.000 caracteres
+  (unas 300 palabras). Antes: Observaciones 500, Estrategia 200, y Motivo y Causa 300.
+- La casilla es más alta, se puede agrandar arrastrando la esquina, y abajo dice cuántos
+  caracteres van de los 2.000.
+- Antes, en Motivo de afectación y en Causa, un texto de más de 200 caracteres no se dejaba
+  guardar. Ya no pasa.
+- Aplica a todas las plantillas. Los monitoreos ya guardados no cambian.
+
 ## v1.189.1 — Noviembre 2026
 
 **Fase 351: la torta de Tipificación se ve igual que antes del menú lateral.**

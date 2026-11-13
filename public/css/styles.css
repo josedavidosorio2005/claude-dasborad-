@@ -1868,6 +1868,11 @@ html[data-motion="off"] #gd-panels .aurora-kpi,html[data-motion="off"] #gd-panel
 .cc2-lt{color:var(--c-text-muted)}
 .cc2-f input,.cc2-f select,.cc2-f textarea{min-height:44px;padding:8px 10px;border:1px solid var(--c-border-control);border-radius:var(--r-sm);background:var(--c-surface);color:var(--c-text);font:inherit;font-size:var(--fs-body)}
 .cc2-f textarea{resize:vertical}
+/* Fase 352: textos largos de Calidad (hasta 2000 caracteres): casilla alta que se agranda, con contador. */
+.cc2-f textarea.cc2-largo{min-height:96px;line-height:1.5}
+.cc2-f textarea.cc2-largo[rows="6"]{min-height:140px}
+.cc2-cont{align-self:flex-end;font-size:var(--fs-note);color:var(--c-text-muted)}
+.cc2-cont.cc2-cont-cerca{color:var(--c-warning-text);font-weight:600}
 .cc2-f input[readonly],.cc2-f input:disabled,.cc2-f select:disabled{background:var(--c-surface-alt);color:var(--c-text-muted)}
 .cc2-f .cc2-invalid,.cc2-invalid{border-color:var(--c-danger-dark)!important;box-shadow:0 0 0 2px var(--c-danger-bg)}
 .cc2-hint{font-size:var(--fs-note);color:var(--c-text-muted)}

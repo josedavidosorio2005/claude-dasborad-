@@ -89,10 +89,32 @@ function _cc2Campo(c) {
   if (c.k === 'motivo') return '<label class="cc2-f cc2-wide">' + '<span class="cc2-lt">' + esc(c.etiqueta) + ' (automático)</span><input type="text" id="' + id + '" readonly></label>';
   // Fase 322 (SURA): cedula del cliente (se guarda enmascarada) y textos libres.
   if (c.k === 'cedula') return '<label class="cc2-f">' + lbl + '<input type="text" id="' + id + '" inputmode="numeric" maxlength="20" autocomplete="off" spellcheck="false"><small class="cc2-hint">Se guarda solo con los últimos 4 dígitos.</small></label>';
-  if (c.k === 'motivoTexto' || c.k === 'estrategia' || c.k === 'causa') return '<label class="cc2-f cc2-wide">' + lbl + '<textarea id="' + id + '" maxlength="' + (c.k === 'estrategia' ? 200 : 300) + '" rows="2"></textarea></label>';
-  if (c.k === 'observaciones') return '<label class="cc2-f cc2-wide">' + lbl + '<textarea id="' + id + '" maxlength="500" rows="3"></textarea></label>';
+  // Fase 352: textos largos (retroalimentacion) hasta CC2_TEXTO_LARGO_MAX, casilla alta que se agranda, con contador.
+  if (c.k === 'motivoTexto' || c.k === 'estrategia' || c.k === 'causa') return _cc2TextoLargo(id, lbl, 4);
+  if (c.k === 'observaciones') return _cc2TextoLargo(id, lbl, 6);
   var extra = c.k === 'placa' ? ' maxlength="20" autocapitalize="characters" spellcheck="false"' : (c.k === 'telefono' ? ' inputmode="tel" maxlength="40"' : ' maxlength="60"');
   return '<label class="cc2-f">' + lbl + '<input type="text" id="' + id + '"' + extra + '></label>';
+}
+
+// Fase 352 (reunion con Edwin del 13/11): mismo tope que el servidor (calidad-campos.js).
+var CC2_TEXTO_LARGO_MAX = 2000;
+function _cc2TextoLargo(id, lbl, filas) {
+  return '<label class="cc2-f cc2-wide">' + lbl + '<textarea id="' + id + '" class="cc2-largo" maxlength="' + CC2_TEXTO_LARGO_MAX + '" rows="' + filas + '" data-cc2-max="' + CC2_TEXTO_LARGO_MAX + '" aria-describedby="' + id + '-cont"></textarea>' +
+    '<small class="cc2-cont" id="' + id + '-cont">0 / ' + CC2_TEXTO_LARGO_MAX.toLocaleString('es-CO') + ' caracteres</small></label>';
+}
+// Texto del contador; al acercarse al tope (90 %), la clase cc2-cont-cerca.
+function cc2ContadorTexto(n, max) { return Number(n || 0).toLocaleString('es-CO') + ' / ' + Number(max).toLocaleString('es-CO') + ' caracteres'; }
+function cc2ActualizarContador(el) {
+  if (!el || !el.getAttribute) return;
+  var max = Number(el.getAttribute('data-cc2-max')) || CC2_TEXTO_LARGO_MAX;
+  var c = document.getElementById(el.id + '-cont'); if (!c) return;
+  var n = String(el.value || '').length;
+  c.textContent = cc2ContadorTexto(n, max);
+  c.classList.toggle('cc2-cont-cerca', n >= max * 0.9);
+}
+function cc2ActualizarContadores() { Array.prototype.forEach.call(document.querySelectorAll('textarea[data-cc2-max]'), cc2ActualizarContador); }
+if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
+  document.addEventListener('input', function (e) { if (e.target && e.target.matches && e.target.matches('textarea[data-cc2-max]')) cc2ActualizarContador(e.target); });
 }
 
 function _cc2Eng() { return _cc2.plantilla ? _cc2.plantilla.engine : 'standard'; }
@@ -207,7 +229,7 @@ function cc2Sugerir() {
   var p = _cc2.plantilla; if (!p) return;
   var t = cc2SugerirObs(p.items, _cc2.answers, p.engine);
   if (t === null) { showToast('Califica los ' + p.items.length + ' ítems para sugerir la observación'); return; }
-  var el = document.getElementById('cc2-f-observaciones'); if (el) { el.value = t.slice(0, 500); el.classList.remove('cc2-invalid'); }
+  var el = document.getElementById('cc2-f-observaciones'); if (el) { el.value = t.slice(0, CC2_TEXTO_LARGO_MAX); el.classList.remove('cc2-invalid'); cc2ActualizarContador(el); }
 }
 
 function cc2VerCriterio(n) {
@@ -348,6 +370,7 @@ function cc2Editar(m) {
   set('canal', m.canal || 'LLAMADA'); // Fase 318
   var ex = m.extras || {};
   CC2_EXTRAS.forEach(function (k) { set(k, ex[k]); }); // Fase 322
+  cc2ActualizarContadores(); // Fase 352
   cc2Pintar();
   showToast('Editando el monitoreo de ' + textoFormatoNombre(m.asesor) + ' (' + (m.fecha || '-') + ')');
   return true;
