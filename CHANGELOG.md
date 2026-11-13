@@ -7,6 +7,20 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.194.1 — Noviembre 2026
+
+**Fase 353b: nombres con tilde o Ñ en mayúsculas.**
+
+- Si el nombre de una asesora venía en mayúsculas con tilde o Ñ (por ejemplo «MUÑOZ» contra
+  «Muñoz»), o con un espacio especial copiado de otro programa, la plataforma no lo tomaba como el
+  mismo nombre y esos monitoreos no le llegaban a su Portal Asesor. Ahora sí, al subir el Excel,
+  al calificar y en el portal. Un nombre con y sin tilde sigue siendo distinto: se sugiere, no se
+  enlaza solo.
+- En «Enlazar monitoreos a usuario», los nombres iguales que solo cambian en mayúsculas o espacios
+  dicen «Mismo nombre que…» (antes decía, por error, que ya le llegaban).
+- Los monitoreos de ORLANT que tenían ese mismo nombre (solo cambian mayúsculas o espacios) quedan
+  unidos a su usuario. No cambia ninguna nota ni fecha.
+
 ## v1.194.0 — Noviembre 2026
 
 **Fase 353: los monitoreos le llegan a cada asesora aunque su nombre esté escrito distinto.**

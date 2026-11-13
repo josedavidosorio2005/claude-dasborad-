@@ -240,9 +240,9 @@ function resolverAsesorUserId(asesorUserId, asesorNombre, campana) {
   if (!asesorUserId) return null;
   const row = db
     .prepare(
-      "SELECT id FROM users WHERE id = ? AND rol = 'ASESOR' AND active = 1 AND asesorCampana = ? AND lower(trim(nombre)) = lower(trim(?))"
+      "SELECT id FROM users WHERE id = ? AND rol = 'ASESOR' AND active = 1 AND asesorCampana = ? AND nombre_clave(nombre) = ?" // Fase 353b
     )
-    .get(asesorUserId, campana, asesorNombre || '');
+    .get(asesorUserId, campana, enlace.claveNombre(asesorNombre || ''));
   return row ? row.id : null;
 }
 
@@ -298,9 +298,9 @@ function puedeEditarMonitoreo(actor, row) {
 
 function esDelAsesor(actor, row) {
   if (row.asesorUserId) return actor.id != null && row.asesorUserId === actor.id;
-  const nombre = (actor.nombre || '').trim().toLowerCase();
+  const nombre = enlace.claveNombre(actor.nombre); // Fase 353b: tildes, Ñ y espacios especiales
   const campana = (actor.asesorCampana || '').trim();
-  return !!nombre && !!campana && row.campana === campana && (row.asesor || '').trim().toLowerCase() === nombre;
+  return !!nombre && !!campana && row.campana === campana && enlace.claveNombre(row.asesor) === nombre;
 }
 
 // ══════════════════════════════════════════════════════════
@@ -518,14 +518,14 @@ router.get(
   '/monitoreos/mios',
   requireActor,
   wrap((req, res) => {
-    const nombre = (req.actor.nombre || '').trim().toLowerCase();
+    const nombre = enlace.claveNombre(req.actor.nombre); // Fase 353b
     const campana = (req.actor.asesorCampana || '').trim();
     if (!req.actor.id && !nombre) return res.json([]);
     const rows = db
       .prepare(
         `SELECT * FROM monitoreos
          WHERE (asesorUserId = @id)
-            OR (asesorUserId IS NULL AND campana = @campana AND lower(trim(asesor)) = @nombre)
+            OR (asesorUserId IS NULL AND campana = @campana AND nombre_clave(asesor) = @nombre)
          ORDER BY fecha DESC, id DESC`
       )
       .all({ id: req.actor.id || 0, nombre, campana });
@@ -541,13 +541,13 @@ router.get(
   '/monitoreos/mios/nuevos',
   requireActor,
   wrap((req, res) => {
-    const nombre = (req.actor.nombre || '').trim().toLowerCase();
+    const nombre = enlace.claveNombre(req.actor.nombre); // Fase 353b
     const campana = (req.actor.asesorCampana || '').trim();
     if (!req.actor.id && !nombre) return res.json({ count: 0 });
     const row = db
       .prepare(
         `SELECT COUNT(*) AS n FROM monitoreos
-         WHERE ((asesorUserId = @id) OR (asesorUserId IS NULL AND campana = @campana AND lower(trim(asesor)) = @nombre))
+         WHERE ((asesorUserId = @id) OR (asesorUserId IS NULL AND campana = @campana AND nombre_clave(asesor) = @nombre))
            AND vistoPorAsesorAt IS NULL
            AND id > @desde`
       )

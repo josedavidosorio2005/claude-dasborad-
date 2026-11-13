@@ -70,7 +70,7 @@ function _enlDibujar(mensaje) {
     var meses = Object.keys(g.meses).sort().reverse().map(function (m) { return _enlMesLbl(m) + ': ' + g.meses[m]; }).join(' · ');
     var sug = g.sugerencia;
     var sugHtml = sug
-      ? '<p class="enl-sug">' + (sug.tipo === 'igual' ? 'Ya le llegan por nombre exacto a «' + esc(sug.nombre) + '».' : 'Sugerencia: «' + esc(sug.nombre) + '» (' + esc(sug.tipo) + ').') +
+      ? '<p class="enl-sug">' + (sug.tipo === 'igual' ? 'Mismo nombre que «' + esc(sug.nombre) + '» (solo cambian mayúsculas o espacios). Enlázalo para que le llegue seguro a su Portal Asesor.' : 'Sugerencia: «' + esc(sug.nombre) + '» (' + esc(sug.tipo) + ').') +
         ' <button type="button" class="btn-link enl-usar" data-i="' + i + '" onclick="calEnlaceUsarSugerencia(this)">Usar</button></p>'
       : '<p class="enl-sug">Sin usuario parecido.</p>';
     return '<li class="enl-fila">' +

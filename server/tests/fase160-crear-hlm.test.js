@@ -102,7 +102,8 @@ test('una base nueva termina todas las migraciones con HLM, creada despues de la
     'fase344_encuestas_telefono_v1', // Fase 344: columna telefono (ANI) en encuestas (ADD COLUMN, sin tocar filas)
     'fase332_orlant_calidad_solo_nueva_v1', // Fase 332: los 3 paneles viejos de Calidad de ORLANT ocultos (no toca Aurora/HLM)
     'faseW1_replica_mobilize_api_v1', // Fase W1: replica interna de Mobilize (fila nueva; no toca Aurora/HLM)
-    'fase353_monitoreos_enlace_exacto_v1']; // Fase 353: solo llena monitoreos.asesorUserId por nombre exacto (no toca Aurora/HLM)
+    'fase353_monitoreos_enlace_exacto_v1', // Fase 353: solo llena monitoreos.asesorUserId por nombre exacto (no toca Aurora/HLM)
+    'fase353_monitoreos_enlace_exacto_v2']; // Fase 353b: lo mismo con nombre_clave() (tildes, Ñ, espacios especiales)
   assert.deepEqual(orden.slice(iHlm + 1).filter((n) => !POSTERIORES.includes(n)), [], 'ninguna migracion vieja corre despues de crear HLM');
   const r = reg.leerRegistro(db).find((c) => c.nombre === HLM);
   assert.ok(r, 'HLM en el registro de clientes');

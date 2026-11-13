@@ -42,6 +42,10 @@ try {
   db = new Database(DB_PATH);
   db.pragma('journal_mode = WAL');
   db.pragma('foreign_keys = ON');
+  // Fase 353b: la misma clave de nombre que server/enlace-asesor.js (mayusculas con tilde y Ñ,
+  // espacios especiales). lower() de SQLite solo baja las letras sin tilde.
+  const { claveNombre } = require('./enlace-asesor');
+  db.function('nombre_clave', { deterministic: true }, (s) => (s == null ? null : claveNombre(s)));
 } catch (err) {
   process.stderr.write(
     '\n[db] No se pudo abrir la base de datos SQLite.\n' +
@@ -5167,6 +5171,15 @@ runOnceMigration('faseW1_replica_mobilize_api_v1', crearReplicaMobilizeApi);
 runOnceMigration('fase353_monitoreos_enlace_exacto_v1', () => {
   const n = require('./enlace-asesor').enlazarExactos(db);
   if (!config.isTest) console.log('[db] Migracion fase353_monitoreos_enlace_exacto_v1: ' + n + ' monitoreo(s) enlazado(s) por nombre exacto.');
+});
+
+// Fase 353b: la v1 comparaba con lower() de SQLite, que no baja las mayusculas con tilde ni la Ñ
+// ni trata los espacios especiales: en produccion dejo sin enlazar 13 monitoreos de ORLANT (2
+// asesoras) que si eran el mismo nombre. Misma regla (nombre exacto con UN unico usuario ASESOR
+// activo de la campaña), ahora con nombre_clave(). Idempotente: lo ya enlazado no se toca.
+runOnceMigration('fase353_monitoreos_enlace_exacto_v2', () => {
+  const n = require('./enlace-asesor').enlazarExactos(db);
+  if (!config.isTest) console.log('[db] Migracion fase353_monitoreos_enlace_exacto_v2: ' + n + ' monitoreo(s) enlazado(s) por nombre exacto.');
 });
 
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
