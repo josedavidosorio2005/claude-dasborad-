@@ -20992,3 +20992,24 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
     - Queda en el Historial (`MONITOREOS_ENLAZADOS` y `MONITOREOS_ENLACE_DESHECHO`, con los ids).
   - Migración `fase353_monitoreos_enlace_exacto_v1`: enlaza por id los monitoreos con nombre exacto a un único usuario activo de su campaña. No cambia el texto.
 - **Pruebas:** `fase353-enlazar-monitoreos` (6), con datos inventados; `fase118-matriz-acceso` declara las 4 rutas nuevas.
+
+### Fase 353 — deploy, migración y Fase 353b (v1.194.1, 2026-11-13)
+
+- **Dry-run en producción** (solo lectura): ORLANT 115 monitoreos de 18 asesoras; las demás campañas 0; ambiguos 0. El usuario dio el OK y se mezcló #807.
+- **Deploy de #807:** falló dos veces (`dial tcp :22: i/o timeout`). Diagnóstico de solo lectura:
+  - La última conexión SSH buena fue el monitor de salud a las 18:21 UTC.
+  - En la corrida fallida, el workflow sí abrió y cerró la regla del puerto 22.
+  - HTTPS respondió 200 en 0,24 s y el monitor externo estaba en verde.
+  - Conclusión: corte temporal de red. Con el OK del usuario se relanzó una vez más y pasó (1.194.0).
+- **Hallazgo tras el deploy:** la migración enlazó **102**, no 115. Los 13 que faltaron son de 2 asesoras con el mismo nombre en mayúsculas con tilde o Ñ, o con un espacio especial.
+  - `lower()` de SQLite solo baja las letras sin tilde, y no trata los espacios especiales.
+  - El dry-run comparaba en JavaScript, que sí los iguala.
+  - El Portal Asesor compara igual que SQLite, así que **esas 2 asesoras tampoco veían esos 13 monitoreos**.
+  - La herramienta les mostraba, por error, «Ya le llegan por nombre exacto».
+- **353b:** `claveNombre()` está en `server/enlace-asesor.js` y se registra en SQLite como `nombre_clave()`. Trata como iguales las mayúsculas con tilde y Ñ y los espacios especiales; un nombre con y sin tilde sigue siendo distinto. Se usa al:
+  - subir el Excel (enlace por id y aviso);
+  - calificar (`resolverAsesorUserId` y el enlace por nombre exacto);
+  - leer en el portal (`/monitoreos/mios`, `/mios/nuevos` y `esDelAsesor`).
+
+  Además, se corrigió el texto de la herramienta («Mismo nombre que…»), y la migración `fase353_monitoreos_enlace_exacto_v2` repite la regla de exactos con `nombre_clave()`; en producción tocan los 13 que faltaron.
+- **Pruebas:** `fase353b-nombres-tildes` (4), con nombres inventados con tilde, Ñ, espacio sin quiebre y espacio de ancho cero.

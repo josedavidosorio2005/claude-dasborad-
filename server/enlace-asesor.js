@@ -18,7 +18,18 @@ function normNombre(s) {
     .trim();
 }
 const ordenNombre = (s) => normNombre(s).split(' ').filter(Boolean).sort().join(' ');
-const exacto = (s) => String(s == null ? '' : s).trim().toLowerCase();
+
+// Fase 353b: la clave del nombre "exacto": sin distinguir mayusculas (tambien con tilde o Ñ:
+// lower() de SQLite solo baja las letras sin tilde), con los espacios especiales (sin quiebre,
+// de ancho cero, etc.) como un espacio normal y sin espacios al borde. Las TILDES SI cuentan: un
+// nombre con y sin tilde es "parecido", no exacto. Se registra en SQLite como nombre_clave() (db.js)
+// para que la base y el codigo comparen igual.
+const INVISIBLES = /[\u200b-\u200d\u2060\ufeff]/g;
+const ESPACIOS = /[\s\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000]+/g;
+function claveNombre(s) {
+  return String(s == null ? '' : s).replace(INVISIBLES, '').replace(ESPACIOS, ' ').trim().toLowerCase();
+}
+const exacto = claveNombre;
 
 // Distancia de edicion con tope (mas de 2 no interesa).
 function distancia(a, b) {
@@ -71,8 +82,8 @@ function asesoresDeCampana(db, campana) {
 function idPorNombreExacto(db, campana, nombre) {
   if (!campana || !exacto(nombre)) return null;
   const rows = db.prepare(
-    "SELECT id FROM users WHERE rol = 'ASESOR' AND active = 1 AND asesorCampana = ? AND lower(trim(nombre)) = lower(trim(?)) LIMIT 2"
-  ).all(campana, nombre);
+    "SELECT id FROM users WHERE rol = 'ASESOR' AND active = 1 AND asesorCampana = ? AND nombre_clave(nombre) = ? LIMIT 2"
+  ).all(campana, claveNombre(nombre));
   return rows.length === 1 ? rows[0].id : null;
 }
 
@@ -114,7 +125,7 @@ const SQL_EXACTO_UNICO = `
   asesorUserId IS NULL AND (
     SELECT COUNT(*) FROM users u
     WHERE u.rol = 'ASESOR' AND u.active = 1 AND u.asesorCampana = monitoreos.campana
-      AND lower(trim(u.nombre)) = lower(trim(monitoreos.asesor))
+      AND nombre_clave(u.nombre) = nombre_clave(monitoreos.asesor)
   ) = 1`;
 function contarExactos(db) {
   return db.prepare('SELECT campana, COUNT(*) AS n FROM monitoreos WHERE ' + SQL_EXACTO_UNICO + ' GROUP BY campana ORDER BY campana').all();
@@ -124,10 +135,10 @@ function enlazarExactos(db) {
     `UPDATE monitoreos SET asesorUserId = (
        SELECT u.id FROM users u
        WHERE u.rol = 'ASESOR' AND u.active = 1 AND u.asesorCampana = monitoreos.campana
-         AND lower(trim(u.nombre)) = lower(trim(monitoreos.asesor))
+         AND nombre_clave(u.nombre) = nombre_clave(monitoreos.asesor)
      ) WHERE ` + SQL_EXACTO_UNICO
   ).run();
   return r.changes;
 }
 
-module.exports = { normNombre, nivelParecido, sugerencia, asesoresDeCampana, idPorNombreExacto, revisarNombres, pendientes, contarExactos, enlazarExactos };
+module.exports = { claveNombre, normNombre, nivelParecido, sugerencia, asesoresDeCampana, idPorNombreExacto, revisarNombres, pendientes, contarExactos, enlazarExactos };
