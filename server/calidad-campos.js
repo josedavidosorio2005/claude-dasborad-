@@ -10,6 +10,10 @@
 // NO estan en la lista: ver docs/calidad-plan-edwin-nov.md, pregunta 3.
 'use strict';
 
+// Fase 352 (reunion con Edwin del 13/11): tope de los textos largos de Calidad (Observaciones,
+// Estrategia, Motivo de afectacion y Causa), igual en el formulario y en el servidor.
+const TEXTO_LARGO_CALIDAD_MAX = 2000;
+
 // k -> { donde: 'columna' | 'extra' | 'auto', etiqueta por defecto, max }
 const CAMPOS_CALIDAD = {
   asesor: { donde: 'columna', etiqueta: 'Nombre del asesor' },
@@ -26,10 +30,10 @@ const CAMPOS_CALIDAD = {
   // Fase 322 (Televentas SURA). Estrategia, Motivo y Causa en texto libre por ahora.
   idContacto: { donde: 'extra', etiqueta: 'ID contacto', max: 60 },
   tipificacionSistema: { donde: 'extra', etiqueta: 'Tipificación sistema', max: 120 },
-  estrategia: { donde: 'extra', etiqueta: 'Estrategia', max: 200 },
-  causa: { donde: 'extra', etiqueta: 'Causa', max: 300 },
+  estrategia: { donde: 'extra', etiqueta: 'Estrategia', max: TEXTO_LARGO_CALIDAD_MAX }, // Fase 352 (antes 200)
+  causa: { donde: 'extra', etiqueta: 'Causa', max: TEXTO_LARGO_CALIDAD_MAX }, // Fase 352 (antes 300)
   // Motivo en texto libre (SURA). El `motivo` automatico (items fallados, Mobilize) no cambia.
-  motivoTexto: { donde: 'extra', etiqueta: 'Motivo de afectación', max: 300 },
+  motivoTexto: { donde: 'extra', etiqueta: 'Motivo de afectación', max: TEXTO_LARGO_CALIDAD_MAX }, // Fase 352 (antes 300)
   // Cedula del cliente: dato personal. Solo se guardan los ULTIMOS 4 digitos (••••1234)
   // hasta que el supervisor decida (plan de Calidad, pregunta 3).
   cedula: { donde: 'extra', etiqueta: 'Cédula cliente', mascara: 'ultimos4' },
@@ -125,4 +129,4 @@ function motivoDesdeItems(items, answers) {
 }
 
 module.exports = { CAMPOS_CALIDAD, CAMPOS_OBLIGATORIOS, ALIAS_CAMPOS, claveCampo, normalizarCampos, camposDe, validarExtras, itemsFaltantes, motivoDesdeItems,
-  respuestasDeItem, respuestasInvalidas, enmascararCedula }; // Fase 322
+  respuestasDeItem, respuestasInvalidas, enmascararCedula, TEXTO_LARGO_CALIDAD_MAX }; // Fase 322; 352

@@ -238,10 +238,14 @@ const textoCortoOpt = z.string().trim().max(200).optional().default('');
 // 200 caracteres (maximo real: 235). Mismo limite ya usado para el campo
 // "observaciones" de Inventario (inventarioItemBody, mas abajo) -- no un
 // numero inventado para esta fase.
-const textoObservacionesOpt = z.string().trim().max(500).optional().default('');
+// Fase 352 (reunion con Edwin del 13/11): retroalimentacion larga en Calidad. Observaciones,
+// Estrategia, Motivo de afectacion y Causa: hasta 2000 caracteres (antes 500 / 200 / 300 / 300).
+// La base ya guarda TEXT sin limite: no hay migracion ni se toca nada guardado.
+const TEXTO_LARGO_CALIDAD_MAX = require('./calidad-campos').TEXTO_LARGO_CALIDAD_MAX;
+const textoObservacionesOpt = z.string().trim().max(TEXTO_LARGO_CALIDAD_MAX).optional().default('');
 
 const extrasMonitoreoSchema = z
-  .record(z.string().max(40), z.union([z.string().max(200), z.null()]))
+  .record(z.string().max(40), z.union([z.string().max(TEXTO_LARGO_CALIDAD_MAX), z.null()])) // Fase 352: el tope de cada campo lo pone calidad-campos.js
   .refine((o) => Object.keys(o).length <= 20, { message: 'Demasiados campos extra' })
   .optional();
 
@@ -324,7 +328,7 @@ const updateMonitoreoBody = z
     // evaluador original nunca cambia) -- se deja en el schema solo para
     // no romper un body viejo que todavia lo mande; se ignora en la ruta.
     evaluador: z.string().trim().max(120).optional(),
-    observaciones: z.string().trim().max(500).optional(),
+    observaciones: z.string().trim().max(TEXTO_LARGO_CALIDAD_MAX).optional(), // Fase 352
     extras: extrasMonitoreoSchema, // Fase 252
     answers: answersSchema.optional(),
   })
