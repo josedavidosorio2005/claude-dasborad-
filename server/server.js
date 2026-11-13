@@ -374,6 +374,7 @@ function createApp() {
   api.use(require('./routes/seguridad'));
   api.use(require('./routes/guia'));
   api.use(require('./routes/admin'));
+  api.use(require('./routes/wolkvox')); // Fase W2: probar conexion (solo admin, solo la replica)
 
   // 404 JSON para rutas de API desconocidas (antes del fallback SPA).
   api.use((req, res) => res.status(404).json({ error: 'Recurso no encontrado' }));

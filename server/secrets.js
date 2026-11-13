@@ -26,6 +26,8 @@ const SSM_KEYS = [
   'JWT_EXPIRES_IN',
 ];
 
+function esClaveWolkvox(nombre) { return /^WOLKVOX_[A-Z0-9_]{1,60}$/.test(nombre); }
+
 async function hydrateEnv() {
   const prefix = process.env.SSM_PARAM_PREFIX;
   if (!prefix) return { loaded: [], source: 'env' };
@@ -64,7 +66,10 @@ async function hydrateEnv() {
   } while (nextToken);
 
   const loaded = [];
-  for (const key of SSM_KEYS) {
+  // Fase W2: ademas, las de Wolkvox (WOLKVOX_<OPERACION>_TOKEN / _SERVIDOR), sin listarlas una a
+  // una. El log de bootstrap muestra solo los NOMBRES cargados, nunca los valores.
+  const claves = SSM_KEYS.concat(Object.keys(found).filter(esClaveWolkvox));
+  for (const key of claves) {
     if (found[key] !== undefined && (process.env[key] === undefined || process.env[key] === '')) {
       process.env[key] = found[key];
       loaded.push(key);
@@ -73,4 +78,4 @@ async function hydrateEnv() {
   return { loaded, source: 'ssm', prefix: withSlash };
 }
 
-module.exports = { hydrateEnv, SSM_KEYS };
+module.exports = { hydrateEnv, SSM_KEYS, esClaveWolkvox };

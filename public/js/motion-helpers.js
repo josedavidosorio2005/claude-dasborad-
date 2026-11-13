@@ -344,6 +344,8 @@ var MOTION_DIALOGOS_SIMPLES = {
   'modal-clasif-asesores': function () { if (typeof tipifCerrarClasificacion === 'function') tipifCerrarClasificacion(); },
   // Fase 210: Clasificación de usuarios / de líneas de Agendamiento.
   'modal-agendas-clasif': function () { if (typeof agendasCerrarClasificacion === 'function') agendasCerrarClasificacion(); },
+  // Fase W2: «Probar conexión» con Wolkvox (se abre encima del tablero de la réplica).
+  'modal-wolkvox': function () { if (typeof wvPruebaCerrar === 'function') wvPruebaCerrar(); },
 };
 // overlay = el elemento con .show (role="dialog"); su primer hijo (.modal /
 // .clients-modal) es el contenedor que recibe el foco, como en A3.

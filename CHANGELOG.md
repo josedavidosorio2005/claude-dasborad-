@@ -7,6 +7,18 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.186.0 — Noviembre 2026
+
+**Fase W2: primera conexión con Wolkvox, solo en el tablero de pruebas.**
+
+- En el tablero de pruebas «Mobilize pruebas API», que solo ve el administrador, hay un botón
+  nuevo: «Probar conexión». Le pide a Wolkvox el detalle de llamadas de una hora y muestra si
+  respondió y qué columnas trae. No muestra ningún dato (ni nombres ni teléfonos).
+- La plataforma cuenta cuántas consultas se hacen al día, para no pasarse de las 3000 que permite
+  Wolkvox.
+- El Mobilize real y los demás clientes no cambian. Todavía no se cargan datos desde Wolkvox: eso
+  viene en las fases siguientes.
+
 ## v1.185.0 — Noviembre 2026
 
 **Fase 348 (E): en el tema claro las tarjetas se distinguen del fondo.**
