@@ -2475,7 +2475,7 @@ div.ca-bar-fila{cursor:default}
 .aurora-card.cl-pantalla{position:fixed;inset:0;z-index:var(--z-panel);border-radius:0;overflow:auto;padding:16px 20px 24px;box-shadow:none}
 .cl-pantalla-btn{min-height:44px;align-self:flex-end}
 
-/* Fase 348 (G, PROPUESTA): menu lateral izquierdo plegable en los dashboards de cliente, como el de
+/* Fase 348 (G): menu lateral izquierdo plegable en los dashboards de cliente, como el de
    Televentas SURA (gd-menu-lateral.js). Solo con #gd-modal.gd-menu-lateral (clientes de la lista);
    desde 901 px. En 900 px o menos, las pestañas de siempre. El boton y el menu van en la MISMA
    celda (fila 3). El `top` del sticky del menu (encabezado + 52 px) es IGUAL a su margen de
@@ -2500,6 +2500,22 @@ div.ca-bar-fila{cursor:default}
   #gd-modal.gd-menu-lateral.gd-menu-plegado{grid-template-columns:auto minmax(0,1fr)}
   #gd-modal.gd-menu-lateral.gd-menu-plegado > #gd-tabs{display:none}
 }
+
+/* Fase W2: ventana «Probar conexión» con Wolkvox (wolkvox-prueba.js). Solo tokens existentes. */
+.modal-wolkvox{position:relative}
+.modal-wolkvox .wv-cerrar{position:absolute;top:10px;right:10px;width:44px;height:44px;border:0;border-radius:var(--r-md);background:transparent;color:var(--c-text-2);font-size:var(--fs-h2);line-height:1;cursor:pointer}
+.modal-wolkvox .wv-cerrar:hover{background:var(--c-border-soft);color:var(--c-text)}
+.modal-wolkvox h3{padding-right:44px}
+.wv-ayuda{font-size:var(--fs-body);color:var(--c-text-2);line-height:1.5;margin:0 0 14px}
+.wv-estado{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:6px 14px;margin:0 0 14px;font-size:var(--fs-body)}
+.wv-estado dt{color:var(--c-text-muted);font-weight:600}
+.wv-estado dd{margin:0;color:var(--c-text);overflow-wrap:anywhere}
+.wv-error{color:var(--c-danger-text);background:var(--c-danger-bg);border-radius:var(--r-md);padding:10px 12px;font-size:var(--fs-body);margin:0 0 12px}
+.wv-resultado{border:1px solid var(--c-border);border-radius:var(--r-md);padding:12px 14px;margin:0 0 12px}
+.wv-campos-titulo{font-size:var(--fs-small);color:var(--c-text-muted);margin:4px 0 8px}
+.wv-campos{display:flex;flex-wrap:wrap;gap:6px;list-style:none;margin:0;padding:0;font-size:var(--fs-small)}
+.wv-campos .wv-campo{border:1px solid var(--c-border);border-radius:var(--r-pill);padding:3px 10px;color:var(--c-text);font-family:ui-monospace,Consolas,monospace}
+@media (max-width:480px){.wv-estado{grid-template-columns:minmax(0,1fr)}.wv-estado dd{margin-bottom:6px}}
 
 /* Fase 348 (E): TEMA CLARO — las tarjetas y bloques se confundian con el fondo (gris muy claro contra
    blanco). Sombra suave en dos capas + un aro de 1px casi invisible que marca el borde, y un poco

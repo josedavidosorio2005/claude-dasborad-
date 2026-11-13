@@ -20,7 +20,8 @@ const DIALOGOS = ['clients-modal-overlay', 'modal-user', 'modal-pass', 'modal-de
   'modal-encuesta-monitoreo', // Fase 331 (PR 4): + Monitoreo de una pregunta de la Encuesta
   'modal-ver-datos', // Fase 152 (B9): + "Ver datos" de una grafica
   'modal-clasif-asesores', // Fase 186: + "Clasificación de asesores" de Tipificacion
-  'modal-agendas-clasif']; // Fase 210: + Clasificación de usuarios / de líneas de Agendamiento
+  'modal-agendas-clasif', // Fase 210: + Clasificación de usuarios / de líneas de Agendamiento
+  'modal-wolkvox']; // Fase W2: + «Probar conexión» con Wolkvox
 
 test('index.html: los 9 dialogos son role="dialog" aria-modal="true" con su titulo <h3> enlazado', () => {
   for (const id of DIALOGOS) {

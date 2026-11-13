@@ -1,4 +1,4 @@
-// fase348-g-menu-lateral-propuesta.test.js — Fase 348, punto G (PROPUESTA, reunion con Edwin del
+// fase348-g-menu-lateral-propuesta.test.js — Fase 348, punto G (aprobado el 13/11; reunion con Edwin del
 // 12/11): menu lateral izquierdo plegable como el de Televentas SURA, por ahora SOLO en Mobilize.
 // ORLANT y los demas clientes no cambian hasta que el usuario lo apruebe.
 'use strict';
@@ -34,7 +34,7 @@ test('G: se aplica al dibujar las pestañas y el CSS solo actua con .gd-menu-lat
   const css = PUB('css/styles.css');
   // Solo el bloque de G: termina donde cierra su @media (una linea con solo «}»), aunque despues
   // vengan otros bloques (E va al final porque su prueba lee hasta el final del archivo).
-  const desde = css.slice(css.indexOf('/* Fase 348 (G, PROPUESTA)'));
+  const desde = css.slice(css.indexOf('/* Fase 348 (G)'));
   const b = desde.slice(0, desde.search(/\n\}\s*\n/) + 2);
   const media = b.slice(b.indexOf('@media (min-width:901px){'), -1);
   const reglas = media.slice(media.indexOf('{') + 1).split('}').map((r) => r.split('{')[0].trim()).filter(Boolean);

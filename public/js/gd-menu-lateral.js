@@ -1,10 +1,10 @@
-// gd-menu-lateral.js — Fase 348, punto G (PROPUESTA, reunion con Edwin del 12/11). Menu lateral
+// gd-menu-lateral.js — Fase 348, punto G (reunion con Edwin del 12/11; aprobado por el usuario el 13/11). Menu lateral
 // izquierdo plegable para los dashboards de cliente, como el de Televentas SURA: desde 901 px las
 // pestañas pasan a una columna a la izquierda (pegada bajo el encabezado, con «MENÚ», icono y
 // 44 px por opcion) y un boton la pliega para dar todo el ancho al tablero. En 900 px o menos se
 // quedan las pestañas de siempre arriba.
 //
-// SOLO para los clientes de GD_MENU_LATERAL_CLIENTES (hoy, Mobilize, para la propuesta). Agregar un
+// SOLO para los clientes de GD_MENU_LATERAL_CLIENTES (hoy, solo Mobilize). Agregar un
 // cliente a la lista es lo unico que hace falta para extenderlo, cuando se apruebe.
 var GD_MENU_LATERAL_CLIENTES = ['MOBILIZE'];
 

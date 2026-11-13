@@ -216,7 +216,7 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 ## 2. Esperando una respuesta de Edwin
 
 - **Módulo de Calidad: tres listas que crecen sin paginar** (Fase 338, 11/11) — Calidad › Monitoreos
-  (hoy 153 filas en ORLANT), Calidad › Detalle por mes y «Resueltas» de Calidad de encuestas muestran
+  (ORLANT: 194 filas al 13/11 y creciendo con los monitoreos de noviembre), Calidad › Detalle por mes y «Resueltas» de Calidad de encuestas muestran
   todas las filas. En el dashboard, «Llamadas con fallas» ya va de a 10 con «Ver más / Ver menos»
   (v1.174.0). Preguntar a Edwin si quiere lo mismo en esas tres; por ahora no se cambian.
 

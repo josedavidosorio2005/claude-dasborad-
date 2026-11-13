@@ -1371,6 +1371,7 @@ function renderGenericHeader(){
   // este cliente y modulo; solo para quien puede cargar (nunca el cliente).
   var btnAct = document.getElementById('gd-actualizar-btn');
   if (btnAct) btnAct.classList.toggle('hidden', !(typeof canLoadAnyModule === 'function' && canLoadAnyModule() && typeof openCentroCargas === 'function'));
+  if (typeof wvPruebaPintarBoton === 'function') wvPruebaPintarBoton(_gd.cliente); // Fase W2: solo admin y solo la replica interna
   document.getElementById('gd-title').textContent = _gd.config.titulo || _gd.cliente;
   // Fase 283: el supervisor abre el tablero desde su portal, en su vista (no la del cliente).
   var vistaSup = document.getElementById('gd-vista-sup');
@@ -1780,7 +1781,7 @@ function renderGenericTabs(){
     var sec = gdSeccionDeTipo(t.panels && t.panels[0] && t.panels[0].tipo);
     return '<button class="atab'+(sec ? ' gd-tab-sec-'+sec : '')+'" data-gdtab="'+esc(t.key)+'">'+esc(t.label)+'</button>';
   }).join('');
-  if(typeof gdMenuLateralAplicar === 'function') gdMenuLateralAplicar(_gd.cliente); // Fase 348 (G, propuesta): menu lateral, solo los clientes de la lista
+  if(typeof gdMenuLateralAplicar === 'function') gdMenuLateralAplicar(_gd.cliente); // Fase 348 (G): menu lateral, solo los clientes de la lista (hoy Mobilize)
 }
 
 // La navegacion por pestanas usa data-gdtab (no un onclick con texto libre).

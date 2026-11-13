@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.185.0` (ver `server/package.json`, expuesta en
+- **Versión**: `1.187.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -209,7 +209,7 @@ desde la Fase 130 (ver `docs/pendientes.md`, sección 1).
 | Agendas (ORLANT) | Desde el 29/10 los 3 meses en base cruda (recargados por la interfaz: ver Fase 213): Ago 11.039 · Sep 13.088 · Oct 8.635 (01–24/10) = General 5.142 + 3P 3.493. Antes (formato anterior): Ago 11.040 · Sep 13.146 | 126 / 210 / 213 |
 | Agendas de octubre por sede (ORLANT, todas / General / 3P, v1.98.0) | Principal 5.425 / 2.779 / 2.646 · 34 (Audífonos) 2.118 / 1.997 / 121 · Poblado 548 / 24 / 524 · Rionegro 477 / 342 / 135 · Llanogrande 67 / 0 / 67 · suma 8.635; verificado en producción | 212 |
 | Inasistencia (ORLANT) | Ago 11.189/786/48, 7,45 % · Sep 12.194/749/61 · período 7,03 % | 130 |
-| Calidad (ORLANT) | Sep: 95 monitoreos, 19 asesores, promedio 94,79 % · Oct (carga del 29/10): 58 monitoreos, 20 asesores, promedio del equipo 96,72 % (54 sobresaliente, 4 no crítico, 0 crítico), 12 asesores por encima y 8 por debajo; verificado en producción | 130 / 213 |
+| Calidad (ORLANT) | Sep: 95 monitoreos, 19 asesores, promedio 94,79 % · Oct (carga del 29/10): 58 monitoreos, 20 asesores, promedio del equipo 96,72 % (54 sobresaliente, 4 no crítico, 0 crítico), 12 asesores por encima y 8 por debajo; verificado en producción · Sep+Oct juntos: 153 monitoreos, promedio 95,52 (referencia fija, no cambia) · Nov (en curso, monitoreos normales que registra un supervisor desde la interfaz, desde el 12/11 21:35): 41 al 13/11 · total al 13/11: 194 monitoreos, promedio 95,38 (crece mientras se califique noviembre) | 130 / 213 / 348 |
 | Ranking de asesores (ORLANT, desde la v1.104.0: agendas ÷ TODO el CDR de Tipificación del asesor, ingreso + salida, llamadas + WhatsApp) | Equipo: Ago 42,60 % (11.039 ÷ 25.914) · Sep 41,40 % (13.088 ÷ 31.614) · Oct 41,80 % (8.631 ÷ 20.650); control INCO3 ago = 505 llamadas + 628 WhatsApp = 1.133 (205 de ingreso + 928 de salida), cifra de Edwin. Marcados "⚠ agenda más de lo que registra Wolkvox" (>100 %): Ago 3 · Sep 2 · Oct 2. Aparte: OTROS (oct 4 agendas) y agentes de Wolkvox sin usuario de Agendamiento (Ago 8 · Sep 3 · Oct 4). Filtro de agendas oct: 3P 3.492 · General 5.139 (v1.103.0). Verificado en producción. Antes, solo ingreso (v1.101.0): Ago 64,56 % · Sep 70,66 % · Oct 66,24 %; archivo EFECTIVIDAD_AGENDAMIENTO: Ago 41,17 % · Sep 40,00 % | 122 / 213 / 214 |
 | Efectividad de Citas (ORLANT, fórmula nueva desde la v1.99.0: agendas ÷ (llamadas contestadas + WhatsApp contestados)) | Con las agendas recargadas el 29/10: Ago 65,93 % (11.039 ÷ 9.374 + 7.370) · Sep 71,84 % (13.088 ÷ 10.264 + 7.953) · Oct 67,17 % (8.635 ÷ 7.343 + 5.512, mes parcial: datos hasta el 24/10) · MESES Ago+Sep 69,01 % · 3 meses 68,52 %; verificado en producción (v1.100.0). Con las agendas anteriores: Sep 72,16 %, Ago+Sep 69,18 %. Antes (archivo CITAS_ATENDIDAS): Ago 70,57 % · Sep 73,54 % · período 72,12 % | 126 / 212 |
 | Llamadas y WhatsApp de salida (ORLANT) | Ago (archivo): llamadas 6.560, WhatsApp 3.381 · Sep (CDR): llamadas 10.791, WhatsApp 4.013 | 127 / 177 / 208 |
@@ -536,6 +536,8 @@ mismo orden):
 - Fase 348 (D) — ventana de Calidad del dashboard con X arriba a la derecha, clic afuera y Esc (v1.183.1, 2026-11-12)
 - Fase 348 (F) — Televentas SURA: «Quitar todos / Agregar todos» en Mes y Resultado de validación, desde afuera (v1.184.0, 2026-11-12)
 - Fase 348 (E) — tema claro: tarjetas, KPIs y gráficas con sombra suave y aro (el oscuro y la paleta sin cambio) (v1.185.0, 2026-11-12)
+- Fase W2 — Wolkvox: cliente de la API en el servidor (tiempo máximo, tope diario, fechas del mismo mes, sin secretos en logs) y botón «Probar conexión» solo para el administrador en la réplica oculta (v1.186.0, 2026-11-13)
+- Fase 348 (G) — Mobilize: menú lateral plegable a la izquierda, como el de Televentas, desde 901 px; en el celular y la tableta, las pestañas de siempre (v1.187.0, 2026-11-13)
 - Fase 309 — Revisión de seguridad: el cliente ya no recibe el nombre de los líderes en `GET /metas`; resto en `docs/revision-seguridad-2026-11-09.md` (v1.154.1, 2026-11-10)
 - Fase 308 — Revisión antes de la reunión con clientes y pendientes del supervisor (solo docs, 2026-11-10)
 - Fase 307 — Calidad para que los líderes evalúen: ORLANT conserva su Calidad y suma «Resultado de los monitoreos» al final; Aurora ya lo tenía (se muestra con el primer monitoreo) (v1.154.0, 2026-11-10)
