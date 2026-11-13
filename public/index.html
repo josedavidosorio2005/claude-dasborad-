@@ -1773,17 +1773,12 @@
         <div class="page-title">Calidad</div>
         <div class="page-subtitle">Realiza monitoreos y consulta resultados de las campañas asignadas.</div>
 
+        <!-- Fase 352 (C, pedido de Edwin): un recuadro por campaña con la meta y el avance del mes; al tocarlo se abre
+             directo la Calidad de esa campaña (sin el paso intermedio «Abrir Módulo de Calidad»). session.js -->
         <div class="aurora-card">
           <div class="aurora-card-title">Mi Meta de Monitoreo — Mes Actual</div>
-          <table class="aurora-rank-table" id="supervisor-meta-table"></table>
-        </div>
-
-        <div class="aurora-card" style="max-width:520px">
-          <div class="aurora-card-title">Módulo de Calidad</div>
-          <p style="font-size:0.85rem;color:var(--c-text);line-height:1.5">Desde aquí puedes registrar nuevos monitoreos y consultar el historial, resumenes y reportes de las campañas que tienes asignadas.</p>
-          <div class="modal-btns" style="margin-top:10px">
-            <button class="btn-primary" onclick="openCalidad()">Abrir Módulo de Calidad</button>
-          </div>
+          <p class="cpl-ayuda">Toca una campaña para abrir su Calidad: registrar monitoreos y ver el historial, los resúmenes y los reportes.</p>
+          <div class="cal-camp-grid" id="supervisor-meta-cards"></div>
         </div>
       </div>
 

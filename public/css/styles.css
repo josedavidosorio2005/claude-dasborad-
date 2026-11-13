@@ -2534,6 +2534,22 @@ div.ca-bar-fila{cursor:default}
 .err-botones{display:inline-flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
 #err-p-texto{min-height:160px;line-height:1.5}
 
+/* Fase 352 (C): portal del supervisor › Calidad, un recuadro por campaña que abre su Calidad. Solo tokens. */
+.cal-camp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;margin-top:6px}
+.cal-camp-card{display:flex;flex-direction:column;gap:8px;min-height:44px;padding:14px 16px;border:1.5px solid var(--c-border);border-radius:var(--r-md);background:var(--c-surface);color:var(--c-text);cursor:pointer}
+.cal-camp-card:hover{border-color:var(--c-primary-mid);background:var(--c-hover-bg)}
+.cal-camp-card:focus-visible{outline:2px solid var(--c-focus);outline-offset:2px}
+.cal-camp-nombre{font-weight:700;font-size:var(--fs-body-lg);color:var(--c-primary)}
+.cal-camp-cifra{display:flex;align-items:baseline;justify-content:space-between;gap:8px;font-size:var(--fs-body)}
+.cal-camp-cifra b{font-size:var(--fs-h3)}
+.cal-camp-cifra .peak{color:var(--c-success-text);font-weight:700}
+.cal-camp-barra{height:6px;border-radius:var(--r-pill);background:var(--c-border-soft);overflow:hidden}
+.cal-camp-barra span{display:block;height:100%;background:var(--c-primary-mid)}
+.cal-camp-det{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:2px 12px;margin:0;font-size:var(--fs-small);color:var(--c-text-2)}
+.cal-camp-det dd{margin:0}
+.cal-camp-sin{margin:0;font-size:var(--fs-small);color:var(--c-text-muted)}
+.cal-camp-ir{margin-top:auto;align-self:flex-end;font-size:var(--fs-small);font-weight:600;color:var(--c-primary)}
+
 /* Fase 348 (E): TEMA CLARO — las tarjetas y bloques se confundian con el fondo (gris muy claro contra
    blanco). Sombra suave en dos capas + un aro de 1px casi invisible que marca el borde, y un poco
    mas de aire entre tarjetas. Solo en claro (el oscuro no cambia) y sin colores nuevos: las sombras
