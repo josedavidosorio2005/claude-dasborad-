@@ -20945,3 +20945,10 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
 - **Ventanas de Calidad sin X arriba** (ahora la tienen): el criterio de un ítem (`cc2-ov-criterio`), el detalle de un monitoreo del módulo (`ca-ov-detalle`), «Cambiar fecha del monitoreo» (`cal-fecha-ov`) y la ventana «Monitoreo» de la Encuesta (`modal-encuesta-monitoreo`). Ya la tenían: el Módulo de Calidad, la ventana del panel del dashboard (Fase 348 D), el detalle de monitoreo del portal y la supervisión de un líder. El aviso «Faltan…» al guardar es una alerta que pide una acción y se deja sin X.
 - **Pruebas:** `fase352-b-ver-observacion` (4).
 - **Visual local** (copia de la base demo, ORLANT): 375/768/1440, claro y oscuro, 61 comprobaciones bien, 0 errores de consola.
+
+### C: Calidad se abre tocando la campaña (v1.192.0, 2026-11-13)
+
+- **Dónde:** portal del supervisor › Calidad. Antes, una tabla «Mi Meta de Monitoreo — Mes Actual» (una fila por campaña) y debajo un recuadro aparte con «Abrir Módulo de Calidad», que abría el módulo en la última campaña usada. El perfil CALIDAD ya entra directo al módulo desde la Fase 254 y no cambia.
+- **Ahora:** un recuadro por campaña (las mismas de antes: las que la persona tiene con `campana_<X>`) con meta, realizados, porcentaje y barra, y el detalle de llamada y WhatsApp; sin meta individual dice «Sin meta individual asignada este mes» y abre igual. Al tocarlo, o con Enter o Espacio (rol `button`, `tabindex=0`, `aria-label` «Abrir la Calidad de X»), se abre el módulo en esa campaña: `openCalidad(campana)` la deja elegida, y si la persona no tuviera acceso, `populateCalCampanaSelect` cae en la primera de las suyas, como siempre. Se quitó el recuadro «Módulo de Calidad».
+- **Pruebas:** `fase352-c-entrada-calidad` (3).
+- **Visual local** (copia de la base demo, cuenta demo de supervisor): antes y después en 375/768/1440, claro y oscuro. Clic, Enter y Espacio abren el módulo en esa campaña; 0 escrituras, 0 errores de consola.

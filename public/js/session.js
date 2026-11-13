@@ -239,30 +239,42 @@ function renderSupervisorClientsGrid(){
     '<div class="es-hint">Solicita al administrador acceso a las campanas o clientes que supervisas.</div></div>';
 }
 
+// Fase 352 (C, pedido de Edwin): un recuadro por campaña (las mismas de antes: las que tiene con
+// campana_<X>) con la meta y el avance del mes; al tocarlo, o con Enter o Espacio, se abre directo
+// la Calidad de esa campaña. El modulo vuelve a revisar el acceso (openCalidad).
+function supervisorCampanaCardHtml(camp, mia){
+  var c = esc(camp);
+  var cuerpo;
+  if(!mia){
+    cuerpo = '<p class="cal-camp-sin">Sin meta individual asignada este mes</p>';
+  } else {
+    var pct = Math.max(0, Math.min(100, Number(mia.pct) || 0));
+    cuerpo = '<div class="cal-camp-cifra"><b>'+esc(mia.realizados)+' / '+esc(mia.meta)+'</b><span class="'+(mia.pct>=100?'peak':'')+'">'+esc(mia.pct)+'%</span></div>'+
+      '<div class="cal-camp-barra" aria-hidden="true"><span style="width:'+pct+'%"></span></div>'+
+      '<dl class="cal-camp-det"><dt>Llamada</dt><dd>'+esc(mia.realizadosLlamada)+'/'+esc(mia.metaLlamada)+(mia.pctLlamadaCompl!==null?' ('+esc(mia.pctLlamadaCompl)+'%)':'')+'</dd>'+
+      '<dt>WhatsApp</dt><dd>'+(mia.auditaWpp ? esc(mia.realizadosWpp)+'/'+esc(mia.metaWpp)+(mia.pctWppCompl!==null?' ('+esc(mia.pctWppCompl)+'%)':'') : '-')+'</dd></dl>';
+  }
+  return '<div class="cal-camp-card" role="button" tabindex="0" data-campana="'+c+'" aria-label="Abrir la Calidad de '+c+'"'+
+    ' onclick="supervisorAbrirCalidad(this.dataset.campana)" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();supervisorAbrirCalidad(this.dataset.campana)}">'+
+    '<div class="cal-camp-nombre">'+c+'</div>'+cuerpo+'<span class="cal-camp-ir" aria-hidden="true">Abrir Calidad ›</span></div>';
+}
+function supervisorAbrirCalidad(camp){ if(typeof openCalidad === 'function') openCalidad(camp); }
 async function renderSupervisorMetaTable(){
-  var tbl = document.getElementById('supervisor-meta-table');
-  if(!tbl || !currentUser) return;
+  var grid = document.getElementById('supervisor-meta-cards');
+  if(!grid || !currentUser) return;
   await calLoadPlantillas();
   var curMonth = gdHoyLocal().slice(0,7);
   var campanas = calidadCampanasRegistro().filter(function(c){ return currentUser.perms['campana_'+c]===true; }); // Fase 262
   for(var i=0;i<campanas.length;i++){ try{ await loadCalData(campanas[i], curMonth); }catch(e){} }
-  var html = '<tr><th>Campana</th><th>Mi Meta</th><th>Realizados</th><th>% Total</th><th>Llamada</th><th>WhatsApp</th></tr>';
   if(campanas.length===0){
-    html += '<tr><td colspan="6" style="text-align:center;color:var(--c-text-muted)">No tienes campanas de Calidad asignadas.</td></tr>';
-  } else {
-    campanas.forEach(function(camp){
-      var lideres = calLideresCumplimiento(camp, curMonth);
-      var mia = lideres.find(function(l){ return String(l.liderId)===String(currentUser.id); });
-      if(!mia){
-        html += '<tr><td>'+camp+'</td><td colspan="5" style="color:var(--c-text-muted)">Sin meta individual asignada este mes</td></tr>';
-      } else {
-        html += '<tr><td>'+camp+'</td><td>'+mia.meta+'</td><td>'+mia.realizados+'</td><td class="'+(mia.pct>=100?'peak':'')+'">'+mia.pct+'%</td>'+
-          '<td>'+mia.realizadosLlamada+'/'+mia.metaLlamada+(mia.pctLlamadaCompl!==null?' ('+mia.pctLlamadaCompl+'%)':'')+'</td>'+
-          '<td>'+(mia.auditaWpp ? (mia.realizadosWpp+'/'+mia.metaWpp+(mia.pctWppCompl!==null?' ('+mia.pctWppCompl+'%)':'')) : '-')+'</td></tr>';
-      }
-    });
+    grid.innerHTML = '<p class="cal-camp-sin">No tienes campañas de Calidad asignadas.</p>';
+    return;
   }
-  tbl.innerHTML = html;
+  grid.innerHTML = campanas.map(function(camp){
+    var lideres = calLideresCumplimiento(camp, curMonth);
+    var mia = lideres.find(function(l){ return String(l.liderId)===String(currentUser.id); });
+    return supervisorCampanaCardHtml(camp, mia);
+  }).join('');
 }
 
 function doLogout(){

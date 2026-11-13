@@ -299,7 +299,10 @@ function populateCalCampanaSelect(){
   sel.value = _ccampana;
 }
 
-async function openCalidad(){
+// Fase 352 (C): con una campaña, abre directo en ella (si quien mira no tiene acceso, populateCalCampanaSelect
+// cae en la primera de las suyas, como siempre: el permiso no cambia).
+async function openCalidad(campana){
+  if(typeof campana === 'string' && campana) _ccampana = campana;
   document.getElementById('calidad-overlay').classList.add('show');
   if (typeof motionAbrirModal === 'function') motionAbrirModal('calidad-modal');
   await calLoadPlantillas();

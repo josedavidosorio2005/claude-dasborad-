@@ -7,6 +7,18 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.192.0 — Noviembre 2026
+
+**Fase 352 (C): Calidad se abre tocando la campaña.**
+
+- En el portal del supervisor, en la sección Calidad, cada campaña es ahora un recuadro con la
+  meta del mes, lo realizado, el porcentaje (con una barra de avance) y el detalle de llamada y
+  WhatsApp.
+- Al tocar el recuadro se abre directamente la Calidad de esa campaña. Ya no hace falta pulsar
+  «Abrir Módulo de Calidad».
+- También funciona con el teclado: se llega al recuadro con Tab y se abre con Enter o Espacio.
+- Cada persona ve las mismas campañas que antes y entra solo a las que tiene asignadas.
+
 ## v1.191.0 — Noviembre 2026
 
 **Fase 352 (B): la observación de un monitoreo se lee en su propia ventana.**
