@@ -325,6 +325,8 @@ if (typeof document !== 'undefined' && typeof document.addEventListener === 'fun
 // apertura/cierre (boton, clic en el fondo, guardar) sin tocar cada open/close.
 var MOTION_DIALOGOS_SIMPLES = {
   'clients-modal-overlay': function () { if (typeof closeClientsModal === 'function') closeClientsModal(); },
+  // Fase 354: elegir la sede (Hospital La Maria).
+  'sede-modal-overlay': function () { if (typeof closeSelectorSede === 'function') closeSelectorSede(); },
   'modal-user': function () { if (typeof closeUserModal === 'function') closeUserModal(); },
   'modal-pass': function () { if (typeof closeModal === 'function') closeModal('modal-pass'); },
   'modal-delete': function () { if (typeof closeModal === 'function') closeModal('modal-delete'); },

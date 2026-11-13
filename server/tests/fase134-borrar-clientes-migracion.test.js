@@ -164,7 +164,7 @@ let db = require('../db');
 test('fase134_borrar_clientes_v1: dashboards_config queda con ORLANT y MOBILIZE (y la Aurora NUEVA de la Fase 153)', () => {
   const clientes = db.prepare('SELECT cliente FROM dashboards_config ORDER BY cliente').all().map((r) => r.cliente);
   // Fase 160: + la HLM NUEVA (fase160_crear_hospital_la_maria_v1), creada despues.
-  assert.deepEqual(clientes, ['CLINICA AURORA', 'HOSPITAL LA MARIA', 'MOBILIZE', 'MOBILIZE PRUEBAS API', 'ORLANT']); // Fase W1: + la replica interna
+  assert.deepEqual(clientes, ['CLINICA AURORA', 'HOSPITAL LA MARIA', 'HOSPITAL LA MARIA - CASTILLA', 'HOSPITAL LA MARIA - SEDE 33', 'MOBILIZE', 'MOBILIZE PRUEBAS API', 'ORLANT']); // Fase 354: + las 2 sedes de HLM // Fase W1: + la replica interna
   const hlm = db.prepare('SELECT titulo, layout FROM dashboards_config WHERE cliente = ?').get('HOSPITAL LA MARIA');
   assert.equal(hlm.titulo, 'Dashboard Hospital La María', 'es la HLM nueva, no la vieja');
   // Fase 229: + Salida, Total trafico y Tipificacion (fase229_hlm_como_orlant_v1).
@@ -235,7 +235,7 @@ test('fase134_borrar_clientes_v1: idempotente -- reabrir la base (segunda corrid
   db = require('../db');
 
   const clientes = db.prepare('SELECT cliente FROM dashboards_config ORDER BY cliente').all().map((r) => r.cliente);
-  assert.deepEqual(clientes, ['CLINICA AURORA', 'HOSPITAL LA MARIA', 'MOBILIZE', 'MOBILIZE PRUEBAS API', 'ORLANT']); // Fase W1: + la replica interna // Fase 153/160: Aurora y HLM nuevas siguen
+  assert.deepEqual(clientes, ['CLINICA AURORA', 'HOSPITAL LA MARIA', 'HOSPITAL LA MARIA - CASTILLA', 'HOSPITAL LA MARIA - SEDE 33', 'MOBILIZE', 'MOBILIZE PRUEBAS API', 'ORLANT']); // Fase 354: + las 2 sedes de HLM // Fase W1: + la replica interna // Fase 153/160: Aurora y HLM nuevas siguen
 
   const u = db.prepare('SELECT * FROM users WHERE user = ?').get('f134_solo_cartera');
   assert.ok(u, 'sigue sin borrarse en la segunda corrida');

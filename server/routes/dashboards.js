@@ -127,7 +127,10 @@ router.get(
     const a = req.actor;
     const veTodos = isFullAdmin(a) || can(a, 'gestionPermisos') || can(a, 'crearUsuarios') || can(a, 'editarUsuarios');
     // Fase W1: quien gestiona usuarios ve todos los clientes MENOS los internos (solo el admin completo).
-    const suyo = (c) => (veTodos && (isFullAdmin(a) || !esCampanaInterna(c))) || clienteAccess(a, c);
+    // Fase 354: el cliente con sedes (Hospital La Maria) tambien es «suyo» si ve alguna de sus sedes.
+    const sedesDe = (c) => (clientesRegistro.leerRegistro(db).find((x) => x.nombre === c) || { parametros: {} }).parametros.sedes || [];
+    const suyo = (c) => (veTodos && (isFullAdmin(a) || !esCampanaInterna(c))) || clienteAccess(a, c) ||
+      sedesDe(c).some((x) => x && typeof x.campana === 'string' && clienteAccess(a, x.campana));
     const rows = db.prepare('SELECT cliente FROM dashboards_config WHERE activo = 1 ORDER BY cliente').all();
     res.json({
       clientes: rows.map((r) => r.cliente).filter(suyo),
@@ -346,6 +349,11 @@ router.get(
     if (!clienteAccess(req.actor, cliente)) {
       return res.status(403).json({ error: 'Sin acceso a este dashboard' });
     }
+    // Fase 354: el tablero del padre de un cliente con sedes («Sin sede»: lo cargado antes de
+    // separar las sedes) es solo del administrador; los demas eligen su sede.
+    if (!isFullAdmin(req.actor) && clientesRegistro.tieneSedes(db, cliente)) {
+      return res.status(403).json({ error: 'Elija la sede para ver este tablero' });
+    }
     const rows = db
       .prepare('SELECT * FROM dashboard_cargas WHERE cliente = ? ORDER BY periodo')
       .all(cliente);
@@ -379,6 +387,8 @@ router.post(
     if (!clienteAccess(req.actor, b.cliente)) {
       return res.status(403).json({ error: 'Sin acceso a este cliente' });
     }
+    // Fase 354: un cliente con sedes se carga por sede (Hospital La Maria).
+    if (clientesRegistro.tieneSedes(db, b.cliente)) return res.status(400).json({ error: require('../auth').errorElegirSede(b.cliente).message });
     const spec = seccionSpec(b.cliente, b.seccion);
     if (!spec) return res.status(400).json({ error: 'Cliente o seccion desconocidos' });
     if (!secciones.periodoValido(spec.periodo, b.periodo)) {

@@ -168,7 +168,8 @@ router.post(
     const token = signToken({ isMasterAdmin: false, userId: row.id, rol: row.rol, tokenVersion: row.token_version });
     // Fase 283: el navegador recibe los permisos EFECTIVOS de la propia cuenta (SUPERVISOR: por supervisa_).
     const pub = toPublicUser({ ...row, last_login_at: ahora });
-    pub.perms = require('../../public/js/perfil-supervisor-logic.js').permisosEfectivos(row.rol, pub.perms);
+    // Fase 354: y con las sedes heredadas (Hospital La Maria), la misma regla que getActor.
+    pub.perms = require('../auth').permisosDeCuenta(row.rol, pub.perms);
     res.json({ token, user: pub });
   })
 );

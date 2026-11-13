@@ -40,7 +40,7 @@ test('registro: los modulos de ORLANT sin salud ni nada nuevo de Calidad, y repa
   const r = reg.leerRegistro(db).find((c) => c.nombre === HLM);
   assert.deepEqual(r.modulos, HLM_MODULOS);
   assert.equal(r.parametros.salidaUsaClasificacion, true);
-  assert.deepEqual(r.parametros.sedes, [], 'sin sedes hasta que Edwin diga');
+  assert.deepEqual(r.parametros.sedes, reg.HLM_SEDES, 'Fase 354: Edwin definio las 2 sedes');
   for (const m of ['agendas', 'efectividad_agendamiento', 'inasistencia', 'efectividad_citas', 'calidad_resumen']) assert.ok(!r.modulos.includes(m), m);
   assert.equal(db.prepare('SELECT 1 FROM calidad_plantillas WHERE campana = ?').get(HLM), undefined, 'Calidad sigue sin plantilla');
 });

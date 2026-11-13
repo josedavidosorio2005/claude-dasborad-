@@ -18,8 +18,13 @@ dejan como deben quedar.
 
 ## Cómo se mide
 
-4. Hospital La María: ¿se mide por sede (Sede 33 / Castilla) o como un solo
-   cliente? Si es por sede, ¿qué skills van a cada sede?
+4. ~~Hospital La María: ¿se mide por sede (Sede 33 / Castilla) o como un solo
+   cliente?~~ **Respondida el 13/11 (Fase 354): por sede, cada una con su tablero.**
+   Falta: ¿de qué sede es lo de agosto ya cargado (hoy «Sin sede», solo admin)? En el
+   Flujo de llamadas trae 2 skills, «LINEA ENTRADA» y «PROGRAMAS ESPECIALES»
+   (12.087 llamadas en total), y en WhatsApp una sola cola sin nombre (14.202 chats).
+   ¿Cada sede saca su propio reporte de Wolkvox o viene uno solo con las skills de las
+   dos? ¿Qué personas son de Castilla (equipo de 3) y cuáles de la 33, para Calidad?
 5. ¿Cuáles son los nombres exactos de las skills de llamadas de cada uno,
    como salen en Wolkvox? Hay que asignarlas antes de cargar.
 

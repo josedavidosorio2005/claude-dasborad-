@@ -468,6 +468,28 @@ normal), se usa esa. Si no la trae, es siempre el cliente del dashboard tal
 cual — **nunca** una variante distinta por sede (ver el aviso de
 consolidación justo abajo: eso cambió el 2026-09-15).
 
+⚠️ **Actualización — Fase 354 (13/11/2026, reunión con Edwin): las sedes de Hospital La María
+vuelven a ser campañas, ahora DE VERDAD (no un atajo del tráfico).** Edwin pidió que Sede
+Castilla y Sede 33 sean dos operaciones «juntas pero no revueltas» (personal e indicadores
+distintos, se elige la sede al entrar y todo lo que se ve es de esa sede). Desde la Fase 160
+el código creció a ~15 tablas por campaña (Tipificación, salida, WhatsApp por rangos, Total
+tráfico, skills de WhatsApp, clasificación de asesores…) que no tienen columna `sede`: llevar
+la sede como atributo exigía tocar cada lector y cada carga, y un filtro olvidado mezclaba
+sedes. Por eso cada sede es una **campaña hija** en `clientes_registro`
+(`HOSPITAL LA MARIA - CASTILLA`, `HOSPITAL LA MARIA - SEDE 33`; `parametros.sedeDe` /
+`sedeEtiqueta`), con su tablero en `dashboards_config`, y el padre lista sus sedes en
+`parametros.sedes` (migración `fase354_hlm_sedes_v1`). A diferencia del atajo de septiembre:
+(1) son campañas reales del registro, no nombres fabricados por el lector; (2) los permisos
+salen de una sola regla, `permisosConSedes` (`public/js/sedes-logic.js`, la usan `getActor`
+y el login): quien ve el padre ve todas sus sedes mientras no tenga ninguna sede marcada; con
+una marcada, solo esa. El tablero del padre («Sin sede», lo cargado antes) es solo del
+administrador, y `canLoadModule` rechaza con 400 cualquier carga al padre (`errorElegirSede`;
+también `/dashboard/cargas` y la pantalla de Tráfico de varios clientes). La columna `sede` y
+la consolidación de abajo siguen en el código (lo de agosto de HLM vive así, con `sede` NULL);
+ningún dato se movió. Las listas fijas por cliente que tenían a HLM (`SALIDA_POR_CLIENTE`,
+`CARGAS_RETIRADAS_POR_CLIENTE`, menú lateral, gráficas de líneas) tienen también sus 2 sedes
+(prueba `fase354-hlm-sedes`).
+
 ⚠️ **Consolidación de sede (2026-09-15, auditoría contra el pedido de
 Edwin — módulo "Flujo de Llamadas"): la sede es un atributo del dato, NO una
 campaña distinta.** Antes de esta fecha, Hospital La María (la única

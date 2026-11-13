@@ -8,6 +8,14 @@ const db = require('./db');
 const config = require('./config');
 // Fase 283: perfil del SUPERVISOR (supervisa_<C>), la misma regla que el navegador.
 const { permisosEfectivos, supervisorUsaPerfil, supervisorClientes } = require('../public/js/perfil-supervisor-logic.js');
+// Fase 354: sedes de un cliente (Hospital La Maria): quien ve al padre ve sus sedes, salvo que tenga alguna marcada.
+const { permisosConSedes } = require('../public/js/sedes-logic.js');
+
+// Permisos con los que se decide el acceso de una cuenta: el perfil del SUPERVISOR (Fase 283)
+// y las sedes heredadas (Fase 354). Los usan getActor y el inicio de sesion (el navegador).
+function permisosDeCuenta(rol, perms) {
+  return permisosConSedes(permisosEfectivos(rol, perms), require('./clientes-registro').leerRegistro(db));
+}
 
 // La validez de JWT_SECRET (longitud minima, etc.) ya se garantiza en config.js
 // al arrancar; aqui solo lo consumimos.
@@ -100,7 +108,7 @@ function getActor(req) {
   // que "actor no encontrado" (401 generico) para no distinguir el motivo.
   if (req.auth.tokenVersion !== row.token_version) return null;
   // Fase 283: un SUPERVISOR en el perfil nuevo decide su acceso SOLO por supervisa_<C>.
-  return { ...row, perms: permisosEfectivos(row.rol, JSON.parse(row.perms || '{}')), isMasterAdmin: false };
+  return { ...row, perms: permisosDeCuenta(row.rol, JSON.parse(row.perms || '{}')), isMasterAdmin: false };
 }
 
 function isFullAdmin(actor) {
@@ -322,6 +330,13 @@ function errorModuloAjeno(campana, modulo) {
   e.statusPublico = 400;
   return e;
 }
+// Fase 354: un cliente dividido en sedes (Hospital La Maria) no recibe cargas directas: quien
+// sube elige la sede. Error 400 con mensaje claro (lo ya cargado en el padre no se toca).
+function errorElegirSede(campana) {
+  const e = new Error('Las bases de ' + campana + ' se suben por sede: elija «Sede Castilla» o «Sede 33» antes de subir.');
+  e.statusPublico = 400;
+  return e;
+}
 // La campaña de una peticion de carga (POST/PUT/DELETE, en el cuerpo o la query).
 function campanaDeCarga(req) {
   if (!req || req.method === 'GET') return undefined;
@@ -332,6 +347,9 @@ function campanaDeCarga(req) {
 function canLoadModule(actor, modulo, campana) {
   const permitido = canLoadData(actor) || supervisorCarga(actor) ||
     !!(actor && actor.rol === 'CALIDAD' && actor.perms && actor.perms['cargar_' + modulo] === true);
+  if (permitido && campana !== undefined && campaignAccess(actor, campana) && require('./clientes-registro').tieneSedes(db, campana)) {
+    throw errorElegirSede(campana); // Fase 354
+  }
   if (permitido && campana !== undefined && campaignAccess(actor, campana) && !moduloEsDeLaCampana(campana, modulo)) {
     throw errorModuloAjeno(campana, modulo);
   }
@@ -357,6 +375,8 @@ function requireDataLoader(req, res, next) {
 }
 
 module.exports = {
+  permisosDeCuenta, // Fase 354
+  errorElegirSede, // Fase 354
   esCampanaInterna, // Fase W1
   ROLES_VEN_TELEFONO,
   puedeVerTelefono,

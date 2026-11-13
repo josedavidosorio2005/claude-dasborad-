@@ -212,8 +212,32 @@ const LOGO_AURORA = {
   altoMovil: 22,
 };
 
+// Fase 354 (reunion con Edwin del 13/11): Hospital La Maria son dos operaciones «juntas
+// pero no revueltas». Cada sede es una campaña HIJA (su propio tablero, sus cargas, sus
+// skills y sus permisos), asi nada se mezcla: todas las tablas ya separan por campaña.
+// El padre (HOSPITAL LA MARIA) guarda en parametros.sedes la lista de sus sedes; cada
+// hija guarda parametros.sedeDe (el padre) y sedeEtiqueta. Lo ya cargado en el padre
+// queda ahi, visible solo para el administrador como «Sin sede».
+const HLM_NOMBRE = 'HOSPITAL LA MARIA';
+const HLM_SEDES = [
+  { campana: 'HOSPITAL LA MARIA - CASTILLA', etiqueta: 'Sede Castilla', codigo: 'CASTILLA' },
+  { campana: 'HOSPITAL LA MARIA - SEDE 33', etiqueta: 'Sede 33', codigo: 'SEDE33' },
+];
+
+// ¿Este cliente se divide en sedes? (entonces no se carga nada directo en el: se elige la sede)
+function tieneSedes(db, nombre) {
+  if (typeof nombre !== 'string' || !nombre) return false;
+  const r = db.prepare('SELECT parametros FROM clientes_registro WHERE nombre = ?').get(nombre);
+  if (!r) return false;
+  const s = _json(r.parametros, {}).sedes;
+  return Array.isArray(s) && s.some((x) => x && typeof x === 'object' && typeof x.campana === 'string');
+}
+
 module.exports = {
   REGISTRO_INICIAL,
+  HLM_NOMBRE, // Fase 354
+  HLM_SEDES, // Fase 354
+  tieneSedes, // Fase 354
   LOGO_AURORA,
   asesorVisibleCliente,
   asesorOcultoCliente,

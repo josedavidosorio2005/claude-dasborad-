@@ -36,6 +36,7 @@ function ctxBase(perms) {
     CLIENTES_LIST: CLIENTES, BUILT_CLIENT_DASHBOARDS: GENERICOS, REGISTRO_CLIENTES: REGISTRO,
     currentUser: { rol: 'X', perms }, isFullAdmin: () => false,
     dashClientesVisibles: L.dashClientesVisibles, dashClienteTieneTablero: L.dashClienteTieneTablero,
+    clientesParaTarjetas: require('../../public/js/sedes-logic.js').clientesParaTarjetas, // Fase 354
     stvEsTeleventas: (c) => c === 'SURA',
   };
   vm.createContext(ctx);

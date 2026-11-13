@@ -17,7 +17,8 @@ const CC = require('../../public/js/centro-cargas-logic.js');
 
 after(cleanup);
 const auth = (t) => ({ Authorization: 'Bearer ' + t });
-const HLM = 'HOSPITAL LA MARIA';
+// Fase 354: HLM se carga por sede; las skills por cliente se prueban con una de sus sedes.
+const HLM = 'HOSPITAL LA MARIA - CASTILLA';
 const fila = (skillName, fecha, total, contestadas, extra) => ({ fecha, skillName, totalLlamadas: total, contestadas, llamadasAbandonadas: total - contestadas, ...extra });
 const foto = (campana) =>
   db
@@ -174,7 +175,7 @@ test('vista previa del Centro: no quita skills y dice cuales se registran', () =
   assert.equal(r.centroIgnoradas, 1);
   assert.equal(
     CC.centroAvisoSkillsNuevas(HLM, r.filas, { 'YA REGISTRADA': true }),
-    'Skills nuevas que se registran para HOSPITAL LA MARIA: LINEA ENTRADA, PROGRAMAS ESPECIALES.'
+    'Skills nuevas que se registran para ' + HLM + ': LINEA ENTRADA, PROGRAMAS ESPECIALES.'
   );
   assert.equal(CC.centroAvisoSkillsNuevas(HLM, r.filas, { 'LINEA ENTRADA': true, 'PROGRAMAS ESPECIALES': true, 'YA REGISTRADA': true }), null);
 });

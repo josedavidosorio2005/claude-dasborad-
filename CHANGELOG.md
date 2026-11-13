@@ -7,6 +7,24 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.195.0 — Noviembre 2026
+
+**Fase 354: Hospital La María por sede (Sede Castilla y Sede 33).**
+
+- Al entrar a Hospital La María aparece primero una pantalla con dos botones grandes:
+  «Sede Castilla» y «Sede 33». Cada uno abre el tablero de esa sede, con las mismas pestañas
+  de siempre (Tráfico de Llamadas, Tráfico de WhatsApp y Total tráfico, con el menú lateral) y
+  solo con los datos de esa sede. Nada se mezcla entre sedes.
+- Dentro del tablero, el encabezado dice en qué sede está y el botón «Cambiar sede» vuelve a la
+  pantalla de elegir.
+- Las bases se suben por sede: en Cargar Datos se elige «HOSPITAL LA MARIA - CASTILLA» o
+  «HOSPITAL LA MARIA - SEDE 33». Si se intenta subir a Hospital La María sin sede, la plataforma
+  lo rechaza con un mensaje claro.
+- Lo que ya estaba cargado en Hospital La María (agosto) no se borró: queda como «Sin sede», que
+  solo ve el administrador, hasta decidir con Edwin de qué sede es.
+- Permisos: quien hoy ve Hospital La María ve las dos sedes. Para que alguien vea una sola, en
+  Usuarios se le marca solo esa sede.
+
 ## v1.194.1 — Noviembre 2026
 
 **Fase 353b: nombres con tilde o Ñ en mayúsculas.**

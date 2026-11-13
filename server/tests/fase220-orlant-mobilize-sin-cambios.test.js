@@ -91,7 +91,7 @@ test('Centro de cargas: lo retirado de ORLANT y de Mobilize no cambia', () => {
   assert.equal(centro.cargaRetiradaPara('MOBILIZE', salida), false);
   assert.equal(centro.cargaRetiradaPara('MOBILIZE', citas), false);
   // Fase 229: + HLM. Fase 251: + MOBILIZE (solo Calidad vieja y Tipificacion de WhatsApp).
-  assert.deepEqual(Object.keys(centro.CARGAS_RETIRADAS_POR_CLIENTE).sort(), ['CLINICA AURORA', 'HOSPITAL LA MARIA', 'MOBILIZE', 'ORLANT']);
+  assert.deepEqual(Object.keys(centro.CARGAS_RETIRADAS_POR_CLIENTE).sort(), ['CLINICA AURORA', 'HOSPITAL LA MARIA', 'HOSPITAL LA MARIA - CASTILLA', 'HOSPITAL LA MARIA - SEDE 33', 'MOBILIZE', 'ORLANT']); // Fase 354: + las 2 sedes
   assert.deepEqual(centro.CARGAS_RETIRADAS_POR_CLIENTE.MOBILIZE, ['calidad', 'tipificacion_whatsapp', 'calidad_resumen']); // Fase 339: + resumen por asesor
 });
 

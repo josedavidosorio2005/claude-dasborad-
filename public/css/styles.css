@@ -745,6 +745,35 @@ tbody td{padding:10px 16px;font-size:var(--fs-body);color:var(--c-text);}
 .client-card{border:1.5px solid var(--c-border);border-radius:var(--r-md);padding:14px 18px;background:var(--c-surface-subtle);cursor:pointer;transition:all 0.18s;display:flex;align-items:center;justify-content:space-between;}
 .client-card:hover{border-color:var(--c-primary-mid);background:var(--c-hover-bg);box-shadow:0 3px 10px rgba(var(--shadow-rgb),0.1);}
 .client-card .client-name{font-size:var(--fs-body);font-weight:700;color:var(--c-primary);}
+/* Fase 354 (Hospital La Maria por sede): pantalla para elegir la sede y la sede en el
+   encabezado del tablero. Solo tokens existentes: superficie, borde, primario y acento. */
+.sede-modal{width:640px}
+.sede-modal-sub{margin:4px 0 0;color:var(--c-text-2);font-size:var(--fs-body)}
+.sede-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
+.sede-btn{display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-height:150px;padding:22px 22px 20px;text-align:left;
+  background:var(--c-surface-subtle);border:2px solid var(--c-border);border-radius:var(--r-lg);color:var(--c-primary);cursor:pointer;
+  font:inherit;transition:border-color var(--dur-medium) var(--ease-out),background-color var(--dur-medium) var(--ease-out),box-shadow var(--dur-medium) var(--ease-out),transform var(--dur-medium) var(--ease-out)}
+.sede-btn:hover{border-color:var(--c-primary-mid);background:var(--c-hover-bg);box-shadow:var(--shadow-md)}
+.sede-btn:active{transform:scale(0.98)}
+.sede-btn:focus-visible{outline:3px solid var(--c-focus);outline-offset:2px}
+.sede-btn-ico{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:50%;background:var(--c-brand);color:var(--c-on-brand);margin-bottom:6px}
+.sede-btn-ico .icono{width:22px;height:22px}
+.sede-btn-nombre{font-size:var(--fs-h2);font-weight:700;line-height:1.2}
+.sede-btn-sub{font-size:var(--fs-small);color:var(--c-text-2)}
+.sede-sin-wrap:empty{display:none}
+.sede-sin-wrap{margin-top:18px;padding-top:14px;border-top:1px solid var(--c-border)}
+.sede-sin-btn{min-height:44px;padding:8px 14px;background:transparent;border:1.5px dashed var(--c-border);border-radius:var(--r-md);color:var(--c-text);font:inherit;font-size:var(--fs-body);font-weight:700;cursor:pointer;text-align:left}
+.sede-sin-btn:hover{border-color:var(--c-primary-mid);background:var(--c-hover-bg)}
+.sede-sin-nota{font-weight:400;color:var(--c-text-2)}
+.gd-sede{display:inline-flex;align-items:center;margin:4px 0 2px;padding:4px 12px;border-radius:var(--r-pill);background:var(--c-on-brand);color:var(--c-brand);font-size:var(--fs-body);font-weight:700}
+.gd-sede.gd-sede-sin{background:rgba(255,255,255,0.15);color:var(--c-on-brand);border:1.5px dashed rgba(255,255,255,0.7)}
+.gd-sede.hidden{display:none}
+@media (max-width:480px){
+  .sede-modal{padding:22px 18px}
+  .sede-grid{grid-template-columns:1fr;gap:12px}
+  .sede-btn{min-height:116px;padding:18px}
+}
+
 
 /* ── MODALS ── */
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(var(--shadow-rgb),0.45);z-index:var(--z-dialogo);align-items:center;justify-content:center;}
@@ -2585,3 +2614,4 @@ div.ca-bar-fila{cursor:default}
 :root:not([data-theme="dark"]) .gd-grafica{box-shadow:var(--e-sombra-suave)}
 :root:not([data-theme="dark"]) .aurora-kpis{gap:12px}
 :root:not([data-theme="dark"]) .gd-sec > .aurora-card + .aurora-card{margin-top:18px}
+

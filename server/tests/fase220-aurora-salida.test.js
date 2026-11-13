@@ -37,6 +37,8 @@ test('la regla de salida esta en un solo lugar: ORLANT y Aurora (provisional) co
     ORLANT: { regla: 'guion', clasificacionAsesores: true },
     'CLINICA AURORA': { regla: 'guion', clasificacionAsesores: false, sinLineas: true, whatsappSalidaSkillIds: ['0', '4062', '4063'] }, // Fases 277-278
     'HOSPITAL LA MARIA': { regla: 'guion', clasificacionAsesores: true }, // Fase 229, provisional
+    'HOSPITAL LA MARIA - CASTILLA': { regla: 'guion', clasificacionAsesores: true }, // Fase 354: cada sede, como el padre
+    'HOSPITAL LA MARIA - SEDE 33': { regla: 'guion', clasificacionAsesores: true },
   });
   for (const c of ['ORLANT', AURORA, 'HOSPITAL LA MARIA']) { assert.equal(t.salidaPorGuion(c), true, c); assert.equal(t.usaClasificacionAsesores(c), c !== AURORA, c); } // Fase 277: Aurora sin lineas
   for (const c of ['MOBILIZE', 'SURA']) { assert.equal(t.salidaPorGuion(c), false, c); assert.equal(t.usaClasificacionAsesores(c), false, c); }

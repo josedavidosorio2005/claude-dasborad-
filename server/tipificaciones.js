@@ -85,6 +85,9 @@ const SALIDA_POR_CLIENTE = {
   // 4019 (Whatsapp de entrada) no es salida. Llamadas igual.
   'CLINICA AURORA': { regla: 'guion', clasificacionAsesores: false, sinLineas: true, whatsappSalidaSkillIds: ['0', '4062', '4063'] },
   'HOSPITAL LA MARIA': { regla: 'guion', clasificacionAsesores: true }, // provisional (Fase 229)
+  // Fase 354: cada sede de Hospital La Maria, la misma regla que el padre.
+  'HOSPITAL LA MARIA - CASTILLA': { regla: 'guion', clasificacionAsesores: true },
+  'HOSPITAL LA MARIA - SEDE 33': { regla: 'guion', clasificacionAsesores: true },
 };
 const SKILLS_LLAMADAS_POR_ID = { '4070': 'CANCELACIONES Y REPROGRAMACION' };
 const SKILLS_SALIDA_SQL = SKILLS_SALIDA_EQUIVALENTES.map((s) => "'" + s + "'").join(', ');

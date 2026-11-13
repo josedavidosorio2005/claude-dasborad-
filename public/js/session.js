@@ -225,9 +225,10 @@ function renderSupervisorClientsGrid(){
   var grid=document.getElementById('supervisor-clients-grid');
   if(!grid) return;
   var html='';
+  // Fase 354: sin las sedes sueltas; el cliente con sedes sale si supervisa alguna de ellas.
+  var visiblesSup = clientesParaTarjetas(CLIENTES_LIST, (typeof REGISTRO_CLIENTES !== 'undefined' ? REGISTRO_CLIENTES : []), currentUser && currentUser.perms, false);
   CLIENTES_LIST.forEach(function(c){
-    var hasPerm = currentUser && currentUser.perms['cliente_'+c]===true;
-    if(!hasPerm) return;
+    if(visiblesSup.indexOf(c)===-1) return;
     // Fase 281: tambien los tableros propios (SURA), igual que el selector de clientes.
     var built = dashClienteTieneTablero(c, BUILT_CLIENT_DASHBOARDS, (typeof REGISTRO_CLIENTES !== 'undefined' ? REGISTRO_CLIENTES : []));
     html+='<div class="client-card'+(built?'':' client-soon')+'" data-cliente="'+c+'" role="button" tabindex="0" onclick="openClientByEl(this)">'+

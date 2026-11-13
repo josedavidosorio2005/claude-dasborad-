@@ -26,7 +26,8 @@ before(async () => {
 test('carga: modulo de la campaña pasa; modulo de otra campaña -> 400 con mensaje claro', async () => {
   const ok = await request(app).post('/api/calidad/aurora-inasistencia/carga').set(H(admin)).send(ina(AUR));
   assert.equal(ok.status, 201, JSON.stringify(ok.body));
-  for (const c of ['MOBILIZE', 'ORLANT', 'HOSPITAL LA MARIA']) {
+  // Fase 354: HOSPITAL LA MARIA ya no recibe cargas directas (se elige la sede): su mensaje se prueba en fase354-hlm-sedes; aqui, una de sus sedes.
+  for (const c of ['MOBILIZE', 'ORLANT', 'HOSPITAL LA MARIA - CASTILLA']) {
     const r = await request(app).post('/api/calidad/aurora-inasistencia/carga').set(H(admin)).send(ina(c));
     assert.equal(r.status, 400, c);
     assert.match(r.body.error, new RegExp('no es de la campaña ' + c));

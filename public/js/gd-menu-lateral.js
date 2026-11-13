@@ -9,7 +9,7 @@
 // ORLANT aprobada por el usuario, solo navegacion): tambien ORLANT. SURA no (Televentas ya tiene su
 // menu). El menu se arma con las pestañas que ya se dibujaron para quien mira: mismas pestañas,
 // mismo orden y mismos permisos. «Gestión líneas internas» no es pestaña (boton aparte, #gd-li-btn).
-var GD_MENU_LATERAL_CLIENTES = ['MOBILIZE', 'CLINICA AURORA', 'HOSPITAL LA MARIA', 'ORLANT'];
+var GD_MENU_LATERAL_CLIENTES = ['MOBILIZE', 'CLINICA AURORA', 'HOSPITAL LA MARIA', 'HOSPITAL LA MARIA - CASTILLA', 'HOSPITAL LA MARIA - SEDE 33', 'ORLANT']; // Fase 354: + las 2 sedes de HLM
 
 // Logica pura: icono de cada pestaña segun su nombre (los del sprite img/iconos/lucide.svg). Gana
 // la PRIMERA que coincida. Fase 349: Errores, Inasistencia y Total tráfico con icono propio, y

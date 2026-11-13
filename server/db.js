@@ -5182,6 +5182,64 @@ runOnceMigration('fase353_monitoreos_enlace_exacto_v2', () => {
   if (!config.isTest) console.log('[db] Migracion fase353_monitoreos_enlace_exacto_v2: ' + n + ' monitoreo(s) enlazado(s) por nombre exacto.');
 });
 
+// Fase 354 (reunion con Edwin del 13/11): Hospital La Maria por sede. Crea las 2 campañas
+// hijas («Sede Castilla» y «Sede 33») como copia de lo que HLM tiene HOY: sus modulos (sin
+// Calidad, que se decide despues), sus parametros (+ sedeDe/sedeEtiqueta), su logo, su
+// tablero (mismas pestañas, con Tráfico de Llamadas, Tráfico de WhatsApp y Total tráfico
+// visibles aunque no tengan datos todavia) y sus codigos de skills de WhatsApp. Al padre
+// solo le agrega parametros.sedes. NO mueve ni borra ningun dato: lo ya cargado en HLM se
+// queda en HLM («Sin sede», solo el administrador). No toca usuarios: quien ve HLM ve las
+// dos sedes por la regla de permisosConSedes (public/js/sedes-logic.js). Idempotente.
+const PESTANAS_VISIBLES_SEDE = ['trafico', 'trafico_whatsapp', 'total_trafico'];
+function crearSedesHospitalLaMaria() {
+  const { HLM_NOMBRE, HLM_SEDES } = require('./clientes-registro');
+  const padre = db.prepare('SELECT orden, modulos, parametros, logo FROM clientes_registro WHERE nombre = ?').get(HLM_NOMBRE);
+  if (!padre) return;
+  const leer = (t, d) => { try { return t ? JSON.parse(t) : d; } catch (e) { return d; } };
+  const paramsPadre = leer(padre.parametros, {});
+  const modulosSede = leer(padre.modulos, []).filter((m) => m !== 'calidad');
+  const cfgPadre = db.prepare('SELECT titulo, secciones, layout FROM dashboards_config WHERE cliente = ?').get(HLM_NOMBRE);
+  const now = new Date().toISOString();
+  // Cambia el nombre del padre por el de la sede SOLO donde es un valor exacto (p. ej. campana del panel).
+  const renombrar = (v, sede) => {
+    if (v === HLM_NOMBRE) return sede;
+    if (Array.isArray(v)) return v.map((x) => renombrar(x, sede));
+    if (v && typeof v === 'object') { const o = {}; Object.keys(v).forEach((k) => { o[k] = renombrar(v[k], sede); }); return o; }
+    return v;
+  };
+  db.transaction(() => {
+    for (const s of HLM_SEDES) {
+      const { sedes, ...resto } = paramsPadre; // eslint-disable-line no-unused-vars
+      const params = Object.assign({}, resto, { sedes: [], sedeDe: HLM_NOMBRE, sedeEtiqueta: s.etiqueta, sedeCodigo: s.codigo });
+      db.prepare(
+        `INSERT OR IGNORE INTO clientes_registro
+           (nombre, orden, dashboard, modulos, parametros, logo, activo, createdAt, updatedAt)
+         VALUES (?, ?, 1, ?, ?, ?, 1, ?, ?)`
+      ).run(s.campana, padre.orden, JSON.stringify(modulosSede), JSON.stringify(params), padre.logo, now, now);
+      if (cfgPadre && !db.prepare('SELECT 1 FROM dashboards_config WHERE cliente = ?').get(s.campana)) {
+        const layout = renombrar(leer(cfgPadre.layout, {}), s.campana);
+        layout.tabs = (layout.tabs || []).filter((t) => t && t.key !== 'calidad').map((t) => (PESTANAS_VISIBLES_SEDE.includes(t.key) ? Object.assign({}, t, { oculta: false }) : t));
+        db.prepare(
+          `INSERT INTO dashboards_config (cliente, titulo, vista, secciones, layout, activo, createdAt, updatedAt)
+           VALUES (?, ?, NULL, ?, ?, 1, ?, ?)`
+        ).run(s.campana, cfgPadre.titulo, JSON.stringify(renombrar(leer(cfgPadre.secciones, {}), s.campana)), JSON.stringify(layout), now, now);
+      }
+      db.prepare(
+        `INSERT OR IGNORE INTO skills_whatsapp (campana, codigo, nombre, updatedAt)
+         SELECT ?, codigo, nombre, ? FROM skills_whatsapp WHERE campana = ?`
+      ).run(s.campana, now, HLM_NOMBRE);
+    }
+    const yaTiene = Array.isArray(paramsPadre.sedes) && paramsPadre.sedes.some((x) => x && typeof x === 'object');
+    if (!yaTiene) {
+      paramsPadre.sedes = HLM_SEDES.map((s) => ({ campana: s.campana, etiqueta: s.etiqueta, codigo: s.codigo }));
+      paramsPadre.sedesNombre = 'Hospital La María'; // titulo de la pantalla de elegir sede
+      db.prepare('UPDATE clientes_registro SET parametros = ?, updatedAt = ? WHERE nombre = ?').run(JSON.stringify(paramsPadre), now, HLM_NOMBRE);
+    }
+  })();
+  if (!config.isTest) console.log('[db] Migracion fase354_hlm_sedes_v1 aplicada.');
+}
+runOnceMigration('fase354_hlm_sedes_v1', crearSedesHospitalLaMaria);
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {
@@ -5278,3 +5336,4 @@ module.exports.recalcularPctAtencionAbandono = recalcularPctAtencionAbandono;
 module.exports.orlantCalidadSoloNueva = orlantCalidadSoloNueva; // Fase 332: prueba de idempotencia
 module.exports.crearReplicaMobilizeApi = crearReplicaMobilizeApi; // Fase W1
 module.exports.REPLICA_API = REPLICA_API;
+module.exports.crearSedesHospitalLaMaria = crearSedesHospitalLaMaria; // Fase 354: prueba de idempotencia

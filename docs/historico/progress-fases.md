@@ -21026,3 +21026,22 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - ORLANT tiene **164 monitoreos con id y 30 sin id**, y septiembre + octubre siguen en **153 / 95,52**.
   - Resultado: 1 escritura, 0 bloqueadas y 0 errores de consola.
 - **Quedan** 30 monitoreos de 3 nombres que nunca tuvieron usuario ASESOR (ver `docs/pendientes.md`).
+
+## Fase 354 — Hospital La María por sede: Sede Castilla y Sede 33 (v1.195.0, 2026-11-13)
+
+- **Pedido (reunión con Edwin del 13/11):** HLM son dos operaciones «juntas pero no revueltas»: Sede Castilla (equipo de 3) y Sede 33 (el resto), con personal e indicadores distintos. Al entrar se elige la sede y todo lo que se ve es de esa sede.
+- **Diagnóstico en producción (solo lectura, Brave con sesión de administrador, toda escritura bloqueada salvo el login; 0 bloqueadas):**
+  - Datos de HLM: solo **agosto**. Flujo de llamadas 50 filas (2 skills: «LINEA ENTRADA» y «PROGRAMAS ESPECIALES», 25 días cada una, `sede` NULL; 12.087 llamadas), Tráfico de WhatsApp 31 filas (cola «-»; 14.202 chats). Sin Tipificación, WhatsApp por rangos ni salida; Total tráfico de agosto sale de esos dos. Sin monitoreos.
+  - Nada en las bases distingue la sede: ni el nombre del archivo, ni la cola de WhatsApp; las 2 skills de llamadas podrían ser una por sede, pero no hay cómo confirmarlo sin Edwin. Sin agentes cargados.
+  - Acceso: 5 usuarios (2 SUPERVISOR, 1 CLIENTES_DASH, 2 CALIDAD), ningún ASESOR con campaña HLM.
+- **Decisión: (b) dos campañas hijas**, no (a) un campo `sede` en cada carga. (a) exigía agregar `sede` a ~15 tablas y filtrar en cada lector y carga (un filtro olvidado mezcla sedes); (b) reutiliza que todo ya separa por campaña. Se reemplaza la decisión de la consolidación del 2026-09-15 (ver `docs/ARQUITECTURA.md`).
+- **Cambio:**
+  - Migración `fase354_hlm_sedes_v1`: crea `HOSPITAL LA MARIA - CASTILLA` y `HOSPITAL LA MARIA - SEDE 33` como copia de HLM (módulos sin Calidad, parámetros + `sedeDe`/`sedeEtiqueta`, logo, tablero sin la pestaña Calidad y con Tráfico de Llamadas, de WhatsApp y Total tráfico visibles, códigos de skills de WhatsApp) y agrega `parametros.sedes` al padre. No mueve ni borra datos; idempotente.
+  - Permisos (`public/js/sedes-logic.js`, `permisosConSedes`, en `getActor` y el login): quien ve HLM ve las dos sedes mientras no tenga ninguna marcada; con una marcada en Usuarios, solo esa. Los 5 usuarios de hoy ven las dos sin tocar nada.
+  - Navegador: `selector-sede.js` (pantalla con dos botones grandes; «Sin sede» solo para el administrador), sede y «Cambiar sede» en el encabezado del tablero; las sedes no salen sueltas en Dashboard Clientes ni en el Portal Supervisor.
+  - Cargas por sede: `canLoadModule`, `/dashboard/cargas` y la pantalla de Tráfico de varios clientes rechazan con 400 «se suben por sede» cualquier carga a HLM; en el Centro de cargas el padre solo lo ve el administrador, con un aviso.
+  - El tablero del padre («Sin sede») responde 403 a quien no es administrador.
+  - Listas por cliente con HLM: + las 2 sedes (`SALIDA_POR_CLIENTE`, `CARGAS_RETIRADAS_POR_CLIENTE`, menú lateral, gráficas de líneas).
+  - Calidad: no se construyó nada; las sedes no tienen el módulo todavía y la Calidad de HLM sigue en el padre.
+- **Pruebas:** `fase354-hlm-sedes` (6) con datos inventados; actualizadas las que fijaban listas exactas de clientes, diálogos, menú y regla de salida, y las de tráfico/skills que cargaban directo a HLM (ahora a una sede, o con la librería para el mecanismo viejo de `sede`).
+- **Visual local** (copia de la base demo, Brave, datos inventados: Castilla 3.032 llamadas, Sede 33 14.744): elegir sede y tablero de cada sede, administrador y cliente, claro y oscuro, 375/768/1440; foco dentro de la pantalla de sedes, Escape la cierra, sin scroll horizontal, 0 errores de consola (salvo el 403 provocado a propósito al pedir el padre como cliente).

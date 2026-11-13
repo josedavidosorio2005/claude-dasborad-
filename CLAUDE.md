@@ -176,7 +176,8 @@ asumir en qué quedó una fase anterior.
 
 - Clientes en producción: **ORLANT y MOBILIZE** (con datos reales),
   **Clínica Aurora** (creada de nuevo en la Fase 153) y **Hospital La
-  María** (Fase 160, un solo cliente). Aurora y Hospital La María se
+  María** (Fase 160; desde la Fase 354 dividido en Sede Castilla y Sede 33, dos campañas
+  hijas — ver `docs/ARQUITECTURA.md`). Aurora y Hospital La María se
   crearon sin datos, con sus pestañas ocultas y visibles solo para el
   administrador; su estado al día (datos cargados, pestañas, sedes) está
   en `PROGRESS.md`. **SURA** (Fase 215) tiene un tablero propio,

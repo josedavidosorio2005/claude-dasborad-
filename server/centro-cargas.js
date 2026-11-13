@@ -74,6 +74,9 @@ const CARGAS_RETIRADAS_POR_CLIENTE = {
   'CLINICA AURORA': ['salida'],
   // Fase 229: Hospital La Maria, igual que Aurora.
   'HOSPITAL LA MARIA': ['salida'],
+  // Fase 354: y cada una de sus sedes.
+  'HOSPITAL LA MARIA - CASTILLA': ['salida'],
+  'HOSPITAL LA MARIA - SEDE 33': ['salida'],
   // Fase 251 (pedido de Edwin, 04/11): Mobilize sin la seccion "Calidad" vieja
   // (monitoreos por Excel; la que usa es "Calidad: resumen por asesor") ni
   // "Tipificacion de WhatsApp" (Mobilize no tiene WhatsApp). Solo se dejan de
