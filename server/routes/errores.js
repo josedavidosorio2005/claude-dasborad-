@@ -25,6 +25,8 @@ function puedeEditar(actor, campana) { return isFullAdmin(actor) || (actor && ac
 // Fase 347 (B3, pedido del usuario 12/11): borrar un error queda solo para el administrador y
 // Reportes con acceso al cliente; el supervisor registra y edita, pero ya no borra.
 function puedeBorrar(actor, campana) { return isFullAdmin(actor) || (!!actor && actor.rol === 'REPORTES' && campaignAccess(actor, campana)); }
+// Fase 352 (D): borrar el plan de accion del mes, mismo permiso que borrar un error.
+const MSG_BORRAR_PLAN = 'Solo el administrador o Reportes pueden borrar el plan de acción';
 // Primero el acceso (403) y despues el modulo (404): quien no tiene acceso no se entera
 // de que clientes tienen la pestaña.
 function guardiaLectura(req, res, campana) {
@@ -65,6 +67,7 @@ router.post('/calidad/errores', requireActor, validate(schemas.errorCrearBody), 
 router.post('/calidad/errores/guardar', requireActor, validate(schemas.errorGuardarBody), wrap((req, res) => {
   const b = req.body;
   if (!guardiaEscritura(req, res, b.campana)) return;
+  if (b.plan !== undefined && !String(b.plan || '').trim() && !puedeBorrar(req.actor, b.campana)) return res.status(403).json({ error: MSG_BORRAR_PLAN }); // Fase 352 (D)
   const r = errores.guardarJunto(db, b.campana, b, req.actor, nowStr());
   if (r.noExiste) return res.status(404).json({ error: 'Error no encontrado' });
   if (r.error) return res.status(400).json({ error: r.error });
@@ -74,13 +77,27 @@ router.post('/calidad/errores/guardar', requireActor, validate(schemas.errorGuar
   res.json({ ok: true, registro: r.creado ? r.creado.fila : (r.edicion ? r.edicion.fila : null), plan: r.plan ? (r.plan.plan || null) : undefined });
 }));
 
+// Fase 352 (D, reunion con Edwin del 13/11): el plan de accion del mes es aparte de los errores
+// («Plan de acción del mes»). Mismos permisos que Errores: el supervisor y el administrador lo
+// escriben y lo editan; borrarlo (dejarlo vacio) queda para el administrador y Reportes.
 router.put('/calidad/errores/plan', requireActor, validate(schemas.errorPlanBody), wrap((req, res) => {
   const b = req.body;
   if (!guardiaEscritura(req, res, b.campana)) return;
+  if (!String(b.texto || '').trim() && !puedeBorrar(req.actor, b.campana)) return res.status(403).json({ error: MSG_BORRAR_PLAN });
   const r = errores.guardarPlan(db, b.campana, b.mes, b.texto, req.actor, nowStr());
   if (r.error) return res.status(400).json({ error: r.error });
   logEvent('ERRORES_PLAN_ACCION', { nombre: b.mes, user: '-', rol: b.campana }, actorLabel(req.actor), r.borrado ? `plan de ${b.mes} borrado` : `plan de ${b.mes} guardado`);
   res.json(r.plan || { campana: b.campana, mes: b.mes, texto: '' });
+}));
+
+router.delete('/calidad/errores/plan', requireActor, validate(schemas.errorPlanBorrarQuery, 'query'), wrap((req, res) => {
+  const { campana, mes } = req.query;
+  if (!puedeBorrar(req.actor, campana)) return res.status(403).json({ error: MSG_BORRAR_PLAN });
+  if (!tieneModulo(campana)) return res.status(404).json({ error: 'Este cliente no tiene la pestaña Errores' });
+  const r = errores.guardarPlan(db, campana, mes, '', req.actor, nowStr());
+  if (r.error) return res.status(400).json({ error: r.error });
+  logEvent('ERRORES_PLAN_ACCION', { nombre: mes, user: '-', rol: campana }, actorLabel(req.actor), 'plan de ' + mes + ' borrado');
+  res.json({ ok: true, borrado: true });
 }));
 
 router.put('/calidad/errores/:id', requireActor, validate(schemas.idParamSchema, 'params'), validate(schemas.errorEditarBody), wrap((req, res) => {

@@ -7,7 +7,7 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
-## v1.192.0 — Noviembre 2026
+## v1.193.0 — Noviembre 2026
 
 **Fase 352 (C): Calidad se abre tocando la campaña.**
 
@@ -18,6 +18,20 @@ sepan que hay nuevo, que se corrigio y que falta.
   «Abrir Módulo de Calidad».
 - También funciona con el teclado: se llega al recuadro con Tab y se abre con Enter o Espacio.
 - Cada persona ve las mismas campañas que antes y entra solo a las que tiene asignadas.
+
+## v1.192.0 — Noviembre 2026
+
+**Fase 352 (D): en Clínica Aurora › Errores, el plan de acción va aparte.**
+
+- Hay un botón nuevo, «Plan de acción del mes», al lado de «Agregar errores». Ahí la supervisora
+  escribe o actualiza el plan de mejora general del equipo para un mes. Se elige solo el mes: no
+  es de una asesora.
+- «Agregar errores» queda solo para los errores y sigue actualizando sus gráficas como antes.
+- El supervisor y el administrador escriben y editan el plan. Solo el administrador y Reportes
+  pueden borrarlo, igual que los errores.
+- El cliente sigue viendo el plan en la pestaña, como antes.
+- Los planes que ya estaban guardados no cambian: aparecen en la nueva ventana, en su mes.
+- La ventana de Errores tiene ahora una X arriba para cerrarla.
 
 ## v1.191.0 — Noviembre 2026
 

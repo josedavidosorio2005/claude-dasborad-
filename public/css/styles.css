@@ -2530,6 +2530,10 @@ div.ca-bar-fila{cursor:default}
 .modal.modal-con-x > h3{padding-right:52px}
 .modal.modal-con-x > .modal-x{position:absolute;top:14px;right:14px}
 
+/* Fase 352 (D): «Plan de acción del mes» aparte, junto a «Agregar errores». Solo tokens. */
+.err-botones{display:inline-flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
+#err-p-texto{min-height:160px;line-height:1.5}
+
 /* Fase 352 (C): portal del supervisor › Calidad, un recuadro por campaña que abre su Calidad. Solo tokens. */
 .cal-camp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;margin-top:6px}
 .cal-camp-card{display:flex;flex-direction:column;gap:8px;min-height:44px;padding:14px 16px;border:1.5px solid var(--c-border);border-radius:var(--r-md);background:var(--c-surface);color:var(--c-text);cursor:pointer}

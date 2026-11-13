@@ -20946,7 +20946,17 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
 - **Pruebas:** `fase352-b-ver-observacion` (4).
 - **Visual local** (copia de la base demo, ORLANT): 375/768/1440, claro y oscuro, 61 comprobaciones bien, 0 errores de consola.
 
-### C: Calidad se abre tocando la campaña (v1.192.0, 2026-11-13)
+### D: «Plan de acción del mes» aparte en Aurora › Errores (v1.192.0, 2026-11-13)
+
+- **Antes:** el plan de acción del mes se escribía en el mismo formulario de «Agregar errores» (Fase 286: un solo «Guardar» para el error y el plan; sin asesora, se guardaba solo el plan). Cualquiera que pudiera escribir, el supervisor incluido, lo borraba dejándolo vacío.
+- **Ahora:** botón «Plan de acción del mes» al lado de «Agregar errores», con su propia ventana (mes y texto de hasta 4000 caracteres, sin asesora). «Agregar errores» queda solo para los errores y sigue actualizando sus gráficas.
+- **Permisos** (los mismos de Errores): el supervisor del cliente y el administrador escriben y editan el plan (`PUT /calidad/errores/plan`). Borrar es una acción aparte, `DELETE /calidad/errores/plan`, para el administrador y Reportes con acceso al cliente, con confirmación de dos clics. El supervisor recibe 403 si intenta dejarlo vacío, por `PUT` o por el «Guardar» de siempre. Reportes ve la ventana con el texto de solo lectura y «Borrar plan». El cliente no ve el botón y sigue leyendo el plan en la pestaña, como antes. Queda en el Historial (`ERRORES_PLAN_ACCION`).
+- **Planes ya guardados:** no hay migración. Ya vivían en su propia tabla, `errores_plan_accion`, uno por campaña y mes, sin asesora; la nueva ventana los muestra tal cual, en su mes. Una prueba lo comprueba con un plan guardado a la manera de antes (junto con un error).
+- **Además:** la ventana de Errores tiene X arriba, y al abrirla el foco va al primer campo (el texto del plan).
+- **Pruebas:** `fase352-d-plan-accion` (4); `fase118-matriz-acceso` declara la ruta nueva.
+- **Visual local** (copia de la base demo, administrador, plan inventado guardado y borrado solo en esa copia): 375/768/1440, claro y oscuro, 0 errores de consola.
+
+### C: Calidad se abre tocando la campaña (v1.193.0, 2026-11-13)
 
 - **Dónde:** portal del supervisor › Calidad. Antes, una tabla «Mi Meta de Monitoreo — Mes Actual» (una fila por campaña) y debajo un recuadro aparte con «Abrir Módulo de Calidad», que abría el módulo en la última campaña usada. El perfil CALIDAD ya entra directo al módulo desde la Fase 254 y no cambia.
 - **Ahora:** un recuadro por campaña (las mismas de antes: las que la persona tiene con `campana_<X>`) con meta, realizados, porcentaje y barra, y el detalle de llamada y WhatsApp; sin meta individual dice «Sin meta individual asignada este mes» y abre igual. Al tocarlo, o con Enter o Espacio (rol `button`, `tabindex=0`, `aria-label` «Abrir la Calidad de X»), se abre el módulo en esa campaña: `openCalidad(campana)` la deja elegida, y si la persona no tuviera acceso, `populateCalCampanaSelect` cae en la primera de las suyas, como siempre. Se quitó el recuadro «Módulo de Calidad».

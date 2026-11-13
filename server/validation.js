@@ -1695,6 +1695,8 @@ const errorEditarBody = z.strictObject({
   observacion: z.string().max(1000).optional(),
 });
 const errorPlanBody = z.strictObject({ campana: campanaSchema, mes: mesSchemaErrores, texto: z.string().max(4000) });
+// Fase 352 (D): borrar el plan de accion de un mes (solo administrador y Reportes).
+const errorPlanBorrarQuery = z.strictObject({ campana: campanaSchema, mes: mesSchemaErrores });
 // Fase 286: un solo «Guardar» (error y plan de accion del mes, juntos).
 const errorGuardarBody = z.strictObject({
   campana: campanaSchema,
@@ -1739,6 +1741,7 @@ module.exports = {
     errorCrearBody,
     errorEditarBody,
     errorPlanBody,
+    errorPlanBorrarQuery, // Fase 352 (D)
     errorGuardarBody,
     loginBody,
     createUserBody,
