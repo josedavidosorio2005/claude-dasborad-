@@ -56,7 +56,10 @@ function ceFallos(m, items) {
   return items.filter(function (it) { return it.critico && a[it.n] === 'NO'; }).length;
 }
 // keyName() del HTML: normName (guion bajo = espacio, espacios simples) en minusculas.
-function ceKey(s) { return String(s || '').replace(/_/g, ' ').replace(/s+/g, ' ').trim().toLowerCase(); }
+// Fase 361: antes /s+/ (sin la barra) juntaba letras «s» en vez de espacios; ahora la clave común.
+// Fase 361: la misma clave de nombre que el servidor (calidad-nombre-clave.js).
+var _ceClave = (typeof calClaveNombre === 'function') ? calClaveNombre : require('./calidad-nombre-clave.js').calClaveNombre;
+function ceKey(s) { return _ceClave(String(s || '').replace(/_/g, ' ')); }
 // Fase 322: con opciones, falla la opcion con descuento > 0.
 function _ceFalla(m, it) {
   var a = (m.answers || {})[it.n];

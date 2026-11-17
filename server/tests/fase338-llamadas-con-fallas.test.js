@@ -20,7 +20,7 @@ function montar(nFallas) {
     currentUser: { rol: 'ADMIN' }, LISTAS_REGISTRO: { asesorVisibleCliente: [] }, _gdMeses: () => [],
   };
   vm.createContext(ctx);
-  for (const f of ['calidad-analisis-logic.js', 'calidad-equipo-logic.js']) vm.runInContext(PUB(f), ctx);
+  for (const f of ['calidad-nombre-clave.js', 'calidad-analisis-logic.js', 'calidad-equipo-logic.js']) vm.runInContext(PUB(f), ctx); // Fase 361: mismo orden que index.html
   // Lo que el panel usa de calidad-analisis.js.
   vm.runInContext("function _caPill(c){return '<span>'+c.t+'</span>';} function _caPct(n){return n+'%';} function _caTieneNo(m){return Object.keys(m.answers||{}).some(function(k){return m.answers[k]==='NO';});}", ctx);
   vm.runInContext(PUB('calidad-panel.js'), ctx);

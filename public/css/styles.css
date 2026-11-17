@@ -2704,6 +2704,9 @@ html.ver-como-activo body{padding-bottom:84px}
 .cal-camp-card{display:flex;flex-direction:column;gap:8px;min-height:44px;padding:14px 16px;border:1.5px solid var(--c-border);border-radius:var(--r-md);background:var(--c-surface);color:var(--c-text);cursor:pointer}
 .cal-camp-card:hover{border-color:var(--c-primary-mid);background:var(--c-hover-bg)}
 .cal-camp-card:focus-visible{outline:2px solid var(--c-focus);outline-offset:2px}
+/* Fase 361: campaña sin plantilla de Calidad: se ve, pero no es un enlace. */
+.cal-camp-card.cal-camp-sin-plantilla{cursor:default;border-style:dashed;background:var(--c-surface-subtle)}
+.cal-camp-card.cal-camp-sin-plantilla:hover{border-color:var(--c-border);background:var(--c-surface-subtle)}
 .cal-camp-nombre{font-weight:700;font-size:var(--fs-body-lg);color:var(--c-primary)}
 .cal-camp-cifra{display:flex;align-items:baseline;justify-content:space-between;gap:8px;font-size:var(--fs-body)}
 .cal-camp-cifra b{font-size:var(--fs-h3)}
