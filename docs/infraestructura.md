@@ -27,7 +27,7 @@ cómo se llegó aquí, o para reconstruir todo desde cero, usar el histórico.
 | Disco de datos | `inconexion-data`, 20 GB, montado por UUID en `/opt/inconexion/data` |
 | ECR | `877538609452.dkr.ecr.us-east-1.amazonaws.com/inconexion` |
 | S3 backups | `inconexion-backups-877538609452` (versionado activo) |
-| SSM `/inconexion/prod/*` | `JWT_SECRET`, `CORS_ORIGIN`, `MASTER_ADMIN_USER`, `MASTER_ADMIN_PASSWORD_HASH`; para la Fase W2 están previstos `WOLKVOX_MOBILIZE_TOKEN` y `WOLKVOX_MOBILIZE_SERVIDOR`, que **todavía NO existen** (17/11/2026; los crea el usuario en la consola como SecureString con `alias/aws/ssm`, ver `docs/pendientes.md`; `secrets.js` cargará todo lo que empiece por `WOLKVOX_`). Los valores nunca van al repo |
+| SSM `/inconexion/prod/*` | `JWT_SECRET`, `CORS_ORIGIN`, `MASTER_ADMIN_USER`, `MASTER_ADMIN_PASSWORD_HASH`; desde la Fase W2, `WOLKVOX_MOBILIZE_TOKEN` y `WOLKVOX_MOBILIZE_SERVIDOR` (SecureString con `alias/aws/ssm`, creados por el usuario en la consola el 17/11/2026; `secrets.js` carga todo lo que empiece por `WOLKVOX_` y `/wolkvox/estado` dice «Sí»; la conexión con Wolkvox desde producción todavía falla, ver `docs/pendientes.md`). Los valores nunca van al repo |
 | IAM rol de deploy (OIDC) | `inconexion-github-deploy` |
 | IAM usuario de instancia | `inconexion-instance` (access key, no rol — Lightsail no soporta instance profiles; rotar periódicamente) |
 

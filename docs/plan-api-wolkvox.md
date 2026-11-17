@@ -148,8 +148,10 @@ Así se ve si los campos se llaman igual que las columnas del Excel.
   - `WOLKVOX_MOBILIZE_TOKEN`
   - `WOLKVOX_MOBILIZE_SERVIDOR`
 
-  **Estado (17/11/2026): estos dos parámetros todavía NO existen en producción**; los crea el
-  usuario en la consola (ver `docs/pendientes.md`). Hasta entonces `/wolkvox/estado` dice «no».
+  **Estado (17/11/2026): los dos parámetros ya existen** (los creó el usuario en la consola el 17/11)
+  y `/wolkvox/estado` dice «Sí». La única «Probar conexión» de ese día falló por conexión («No se pudo
+  conectar con Wolkvox» a los ~10 s, no un rechazo del token): lo más probable es que Wolkvox no tenga
+  autorizada la IP del servidor de producción. Ver `docs/pendientes.md`.
 
   Más adelante, `WOLKVOX_<OPERACION>_…` para cada operación nueva. `server/secrets.js` se
   amplía para leer las claves que empiezan por `WOLKVOX_`, sin tener que listarlas una por
