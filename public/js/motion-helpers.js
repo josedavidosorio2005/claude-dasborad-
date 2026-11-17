@@ -350,6 +350,8 @@ var MOTION_DIALOGOS_SIMPLES = {
   'modal-wolkvox': function () { if (typeof wvPruebaCerrar === 'function') wvPruebaCerrar(); },
   // Fase 355: «Exportar PDF» del mes (Hospital La María).
   'modal-reporte-pdf': function () { if (typeof reportePdfCerrar === 'function') reportePdfCerrar(); },
+  // Fase 356: «Sugerencias / Tickets».
+  'modal-tickets': function () { if (typeof ticketsCerrar === 'function') ticketsCerrar(); },
 };
 // overlay = el elemento con .show (role="dialog"); su primer hijo (.modal /
 // .clients-modal) es el contenedor que recibe el foco, como en A3.

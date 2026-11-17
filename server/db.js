@@ -639,6 +639,38 @@ CREATE TABLE IF NOT EXISTS umbrales_semaforo (
 );
 `);
 
+// Fase 356: «Sugerencias / Tickets». Solo tablas nuevas (IF NOT EXISTS): no toca datos.
+// autorId es NULL para el administrador maestro (no tiene fila en users); por eso se guarda
+// tambien autorUser. campana = 'GENERAL' cuando es de la plataforma. Sin adjuntos.
+db.exec(`
+CREATE TABLE IF NOT EXISTS tickets (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  tipo TEXT NOT NULL CHECK (tipo IN ('SUGERENCIA','PROBLEMA','PREGUNTA')),
+  campana TEXT NOT NULL,
+  descripcion TEXT NOT NULL,
+  estado TEXT NOT NULL DEFAULT 'NUEVO' CHECK (estado IN ('NUEVO','EN_REVISION','RESUELTO')),
+  autorId INTEGER,
+  autorUser TEXT NOT NULL,
+  autorNombre TEXT NOT NULL,
+  autorRol TEXT NOT NULL,
+  createdAt TEXT NOT NULL,
+  updatedAt TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_tickets_autor ON tickets(autorId, createdAt);
+CREATE INDEX IF NOT EXISTS idx_tickets_estado ON tickets(estado, createdAt);
+CREATE TABLE IF NOT EXISTS tickets_respuestas (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  ticketId INTEGER NOT NULL REFERENCES tickets(id) ON DELETE CASCADE,
+  texto TEXT NOT NULL,
+  autorId INTEGER,
+  autorUser TEXT NOT NULL,
+  autorNombre TEXT NOT NULL,
+  autorRol TEXT NOT NULL,
+  createdAt TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_tickets_respuestas_ticket ON tickets_respuestas(ticketId, id);
+`);
+
 // Fase 153 (Paso 1): registro de clientes. La semilla (ORLANT y MOBILIZE tal
 // como estaban en las listas fijas) corre una sola vez; despues el registro
 // es la unica fuente de CLIENTES_LIST y CAMPANAS_CALIDAD.

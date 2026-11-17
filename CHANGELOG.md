@@ -7,6 +7,20 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.198.0 — Noviembre 2026
+
+**Fase 356: «Sugerencias / Tickets» dentro de la plataforma.**
+
+- Cualquier persona con sesión tiene un botón nuevo, «Sugerencias / Tickets», en el menú de su
+  cuenta. Puede enviar una sugerencia, reportar un problema o hacer una pregunta: elige el tipo,
+  la campaña (o «General (plataforma)») y escribe la descripción, hasta 2.000 caracteres. No se
+  adjuntan archivos, y el formulario recuerda no incluir datos de pacientes ni datos personales.
+- En «Mis tickets» cada quien ve solo los suyos, con su estado (Nuevo, En revisión, Resuelto) y
+  las respuestas, y puede contestar en su propio ticket. Nadie ve los tickets de otra persona.
+- El administrador y Reportes ven todos los tickets, los filtran por estado, tipo y campaña,
+  cambian el estado y responden. Junto al botón ven cuántos tickets nuevos hay.
+- Solo el administrador puede borrar un ticket. El borrado es definitivo y queda anotado en el
+  Historial (quién, cuándo y el número del ticket, sin lo que decía).
 ## v1.197.1 — Noviembre 2026
 
 **Fase 355b: el logo de InConexion ya sale en el PDF de Hospital La María.**

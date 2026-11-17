@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.197.1` (ver `server/package.json`, expuesta en
+- **Versión**: `1.198.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -558,6 +558,7 @@ mismo orden):
 - Fase 355 — HLM: «Exportar PDF» del mes (logo, campaña y sede, indicadores y gráficas de llamadas, WhatsApp y total; «Tipificación: sin datos cargados») en cada sede y en «Datos anteriores», para ADMIN, REPORTES y cliente (v1.197.0, 2026-11-17)
 - Fase 355b — el logo del PDF va embebido (PNG en base64, como las gráficas): en producción la ventana del PDF no lo cargaba desde su URL (v1.197.1, 2026-11-17)
 - Fase W2 (17/11) — parámetros SSM de Wolkvox creados por el usuario; `/wolkvox/estado` dice «Sí», pero la única «Probar conexión» falló por conexión (probable IP del servidor no autorizada en Wolkvox) (solo docs, 2026-11-17)
+- Fase 356 — «Sugerencias / Tickets»: cualquier usuario envía (Sugerencia, Problema o Pregunta; campaña o «General»; hasta 2.000 caracteres, sin adjuntos) y ve solo los suyos con su hilo; ADMIN y REPORTES ven todos, cambian el estado y responden, con contador de «Nuevo»; solo ADMIN borra (v1.198.0, 2026-11-17)
 - Fase 309 — Revisión de seguridad: el cliente ya no recibe el nombre de los líderes en `GET /metas`; resto en `docs/revision-seguridad-2026-11-09.md` (v1.154.1, 2026-11-10)
 - Fase 308 — Revisión antes de la reunión con clientes y pendientes del supervisor (solo docs, 2026-11-10)
 - Fase 307 — Calidad para que los líderes evalúen: ORLANT conserva su Calidad y suma «Resultado de los monitoreos» al final; Aurora ya lo tenía (se muestra con el primer monitoreo) (v1.154.0, 2026-11-10)

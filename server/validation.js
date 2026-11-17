@@ -1729,6 +1729,31 @@ const errorGuardarBody = z.strictObject({
   plan: z.string().max(4000).optional(),
 });
 
+// Fase 356: «Sugerencias / Tickets». Texto de 1 a 2.000 caracteres (sin adjuntos).
+const TICKET_TEXTO_MAX = 2000;
+const TICKET_TIPOS = ['SUGERENCIA', 'PROBLEMA', 'PREGUNTA'];
+const TICKET_ESTADOS = ['NUEVO', 'EN_REVISION', 'RESUELTO'];
+const ticketTexto = z.string().trim()
+  .min(1, 'Escribe la descripción')
+  .max(TICKET_TEXTO_MAX, 'La descripción puede tener hasta ' + TICKET_TEXTO_MAX + ' caracteres');
+const ticketCrearBody = z.strictObject({
+  tipo: z.enum(TICKET_TIPOS, { message: 'Elige el tipo' }),
+  campana: z.string().trim().min(1, 'Elige la campaña').max(120),
+  descripcion: ticketTexto,
+});
+const ticketRespuestaBody = z.strictObject({
+  texto: z.string().trim()
+    .min(1, 'Escribe la respuesta')
+    .max(TICKET_TEXTO_MAX, 'La respuesta puede tener hasta ' + TICKET_TEXTO_MAX + ' caracteres'),
+});
+const ticketEstadoBody = z.strictObject({ estado: z.enum(TICKET_ESTADOS, { message: 'Estado no válido' }) });
+const ticketsListaQuery = z.strictObject({
+  alcance: z.enum(['mios', 'todos']).optional(),
+  estado: z.enum(TICKET_ESTADOS).optional(),
+  tipo: z.enum(TICKET_TIPOS).optional(),
+  campana: z.string().trim().min(1).max(120).optional(),
+});
+
 function validate(schema, part = 'body') {
   return (req, res, next) => {
     const result = schema.safeParse(req[part]);
@@ -1755,7 +1780,9 @@ module.exports = {
   ROLES,
   PASSWORD_MIN,
   validate,
+  TICKET_TEXTO_MAX, TICKET_TIPOS, TICKET_ESTADOS, // Fase 356
   schemas: {
+    ticketCrearBody, ticketRespuestaBody, ticketEstadoBody, ticketsListaQuery, // Fase 356
     erroresQuery,
     errorCrearBody,
     errorEditarBody,
