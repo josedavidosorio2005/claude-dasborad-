@@ -7,6 +7,16 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.206.0 — Noviembre 2026
+
+**Plan B de Wolkvox (fase B1): la plataforma ya puede recibir datos de un programa en la oficina.**
+
+- Como el servidor no logra conectarse a Wolkvox, un programa en un computador de la oficina
+  consultará Wolkvox y enviará los datos a la plataforma. Por ahora solo puede enviar el Flujo de
+  llamadas (nivel de servicio por día) y solo a la campaña de pruebas oculta «MOBILIZE PRUEBAS
+  API»; el Mobilize real y los demás clientes no se tocan.
+- Está apagado: no recibe nada hasta que se configure su clave en el servidor.
+
 ## v1.205.2 — Noviembre 2026
 
 **Fase 362: las ventanas se cierran al salir.**
