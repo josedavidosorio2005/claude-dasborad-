@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.205.1` (ver `server/package.json`, expuesta en
+- **Versión**: `1.205.2` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -571,6 +571,7 @@ mismo orden):
 - Fase 360 — generador de Televentas al día: los arreglos que solo estaban a mano en el tablero publicado («Descargar» según permiso, 2 ajustes de estilo) pasan al generador; regenerado = publicado byte a byte, con prueba (solo script y pruebas, 2026-11-17)
 - Pendientes al 17/11 — docs/pendientes.md con el estado del día: Fases 355–360 hechas; Malla fases 2 y 3 esperando a Edwin; Wolkvox esperando a su soporte; corrección de un nombre de usuario (id 57) hecha con OK (solo docs, 2026-11-17)
 - Fase 361 — Calidad: recuadro «Sin plantilla de Calidad» en el portal del supervisor; una sola clave de nombre (mayúsculas con tilde, espacios dobles) en «propios» del servidor y en resúmenes/listas/gráficas del navegador; barra de KPIs a 375 px ya resuelta en la Fase 319 (v1.205.1, 2026-11-17)
+- Fase 362 — al cerrar sesión y al entrar/salir de «ver como» se cierra toda ventana abierta (antes la de Calidad quedaba abierta para la persona siguiente) (v1.205.2, 2026-11-17)
 - Fase 309 — Revisión de seguridad: el cliente ya no recibe el nombre de los líderes en `GET /metas`; resto en `docs/revision-seguridad-2026-11-09.md` (v1.154.1, 2026-11-10)
 - Fase 308 — Revisión antes de la reunión con clientes y pendientes del supervisor (solo docs, 2026-11-10)
 - Fase 307 — Calidad para que los líderes evalúen: ORLANT conserva su Calidad y suma «Resultado de los monitoreos» al final; Aurora ya lo tenía (se muestra con el primer monitoreo) (v1.154.0, 2026-11-10)

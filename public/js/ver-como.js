@@ -69,6 +69,7 @@ function _verComoLimpiarPantalla() {
   if (typeof gdReiniciarFiltros === 'function') gdReiniciarFiltros();
   if (typeof calSondeoReiniciar === 'function') calSondeoReiniciar();
   if (typeof ticketsAlSalir === 'function') ticketsAlSalir();
+  if (typeof cerrarVentanasAbiertas === 'function') cerrarVentanasAbiertas(); // Fase 362: toda ventana abierta (Calidad, etc.)
   if (typeof hideAllPages === 'function') hideAllPages();
 }
 

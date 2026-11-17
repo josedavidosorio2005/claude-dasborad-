@@ -7,6 +7,15 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.205.2 — Noviembre 2026
+
+**Fase 362: las ventanas se cierran al salir.**
+
+- Al cerrar sesión, y al entrar o salir de «Ver como este usuario», se cierra cualquier ventana
+  que estuviera abierta (Calidad, Televentas, Inventario, Gerencia, diálogos...). Antes, la
+  ventana de Calidad de una persona podía quedar abierta para quien entrara después en el mismo
+  computador.
+
 ## v1.205.1 — Noviembre 2026
 
 **Fase 361: tres arreglos pequeños de Calidad.**

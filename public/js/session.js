@@ -314,6 +314,7 @@ function doLogout(){
   if(typeof gdReiniciarFiltros === 'function') gdReiniciarFiltros();
   if(typeof calSondeoReiniciar === 'function') calSondeoReiniciar(); // Fase 236
   if(typeof ticketsAlSalir === 'function') ticketsAlSalir(); // Fase 356
+  if(typeof cerrarVentanasAbiertas === 'function') cerrarVentanasAbiertas(); // Fase 362: toda ventana abierta (Calidad, etc.)
   currentUser=null; authToken=null; users=[]; historial=[];
   seedDemoActivo=false; renderSeedDemoBanner();
   hideAllPages();
