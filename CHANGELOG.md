@@ -7,6 +7,17 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.205.0 — Noviembre 2026
+
+**Fase 359: Televentas (SURA) con filtro por año.**
+
+- En el encabezado de Televentas hay un selector «Año». Por defecto muestra el año más reciente
+  con bases cargadas, y aplica a todas las pestañas: al llegar 2027 se puede ver 2026 o 2027 sin
+  que se mezclen los meses (por ejemplo, «Enero 2026» con «Enero 2027»).
+- «Cargar información» muestra los 12 meses del año elegido, así se pueden montar las bases de un
+  año nuevo. En el Centro de cargas también se elige el año.
+- Lo que mira toda la historia (clientes que ya compraron en meses anteriores, última venta de
+  cada asesor) sigue contando todos los años.
 ## v1.204.0 — Noviembre 2026
 
 **Fase 358: Malla de turnos.**

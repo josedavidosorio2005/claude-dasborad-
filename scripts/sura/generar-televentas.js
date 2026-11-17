@@ -252,6 +252,17 @@ X('${pretty(k)}', '${esc(pretty(k))}', 11);
 X('data-k="${k}"', 'data-k="${esc(k)}"', 2);
 X('`<option value="${v}" ${v===c?"selected":""}>${t}<', '`<option value="${esc(v)}" ${v===c?"selected":""}>${esc(t)}<', 1);
 X('${cName(c)}', '${esc(cName(c))}', 11);
+// ── Fase 359 (pedido de Edwin, 17/11): filtro por año desde el encabezado de la plataforma.
+// El año deja de estar fijo en 2026: MK() da solo los meses del año elegido (todas las pestañas
+// suman ese año, sin mezclar «Enero 2026» con «Enero 2027»), y MKT() todos los meses para lo que
+// debe mirar toda la historia (alias, clientes que ya compraron, última venta de cada asesor).
+// El año lo elige sura-televentas.js con anio() (ver el return de abajo).
+X('const YEAR=2026;', 'let YEAR=2026; // Fase 359: el año lo elige el encabezado de la plataforma (anio())', 1);
+X('const MK=()=>Object.keys(DB).filter(k=>!k.startsWith("__")).sort(),MKF=', 'const MKT=()=>Object.keys(DB).filter(k=>!k.startsWith("__")).sort(),MK=()=>MKT().filter(k=>k.startsWith(YEAR+"-")),MKF=', 1);
+X('function agFixDB(){for(const k of MK()){', 'function agFixDB(){for(const k of MKT()){', 1);
+X('MK().filter(k=>k<T).forEach', 'MKT().filter(k=>k<T).forEach', 1);
+X('MK().filter(x=>x<k).forEach', 'MKT().filter(x=>x<k).forEach', 1);
+X('const all=MK(),LM=all[all.length-1],last={};', 'const all=MKT(),LM=all[all.length-1],last={};', 1);
 
 {
   // sin imprimir contexto (podria traer datos): solo cual quedo
@@ -310,7 +321,10 @@ let PERM = null;
 ${js.trim()}
 
 // leer: las 3 lecturas de Excel del HTML, para las pruebas con archivos sinteticos.
-return { cargar: cargar, leer: { parseBook: parseBook, parseIni: parseIni, parseEst: parseEst } };
+// Fase 359: años con bases (todas) y elegir el año que se ve; los meses de otros años no se mezclan.
+function anios(){return [...new Set(MKT().map(k=>k.slice(0,4)))].sort()}
+function anio(a){if(a===undefined)return YEAR;const n=Number(a);if(!(n>=2000&&n<=2099))return YEAR;YEAR=n;renderMonths();renderEst();renderIni();refresh();try{renderMetas();renderMetaA()}catch(e){}return YEAR}
+return { cargar: cargar, anios: anios, anio: anio, leer: { parseBook: parseBook, parseIni: parseIni, parseEst: parseEst } };
 }
 
 if (typeof module !== 'undefined' && module.exports) module.exports = { STV_MARKUP: STV_MARKUP, stvCrearApp: stvCrearApp, stvLimpiarTexto: stvLimpiarTexto };

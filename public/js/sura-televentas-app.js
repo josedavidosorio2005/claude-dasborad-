@@ -42,7 +42,7 @@ function stvCrearApp(ROOT, API, ABIERTO){
 const BLOQUEO = {}; // el overlay de la plataforma ya bloquea el scroll del fondo
 let PERM = null;
 const MESES=["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
-const YEAR=2026;
+let YEAR=2026; // Fase 359: el año lo elige el encabezado de la plataforma (anio())
 let DB={}; // {"2026-09":{file,at,rows:[[agente,fecha,cant,prod,producto]]}}
 let pending=null;
 const $=id=>ROOT.getElementById(id);
@@ -138,7 +138,7 @@ $("file").addEventListener("change",async e=>{
 /* ---------- Filtros globales: campaña (D), mes, validación (AI) ---------- */
 const NV="(sin validación)",LEG="(base sin columna D)";
 let VOFF=new Set(),MOFF=new Set();
-const MK=()=>Object.keys(DB).filter(k=>!k.startsWith("__")).sort(),MKF=()=>MK().filter(k=>!MOFF.has(k)),mname=k=>MESES[+k.slice(5)-1];
+const MKT=()=>Object.keys(DB).filter(k=>!k.startsWith("__")).sort(),MK=()=>MKT().filter(k=>k.startsWith(YEAR+"-")),MKF=()=>MK().filter(k=>!MOFF.has(k)),mname=k=>MESES[+k.slice(5)-1];
 const campOf=r=>r[7]||LEG,cOK=c=>!$("cf").value||c===$("cf").value,cName=c=>c===LEG||c[0]==="("?c:({odontologico:"Odontológico",salud_para_ti:"Salud para ti"})[c]||pretty(c);
 // Formato nuevo (v2): por campaña. Bases antiguas: todo queda bajo LEG.
 const stratOf=d=>{if(d.v>=2)return d.strat||{};const o={};for(const h in d.strat||{}){o[h]={};for(const v in d.strat[h])o[h][v]=d.strat[h][v].reg}return Object.keys(o).length?{[LEG]:o}:{}};
@@ -146,7 +146,7 @@ const agOf=d=>d.v>=2?(d.ag||{}):(d.ag?{[LEG]:d.ag}:{});
 /* mismo asesor escrito distinto entre bases: tildes (no la ñ) y nombres incompletos */
 let AGALIAS={}; // Fase 215: alias de asesores, del servidor (config "agalias")
 function agFix(a){if(a==null)return a;let x=String(a).trim().toLowerCase().replace(/[áàä]/g,"a").replace(/[éèë]/g,"e").replace(/[íìï]/g,"i").replace(/[óòö]/g,"o").replace(/[úùü]/g,"u");return AGALIAS[x]||x}
-function agFixDB(){for(const k of MK()){const d=DB[k];if(!d||d.__agf===2)continue;d.rows.forEach(r=>{if(r[0])r[0]=agFix(r[0])});
+function agFixDB(){for(const k of MKT()){const d=DB[k];if(!d||d.__agf===2)continue;d.rows.forEach(r=>{if(r[0])r[0]=agFix(r[0])});
   const A=agOf(d);for(const c in A){const N={};for(const a in A[c]){const b=agFix(a),o=N[b]||(N[b]={});for(const r in A[c][a])o[r]=(o[r]||0)+A[c][a][r]}A[c]=N}
   if(d.pr&&d.pr.A){const old=d.pr.A,M=new Map(),NA=[];old.forEach((a,i)=>{const b=a?agFix(a):a;let j=M.get(b);if(j==null){j=NA.length;NA.push(b);M.set(b,j)}old[i]=j});d.pr.a=d.pr.a.map(i=>old[i]);d.pr.A=NA}
   d.__agf=2}}
@@ -1143,8 +1143,8 @@ function iaData(T){
   const sh=(o,pr)=>o?(o.v+IAK*pr)/(o.reg+IAK):pr;
   const prob=iaModel(hist).prob; // ciudad, apoyada en su departamento (lo que mejor predijo en las pruebas)
   // 2) registros repetidos y clientes que ya compraron
-  const prevIds=new Set(),comp=new Set();MK().filter(k=>k<T).forEach(k=>{const p=DB[k].pr;if(p)p.ids.forEach(x=>prevIds.add(x));DB[k].rows.forEach(r=>{if(r[11])comp.add(r[11])})});
-  let rn={reg:0,v:0},rr={reg:0,v:0};hist.forEach(k=>{const p=DB[k].pr;if(!p)return;const before=new Set();MK().filter(x=>x<k).forEach(x=>{const q=DB[x].pr;if(q)q.ids.forEach(i=>before.add(i))});if(!before.size)return;
+  const prevIds=new Set(),comp=new Set();MKT().filter(k=>k<T).forEach(k=>{const p=DB[k].pr;if(p)p.ids.forEach(x=>prevIds.add(x));DB[k].rows.forEach(r=>{if(r[11])comp.add(r[11])})});
+  let rn={reg:0,v:0},rr={reg:0,v:0};hist.forEach(k=>{const p=DB[k].pr;if(!p)return;const before=new Set();MKT().filter(x=>x<k).forEach(x=>{const q=DB[x].pr;if(q)q.ids.forEach(i=>before.add(i))});if(!before.size)return;
     const sold=new Map();R.forEach(r=>{if(r.k===k&&r[11])sold.set(r[11],(sold.get(r[11])||0)+r[2])});p.ids.forEach(i=>{const o=before.has(i)?rr:rn;o.reg++;o.v+=sold.get(i)||0})});
   const fRep=rr.reg>=500&&rn.reg>=500?{n:(rn.v/rn.reg)/((rn.v+rr.v)/(rn.reg+rr.reg)),r:(rr.v/rr.reg)/((rn.v+rr.v)/(rn.reg+rr.reg))}:{n:1,r:1};
   // 3) puntuar cada registro de la base a trabajar
@@ -1242,7 +1242,7 @@ function draw8(){
   const ks=MKF(),R=rows(true),med=$("amed").value,q=norm($("aq").value).replace(/_/g," ");
   if(!ks.length){$("agrid").innerHTML='<div class="card empty">Activa al menos un mes.</div>';return}
   // última venta de cada asesor en todas las bases cargadas
-  const all=MK(),LM=all[all.length-1],last={};all.forEach(k=>DB[k].rows.forEach(r=>{const a=r[0]||"(sin agente)";if(!last[a]||k>last[a])last[a]=k}));
+  const all=MKT(),LM=all[all.length-1],last={};all.forEach(k=>DB[k].rows.forEach(r=>{const a=r[0]||"(sin agente)";if(!last[a]||k>last[a])last[a]=k}));
   const m={};R.forEach(r=>{const a=r[0]||"(sin agente)",o=m[a]||(m[a]={v:{},p:{}});o.v[r.k]=(o.v[r.k]||0)+r[2];o.p[r.k]=(o.p[r.k]||0)+r[3]});
   const dias=ks.map(diasMes),val=(o,k,i)=>med==="p"?(o.p[k]||0):med==="d"?(dias[i]?(o.v[k]||0)/dias[i]:0):(o.v[k]||0);
   const f=med==="p"?v=>"$"+(v>=1e6?(v/1e6).toFixed(1).replace(".",",")+" M":fmt(v)):med==="d"?v=>v.toFixed(1).replace(".",","):fmt;
@@ -1290,7 +1290,10 @@ async function cargar(){ // Fase 215: todo sale de la API (resumen + cada base p
   let c=false;try{c=localStorage.getItem("stvMenuOculto")==="1"}catch(e){}set(c);b.addEventListener("click",()=>set(!W.classList.contains("mcol")))})();
 
 // leer: las 3 lecturas de Excel del HTML, para las pruebas con archivos sinteticos.
-return { cargar: cargar, leer: { parseBook: parseBook, parseIni: parseIni, parseEst: parseEst } };
+// Fase 359: años con bases (todas) y elegir el año que se ve; los meses de otros años no se mezclan.
+function anios(){return [...new Set(MKT().map(k=>k.slice(0,4)))].sort()}
+function anio(a){if(a===undefined)return YEAR;const n=Number(a);if(!(n>=2000&&n<=2099))return YEAR;YEAR=n;renderMonths();renderEst();renderIni();refresh();try{renderMetas();renderMetaA()}catch(e){}return YEAR}
+return { cargar: cargar, anios: anios, anio: anio, leer: { parseBook: parseBook, parseIni: parseIni, parseEst: parseEst } };
 }
 
 if (typeof module !== 'undefined' && module.exports) module.exports = { STV_MARKUP: STV_MARKUP, stvCrearApp: stvCrearApp, stvLimpiarTexto: stvLimpiarTexto };

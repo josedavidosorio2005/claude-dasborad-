@@ -264,6 +264,8 @@ async function openSuraTeleventas(cliente) {
     _stvCalidadMontar(_stv.root, cliente); // Fase 335: pestaña Calidad (antes de elegir la primera)
     if (typeof stvTodosMontar === 'function') stvTodosMontar(_stv.root); // Fase 348 (F): «Quitar todos / Agregar todos» en Mes y Validación
     _stvAplicarPermisos(perm);
+    // Fase 359: año (por defecto el más reciente con datos) en el encabezado.
+    if (typeof stvAnioPreparar === 'function') stvAnioPreparar(_stv.app, document.getElementById('stv-anio'), document.getElementById('stv-anio-wrap'));
     await _stvCalidadPermiso(_stv.root, cliente);
     _stv.listo = true;
     _stvEstadoCarga(_stv.root, null);
@@ -275,6 +277,11 @@ async function openSuraTeleventas(cliente) {
     if (!_stv.listo) _stvEstadoCarga(_stv.root, 'error', 'No se pudo cargar el tablero. Ciérralo y vuelve a abrirlo.');
     if (typeof showToast === 'function') showToast('No se pudo abrir el tablero: ' + e.message);
   }
+}
+
+// Fase 359: cambiar el año del tablero (todas las pestañas lo usan).
+function stvCambiarAnio(v) {
+  if (_stv.app && typeof _stv.app.anio === 'function') _stv.app.anio(v);
 }
 
 // Fase 218: «Cargar información» de SURA dentro del Centro de cargas. Es la
@@ -295,7 +302,23 @@ async function stvMontarCarga(host, cliente) {
     _stvCarga.cliente = cliente;
     _stvCarga.app = stvCrearApp(_stvCarga.root, _stvApi(cliente), function () { return _stvCarga.abierto; });
   }
-  return _stvCarga.app.cargar();
+  var r = await _stvCarga.app.cargar();
+  // Fase 359: en el Centro de cargas también se elige el año de los meses a montar.
+  var wrap = _stvAnioCargaWrap(host);
+  if (typeof stvAnioPreparar === 'function') stvAnioPreparar(_stvCarga.app, wrap.querySelector('select'), wrap);
+  return r;
+}
+
+// Fase 359: selector de año justo encima del panel de carga (fuera del Shadow DOM).
+function _stvAnioCargaWrap(host) {
+  var w = host.previousElementSibling;
+  if (w && w.classList && w.classList.contains('stv-anio-carga')) return w;
+  w = document.createElement('div');
+  w.className = 'stv-anio stv-anio-carga hidden';
+  w.innerHTML = '<label for="stv-anio-carga">Año de los meses</label><select id="stv-anio-carga"></select>';
+  w.querySelector('select').addEventListener('change', function () { if (_stvCarga.app) _stvCarga.app.anio(this.value); });
+  host.parentNode.insertBefore(w, host);
+  return w;
 }
 
 function stvDesmontarCarga() {
