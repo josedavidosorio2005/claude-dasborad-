@@ -7,6 +7,19 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.205.1 — Noviembre 2026
+
+**Fase 361: tres arreglos pequeños de Calidad.**
+
+- En «Mi portal › Calidad» del supervisor, si una campaña todavía no tiene plantilla de Calidad, su
+  recuadro lo dice («Sin plantilla de Calidad») y ya no abre el módulo en otra campaña. Hoy las 5
+  campañas tienen plantilla, así que nadie lo va a ver; queda listo para una campaña nueva.
+- Calidad reconoce a la misma persona aunque su nombre esté escrito con mayúsculas con tilde o con
+  un espacio de más: los resúmenes, las listas y las gráficas por asesor ya no la parten en dos
+  filas, y «Hechos por mí» cuenta bien los monitoreos viejos del evaluador.
+- La barra de indicadores de Calidad en el celular ya se había arreglado en la versión 1.158.1; se
+  volvió a medir y está bien.
+
 ## v1.205.0 — Noviembre 2026
 
 **Fase 359: Televentas (SURA) con filtro por año.**

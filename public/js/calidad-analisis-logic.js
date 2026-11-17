@@ -4,6 +4,9 @@
 // la pestaña Calidad del dashboard y "Mis resultados" del asesor (B5).
 // Los puntajes vienen ya calculados por el servidor (monitoreo.puntaje).
 
+// Fase 361: la misma clave de nombre que el servidor (calidad-nombre-clave.js).
+var _caClave = (typeof calClaveNombre === 'function') ? calClaveNombre : require('./calidad-nombre-clave.js').calClaveNombre;
+
 function caR1(n) { return Math.round(n * 10) / 10; }
 
 // Plantilla con la que se hizo el monitoreo: la de su plantillaId o, en los
@@ -40,7 +43,7 @@ function caKpis(monitoreos) {
   var total = arr.length;
   var prom = total ? caR1(arr.reduce(function (s, m) { return s + (Number(m.puntaje) || 0); }, 0) / total) : null;
   var asesores = {};
-  arr.forEach(function (m) { if (!caSinAsesor(m.asesor)) asesores[String(m.asesor || '').trim().toLowerCase()] = true; });
+  arr.forEach(function (m) { if (!caSinAsesor(m.asesor)) asesores[_caClave(m.asesor)] = true; });
   return {
     total: total,
     promedio: prom,
@@ -54,7 +57,7 @@ function caKpis(monitoreos) {
 function caResumenAsesores(monitoreos) {
   var by = {};
   (monitoreos || []).forEach(function (m) {
-    var k = String(m.asesor || '').trim().toLowerCase();
+    var k = _caClave(m.asesor);
     if (!k) return;
     if (!by[k]) by[k] = { asesor: m.asesor, notas: [], fallos: 0 };
     by[k].notas.push(Number(m.puntaje) || 0);
@@ -82,7 +85,7 @@ function caMetricasDescuento(monitoreos) {
 function caResumenDescuento(monitoreos) {
   var by = {}, orden = [];
   (monitoreos || []).forEach(function (m) {
-    var k = String(m.asesor || '').trim().toLowerCase();
+    var k = _caClave(m.asesor);
     if (!k) return;
     if (!by[k]) { by[k] = { asesor: m.asesor, lista: [] }; orden.push(k); }
     by[k].lista.push(m);

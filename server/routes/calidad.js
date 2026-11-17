@@ -632,7 +632,11 @@ router.put(
 );
 
 // Fase 334: "solo lo mio" del Modulo de Calidad (ver GET /monitoreos).
-const FILTRO_PROPIOS = ' AND (evaluadorUserId = @uid OR (evaluadorUserId IS NULL AND lower(trim(evaluador)) = lower(trim(@nombre))))';
+// Fase 361: los viejos sin id de evaluador se comparan con nombre_clave() (la misma regla de la
+// Fase 353b: mayúsculas con tilde y Ñ, espacios dobles y especiales), no con lower() de SQLite,
+// que no baja las mayúsculas con tilde. @nombre llega ya como clave (claveDeEvaluador).
+const FILTRO_PROPIOS = ' AND (evaluadorUserId = @uid OR (evaluadorUserId IS NULL AND nombre_clave(evaluador) = @nombre))';
+const claveDeEvaluador = (actor) => enlace.claveNombre((actor && actor.nombre) || '');
 function soloPropios(req) {
   const a = req.actor;
   if (!a || isFullAdmin(a) || a.isMasterAdmin) return false;
@@ -649,7 +653,7 @@ router.get(
   wrap((req, res) => {
     const { campana, mes } = req.query;
     if (!campaignAccess(req.actor, campana)) return res.status(403).json({ error: 'Sin acceso a los datos de esta campana' });
-    const p = { campana, mes: mes || null, uid: (req.actor && req.actor.id) || 0, nombre: (req.actor && req.actor.nombre) || '' };
+    const p = { campana, mes: mes || null, uid: (req.actor && req.actor.id) || 0, nombre: claveDeEvaluador(req.actor) };
     const donde = ' WHERE campana = @campana' + (mes ? ' AND mes = @mes' : '');
     const conPropios = !!req.actor && !req.actor.isMasterAdmin;
     const porMes = {};
@@ -679,7 +683,7 @@ router.get(
     const propios = soloPropios(req);
     const rows = db
       .prepare('SELECT * FROM monitoreos WHERE campana = @campana' + (mes ? ' AND mes = @mes' : '') + (propios ? FILTRO_PROPIOS : '') + ' ORDER BY id DESC')
-      .all({ campana, mes: mes || null, uid: (req.actor && req.actor.id) || 0, nombre: (req.actor && req.actor.nombre) || '' });
+      .all({ campana, mes: mes || null, uid: (req.actor && req.actor.id) || 0, nombre: claveDeEvaluador(req.actor) });
     const lista = conFechaLlamada(rows.map((r) => monitoreoPara(req.actor, r))); // Fase 346
     // Fase 287: la cuenta de cliente, sin evaluador ni observaciones (y sin nombre de asesor si el cliente los oculta).
     res.json(privacidad.esCuentaCliente(req.actor) ? privacidad.monitoreosParaCliente(lista, privacidad.ocultaAsesores(db, req.actor, campana)) : lista);

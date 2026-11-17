@@ -254,8 +254,15 @@ function renderSupervisorClientsGrid(){
 // Fase 352 (C, pedido de Edwin): un recuadro por campaña (las mismas de antes: las que tiene con
 // campana_<X>) con la meta y el avance del mes; al tocarlo, o con Enter o Espacio, se abre directo
 // la Calidad de esa campaña. El modulo vuelve a revisar el acceso (openCalidad).
-function supervisorCampanaCardHtml(camp, mia){
+function supervisorCampanaCardHtml(camp, mia, sinPlantilla){
   var c = esc(camp);
+  // Fase 361: una campaña del registro sin plantilla principal activa no se puede abrir en el
+  // módulo (solo ofrece las que tienen plantilla): antes el recuadro abría la PRIMERA campaña de la
+  // persona, no la suya. Ahora se ve, pero sin enlace y diciendo por qué.
+  if(sinPlantilla){
+    return '<div class="cal-camp-card cal-camp-sin-plantilla" aria-disabled="true">'+
+      '<div class="cal-camp-nombre">'+c+'</div><p class="cal-camp-sin">Sin plantilla de Calidad: pídele al administrador que active una.</p></div>';
+  }
   var cuerpo;
   if(!mia){
     cuerpo = '<p class="cal-camp-sin">Sin meta individual asignada este mes</p>';
@@ -282,7 +289,9 @@ async function renderSupervisorMetaTable(){
     grid.innerHTML = '<p class="cal-camp-sin">No tienes campañas de Calidad asignadas.</p>';
     return;
   }
+  var conPlantilla = (typeof calCampanas === 'function') ? calCampanas() : campanas; // Fase 361
   grid.innerHTML = campanas.map(function(camp){
+    if(conPlantilla.indexOf(camp)===-1) return supervisorCampanaCardHtml(camp, null, true);
     var lideres = calLideresCumplimiento(camp, curMonth);
     var mia = lideres.find(function(l){ return String(l.liderId)===String(currentUser.id); });
     return supervisorCampanaCardHtml(camp, mia);

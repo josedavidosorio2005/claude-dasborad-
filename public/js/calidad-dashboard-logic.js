@@ -13,16 +13,30 @@
 // Node para las pruebas (server/tests/calidad-dashboard-logic.test.js).
 'use strict';
 
+// Fase 361: la misma clave de nombre que el servidor (calidad-nombre-clave.js): la misma persona
+// con un espacio doble o especial ya no sale en dos filas; se muestra el primer nombre visto.
+var _cdClave = (typeof calClaveNombre === 'function') ? calClaveNombre : require('./calidad-nombre-clave.js').calClaveNombre;
+function _cdAgrupar(arr) {
+  var nombre = {}, sumas = {}, cuentas = {}, orden = [];
+  arr.forEach(function (m) {
+    var k = _cdClave(m.asesor);
+    if (!k) return;
+    if (!(k in sumas)) { nombre[k] = String(m.asesor).trim(); sumas[k] = 0; cuentas[k] = 0; orden.push(k); }
+    sumas[k] += m.puntaje; cuentas[k]++;
+  });
+  return { orden: orden, nombre: nombre, sumas: sumas, cuentas: cuentas };
+}
+
 function calDashFiltrarMonitoreos(monitoreos, opts) {
   opts = opts || {};
   var asesores = opts.asesores && opts.asesores.length ? opts.asesores : null;
   var set = null;
   if (asesores) {
     set = {};
-    asesores.forEach(function (a) { set[a] = true; });
+    asesores.forEach(function (a) { set[_cdClave(a)] = true; });
   }
   return (monitoreos || []).filter(function (m) {
-    if (set && !set[m.asesor]) return false;
+    if (set && !set[_cdClave(m.asesor)]) return false;
     if (opts.desde && m.fecha && m.fecha < opts.desde) return false;
     if (opts.hasta && m.fecha && m.fecha > opts.hasta) return false;
     return true;
@@ -44,9 +58,8 @@ function calDashResumen(monitoreos) {
 
 // Lista de asesores distintos (para poblar el multi-select), orden alfabetico.
 function calDashAsesoresDistintos(monitoreos) {
-  var vistos = {};
-  (monitoreos || []).forEach(function (m) { if (m.asesor) vistos[m.asesor] = true; });
-  return Object.keys(vistos).sort();
+  var g = _cdAgrupar((monitoreos || []).map(function (m) { return { asesor: m.asesor, puntaje: 0 }; }));
+  return g.orden.map(function (k) { return g.nombre[k]; }).sort();
 }
 
 // Fase 130 (pedido de Edwin, vista de Calidad): promedio de puntaje POR
@@ -58,16 +71,10 @@ function calDashAsesoresDistintos(monitoreos) {
 // promedio nunca mezcla meses porque nunca ve datos fuera de ese filtro.
 // Orden: de mayor a menor promedio (pedido explicito, "ordenadas").
 function calDashPromedioPorAsesor(monitoreos) {
-  var sumas = {};
-  var cuentas = {};
-  (monitoreos || []).forEach(function (m) {
-    if (!m.asesor) return;
-    sumas[m.asesor] = (sumas[m.asesor] || 0) + m.puntaje;
-    cuentas[m.asesor] = (cuentas[m.asesor] || 0) + 1;
-  });
-  return Object.keys(sumas)
-    .map(function (asesor) {
-      return { asesor: asesor, promedio: Math.round((sumas[asesor] / cuentas[asesor]) * 10) / 10 };
+  var g = _cdAgrupar(monitoreos || []);
+  return g.orden
+    .map(function (k) {
+      return { asesor: g.nombre[k], promedio: Math.round((g.sumas[k] / g.cuentas[k]) * 10) / 10 };
     })
     .sort(function (a, b) { return b.promedio - a.promedio; });
 }
@@ -81,11 +88,10 @@ function calDashPuntajeVsEquipo(monitoreos) {
   var arr = (monitoreos || []).filter(function (m) { return m.asesor && typeof m.puntaje === 'number'; });
   if (!arr.length) return { equipo: null, filas: [], encima: 0, debajo: 0 };
   var equipo = arr.reduce(function (a, m) { return a + m.puntaje; }, 0) / arr.length;
-  var sumas = {}, cuentas = {};
-  arr.forEach(function (m) { sumas[m.asesor] = (sumas[m.asesor] || 0) + m.puntaje; cuentas[m.asesor] = (cuentas[m.asesor] || 0) + 1; });
-  var filas = Object.keys(sumas).map(function (a) {
-    var exacto = sumas[a] / cuentas[a];
-    return { asesor: a, promedio: Math.round(exacto * 10) / 10, encima: exacto >= equipo, _exacto: exacto };
+  var g = _cdAgrupar(arr);
+  var filas = g.orden.map(function (k) {
+    var exacto = g.sumas[k] / g.cuentas[k];
+    return { asesor: g.nombre[k], promedio: Math.round(exacto * 10) / 10, encima: exacto >= equipo, _exacto: exacto };
   }).sort(function (x, y) { return y._exacto - x._exacto; })
     .map(function (f) { return { asesor: f.asesor, promedio: f.promedio, encima: f.encima }; });
   return {

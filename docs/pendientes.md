@@ -742,8 +742,7 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 
 ## 3. Técnico, sin dueño (costo y riesgo ya estimado — nada se aplica sin pedirlo)
 
-- **La misma comparación de nombres en otras dos partes** (revisión de la Fase 353b, 13/11/2026; no se
-  tocó):
+- ~~**La misma comparación de nombres en otras dos partes**~~ — **resuelto en la Fase 361 (v1.205.1, 17/11/2026)**: una sola clave (`calClaveNombre`) en el servidor y en el navegador. Lo que sigue es el detalle original (revisión de la Fase 353b, 13/11/2026):
   - El conteo «propios» del evaluador (`/monitoreos/total`) compara con `lower()` de SQLite en
     monitoreos viejos sin id de evaluador: a alguien con mayúscula con tilde le faltarían algunos.
   - Las listas y resúmenes de Calidad en el navegador separan en dos filas a la misma persona si su
@@ -751,7 +750,7 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 
   Costo: bajo (usar `nombre_clave()` y `claveNombre()`). Riesgo: bajo. Errores de Aurora y los alias
   no se ven afectados.
-- **Portal del supervisor › Calidad: recuadro de una campaña sin plantilla** (Fase 352 C,
+- ~~**Portal del supervisor › Calidad: recuadro de una campaña sin plantilla**~~ — **resuelto en la Fase 361 (v1.205.1, 17/11/2026)**: se muestra «Sin plantilla de Calidad», sin enlace. Detalle original (Fase 352 C,
   13/11/2026). Los recuadros salen del registro de campañas de Calidad, y el módulo solo ofrece las
   que tienen plantilla principal activa. Si una campaña del registro no tuviera plantilla, su
   recuadro abriría el módulo en la primera campaña de la persona, no en la suya. Hoy no pasa en
@@ -798,7 +797,7 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   plantillas nuevas (hoy sigue con el formulario de siempre). La sección
   "Resultado de los monitoreos" del dashboard queda fuera del Excel de
   Exportar (nombres + notas, mismo criterio que la Fase 130).
-- **Calidad: la barra de KPIs del módulo a 375 px** — las tarjetas de arriba
+- ~~**Calidad: la barra de KPIs del módulo a 375 px**~~ — **ya estaba resuelto por la Fase 319 (v1.158.1)**; vuelto a medir el 17/11 (Fase 361) a 375/768/1440 con scroll: no se monta. Detalle original: las tarjetas de arriba
   del módulo de Calidad se montan con la cabecera al hacer scroll en el
   celular (existía antes de la Fase 253; visto en las capturas locales).
   Prioridad BAJA.

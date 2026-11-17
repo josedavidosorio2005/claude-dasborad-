@@ -24,11 +24,8 @@ const ordenNombre = (s) => normNombre(s).split(' ').filter(Boolean).sort().join(
 // de ancho cero, etc.) como un espacio normal y sin espacios al borde. Las TILDES SI cuentan: un
 // nombre con y sin tilde es "parecido", no exacto. Se registra en SQLite como nombre_clave() (db.js)
 // para que la base y el codigo comparen igual.
-const INVISIBLES = /[\u200b-\u200d\u2060\ufeff]/g;
-const ESPACIOS = /[\s\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000]+/g;
-function claveNombre(s) {
-  return String(s == null ? '' : s).replace(INVISIBLES, '').replace(ESPACIOS, ' ').trim().toLowerCase();
-}
+// Fase 361: la misma función que usa el navegador (public/js/calidad-nombre-clave.js).
+const { calClaveNombre: claveNombre, CAL_NOMBRE_INVISIBLES: INVISIBLES, CAL_NOMBRE_ESPACIOS: ESPACIOS } = require('../public/js/calidad-nombre-clave.js');
 const exacto = claveNombre;
 
 // Distancia de edicion con tope (mas de 2 no interesa).
