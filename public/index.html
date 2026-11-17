@@ -1058,6 +1058,8 @@
       <div class="gd-header-derecha">
         <span class="gd-marca-inconexion"><img class="gd-marca-logo" src="img/marca/logo-horizontal-blanco.png" srcset="img/marca/logo-horizontal-blanco.png 1x, img/marca/logo-horizontal-blanco@2x.png 2x" alt="InConexion" width="170" height="34"></span>
         <div class="gd-header-acciones" style="display:flex;align-items:center;gap:8px">
+          <!-- Fase 359: año que se ve en todas las pestañas (sin mezclar meses de años distintos). -->
+          <span class="stv-anio hidden" id="stv-anio-wrap"><label for="stv-anio">Año</label><select id="stv-anio" onchange="stvCambiarAnio(this.value)"></select></span>
           <button class="aurora-close theme-toggle gd-tema-btn" id="stv-tema-btn" type="button" onclick="toggleTema()" aria-label="Cambiar tema" title="Cambiar tema"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-moon"></use></svg></button>
           <button class="aurora-close" id="stv-cerrar-btn" type="button" onclick="closeSuraTeleventas()">X Cerrar</button>
         </div>
@@ -2234,6 +2236,7 @@
 <script src="js/ver-como.js"></script>
 <script src="js/vistos-logic.js"></script>
 <script src="js/vistos.js"></script>
+<script src="js/sura-televentas-anio.js"></script>
 <script src="js/malla-logic.js"></script>
 <script src="js/malla.js"></script>
 <script src="js/dashboard-generic.js"></script>

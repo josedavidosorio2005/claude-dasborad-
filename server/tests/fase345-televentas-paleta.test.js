@@ -56,6 +56,8 @@ test('desde afuera: sura-televentas.js agrega la capa DESPUES de la hoja del tab
   const i = (s) => html.indexOf('<script src="js/' + s + '"></script>');
   assert.ok(i('sura-televentas-paleta-logic.js') !== -1 && i('sura-televentas-paleta-logic.js') < i('sura-televentas.js'));
   let cambios = null;
-  try { cambios = execSync('git diff --name-only origin/main -- public/js/sura-televentas-app.js public/css/sura-televentas-app.css scripts/sura', { cwd: RAIZ, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }); } catch (e) { /* sin git: se omite */ }
-  if (cambios !== null) assert.equal(cambios.trim(), '', 'el tablero del supervisor y su generador no cambian');
+  // Fase 359: el año del tablero (sura-televentas-app.js y su generador) sí cambió, autorizado por
+  // el usuario; la paleta sigue viniendo SOLO de afuera, así que la hoja del tablero no se toca.
+  try { cambios = execSync('git diff --name-only origin/main -- public/css/sura-televentas-app.css', { cwd: RAIZ, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }); } catch (e) { /* sin git: se omite */ }
+  if (cambios !== null) assert.equal(cambios.trim(), '', 'la hoja de estilos del tablero no cambia (la paleta va desde afuera)');
 });
