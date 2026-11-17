@@ -54,6 +54,8 @@ async function verComoVolver(aviso) {
   authToken = vc.adminToken;
   _verComoPintar();
   await _entrarTrasLogin(vc.adminDatos);
+  // Fase 357 (B): el administrador entra al menú de tarjetas; se vuelve a Usuarios, de donde salió.
+  if (typeof enterAdminPanel === 'function') enterAdminPanel();
   if (typeof showSection === 'function' && document.getElementById('section-users')) showSection('users');
   if (aviso) showToast(aviso);
 }

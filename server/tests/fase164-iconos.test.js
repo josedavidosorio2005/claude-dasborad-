@@ -73,5 +73,8 @@ test('pantallas sin emoji: Calidad, Metas, Mis resultados e inicio de modulos', 
   const mods = leer('js/constants.js').match(/var DASH_MODULES = \[[\s\S]*?\];/)[0];
   assert.doesNotMatch(mods, /&#1\d{4,5};|&#10003;/, 'los modulos del inicio ya no usan emoji');
   assert.match(mods, /lucide\.svg#i-circle-check/);
-  assert.match(leer('js/dashboards-core.js'), /dash-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img\/iconos\/lucide\.svg#i-upload">/);
+  // Fase 357 (B): las tarjetas de entrada (Administración, Mi portal, Cargar Datos) salen de
+  // dashTarjetasEntrada con su icono de Lucide; el SVG se pinta igual en dashboards-core.js.
+  assert.match(leer('js/dashboards-core.js'), /dash-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img\/iconos\/lucide\.svg#'\+t\.icon\+'">/);
+  assert.match(leer('js/dashboards-logic.js'), /key: 'cargar', label: 'Cargar Datos'[^}]*icon: 'i-upload'/);
 });

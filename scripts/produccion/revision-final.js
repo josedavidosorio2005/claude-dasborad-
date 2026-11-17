@@ -434,7 +434,9 @@ async function correrChequeosAdmin(page) {
   const reporte = { pestanas: {} };
 
   // ══ 1. Usuarios de ejemplo (Fase 110): ninguno activo con la clave de ejemplo ══
-  await page.evaluate(() => showSection('users'));
+  // Fase 357 (B): el administrador entra al menú de tarjetas; se abre «Administración» primero
+  // para que los chequeos de #admin-page (Usuarios, botón de contraseña) vean la página real.
+  await page.evaluate(() => { if (typeof enterAdminPanel === 'function') enterAdminPanel(); showSection('users'); });
   await page.waitForTimeout(1200);
   const usuarios = await page.evaluate(async (lista) => {
     const rows = await apiRequest('GET', '/users');
