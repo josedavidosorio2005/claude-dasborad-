@@ -35,6 +35,7 @@ const ROLES = [
   'INVENTARIO',
   'GERENCIA',
   'GESTION_HUMANA',
+  'SISTEMAS', // Fase 357 (pedido de Edwin, 17/11): por ahora sin módulos; luego el inventario de sistemas
   'CLIENTES_DASH',
   'REPORTES',
   'ASESOR',
