@@ -671,6 +671,30 @@ CREATE TABLE IF NOT EXISTS tickets_respuestas (
 CREATE INDEX IF NOT EXISTS idx_tickets_respuestas_ticket ON tickets_respuestas(ticketId, id);
 `);
 
+// Fase 358 (pedido de Edwin, 17/11): «Malla de turnos». Solo tablas nuevas (IF NOT EXISTS).
+// Un grupo es de una campaña y una semana (su lunes), con horario por día (JSON: "1".."7" ->
+// {entrada, salida} o null). Cada asesora está como máximo en un grupo por campaña y semana.
+db.exec(`
+CREATE TABLE IF NOT EXISTS malla_grupos (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  campana TEXT NOT NULL,
+  semana TEXT NOT NULL,
+  nombre TEXT NOT NULL,
+  horario TEXT NOT NULL,
+  creadoPor TEXT NOT NULL DEFAULT '',
+  createdAt TEXT NOT NULL,
+  updatedAt TEXT NOT NULL,
+  UNIQUE(campana, semana, nombre)
+);
+CREATE INDEX IF NOT EXISTS idx_malla_grupos_semana ON malla_grupos(campana, semana);
+CREATE TABLE IF NOT EXISTS malla_asignaciones (
+  grupoId INTEGER NOT NULL REFERENCES malla_grupos(id) ON DELETE CASCADE,
+  asesorId INTEGER NOT NULL,
+  PRIMARY KEY (grupoId, asesorId)
+);
+CREATE INDEX IF NOT EXISTS idx_malla_asig_asesor ON malla_asignaciones(asesorId);
+`);
+
 // Fase 153 (Paso 1): registro de clientes. La semilla (ORLANT y MOBILIZE tal
 // como estaban en las listas fijas) corre una sola vez; despues el registro
 // es la unica fuente de CLIENTES_LIST y CAMPANAS_CALIDAD.

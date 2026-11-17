@@ -184,6 +184,11 @@ declarar(['GET /wolkvox/estado', 'POST /wolkvox/probar', 'POST /wolkvox/diagnost
 // un ajeno no vea ni conteste) se prueban rol por rol en fase356-tickets.test.js.
 declarar(['GET /tickets/campanas', 'GET /tickets', 'GET /tickets/:id', 'POST /tickets', 'POST /tickets/:id/respuestas'], 'open');
 declarar(['GET /tickets/contador', 'PUT /tickets/:id/estado', 'DELETE /tickets/:id'], 'skip');
+// Fase 358: «Malla de turnos». /malla/campanas y /malla/mia son auto-scoped (cualquier autenticado
+// recibe solo lo suyo); el resto exige supervisor de la campaña o ADMIN (leer: también REPORTES),
+// probado rol por rol en fase358-malla.test.js.
+declarar(['GET /malla/campanas', 'GET /malla/mia'], 'open');
+declarar(['GET /malla', 'POST /malla/grupos', 'PUT /malla/grupos/:id', 'DELETE /malla/grupos/:id', 'PUT /malla/grupos/:id/asesoras', 'POST /malla/copiar'], 'skip');
 declarar(['PUT /monitoreos/:id/fecha'], 'calidadManage'); // Fase 337: quien lo califico, Reportes o admin (fase337-fecha-del-monitoreo.test.js) // Fase 333: corregir solo el asesor "Invalid Date" (fase333-sin-asesor.test.js)
 declarar(['GET /calidad/codificaciones'], 'scopedRead');
 declarar(['POST /calidad/codificaciones/bulk', 'PUT /calidad/codificaciones/:id'], 'cargaCampana'); // Fase 299

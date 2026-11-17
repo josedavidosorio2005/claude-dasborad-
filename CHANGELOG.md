@@ -7,6 +7,19 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.204.0 — Noviembre 2026
+
+**Fase 358: Malla de turnos.**
+
+- Hay una tarjeta nueva, «Malla de turnos», para el administrador, el supervisor y Reportes (este
+  último solo para mirar). El supervisor también la tiene en el menú de su portal.
+- Por campaña y por semana (de lunes a domingo), el supervisor crea grupos con su horario de
+  entrada y salida para cada día. El sábado puede ser distinto y un día puede quedar de descanso.
+  Luego marca qué asesoras van en cada grupo. Una asesora está en un solo grupo por semana.
+- «Copiar esta semana a…» pasa los grupos, horarios y asesoras a otra semana. Si esa semana ya
+  tiene malla, pide confirmación antes de reemplazarla.
+- La asesora ve «Mi malla» en su portal: su horario de esta semana y de la siguiente.
+- El cliente no ve la malla. Cada cambio queda en el Historial.
 ## v1.203.0 — Noviembre 2026
 
 **Fase 357 (C): pestaña «Vistos» en Calidad.**

@@ -352,6 +352,8 @@ var MOTION_DIALOGOS_SIMPLES = {
   'modal-reporte-pdf': function () { if (typeof reportePdfCerrar === 'function') reportePdfCerrar(); },
   // Fase 356: «Sugerencias / Tickets».
   'modal-tickets': function () { if (typeof ticketsCerrar === 'function') ticketsCerrar(); },
+  // Fase 358: «Malla de turnos».
+  'modal-malla': function () { if (typeof mallaCerrar === 'function') mallaCerrar(); },
 };
 // overlay = el elemento con .show (role="dialog"); su primer hijo (.modal /
 // .clients-modal) es el contenedor que recibe el foco, como en A3.
