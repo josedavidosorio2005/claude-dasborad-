@@ -61,6 +61,12 @@
   <img class="marca-esquina" src="img/marca/logo-horizontal-blanco.png" srcset="img/marca/logo-horizontal-blanco.png 1x, img/marca/logo-horizontal-blanco@2x.png 2x" alt="InConexion" width="120" height="24">
 </div>
 
+<!-- Fase 357 (D): «Ver como este usuario» (solo lectura). Fija abajo, sobre todo lo demás. -->
+<div id="ver-como-banner" class="ver-como-banner hidden" role="status" aria-live="polite">
+  <span id="ver-como-texto"></span>
+  <button type="button" id="ver-como-volver" class="ver-como-volver" onclick="verComoVolver()">Volver a mi sesión</button>
+</div>
+
 <!-- ADMIN PANEL -->
 <div id="admin-page" class="app-page">
   <nav class="navbar">
@@ -2167,6 +2173,7 @@
 <script src="js/reporte-pdf.js"></script>
 <script src="js/tickets-logic.js"></script>
 <script src="js/tickets.js"></script>
+<script src="js/ver-como.js"></script>
 <script src="js/dashboard-generic.js"></script>
 <script src="js/sura-televentas-app.js"></script>
 <script src="js/sura-televentas-paleta-logic.js"></script>

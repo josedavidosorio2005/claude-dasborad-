@@ -330,6 +330,10 @@ declarar(['POST /dashboard/cargas', 'DELETE /dashboard/cargas/:id'], 'cargaGloba
 // matriz de candados especifica de esta ruta: dry-run, conteo esperado,
 // campana fija a ORLANT, etc).
 declarar(['POST /admin/borrado-rango'], 'admin');
+// Fase 357 (D): «ver como» -- iniciar solo ADMIN (nunca hacia otro ADMIN); terminar solo con un
+// token «ver como». Probado rol por rol en fase357d-ver-como.test.js.
+declarar(['POST /admin/ver-como/:id'], 'admin');
+declarar(['POST /admin/ver-como/fin'], 'skip');
 
 // Inventario / Gerencia / Gestion Humana (modulos internos globales, sin campana)
 declarar(['GET /inventario/items', 'GET /inventario/resumen', 'GET /inventario/movimientos'], 'modulo:Inventario');

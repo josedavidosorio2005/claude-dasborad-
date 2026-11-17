@@ -21140,3 +21140,12 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - Campañas (Calidad): `campana_CLINICA AURORA`, `campana_HOSPITAL LA MARIA`, `campana_MOBILIZE`, `campana_ORLANT`.
   - Supervisa: `supervisa_CLINICA AURORA`, `supervisa_HOSPITAL LA MARIA`, `supervisa_HOSPITAL LA MARIA - CASTILLA`, `supervisa_HOSPITAL LA MARIA - SEDE 33`, `supervisa_MOBILIZE`, `supervisa_ORLANT`, `supervisa_SURA`.
   - Plantillas: `plantilla_1`, `plantilla_9`, `plantilla_10`, `plantilla_11`, `plantilla_12`, `plantilla_13`.
+## Fase 357 (D) — «Ver como este usuario» (v1.201.0, 2026-11-17)
+
+- **Pedido (Edwin, 17/11):** probar lo que ve un cliente o una asesora en lugar de mostrar contraseñas. Decisiones del usuario: solo ADMIN, solo lectura, 30 minutos, nunca hacia otro ADMIN, inicio y fin en el Historial.
+- **Servidor:**
+  - `POST /admin/ver-como/:id`: solo ADMIN completo, y no con un token «ver como». Nunca hacia un ADMIN ni una cuenta suspendida. Firma un token del usuario elegido con `soloLectura` y `verComo` (quién lo pidió), de 30 minutos, y devuelve su usuario público (sin contraseña ni hash). Historial `VER_COMO_INICIO`.
+  - `POST /admin/ver-como/fin`: solo con un token «ver como»; lo revoca de inmediato. Historial `VER_COMO_FIN`.
+  - `bloqueoSoloLecturaVerComo` (middleware global, antes de las rutas): con un token «ver como» solo pasan GET/HEAD/OPTIONS y el fin. Así tampoco se marcan monitoreos como vistos, ni se crean tickets, ni se cambia nada. Se revisó que ninguna ruta GET escribe en la base. A una cuenta con cambio de clave pendiente no se le pide cambiarla en este modo.
+- **Interfaz:** «Ver como este usuario» en el menú «⋮» de Usuarios (solo ADMIN, no en ADMIN ni en cuentas suspendidas). Cambia en la misma pestaña al token de solo lectura, con una franja fija «Viendo como… · solo lectura · hasta…» y «Volver a mi sesión». A los 30 minutos vuelve sola. «Cerrar sesión» termina la vista y cierra la sesión del administrador. El token del administrador queda solo en memoria, nunca en el navegador.
+- **Pruebas:** `fase357d-ver-como` (6) y `fase357d-ver-como-interfaz` (3); `fase118` declara las 2 rutas. Suite 3163/3163. Brave local 26/26 (375 y 1440): ver como cliente y asesora, escritura bloqueada, volver, cerrar sesión, Historial con 4 inicios y 4 fines, 0 escrituras en la base, 0 errores de consola.

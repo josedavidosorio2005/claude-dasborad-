@@ -30,6 +30,7 @@ async function doLogin() {
   try {
     var data = await apiRequest('POST', '/auth/login', { user: u, password: p });
     authToken = data.token;
+    _loginDatos = data; // Fase 357 (D): para volver de «ver como» a esta sesión (solo en memoria)
 
     // Fase 151: contrasena asignada por un administrador -> cambiarla antes
     // de entrar (el servidor no deja hacer nada mas mientras tanto).
@@ -281,6 +282,9 @@ async function renderSupervisorMetaTable(){
 }
 
 function doLogout(){
+  // Fase 357 (D): si se estaba viendo como otro usuario, se termina y se cierra la sesión del administrador.
+  if(typeof verComoAntesDeSalir === 'function') verComoAntesDeSalir();
+  _loginDatos = null;
   // Fase 113 (tema A): registra el cierre de sesion en el Historial antes de
   // limpiar el token -- "fire and forget" (no se espera la respuesta, nunca
   // debe frenar ni poder fallar el cierre de sesion visible para el usuario).
