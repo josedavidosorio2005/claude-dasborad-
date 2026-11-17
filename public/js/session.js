@@ -201,7 +201,8 @@ function enterAsesorPage(){
 function showAsesorSection(sec){
   // Fase 357 (C): cada vez que la asesora abre su Calidad queda la hora (pestaña «Vistos»).
   if(sec==='calidad' && typeof vistosRegistrarApertura === 'function') vistosRegistrarApertura();
-  ['calidad'].forEach(function(s){
+  if(sec==='malla' && typeof mallaMiaRender === 'function') mallaMiaRender(); // Fase 358
+  ['calidad','malla'].forEach(function(s){
     var el=document.getElementById('asesor-section-'+s);
     var mel=document.getElementById('asesor-menu-'+s);
     if(el) el.style.display = (s===sec) ? 'block' : 'none';

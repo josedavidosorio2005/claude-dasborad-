@@ -1723,10 +1723,18 @@
         <li><a id="asesor-menu-calidad" role="button" tabindex="0" onclick="showAsesorSection('calidad')" class="active"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-trophy"></use></svg></span> Resultados de Calidad
           <span id="asesor-menu-calidad-badge" class="hidden" style="background:var(--c-danger-dark);color:var(--c-on-brand);border-radius:10px;padding:1px 7px;font-size:var(--fs-note);font-weight:700;margin-left:6px"></span>
         </a></li>
+        <li><a id="asesor-menu-malla" role="button" tabindex="0" onclick="showAsesorSection('malla')"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-calendar"></use></svg></span> Mi malla</a></li><!-- Fase 358 -->
       </ul>
     </aside>
     <div class="sidebar-overlay" onclick="closeSidebar()"></div>
     <main class="main-content">
+
+      <!-- Fase 358: «Mi malla» (el turno de la asesora, esta semana y la siguiente). -->
+      <div id="asesor-section-malla" style="display:none">
+        <div class="page-title">Mi malla</div>
+        <div class="page-subtitle">Tu horario de esta semana y de la siguiente.</div>
+        <div id="malla-mia" aria-live="polite"></div>
+      </div>
 
       <!-- Fase 95 (tema C): aviso de monitoreo(s) nuevo(s) de calidad sin ver -->
       <div class="aux-banner hidden" id="asesor-alerta-nuevos" style="justify-content:space-between">
@@ -1806,6 +1814,7 @@
       <ul class="sidebar-menu" id="supervisor-sidebar-menu">
         <li><a id="supervisor-menu-inicio" role="button" tabindex="0" onclick="enterUserDashboard()"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-arrow-left"></use></svg></span> Inicio</a></li><!-- Fase 357 (B) -->
         <li><a id="supervisor-menu-dashboards" role="button" tabindex="0" onclick="showSupervisorSection('dashboards')" class="active"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-layout-dashboard"></use></svg></span> Dashboards</a></li>
+        <li><a id="supervisor-menu-malla" role="button" tabindex="0" onclick="mallaAbrir()"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-calendar"></use></svg></span> Malla de turnos</a></li><!-- Fase 358 -->
         <li id="supervisor-menu-cargas-li" class="hidden"><a id="supervisor-menu-cargas" role="button" tabindex="0" onclick="openCentroCargas()"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-upload"></use></svg></span> Cargar bases</a></li>
         <li><a id="supervisor-menu-calidad" role="button" tabindex="0" onclick="showSupervisorSection('calidad')"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-circle-check"></use></svg></span> Calidad</a></li>
       </ul>
@@ -1976,6 +1985,39 @@
       <button class="btn-cancel" type="button" id="wv-red-btn" onclick="wvDiagnosticoRed()">Diagnóstico de red</button>
       <button class="btn-primary" type="button" id="wv-probar-btn" onclick="wvPruebaProbar()">Probar</button>
     </div>
+  </div>
+</div>
+
+<!-- Fase 358: «Malla de turnos» (ADMIN y supervisor editan; Reportes solo ve). -->
+<div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-malla-title" id="modal-malla">
+  <div class="modal modal-malla">
+    <button class="tk-cerrar" type="button" onclick="mallaCerrar()" aria-label="Cerrar">×</button>
+    <h3 id="modal-malla-title">Malla de turnos</h3>
+    <div class="ml-barra">
+      <div class="ig"><label for="ml-campana">Campaña</label><select id="ml-campana" onchange="mallaCargar()"></select></div>
+      <div class="ml-semana" role="group" aria-label="Semana">
+        <button type="button" class="btn-cancel" onclick="mallaMoverSemana(-1)" aria-label="Semana anterior">‹</button>
+        <span id="ml-semana-txt" aria-live="polite"></span>
+        <button type="button" class="btn-cancel" onclick="mallaMoverSemana(1)" aria-label="Semana siguiente">›</button>
+        <button type="button" class="btn-cancel" onclick="mallaIrHoy()">Esta semana</button>
+      </div>
+    </div>
+    <div class="ml-acciones hidden" id="ml-acciones">
+      <button type="button" class="btn-primary" onclick="mallaNuevoGrupo()">Nuevo grupo</button>
+      <span class="ml-copiar">
+        <label for="ml-copiar-a">Copiar esta semana a</label>
+        <select id="ml-copiar-a"></select>
+        <button type="button" class="btn-cancel" id="ml-copiar-btn" onclick="mallaCopiar(false)">Copiar</button>
+      </span>
+    </div>
+    <div class="ml-confirmar hidden" id="ml-confirmar" role="alertdialog" aria-labelledby="ml-confirmar-txt">
+      <span id="ml-confirmar-txt"></span>
+      <button type="button" class="btn-danger" id="ml-reemplazar-btn" onclick="mallaCopiar(true)">Sí, reemplazar</button>
+      <button type="button" class="btn-cancel" onclick="mallaCancelarCopia()">No</button>
+    </div>
+    <p class="wv-error hidden" id="ml-error" role="alert"></p>
+    <p class="ml-nota" id="ml-nota" role="status" aria-live="polite"></p>
+    <div id="ml-grupos"></div>
   </div>
 </div>
 
@@ -2192,6 +2234,8 @@
 <script src="js/ver-como.js"></script>
 <script src="js/vistos-logic.js"></script>
 <script src="js/vistos.js"></script>
+<script src="js/malla-logic.js"></script>
+<script src="js/malla.js"></script>
 <script src="js/dashboard-generic.js"></script>
 <script src="js/sura-televentas-app.js"></script>
 <script src="js/sura-televentas-paleta-logic.js"></script>

@@ -92,6 +92,8 @@ function dashTarjetasEntrada(rol, esFullAdmin, puedeCargar) {
   var t = [];
   if (esFullAdmin || rol === 'AUX_ADMIN') t.push({ key: 'admin', label: 'Administración', sub: 'Usuarios, permisos, historial y configuración', icon: 'i-lock', accion: 'enterAdminPanel' });
   if (rol === 'SUPERVISOR' && !esFullAdmin) t.push({ key: 'portal', label: 'Mi portal', sub: 'Tus clientes, cargas y metas de Calidad', icon: 'i-users', accion: 'enterSupervisorPage' });
+  // Fase 358: «Malla de turnos» (ADMIN y supervisor editan; Reportes la ve).
+  if (esFullAdmin || rol === 'SUPERVISOR' || rol === 'REPORTES') t.push({ key: 'malla', label: 'Malla de turnos', sub: 'Horarios por semana y grupos de asesoras', icon: 'i-calendar', accion: 'mallaAbrir' });
   if (puedeCargar) t.push({ key: 'cargar', label: 'Cargar Datos', sub: 'Subir Excel de los dashboards', icon: 'i-upload', accion: 'openCentroCargas' });
   return t;
 }
