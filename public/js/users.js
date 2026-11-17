@@ -72,9 +72,12 @@ function renderUsers(filter){
     // row-actions.js no alcanza a un clic DENTRO del menu). "Eliminar"
     // va aparte visualmente (.danger, separador) por ser la accion mas
     // riesgosa.
+    // Fase 357 (D): «Ver como este usuario», solo ADMIN completo, nunca otro ADMIN ni una cuenta suspendida.
+    var canVerComo = isFullAdmin() && u.rol!=='ADMIN' && u.active && typeof verComoIniciar==='function';
     var menuId='row-actions-menu-'+u.id;
     var kebabId='row-actions-kebab-'+u.id;
     var itemsMenu=
+      (canVerComo?'<button type="button" role="menuitem" class="row-actions-menu-item" tabindex="-1" onclick="rowActionsCerrarTodos();verComoIniciar('+u.id+')">Ver como este usuario</button>':'')+
       (canPass?'<button type="button" role="menuitem" class="row-actions-menu-item" tabindex="-1" onclick="rowActionsCerrarTodos();openPassModal('+u.id+')">Cambiar contrasena</button>':'')+
       (canSusp?'<button type="button" role="menuitem" class="row-actions-menu-item" tabindex="-1" onclick="rowActionsCerrarTodos();toggleActive('+u.id+')">'+sl+'</button>':'')+
       (canDel?'<button type="button" role="menuitem" class="row-actions-menu-item danger" tabindex="-1" onclick="rowActionsCerrarTodos();openDeleteModal('+u.id+')">Eliminar</button>':'');

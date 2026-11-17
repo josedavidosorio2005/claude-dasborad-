@@ -289,6 +289,8 @@ function createApp() {
     tiempoCuerpoMs: config.cargasTiempoCuerpoMs,
     responderSinLeerCuerpo,
   });
+  // Fase 357 (D): con un token «ver como» (solo lectura) no pasa nada que no sea leer.
+  app.use('/api', require('./auth').bloqueoSoloLecturaVerComo);
   app.use(exigirSesionParaCuerpo);
   app.use(topeCargas.middleware);
   app.use(leerCuerpoJson);

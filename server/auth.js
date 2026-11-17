@@ -50,11 +50,42 @@ function revocarToken(auth) {
   db.prepare('INSERT OR IGNORE INTO tokens_revocados (jti, exp) VALUES (?, ?)').run(auth.jti, auth.exp);
 }
 
+// ── Fase 357 (D): «Ver como este usuario» ──
+// Un ADMIN pide un token del usuario elegido (nunca otro ADMIN), de SOLO LECTURA y por 30
+// minutos. El token lleva `verComo` (quien lo pidio) y `soloLectura: true`. Mientras se usa,
+// el servidor solo deja pasar GET/HEAD/OPTIONS, salvo terminar la sesion «ver como».
+const VER_COMO_MINUTOS = 30;
+const RUTAS_PERMITIDAS_VER_COMO = ['/api/admin/ver-como/fin'];
+function firmarTokenVerComo(row, admin) {
+  return jwt.sign(
+    {
+      isMasterAdmin: false, userId: row.id, rol: row.rol, tokenVersion: row.token_version,
+      soloLectura: true,
+      verComo: { adminId: admin.id === undefined ? null : admin.id, adminUser: String(admin.user || ''), adminNombre: String(admin.nombre || '') },
+    },
+    JWT_SECRET,
+    { expiresIn: VER_COMO_MINUTOS * 60, algorithm: JWT_ALGORITHM, jwtid: crypto.randomUUID() }
+  );
+}
+// Middleware global (antes de las rutas): con un token «ver como», nada que no sea leer.
+function bloqueoSoloLecturaVerComo(req, res, next) {
+  const header = req.headers.authorization || '';
+  if (!header.startsWith('Bearer ')) return next();
+  let dec;
+  try { dec = jwt.verify(header.slice(7), JWT_SECRET, { algorithms: [JWT_ALGORITHM] }); } catch (e) { return next(); }
+  if (!dec || !dec.soloLectura) return next();
+  if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) return next();
+  const ruta = String(req.originalUrl || '').split('?')[0];
+  if (RUTAS_PERMITIDAS_VER_COMO.includes(ruta)) return next();
+  return res.status(403).json({ error: 'Solo lectura: estás viendo la plataforma como otro usuario.', codigo: 'SOLO_LECTURA_VER_COMO' });
+}
+
 // Fase 151: mientras una cuenta tenga una contrasena asignada por un
 // administrador sin cambiar, solo puede cambiarla o cerrar sesion.
 const RUTAS_PERMITIDAS_SIN_CAMBIAR_PASSWORD = ['/api/auth/password', '/api/auth/logout'];
 function bloqueadaPorCambioDePassword(actor, req) {
   if (!actor || actor.isMasterAdmin || !actor.debe_cambiar_password) return false;
+  if (req.auth && req.auth.soloLectura) return false; // Fase 357 (D): «ver como» solo lee; no se le pide cambiar la clave ajena
   const ruta = String(req.originalUrl || '').split('?')[0];
   return !RUTAS_PERMITIDAS_SIN_CAMBIAR_PASSWORD.includes(ruta);
 }
@@ -378,6 +409,7 @@ function requireDataLoader(req, res, next) {
 }
 
 module.exports = {
+  VER_COMO_MINUTOS, firmarTokenVerComo, bloqueoSoloLecturaVerComo, // Fase 357 (D)
   permisosDeCuenta, // Fase 354
   errorElegirSede, // Fase 354
   esCampanaInterna, // Fase W1

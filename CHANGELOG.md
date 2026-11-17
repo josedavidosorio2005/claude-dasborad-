@@ -7,6 +7,18 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.201.0 — Noviembre 2026
+
+**Fase 357 (D): «Ver como este usuario».**
+
+- El administrador puede ver la plataforma tal como la ve un cliente, una asesora o cualquier otro
+  usuario, para revisar qué le aparece, sin pedirle ni mostrar su contraseña. Está en Usuarios,
+  en el menú «⋮» de cada persona: «Ver como este usuario».
+- Es solo para mirar: mientras dura no se puede guardar, cargar, calificar ni marcar nada. Dura
+  30 minutos como máximo. Abajo aparece una franja «Viendo como… · solo lectura» con el botón
+  «Volver a mi sesión».
+- No se puede ver como otro administrador ni como una cuenta suspendida.
+- El Historial anota cuándo empezó y cuándo terminó, quién lo hizo y a quién.
 ## v1.200.0 — Noviembre 2026
 
 **Fase 357 (A): nuevo rol «Sistemas».**
