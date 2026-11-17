@@ -290,6 +290,9 @@ function createApp() {
     responderSinLeerCuerpo,
   });
   // Fase 357 (D): con un token «ver como» (solo lectura) no pasa nada que no sea leer.
+  // Plan B de Wolkvox (B1): ingesta del agente de la oficina, con clave propia y sin sesion.
+  // Va ANTES de exigirSesionParaCuerpo; queda bajo el limitador por IP (anonLimiter).
+  require('./wolkvox-ingesta').montarIngesta(app, db, { responderSinLeerCuerpo });
   app.use('/api', require('./auth').bloqueoSoloLecturaVerComo);
   app.use(exigirSesionParaCuerpo);
   app.use(topeCargas.middleware);

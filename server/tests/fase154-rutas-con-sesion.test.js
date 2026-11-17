@@ -12,7 +12,9 @@ const { app, cleanup } = require('./helpers');
 after(cleanup);
 
 // Unicas rutas de la API que se usan sin sesion.
-const SIN_SESION = new Set(['GET /api/health', 'POST /api/auth/login']);
+// Plan B de Wolkvox (B1): el agente de la oficina entra con su propia clave (X-Agente-Clave),
+// no con sesion -- cubierto en faseB1-wolkvox-ingesta.test.js.
+const SIN_SESION = new Set(['GET /api/health', 'POST /api/auth/login', 'POST /api/wolkvox/agente/flujo']);
 // El frontend estatico (index y el fallback de la SPA) no es API.
 const FRONTEND = new Set(['GET /', 'GET /index.html', 'GET /{*splat}']);
 // Fase 283: requireCargaGenerica (routes/dashboards.js) empieza llamando a requireActor.

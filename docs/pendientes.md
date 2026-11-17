@@ -17,6 +17,7 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   en solo lectura (escrituras solo las autorizadas). Detalle en `docs/historico/progress-fases.md`.
 - **Esperando a Edwin:** Malla fases 2 (puntualidad) y 3 (Portal Asesor ampliado) — ver el bloque 2.
 - **Esperando al soporte de Wolkvox:** el bloqueo de red hacia el servidor — ver el primer ítem de abajo.
+- **Plan B de Wolkvox (agente en la oficina):** B1 hecho (v1.206.0, endpoint apagado). **Decisión pendiente del usuario:** `skill_1` día a día (~30 consultas/mes, con detalle por skill) o `skill_3` (total del día, sin skill). Detalle y pasos en `docs/plan-api-wolkvox.md`, sección 9.
 
 ## 1. Esperando una decisión tuya
 

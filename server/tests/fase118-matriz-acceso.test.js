@@ -154,6 +154,9 @@ function declarar(rutas, tipo, extra) {
 }
 
 declarar(['GET /health', 'POST /auth/login'], 'skip');
+// Plan B de Wolkvox (B1): agente de la oficina, sin sesion; se protege con su propia clave
+// (X-Agente-Clave, huella en SSM) -- cubierto en faseB1-wolkvox-ingesta.test.js.
+declarar(['POST /api/wolkvox/agente/flujo'], 'skip');
 declarar(['PUT /auth/password', 'POST /auth/logout', 'GET /seed-demo/estado', 'GET /guia-uso'], 'open');
 declarar(['GET /users'], 'open'); // ver routes/usuarios.js: perms/lastLogin se redactan adentro, no 403
 declarar(['GET /historial', 'GET /seguridad/alertas'], 'admin');

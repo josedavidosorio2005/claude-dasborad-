@@ -340,3 +340,32 @@ que esté aprobado.
 - **Pruebas** (`faseW2-wolkvox.test.js`, con un Wolkvox falso y datos inventados): fechas, URL y
   encabezado, tiempo agotado, errores sin secretos, log sin secretos, tope, respuesta sin valores,
   permisos por rol, 404 para clientes reales, carga desde SSM y botón oculto.
+
+## 9. Plan B (agente en la oficina): B1 hecho, cómo seguir (17/11/2026)
+
+**B1 (v1.206.0):** `POST /api/wolkvox/agente/flujo` (`server/wolkvox-ingesta.js`), apagado sin
+`WOLKVOX_AGENTE_CLAVE_SHA256` en SSM. Solo la réplica «MOBILIZE PRUEBAS API» y solo Flujo
+(excepción escrita del usuario, anotada en `CLAUDE.md`).
+
+**Lo que dijeron las consultas reales** (2 de 3 autorizadas usadas; la tercera NO se gastó):
+- `skill_2`: no existe (404).
+- `skill_1`: una fila por skill (llamadas, nivel de servicio, abandono, ASA, ATA), **sin fecha**, sin
+  AHT ni espera. Responde por el rango pedido, así que para tener el día hay que pedir **un día por
+  consulta**.
+- `skill_3`: total del día, **sin skill**.
+
+**Decisión pendiente del usuario (antes de B2):**
+- **Opción A — `skill_1` día a día:** ~30 consultas por mes (una por día), con detalle por skill
+  como el Flujo actual. Más consultas contra el límite de uso de Wolkvox (sección 4).
+- **Opción B — `skill_3`:** pocas consultas, pero el Flujo quedaría con una sola «skill» (total del
+  día), sin el desglose por skill que hoy tiene la pestaña.
+- En las dos, AHT y espera siguen viniendo solo del archivo manual.
+
+**Pasos que siguen (cada uno con su OK):**
+1. Decidir A o B.
+2. B2: el agente (script en el PC de la oficina, fuera de producción) que arme el cuerpo y lo envíe;
+   la clave del agente vive solo en ese PC, nunca en el repo.
+3. Generar la clave, guardar SOLO su huella sha256 en SSM (`WOLKVOX_AGENTE_CLAVE_SHA256`) y, si se
+   quiere, la IP de la oficina en `WOLKVOX_AGENTE_IPS` — necesita OK explícito para tocar SSM.
+4. Primer envío real a la réplica y comparar contra la carga manual de Mobilize del mismo mes
+   (sección 5).

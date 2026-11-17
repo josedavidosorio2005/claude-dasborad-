@@ -94,6 +94,17 @@ asumir en qué quedó una fase anterior.
   interfaz normal de la plataforma (como lo haría un usuario real) — nunca
   escribiendo directo en la base de datos, nunca por un workflow (los
   archivos reales de clientes no pueden pasar por GitHub).
+- **Excepción escrita (usuario, 17/11/2026, Plan B de Wolkvox, fase B1):**
+  el agente de la oficina puede ENVIAR datos a producción por
+  `POST /api/wolkvox/agente/flujo` (`server/wolkvox-ingesta.js`) **solo
+  para la réplica oculta «MOBILIZE PRUEBAS API» y solo el reporte de
+  Flujo** (nivel de servicio diario). Nada más: ni el MOBILIZE real, ni
+  otro cliente, ni otro reporte. El endpoint está apagado mientras no
+  exista `WOLKVOX_AGENTE_CLAVE_SHA256` (huella sha256 de la clave, nunca
+  la clave) en SSM; `WOLKVOX_AGENTE_IPS` (opcional) limita las IPs.
+  Encenderlo en producción (crear la huella en SSM) sigue necesitando OK
+  explícito del usuario. Ampliar a otro cliente o reporte = autorización
+  nueva por escrito.
 - Nada de pruebas agresivas contra producción (sin límite de tasa, sin
   volumen alto, sin tocar datos que no sean los explícitamente
   autorizados). No destapar pestañas ocultas a mano, no tocar datos de
