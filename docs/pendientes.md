@@ -28,7 +28,9 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   del usuario.
   El 13/11 el Mobilize real no cambió (78 filas de nivel de servicio antes y después), se envió 0 escrituras
   y se cerró la sesión.
-- **Lunes 16/11: verificar en producción la Fase 354b** (solo lectura; tú inicias sesión como
+- ~~**Lunes 16/11: verificar en producción la Fase 354b**~~ — **HECHO** (17/11/2026, solo lectura, 0
+  escrituras): «Datos anteriores» abre con 12.087 llamadas y 14.202 chats, las dos sedes están vacías
+  y «Cambiar sede» funciona. Pedido original (solo lectura; tú inicias sesión como
   administrador; Brave, sin recargar). Que el botón «Datos anteriores (agosto, sin separar por sede)»
   aparece en la pantalla de sedes de HLM para quien ve HLM (como admin se simula en el navegador, sin
   escribir) y que agosto muestra **12.087 llamadas** y **14.202 chats**.

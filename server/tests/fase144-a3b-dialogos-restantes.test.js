@@ -22,7 +22,8 @@ const DIALOGOS = ['clients-modal-overlay', 'sede-modal-overlay', 'modal-user', /
   'modal-ver-datos', // Fase 152 (B9): + "Ver datos" de una grafica
   'modal-clasif-asesores', // Fase 186: + "Clasificación de asesores" de Tipificacion
   'modal-agendas-clasif', // Fase 210: + Clasificación de usuarios / de líneas de Agendamiento
-  'modal-wolkvox']; // Fase W2: + «Probar conexión» con Wolkvox
+  'modal-wolkvox', // Fase W2: + «Probar conexión» con Wolkvox
+  'modal-reporte-pdf']; // Fase 355: + «Exportar PDF» del mes (Hospital La María)
 
 test('index.html: los 9 dialogos son role="dialog" aria-modal="true" con su titulo <h3> enlazado', () => {
   for (const id of DIALOGOS) {

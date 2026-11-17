@@ -1019,6 +1019,8 @@
         <button class="aurora-close hidden" id="gd-wolkvox-btn" type="button" aria-haspopup="dialog" aria-label="Probar conexión con Wolkvox" onclick="wvPruebaAbrir()"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-phone"></use></svg> <span class="gd-btn-txt">Probar conexión</span></button>
         <!-- Fase 354: volver a elegir la sede (solo en un cliente con sedes). -->
         <button class="aurora-close hidden" id="gd-cambiar-sede-btn" type="button" aria-label="Cambiar sede" title="Cambiar sede" onclick="gdCambiarSede()"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-map-pin"></use></svg> <span class="gd-btn-txt">Cambiar sede</span></button>
+        <!-- Fase 355: PDF del mes (Hospital La María: cada sede y «Datos anteriores»; ADMIN, REPORTES y cliente). -->
+        <button class="aurora-close hidden" id="gd-reporte-pdf-btn" type="button" aria-haspopup="dialog" aria-label="Exportar PDF del mes" onclick="reportePdfAbrir()"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-file-text"></use></svg> <span class="gd-btn-txt">Exportar PDF</span></button>
         <button class="aurora-close" id="gd-export-btn" aria-label="Exportar" aria-haspopup="menu" aria-expanded="false" onclick="exportGenericDashboard()"><svg class="icono gd-icono-movil" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-download"></use></svg><span class="gd-btn-txt">Exportar</span></button>
         <!-- Fase 155: tema claro/oscuro dentro del tablero (el modal tapa la barra de arriba). Mismo mecanismo (theme.js): la clase theme-toggle lo sincroniza. -->
         <button class="aurora-close theme-toggle gd-tema-btn" id="gd-tema-btn" type="button" onclick="toggleTema()" aria-label="Cambiar tema" title="Cambiar tema"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-moon"></use></svg></button>
@@ -1944,6 +1946,24 @@
   </div>
 </div>
 
+<!-- Fase 355: «Exportar PDF» del mes (Hospital La María). Solo lee; abre «Guardar como PDF». -->
+<div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-reporte-pdf-title" aria-describedby="rp-ayuda" id="modal-reporte-pdf">
+  <div class="modal modal-reporte-pdf">
+    <button class="rp-cerrar" type="button" onclick="reportePdfCerrar()" aria-label="Cerrar">×</button>
+    <h3 id="modal-reporte-pdf-title">Exportar PDF</h3>
+    <p class="rp-ayuda" id="rp-ayuda">Informe del mes de <strong id="rp-campana"></strong>: indicadores y gráficas de llamadas, WhatsApp y total tráfico. En la ventana que se abre, elige «Guardar como PDF».</p>
+    <div class="ig">
+      <label for="rp-mes">Mes</label>
+      <select id="rp-mes"></select>
+    </div>
+    <p class="rp-nota" id="rp-nota" role="status" aria-live="polite"></p>
+    <div class="modal-btns">
+      <button class="btn-cancel" type="button" onclick="reportePdfCerrar()">Cancelar</button>
+      <button class="btn-primary" type="button" id="rp-generar-btn" onclick="reportePdfGenerar()">Generar PDF</button>
+    </div>
+  </div>
+</div>
+
 <!-- Fase 152 (B9): "Ver datos" -- tabla con los numeros de una grafica. -->
 <div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-ver-datos-title" id="modal-ver-datos">
   <div class="modal modal-ver-datos">
@@ -2068,6 +2088,8 @@
 <script src="js/grafica-vacia-logic.js"></script>
 <script src="js/gd-menu-lateral.js"></script>
 <script src="js/wolkvox-prueba.js"></script>
+<script src="js/reporte-pdf-logic.js"></script>
+<script src="js/reporte-pdf.js"></script>
 <script src="js/dashboard-generic.js"></script>
 <script src="js/sura-televentas-app.js"></script>
 <script src="js/sura-televentas-paleta-logic.js"></script>
