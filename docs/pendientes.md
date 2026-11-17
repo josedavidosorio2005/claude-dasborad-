@@ -9,25 +9,26 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 
 ## 1. Esperando una decisión tuya
 
-- **Lunes 16/11: la verificación de Wolkvox (Fase W2) en producción queda para el lunes** (13/11/2026).
-  En local ya funciona: con `server/data/wolkvox.local.env` (ignorado por git), «Probar conexión» en la réplica
-  «MOBILIZE PRUEBAS API» dio código 200, «1 records were found», 1 fila y 20 campos de `cdr_1`.
-  **Corrección (17/11/2026): los parámetros SSM de Wolkvox todavía NO están creados en producción.** Lo
-  que se anotó antes (que ya existían en la consola) no era cierto; por eso `/wolkvox/estado` dice
-  **no / no / no**: no hay token ni servidor que leer, y no se hizo la prueba en producción.
-  Lo que falta (lo hace el usuario en la consola, Systems Manager › Parameter Store, us-east-1):
-  1. Crear `/inconexion/prod/WOLKVOX_MOBILIZE_TOKEN` y `/inconexion/prod/WOLKVOX_MOBILIZE_SERVIDOR` con esos
-     nombres **exactos** (barra inicial, mayúsculas, sin espacios al final), en la misma carpeta que
-     `/inconexion/prod/JWT_SECRET`, no en una subcarpeta.
-  2. Tipo SecureString con la llave **alias/aws/ssm**, la misma de `JWT_SECRET`. Con otra llave, el rol
-     de la instancia no puede descifrarlos.
-  3. Con eso creado, se vuelve a correr el último deploy, se lee `/wolkvox/estado` (tres «sí») y se hace una
-     sola «Probar conexión» en la réplica.
-  Si después de crearlos sigue en «no», se puede mirar con `verificar-logs-produccion.yml` si el arranque
-  cargó `WOLKVOX_*` (el registro de arranque muestra solo nombres, nunca valores). Ese paso necesita el OK
-  del usuario.
-  El 13/11 el Mobilize real no cambió (78 filas de nivel de servicio antes y después), se envió 0 escrituras
-  y se cerró la sesión.
+- **Wolkvox (Fase W2): producción no logra conectarse con Wolkvox; probable IP no autorizada** (17/11/2026).
+  En local funciona (13/11): con `server/data/wolkvox.local.env` (ignorado por git), «Probar conexión» en la
+  réplica «MOBILIZE PRUEBAS API» dio código 200, «1 records were found», 1 fila y 20 campos de `cdr_1`.
+  En producción:
+  - El usuario creó el **17/11** en la consola (Parameter Store, us-east-1) `/inconexion/prod/WOLKVOX_MOBILIZE_TOKEN`
+    y `/inconexion/prod/WOLKVOX_MOBILIZE_SERVIDOR`. Se volvió a correr el último deploy (verde) y
+    `/wolkvox/estado` dice **«Sí»**: la plataforma ya encuentra el token y el servidor.
+  - La única «Probar conexión» del 17/11 (fecha 16/11) falló con «No se pudo conectar con Wolkvox» a los
+    ~10 s. No es un rechazo del token (sería 401/403): el servidor no logra abrir la conexión con Wolkvox;
+    esos ~10 s son lo que espera Node para conectarse. Uso del día: 1 de 2.800.
+  - **Causa probable:** Wolkvox solo acepta la API desde IPs autorizadas y no tiene la del servidor de
+    producción. El dominio de producción apunta a **3.85.54.96** (la IP de 100.51.93.1 que aparece en la
+    bitácora vieja era de la cuenta anterior, ya retirada). En Lightsail la IP pública de la instancia es
+    también la de salida; falta confirmar en la consola (Lightsail › Networking) que sea la IP **estática**,
+    para que no cambie.
+  Lo que falta:
+  1. Edwin o el usuario piden a Wolkvox autorizar esa IP para la API (o que confirme si tiene esa restricción).
+  2. Con la IP autorizada, se hace **una sola** «Probar conexión» en la réplica, solo lectura.
+  3. Si sigue fallando, se revisa con `verificar-logs-produccion.yml` (con el OK del usuario). El registro solo
+     dice «sin conexión» y el tiempo, nunca el servidor ni el token.
 - ~~**Lunes 16/11: verificar en producción la Fase 354b**~~ — **HECHO** (17/11/2026, solo lectura, 0
   escrituras): «Datos anteriores» abre con 12.087 llamadas y 14.202 chats, las dos sedes están vacías
   y «Cambiar sede» funciona. Pedido original (solo lectura; tú inicias sesión como
