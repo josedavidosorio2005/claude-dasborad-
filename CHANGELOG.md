@@ -7,6 +7,18 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.202.0 — Noviembre 2026
+
+**Fase 357 (B): un solo menú de inicio para todos.**
+
+- El administrador, el supervisor, Gerencia, Reportes y Calidad entran ahora al mismo menú de
+  tarjetas que ve el cliente, con solo los módulos que cada uno tiene habilitados: Dashboard,
+  Calidad, Cargar datos, etc.
+- El administrador tiene además la tarjeta «Administración» (usuarios, permisos, historial y
+  configuración), y el supervisor la tarjeta «Mi portal» (sus clientes, cargas y metas).
+- Dentro del panel de administración y del portal del supervisor hay un botón «Inicio» para
+  volver al menú.
+- La asesora y el Auxiliar Admin siguen entrando como antes.
 ## v1.201.0 — Noviembre 2026
 
 **Fase 357 (D): «Ver como este usuario».**

@@ -84,8 +84,29 @@ function dashClientesLibres(clientesList, construidos, registro, editando) {
   return (clientesList || []).filter(function (c) { return c === editando || !dashClienteTieneTablero(c, construidos, registro); });
 }
 
+// Fase 357 (B, pedido de Edwin 17/11): menú único de tarjetas para todos los internos. Además
+// de los módulos por permiso, tarjetas de entrada: «Administración» (ADMIN, y el Auxiliar Admin
+// que ya entraba al panel), «Mi portal» (SUPERVISOR) y «Cargar Datos» (quien puede cargar).
+// Puro: se prueba en Node.
+function dashTarjetasEntrada(rol, esFullAdmin, puedeCargar) {
+  var t = [];
+  if (esFullAdmin || rol === 'AUX_ADMIN') t.push({ key: 'admin', label: 'Administración', sub: 'Usuarios, permisos, historial y configuración', icon: 'i-lock', accion: 'enterAdminPanel' });
+  if (rol === 'SUPERVISOR' && !esFullAdmin) t.push({ key: 'portal', label: 'Mi portal', sub: 'Tus clientes, cargas y metas de Calidad', icon: 'i-users', accion: 'enterSupervisorPage' });
+  if (puedeCargar) t.push({ key: 'cargar', label: 'Cargar Datos', sub: 'Subir Excel de los dashboards', icon: 'i-upload', accion: 'openCentroCargas' });
+  return t;
+}
+
+// Fase 357 (B): a qué pantalla entra cada rol al iniciar sesión.
+function dashPantallaDeEntrada(rol, esMaestro) {
+  if (esMaestro || rol === 'ADMIN') return 'tarjetas';
+  if (rol === 'AUX_ADMIN') return 'admin';
+  if (rol === 'ASESOR') return 'asesor';
+  return 'tarjetas'; // SUPERVISOR, GERENCIA, REPORTES, CALIDAD, CLIENTES_DASH, SISTEMAS, ...
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
+    dashTarjetasEntrada: dashTarjetasEntrada, dashPantallaDeEntrada: dashPantallaDeEntrada, // Fase 357 (B)
     dashClienteTieneTablero: dashClienteTieneTablero,
     dashClientesLibres: dashClientesLibres,
     dashModulosVisibles: dashModulosVisibles,

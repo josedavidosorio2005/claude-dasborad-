@@ -55,7 +55,7 @@ async function _entrarTrasLogin(data) {
     currentUser = null; // null = admin maestro
     await loadDashboardClientes(); await loadData(); await loadHist(); await loadSeedDemoEstado();
     if(typeof cargarAlertasSeguridad==='function') await cargarAlertasSeguridad();
-    enterAdminPanel();
+    enterUserDashboard(); // Fase 357 (B): menú único de tarjetas («Administración» lleva al panel)
     if (typeof ticketsAlEntrar === 'function') ticketsAlEntrar(); // Fase 356
     return;
   }
@@ -82,9 +82,11 @@ async function _entrarTrasLogin(data) {
   // real a sus clientes/campañas se queda sin ver ninguno tras iniciar sesión.
   currentUser = found ? Object.assign({}, found, { perms: data.user.perms }) : data.user;
 
-  if (currentUser.rol==='ADMIN' || currentUser.rol==='AUX_ADMIN') { enterAdminPanel(); }
-  else if (currentUser.rol==='ASESOR') { enterAsesorPage(); }
-  else if (currentUser.rol==='SUPERVISOR') { enterSupervisorPage(); }
+  // Fase 357 (B): menú único de tarjetas para los internos (ADMIN, SUPERVISOR, GERENCIA, REPORTES,
+  // CALIDAD...). El Auxiliar Admin sigue entrando a su panel y la asesora a su portal.
+  var pantalla = dashPantallaDeEntrada(currentUser.rol, false);
+  if (pantalla==='admin') { enterAdminPanel(); }
+  else if (pantalla==='asesor') { enterAsesorPage(); }
   else { enterUserDashboard(); }
   if (typeof ticketsAlEntrar === 'function') ticketsAlEntrar(); // Fase 356
 }
@@ -169,16 +171,19 @@ function enterAdminPanel(){
 function enterUserDashboard(){
   hideAllPages();
   document.getElementById('user-page').style.display='block';
-  document.getElementById('nb-user-dash').textContent = currentUser.nombre;
+  // Fase 357 (B): también el administrador maestro (currentUser === null) entra aquí.
+  var nombreEntrada = currentUser ? currentUser.nombre : 'Administrador';
+  var rolEntrada = currentUser ? currentUser.rol : 'ADMIN';
+  document.getElementById('nb-user-dash').textContent = nombreEntrada;
   var rEl=document.getElementById('nb-role-dash');
-  rEl.textContent=RL[currentUser.rol]||currentUser.rol;
-  rEl.className='navbar-role';
-  var fn=currentUser.nombre.split(' ')[0];
+  rEl.textContent=RL[rolEntrada]||rolEntrada;
+  rEl.className='navbar-role'+(rolEntrada==='ADMIN'?' admin-role':'');
+  var fn=nombreEntrada.split(' ')[0];
   document.getElementById('welcome-name').textContent='Bienvenido, '+fn;
   renderDashGrid();
   // Fase 254 (pedido de Edwin): el rol CALIDAD entra directo a Calificar. Al
   // cerrar el modulo vuelve a su pantalla de inicio de siempre.
-  if(currentUser.rol==='CALIDAD' && currentUser.perms && currentUser.perms.Calidad===true && typeof openCalidad==='function'){
+  if(currentUser && currentUser.rol==='CALIDAD' && currentUser.perms && currentUser.perms.Calidad===true && typeof openCalidad==='function'){
     openCalidad();
   }
 }

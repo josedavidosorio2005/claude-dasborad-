@@ -27,17 +27,24 @@ function renderDashGrid(){
       '<div class="dash-label">'+m.label+'</div>'+
       '<div class="dash-sub">'+m.sub+'</div></div>';
   }).join('');
-  // Tile extra para quien puede cargar datos operativos de los dashboards.
-  var puedeCargar = typeof canLoadAnyModule==='function' && canLoadAnyModule() && !isFullAdmin();
-  if(puedeCargar){
-    grid.innerHTML += '<div class="dash-btn mod-clientes" role="button" tabindex="0" onclick="openCentroCargas()">'+
-      '<div class="dash-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-upload"></use></svg></div>'+
-      '<div class="dash-label">Cargar Datos</div>'+
-      '<div class="dash-sub">Subir Excel de los dashboards</div></div>';
-  }
-  // Sin ningun modulo (ni "Cargar Datos") -> mensaje claro, sin tarjetas.
+  // Fase 357 (B): tarjetas de entrada del menú único (Administración, Mi portal, Cargar Datos).
+  // Antes «Cargar Datos» no salía para el administrador (él cargaba desde su panel).
+  var puedeCargar = typeof canLoadAnyModule==='function' && canLoadAnyModule();
+  var rolActual = currentUser ? currentUser.rol : 'ADMIN';
+  var extra = dashTarjetasEntrada(rolActual, isFullAdmin(), puedeCargar);
+  var tarjetaEntrada = function(t){
+    return '<div class="dash-btn mod-clientes dash-entrada-'+t.key+'" role="button" tabindex="0" data-entrada="'+t.key+'" onclick="'+t.accion+'()">'+
+      '<div class="dash-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#'+t.icon+'"></use></svg></div>'+
+      '<div class="dash-label">'+t.label+'</div>'+
+      '<div class="dash-sub">'+t.sub+'</div></div>';
+  };
+  // «Administración» y «Mi portal» primero; «Cargar Datos» al final, como antes.
+  var antes = extra.filter(function(t){ return t.key!=='cargar'; }).map(tarjetaEntrada).join('');
+  var despues = extra.filter(function(t){ return t.key==='cargar'; }).map(tarjetaEntrada).join('');
+  grid.innerHTML = antes + grid.innerHTML + despues;
+  // Sin ningun modulo (ni tarjetas de entrada) -> mensaje claro, sin tarjetas.
   var vacio=document.getElementById('dash-grid-vacio');
-  var sinNada = modulos.length===0 && !puedeCargar;
+  var sinNada = modulos.length===0 && extra.length===0;
   if(vacio) vacio.classList.toggle('hidden', !sinNada);
   grid.classList.toggle('hidden', sinNada);
 }

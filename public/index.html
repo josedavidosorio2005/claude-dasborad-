@@ -91,6 +91,7 @@
     <aside class="sidebar">
       <div class="sidebar-title">Panel Admin</div>
       <ul class="sidebar-menu" id="sidebar-menu">
+        <li><a id="menu-inicio" role="button" tabindex="0" onclick="enterUserDashboard()"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-arrow-left"></use></svg></span> Inicio</a></li><!-- Fase 357 (B): volver al menú de tarjetas -->
         <li><a id="menu-users" role="button" tabindex="0" onclick="showSection('users')" class="active"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-users"></use></svg></span> Usuarios</a></li>
         <li id="menu-perms-li"><a id="menu-perms" role="button" tabindex="0" onclick="showSection('perms')"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-lock"></use></svg></span> Permisos</a></li>
         <li id="menu-hist-li" class="hidden"><a id="menu-hist" role="button" tabindex="0" onclick="showSection('hist')"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-history"></use></svg></span> Historial</a></li>
@@ -1789,6 +1790,7 @@
     <aside class="sidebar">
       <div class="sidebar-title">Mi Portal</div>
       <ul class="sidebar-menu" id="supervisor-sidebar-menu">
+        <li><a id="supervisor-menu-inicio" role="button" tabindex="0" onclick="enterUserDashboard()"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-arrow-left"></use></svg></span> Inicio</a></li><!-- Fase 357 (B) -->
         <li><a id="supervisor-menu-dashboards" role="button" tabindex="0" onclick="showSupervisorSection('dashboards')" class="active"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-layout-dashboard"></use></svg></span> Dashboards</a></li>
         <li id="supervisor-menu-cargas-li" class="hidden"><a id="supervisor-menu-cargas" role="button" tabindex="0" onclick="openCentroCargas()"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-upload"></use></svg></span> Cargar bases</a></li>
         <li><a id="supervisor-menu-calidad" role="button" tabindex="0" onclick="showSupervisorSection('calidad')"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-circle-check"></use></svg></span> Calidad</a></li>
