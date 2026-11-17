@@ -149,9 +149,10 @@ Así se ve si los campos se llaman igual que las columnas del Excel.
   - `WOLKVOX_MOBILIZE_SERVIDOR`
 
   **Estado (17/11/2026): los dos parámetros ya existen** (los creó el usuario en la consola el 17/11)
-  y `/wolkvox/estado` dice «Sí». La única «Probar conexión» de ese día falló por conexión («No se pudo
-  conectar con Wolkvox» a los ~10 s, no un rechazo del token): lo más probable es que Wolkvox no tenga
-  autorizada la IP del servidor de producción. Ver `docs/pendientes.md`.
+  y `/wolkvox/estado` dice «Sí». Las «Probar conexión» de ese día fallaron por conexión, no por el token. El «Diagnóstico de red»
+  (Fase W3) mostró que la conexión TCP al 443 de Wolkvox no responde desde la IP estática del servidor
+  (3.85.54.96), mientras el DNS y la salida a internet funcionan: es un bloqueo de red del lado de
+  Wolkvox. Se escribió a su soporte el 17/11. Ver `docs/pendientes.md`.
 
   Más adelante, `WOLKVOX_<OPERACION>_…` para cada operación nueva. `server/secrets.js` se
   amplía para leer las claves que empiezan por `WOLKVOX_`, sin tener que listarlas una por

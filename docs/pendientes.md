@@ -9,27 +9,27 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 
 ## 1. Esperando una decisión tuya
 
-- **Wolkvox (Fase W2): producción no logra conectarse con Wolkvox; probable IP no autorizada** (17/11/2026).
-  En local funciona (13/11): con `server/data/wolkvox.local.env` (ignorado por git), «Probar conexión» en la
-  réplica «MOBILIZE PRUEBAS API» dio código 200, «1 records were found», 1 fila y 20 campos de `cdr_1`.
+- **Wolkvox: bloqueo de red del lado de Wolkvox hacia el servidor de producción; esperando a soporte de Wolkvox** (17/11/2026).
+  En local funciona (13/11): «Probar conexión» en la réplica «MOBILIZE PRUEBAS API» dio código 200 y 20 campos de `cdr_1`.
   En producción:
-  - El usuario creó el **17/11** en la consola (Parameter Store, us-east-1) `/inconexion/prod/WOLKVOX_MOBILIZE_TOKEN`
-    y `/inconexion/prod/WOLKVOX_MOBILIZE_SERVIDOR`. Se volvió a correr el último deploy (verde) y
-    `/wolkvox/estado` dice **«Sí»**: la plataforma ya encuentra el token y el servidor.
-  - La única «Probar conexión» del 17/11 (fecha 16/11) falló con «No se pudo conectar con Wolkvox» a los
-    ~10 s. No es un rechazo del token (sería 401/403): el servidor no logra abrir la conexión con Wolkvox;
-    esos ~10 s son lo que espera Node para conectarse. Uso del día: 1 de 2.800.
-  - **Causa probable:** Wolkvox solo acepta la API desde IPs autorizadas y no tiene la del servidor de
-    producción. El dominio de producción apunta a **3.85.54.96** (la IP de 100.51.93.1 que aparece en la
-    bitácora vieja era de la cuenta anterior, ya retirada). En Lightsail la IP pública de la instancia es
-    también la de salida; falta confirmar en la consola (Lightsail › Networking) que sea la IP **estática**,
-    para que no cambie.
+  - Los parámetros SSM `/inconexion/prod/WOLKVOX_MOBILIZE_TOKEN` y `/inconexion/prod/WOLKVOX_MOBILIZE_SERVIDOR`
+    existen (los creó el usuario el 17/11) y `/wolkvox/estado` dice **«Sí»**.
+  - Las «Probar conexión» del 17/11 (10:16, 10:27 y 10:28, hora de Colombia) fallaron por red, no por token.
+  - **Diagnóstico de red** (Fase W3, v1.199.0; 17/11 11:52, sin token y sin gastar consultas): DNS de
+    `wv0072.wolkvox.com` bien (1 IPv4, 0 IPv6); **conexión TCP al 443 por IPv4 sin respuesta en 5 s**
+    (`TIEMPO_AGOTADO`); IPv6 no aplica (Wolkvox no tiene dirección IPv6); control de salida a internet bien.
+    Desde un PC en Colombia el mismo nombre conecta en 77 ms con TLS válido.
+  - **Causa:** el tráfico desde la IP estática del servidor, **3.85.54.96** (confirmada como IP estática en
+    Lightsail), no llega o no recibe respuesta del lado de Wolkvox o de su nube. El token en Wolkvox Manager no
+    tiene lista de IPs, así que es un bloqueo a nivel de red o firewall, no de la API. No es DNS, ni IPv6,
+    ni la salida a internet del servidor. Forzar IPv4 no cambia nada.
+  - **17/11:** el usuario envió a soporte de Wolkvox el mensaje con la IP, el puerto, los horarios de las
+    pruebas y el síntoma, pidiendo revisar el bloqueo y autorizar la IP.
   Lo que falta:
-  1. Edwin o el usuario piden a Wolkvox autorizar esa IP para la API (o que confirme si tiene esa restricción).
-  2. Con la IP autorizada, se hace **una sola** «Probar conexión» en la réplica, solo lectura.
-  3. Si sigue fallando, se revisa con `verificar-logs-produccion.yml` (con el OK del usuario). El registro solo
-     dice «sin conexión» y el tiempo, nunca el servidor ni el token.
-- ~~**Lunes 16/11: verificar en producción la Fase 354b**~~ — **HECHO** (17/11/2026, solo lectura, 0
+  1. Respuesta de Wolkvox. Cuando digan que la IP está autorizada, se hace **un** «Diagnóstico de red»
+     (sin token) y, si la conexión al 443 abre, **una sola** «Probar conexión» en la réplica, con el OK del usuario.
+  2. Si Wolkvox dice que no bloquea nada, se revisa la ruta de salida del servidor; eso puede tocar AWS y
+     se consulta antes.- ~~**Lunes 16/11: verificar en producción la Fase 354b**~~ — **HECHO** (17/11/2026, solo lectura, 0
   escrituras): «Datos anteriores» abre con 12.087 llamadas y 14.202 chats, las dos sedes están vacías
   y «Cambiar sede» funciona. Pedido original (solo lectura; tú inicias sesión como
   administrador; Brave, sin recargar). Que el botón «Datos anteriores (agosto, sin separar por sede)»
