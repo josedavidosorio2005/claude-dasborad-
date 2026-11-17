@@ -149,6 +149,12 @@ function reportePdfPct(n) {
   return Number(n).toLocaleString('es-CO', { maximumFractionDigits: 1 }) + ' %';
 }
 
+// Fase 355b: el logo solo entra embebido (PNG en base64), como las gráficas. Una URL no sirve:
+// en producción la ventana del PDF no la cargaba.
+function reportePdfLogoValido(s) {
+  return typeof s === 'string' && /^data:image\/png;base64,[A-Za-z0-9+/]+=*$/.test(s);
+}
+
 function _rpTarjetas(items) {
   return '<div class="kpis">' + items.map(function (it) {
     return '<div class="kpi"><div class="v">' + _rpEsc(it.valor) + '</div><div class="l">' + _rpEsc(it.etiqueta) + '</div></div>';
@@ -206,7 +212,7 @@ function reportePdfPrintHtml(opts) {
     'footer{margin-top:22px;color:#5b6f78;font-size:10px;border-top:1px solid #c9dbe3;padding-top:6px}' +
     '</style></head><body>' + aviso +
     '<header><div><h1>' + _rpEsc(titulo) + '</h1><p class="mes">Informe de ' + _rpEsc(mesLbl) + '</p></div>' +
-    (o.logoUrl ? '<img src="' + _rpEsc(o.logoUrl) + '" alt="InConexion">' : '') + '</header>' +
+    (reportePdfLogoValido(o.logoUrl) ? '<img src="' + _rpEsc(o.logoUrl) + '" alt="InConexion">' : '') + '</header>' +
     _rpCanal('Tráfico de Llamadas', ind.llamadas, { nombre: 'llamadas', total: 'Total de llamadas', contestadas: 'Llamadas contestadas', abandonadas: 'Llamadas abandonadas' }, g.llamadas) +
     _rpCanal('Tráfico de WhatsApp', ind.whatsapp, { nombre: 'WhatsApp', total: 'Total de WhatsApp', contestadas: 'WhatsApp contestados', abandonadas: 'WhatsApp abandonados' }, g.whatsapp) +
     totalHtml +
@@ -222,5 +228,6 @@ if (typeof module !== 'undefined' && module.exports) {
     reportePdfMeses: reportePdfMeses, reportePdfMesesSinDatos: reportePdfMesesSinDatos, reportePdfMesLargo: reportePdfMesLargo,
     reportePdfIndicadores: reportePdfIndicadores, reportePdfSerieDiaria: reportePdfSerieDiaria,
     reportePdfPrintHtml: reportePdfPrintHtml, reportePdfNum: reportePdfNum, reportePdfPct: reportePdfPct,
+    reportePdfLogoValido: reportePdfLogoValido, // Fase 355b
   };
 }

@@ -21087,3 +21087,9 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - Icono nuevo `i-file-text` (Lucide 0.460.0) para no repetir el de «Exportar» en el teléfono.
 - **Pruebas:** `fase355-reporte-pdf` (10, datos inventados); ajustada la lista de diálogos de `fase144-a3b-dialogos-restantes`.
 - **Visual local** (base temporal con datos inventados, Brave): ADMIN, REPORTES y cliente (375/768/1440) ven el botón en Castilla, Sede 33 y «Datos anteriores»; el supervisor no; ORLANT no lo tiene. El PDF lleva logo cargado, nombre de campaña y sede, 12.087 / 14.202 con las cifras de control y 3 gráficas en «Datos anteriores», «sin datos» en Sede 33, y «Tipificación: sin datos cargados». 140/140 revisiones, 0 errores de consola.
+## Fase 355b — el logo del PDF va embebido (v1.197.1, 2026-11-17)
+
+- **Hallazgo (verificación en producción del 17/11, solo lectura):** el PDF de «Datos anteriores» salió con las cifras correctas (12.087 / 14.202, 3 gráficas, «Tipificación: sin datos cargados») pero **sin el logo**. El archivo responde bien en producción (200, image/png); las gráficas, que ya iban embebidas, sí salían. Lo que fallaba era que la ventana del PDF cargara el logo desde una URL (en local sí cargaba).
+- **Cambio:** la interfaz lee el PNG una sola vez, lo convierte a `data:image/png;base64,…` antes de habilitar «Generar PDF» y lo pasa embebido. `reportePdfLogoValido` solo acepta ese formato: una URL u otro tipo nunca se pinta. Si no se pudiera leer, el PDF sale sin logo.
+- **Pruebas:** `fase355-reporte-pdf` +1 (logo solo embebido; la interfaz lo carga antes de habilitar el botón). Suite 3127/3127; `npm audit` 0.
+- **Visual local** (base temporal, datos inventados, Brave): ADMIN a 1440 y cliente a 375, en «Datos anteriores» y Castilla: logo embebido y cargado al abrir (600 px de ancho natural), un solo pedido del PNG por sesión, 0 errores de consola (12/12).

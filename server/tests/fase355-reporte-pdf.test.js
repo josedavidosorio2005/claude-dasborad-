@@ -97,9 +97,9 @@ test('HTML: logo, nombre de la campaña y sede, mes, indicadores, gráficas y ti
   const html = R.reportePdfPrintHtml({
     campana: 'Hospital La María', etiqueta: 'Datos anteriores (agosto, sin separar por sede)', mes: '2026-08', ind,
     graficas: { llamadas: 'data:image/png;base64,AAA', whatsapp: 'data:image/png;base64,BBB', total: 'data:image/png;base64,CCC' },
-    logoUrl: 'https://ejemplo.test/img/marca/logo-horizontal-color.png', generado: '17/11/2026',
+    logoUrl: 'data:image/png;base64,iVBORw0KGgo=', generado: '17/11/2026',
   });
-  assert.match(html, /<img src="https:\/\/ejemplo\.test\/img\/marca\/logo-horizontal-color\.png" alt="InConexion">/);
+  assert.match(html, /<img src="data:image\/png;base64,iVBORw0KGgo=" alt="InConexion">/);
   assert.match(html, /<h1>Hospital La María · Datos anteriores \(agosto, sin separar por sede\)<\/h1>/);
   assert.match(html, /Informe de Agosto 2026/);
   assert.match(html, /Tráfico de Llamadas/);
@@ -125,6 +125,25 @@ test('HTML: todo texto va escapado (nombre de campaña con etiquetas no se ejecu
   assert.doesNotMatch(html, /<img src=x/);
   assert.doesNotMatch(html, /x" onerror=/);
   assert.match(html, /&lt;script&gt;/);
+});
+
+// Fase 355b: en producción la ventana del PDF no cargaba el logo desde su URL (las gráficas,
+// embebidas, sí salían). El logo va embebido como PNG en base64 y una URL nunca se pinta.
+test('Fase 355b: el logo solo entra embebido (data:image/png;base64), nunca una URL', () => {
+  assert.equal(R.reportePdfLogoValido('data:image/png;base64,iVBORw0KGgoAAAANSUhEUg=='), true);
+  for (const malo of ['https://sinco.inconexion.com.co/img/marca/logo-horizontal-color.png', 'img/marca/logo-horizontal-color.png',
+    'data:image/svg+xml;base64,PHN2Zz4=', 'data:text/html;base64,PGI+', 'data:image/png;base64,AA" onerror="x', '', null, undefined]) {
+    assert.equal(R.reportePdfLogoValido(malo), false, String(malo));
+    const html = R.reportePdfPrintHtml({ campana: 'Hospital La María', etiqueta: 'Sede 33', mes: '2026-08', ind: {}, logoUrl: malo });
+    assert.doesNotMatch(html, /alt="InConexion"/, String(malo));
+  }
+  // La interfaz lee el PNG una vez, lo convierte a base64 antes de habilitar «Generar PDF» y lo pasa embebido.
+  const ui = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'js', 'reporte-pdf.js'), 'utf8');
+  assert.match(ui, /RP_LOGO_RUTA = 'img\/marca\/logo-horizontal-color\.png'/);
+  assert.match(ui, /readAsDataURL\(blob\)/);
+  assert.match(ui, /await _rpCargarLogo\(\);[\s\S]*sel\.disabled = false; btn\.disabled = false;/);
+  assert.match(ui, /logoUrl: _rpLogoDataUrl/);
+  assert.doesNotMatch(ui, /new URL\('img\/marca/);
 });
 
 test('la página cablea el botón, el diálogo, los scripts y la tecla Escape', () => {

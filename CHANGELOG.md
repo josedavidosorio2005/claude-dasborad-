@@ -7,6 +7,14 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.197.1 — Noviembre 2026
+
+**Fase 355b: el logo de InConexion ya sale en el PDF de Hospital La María.**
+
+- En producción el informe de «Exportar PDF» salía sin el logo (las cifras y las gráficas sí
+  estaban bien). Ahora el logo va dentro del documento, igual que las gráficas, así que siempre
+  aparece.
+
 ## v1.197.0 — Noviembre 2026
 
 **Fase 355: Hospital La María, «Exportar PDF» del mes.**
