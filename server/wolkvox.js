@@ -30,12 +30,32 @@ const REPORTES = { cdr_1: 'Detalle de las llamadas (CDR)' };
 const OPERACION_DE_CAMPANA = { 'MOBILIZE PRUEBAS API': 'MOBILIZE' };
 
 class WolkvoxError extends Error {
-  constructor(codigo, mensaje, httpStatus) {
+  constructor(codigo, mensaje, httpStatus, causa) {
     super(mensaje);
     this.name = 'WolkvoxError';
     this.codigo = codigo;
     if (httpStatus) this.httpStatus = httpStatus;
+    if (causa) this.causa = causa;
   }
+}
+
+// Fase W3 (17/11): el codigo de la causa de un error de red (UND_ERR_CONNECT_TIMEOUT, ENOTFOUND,
+// EAI_AGAIN, ECONNREFUSED, ECONNRESET, CERT_HAS_EXPIRED...). SOLO el codigo, y solo si tiene forma
+// de codigo (mayusculas, numeros y _): nunca el mensaje, que puede traer el servidor o la URL.
+const _CODIGO_RED = /^[A-Z][A-Z0-9_]{1,48}$/;
+function causaDeRed(e) {
+  const vistos = new Set();
+  const pila = [e];
+  while (pila.length) {
+    const x = pila.shift();
+    if (!x || typeof x !== 'object' || vistos.has(x)) continue;
+    vistos.add(x);
+    if (typeof x.code === 'string' && _CODIGO_RED.test(x.code)) return x.code;
+    if (x.cause) pila.push(x.cause);
+    if (Array.isArray(x.errors)) pila.push(...x.errors);
+  }
+  if (e && e.name === 'AbortError') return 'ABORTADO';
+  return 'DESCONOCIDO';
 }
 
 // ── Credenciales (nunca salen de este modulo) ──
@@ -189,10 +209,13 @@ async function consultarReporte(opts) {
         redirect: 'error',
       });
     } catch (e) {
-      // Nunca se reenvia e.message: puede traer la URL o el nombre del servidor.
-      _log(operacion, api, agotado ? 'tiempo agotado' : 'sin conexión', null, Date.now() - t0);
+      // Nunca se reenvia e.message: puede traer la URL o el nombre del servidor. Fase W3: si el
+      // log y el error llevan el codigo de la causa (solo el codigo, ver causaDeRed).
       if (e instanceof WolkvoxError) throw e;
-      throw agotado ? errAgotado() : new WolkvoxError('red', 'No se pudo conectar con Wolkvox');
+      const causa = causaDeRed(e);
+      _log(operacion, api, (agotado ? 'tiempo agotado' : 'sin conexión') + ' (' + causa + ')', null, Date.now() - t0);
+      if (agotado) { const ea = errAgotado(); ea.causa = causa; throw ea; }
+      throw new WolkvoxError('red', 'No se pudo conectar con Wolkvox (' + causa + ')', undefined, causa);
     }
     const st = resp.status;
     if (st === 401 || st === 403) {
@@ -243,6 +266,94 @@ function resumenSinValores(cuerpo) {
   return { code, msg, filas: data.length, campos: [...campos].sort() };
 }
 
+// ── Fase W3 (17/11): «Diagnóstico de red» ──
+// Desde el servidor, hacia <servidor>.wolkvox.com: resolver el nombre (DNS), abrir una conexion
+// TCP al 443 por IPv4 y por IPv6 (si hay direccion de esa familia) y hacer solo el saludo TLS.
+// NO se envia ninguna peticion HTTP, ni el token, ni se gasta una consulta del dia. Un control
+// (www.google.com:443 por IPv4) dice si el servidor sale a internet en general. Lo que vuelve:
+// solo si/no, tiempos, cuantas direcciones por familia y codigos; nunca el nombre del servidor
+// ni una IP.
+const DIAG_TIEMPO_MS = 5000;
+const DIAG_CONTROL = 'www.google.com';
+
+function _redPorDefecto(env) {
+  if ((env.NODE_ENV || 'development') === 'test') {
+    const no = () => Promise.reject(Object.assign(new Error('En pruebas no se usa la red'), { code: 'SIN_RED_EN_PRUEBAS' }));
+    return { lookup: no, tcp: no, tls: no };
+  }
+  const dns = require('dns');
+  const net = require('net');
+  const tls = require('tls');
+  return {
+    lookup: (host) => dns.promises.lookup(host, { all: true, verbatim: true }),
+    // Abre y cierra: no escribe nada en el socket.
+    tcp: (address, family, ms) => new Promise((ok, mal) => {
+      const s = net.connect({ host: address, port: 443, family });
+      const t = setTimeout(() => { s.destroy(); mal(Object.assign(new Error('timeout'), { code: 'TIEMPO_AGOTADO' })); }, ms);
+      s.once('connect', () => { clearTimeout(t); s.destroy(); ok(); });
+      s.once('error', (e) => { clearTimeout(t); s.destroy(); mal(e); });
+    }),
+    // Solo el saludo TLS (ClientHello/ServerHello y el certificado); nada de HTTP.
+    tls: (address, family, servername, ms) => new Promise((ok, mal) => {
+      const s = tls.connect({ host: address, port: 443, family, servername, rejectUnauthorized: true });
+      const t = setTimeout(() => { s.destroy(); mal(Object.assign(new Error('timeout'), { code: 'TIEMPO_AGOTADO' })); }, ms);
+      s.once('secureConnect', () => { clearTimeout(t); const p = s.getProtocol(); s.destroy(); ok({ protocolo: p }); });
+      s.once('error', (e) => { clearTimeout(t); s.destroy(); mal(e); });
+    }),
+  };
+}
+
+function _conLimite(promesa, ms) {
+  let t;
+  return Promise.race([
+    promesa,
+    new Promise((_, mal) => { t = setTimeout(() => mal(Object.assign(new Error('timeout'), { code: 'TIEMPO_AGOTADO' })), ms); }),
+  ]).finally(() => clearTimeout(t));
+}
+
+async function _medir(fn) {
+  const t0 = Date.now();
+  try { const r = await fn(); return Object.assign({ ok: true, ms: Date.now() - t0 }, r || {}); }
+  catch (e) { return { ok: false, ms: Date.now() - t0, codigo: causaDeRed(e) }; }
+}
+
+async function _probarHost(red, host, familias, ms) {
+  const out = { dns: null, ipv4: null, ipv6: null };
+  let direcciones = [];
+  out.dns = await _medir(async () => {
+    direcciones = (await _conLimite(red.lookup(host), ms)) || [];
+    return { ipv4: direcciones.filter((d) => d.family === 4).length, ipv6: direcciones.filter((d) => d.family === 6).length };
+  });
+  for (const fam of familias) {
+    const clave = fam === 4 ? 'ipv4' : 'ipv6';
+    const d = direcciones.find((x) => x.family === fam);
+    if (!d) { out[clave] = { omitido: out.dns.ok ? 'sin dirección' : 'sin DNS' }; continue; }
+    const tcp = await _medir(() => red.tcp(d.address, fam, ms));
+    const tlsR = tcp.ok ? await _medir(() => red.tls(d.address, fam, host, ms)) : null;
+    out[clave] = { tcp, tls: tlsR };
+  }
+  return out;
+}
+
+async function diagnosticarRed(opts) {
+  const env = opts.env || process.env;
+  const cred = opts.credenciales || credenciales(opts.operacion, env);
+  if (!cred) throw new WolkvoxError('sin_configurar', 'Falta configurar el token o el servidor de Wolkvox de esta operación');
+  const red = opts.red || _redPorDefecto(env);
+  const ms = opts.tiempoMs || DIAG_TIEMPO_MS;
+  const wolkvox = await _probarHost(red, cred.servidor + '.wolkvox.com', [4, 6], ms);
+  const control = await _probarHost(red, DIAG_CONTROL, [4], ms);
+  return { wolkvox, control: { dns: control.dns, ipv4: control.ipv4 }, tiempoMaximoMs: ms };
+}
+
+// Resumen de una linea para el log/Historial: solo codigos y si/no.
+function resumenDiagnostico(d) {
+  const p = (x) => (!x ? '-' : x.omitido ? x.omitido : (x.tcp.ok ? 'tcp ok' : 'tcp ' + x.tcp.codigo) + (x.tls ? (x.tls.ok ? ', tls ok' : ', tls ' + x.tls.codigo) : ''));
+  const w = d.wolkvox;
+  return 'dns ' + (w.dns.ok ? 'ok (' + w.dns.ipv4 + ' v4, ' + w.dns.ipv6 + ' v6)' : w.dns.codigo) + ' · ipv4 ' + p(w.ipv4) + ' · ipv6 ' + p(w.ipv6) +
+    ' · control ' + (d.control.dns.ok ? p(d.control.ipv4) : 'dns ' + d.control.dns.codigo);
+}
+
 function operacionDeCampana(campana) {
   return Object.prototype.hasOwnProperty.call(OPERACION_DE_CAMPANA, campana) ? OPERACION_DE_CAMPANA[campana] : null;
 }
@@ -266,5 +377,6 @@ module.exports = {
   consultarReporte,
   resumenSinValores,
   operacionDeCampana,
+  causaDeRed, diagnosticarRed, resumenDiagnostico, DIAG_TIEMPO_MS, // Fase W3
   _reiniciarArchivoLocal: () => { _archivoLocalLeido = false; }, // solo pruebas
 };

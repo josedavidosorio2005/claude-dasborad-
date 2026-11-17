@@ -58,6 +58,7 @@ function wvPruebaCerrar() {
 
 function _wvLimpiarResultado() {
   var r = _wvEl('wv-resultado'); if (r) r.classList.add('hidden');
+  var rd = _wvEl('wv-red'); if (rd) rd.classList.add('hidden'); // Fase W3
   var e = _wvEl('wv-error'); if (e) { e.classList.add('hidden'); e.textContent = ''; }
   var c = _wvEl('wv-campos'); if (c) c.textContent = '';
 }
@@ -104,13 +105,57 @@ async function wvPruebaProbar() {
   }
 }
 
+// ── Fase W3: «Diagnóstico de red» ──
+// Filas [titulo, texto] del resultado. Puro (se prueba en Node). Solo si/no, tiempos y codigos.
+function wvRedFilas(d) {
+  var paso = function (x) {
+    if (!x) return 'No se probó';
+    return x.ok ? 'Sí (' + x.ms + ' ms' + (x.protocolo ? ', ' + x.protocolo : '') + ')' : 'No (' + (x.codigo || 'DESCONOCIDO') + ', ' + x.ms + ' ms)';
+  };
+  var familia = function (f, nombre, filas) {
+    if (!f || f.omitido) { filas.push(['Conexión ' + nombre + ' (puerto 443)', 'No se probó: ' + ((f && f.omitido) || 'sin datos')]); return; }
+    filas.push(['Conexión ' + nombre + ' (puerto 443)', paso(f.tcp)]);
+    filas.push(['Conexión segura ' + nombre + ' (TLS)', f.tls ? paso(f.tls) : 'No se probó: no abrió la conexión']);
+  };
+  var filas = [];
+  var w = (d && d.wolkvox) || {};
+  var dns = w.dns || {};
+  filas.push(['Nombre del servidor (DNS)', dns.ok ? 'Sí: ' + dns.ipv4 + ' IPv4 y ' + dns.ipv6 + ' IPv6 (' + dns.ms + ' ms)' : 'No (' + (dns.codigo || 'DESCONOCIDO') + ', ' + (dns.ms || 0) + ' ms)']);
+  familia(w.ipv4, 'IPv4', filas);
+  familia(w.ipv6, 'IPv6', filas);
+  var c = (d && d.control) || {};
+  filas.push(['Control: salida a internet (IPv4)', c.dns && c.dns.ok ? (c.ipv4 && c.ipv4.tcp ? paso(c.ipv4.tcp) : 'No se probó') : 'No (DNS ' + ((c.dns && c.dns.codigo) || 'DESCONOCIDO') + ')']);
+  return filas;
+}
+
+async function wvDiagnosticoRed() {
+  var errPrevio = _wvEl('wv-error'); if (errPrevio) { errPrevio.classList.add('hidden'); errPrevio.textContent = ''; }
+  try {
+    var d = await withButtonLoading(_wvEl('wv-red-btn'), 'Diagnosticando…', function () {
+      return apiRequest('POST', '/wolkvox/diagnostico-red', { campana: _wvCampana });
+    });
+    var dl = _wvEl('wv-red-dl');
+    dl.textContent = '';
+    wvRedFilas(d).forEach(function (f) {
+      var dt = document.createElement('dt'); dt.textContent = f[0];
+      var dd = document.createElement('dd'); dd.textContent = f[1];
+      dl.appendChild(dt); dl.appendChild(dd);
+    });
+    _wvEl('wv-red').classList.remove('hidden');
+  } catch (err) {
+    _wvError(err.message);
+  }
+}
+
 // Esc, Tab dentro de la ventana, fondo inerte y foco de vuelta: motion-helpers.js
 // (MOTION_DIALOGOS_SIMPLES). Aqui solo el clic en el fondo, como los demas dialogos simples.
-document.addEventListener('click', function (e) {
-  var m = document.getElementById('modal-wolkvox');
-  if (m && e.target === m) wvPruebaCerrar();
-});
+if (typeof document !== 'undefined') { // Fase W3: el archivo también se carga en Node (pruebas de wvRedFilas)
+  document.addEventListener('click', function (e) {
+    var m = document.getElementById('modal-wolkvox');
+    if (m && e.target === m) wvPruebaCerrar();
+  });
+}
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { wvPruebaVisible: wvPruebaVisible };
+  module.exports = { wvPruebaVisible: wvPruebaVisible, wvRedFilas: wvRedFilas };
 }
