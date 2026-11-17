@@ -11,19 +11,21 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 
 - **Lunes 16/11: la verificación de Wolkvox (Fase W2) en producción queda para el lunes** (13/11/2026).
   En local ya funciona: con `server/data/wolkvox.local.env` (ignorado por git), «Probar conexión» en la réplica
-  «MOBILIZE PRUEBAS API» dio código 200, «1 records were found», 1 fila y 20 campos de `cdr_1`. En producción
-  el usuario creó en la consola `/inconexion/prod/WOLKVOX_MOBILIZE_TOKEN` y `/inconexion/prod/WOLKVOX_MOBILIZE_SERVIDOR`
-  (SecureString, us-east-1) y se volvió a correr el último deploy en verde. Pero `/wolkvox/estado` sigue
-  diciendo **no / no / no**: no encuentra ni el token ni el servidor, así que no se hizo la prueba en producción.
-  Lo que hay que revisar en la consola (Systems Manager › Parameter Store, us-east-1):
-  1. Que los nombres sean **exactamente** esos dos, con la barra inicial, en mayúsculas, sin espacios al
-     final y en la misma carpeta que `/inconexion/prod/JWT_SECRET`, no en una subcarpeta.
-  2. Que el tipo sea SecureString con la llave **alias/aws/ssm**, la misma de `JWT_SECRET`. Con otra llave,
-     el rol de la instancia no puede descifrarlos.
-  3. Con eso corregido, se vuelve a correr el último deploy, se lee `/wolkvox/estado` (tres «sí») y se hace una
+  «MOBILIZE PRUEBAS API» dio código 200, «1 records were found», 1 fila y 20 campos de `cdr_1`.
+  **Corrección (17/11/2026): los parámetros SSM de Wolkvox todavía NO están creados en producción.** Lo
+  que se anotó antes (que ya existían en la consola) no era cierto; por eso `/wolkvox/estado` dice
+  **no / no / no**: no hay token ni servidor que leer, y no se hizo la prueba en producción.
+  Lo que falta (lo hace el usuario en la consola, Systems Manager › Parameter Store, us-east-1):
+  1. Crear `/inconexion/prod/WOLKVOX_MOBILIZE_TOKEN` y `/inconexion/prod/WOLKVOX_MOBILIZE_SERVIDOR` con esos
+     nombres **exactos** (barra inicial, mayúsculas, sin espacios al final), en la misma carpeta que
+     `/inconexion/prod/JWT_SECRET`, no en una subcarpeta.
+  2. Tipo SecureString con la llave **alias/aws/ssm**, la misma de `JWT_SECRET`. Con otra llave, el rol
+     de la instancia no puede descifrarlos.
+  3. Con eso creado, se vuelve a correr el último deploy, se lee `/wolkvox/estado` (tres «sí») y se hace una
      sola «Probar conexión» en la réplica.
-  Si los nombres están bien, se puede mirar con `verificar-logs-produccion.yml` si el arranque cargó
-  `WOLKVOX_*` (el registro de arranque muestra solo nombres, nunca valores). Ese paso necesita el OK del usuario.
+  Si después de crearlos sigue en «no», se puede mirar con `verificar-logs-produccion.yml` si el arranque
+  cargó `WOLKVOX_*` (el registro de arranque muestra solo nombres, nunca valores). Ese paso necesita el OK
+  del usuario.
   El 13/11 el Mobilize real no cambió (78 filas de nivel de servicio antes y después), se envió 0 escrituras
   y se cerró la sesión.
 - **Lunes 16/11: verificar en producción la Fase 354b** (solo lectura; tú inicias sesión como
