@@ -16,8 +16,9 @@
 'use strict';
 
 (function () {
-  var SEL_TABLIST = '.aurora-tabs, .gd-subtabs';
-  var SEL_TAB = '.atab, .gd-subtab-btn';
+  // Fase 356: + las pestañas de «Sugerencias / Tickets» (clase propia, mismo patrón).
+  var SEL_TABLIST = '.aurora-tabs, .gd-subtabs, .tk-tabs';
+  var SEL_TAB = '.atab, .gd-subtab-btn, .tk-tab-btn';
   var _idSeq = 0;
 
   function esActiva(btn) {

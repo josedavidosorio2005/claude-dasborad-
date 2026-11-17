@@ -55,6 +55,7 @@ async function _entrarTrasLogin(data) {
     await loadDashboardClientes(); await loadData(); await loadHist(); await loadSeedDemoEstado();
     if(typeof cargarAlertasSeguridad==='function') await cargarAlertasSeguridad();
     enterAdminPanel();
+    if (typeof ticketsAlEntrar === 'function') ticketsAlEntrar(); // Fase 356
     return;
   }
 
@@ -84,6 +85,7 @@ async function _entrarTrasLogin(data) {
   else if (currentUser.rol==='ASESOR') { enterAsesorPage(); }
   else if (currentUser.rol==='SUPERVISOR') { enterSupervisorPage(); }
   else { enterUserDashboard(); }
+  if (typeof ticketsAlEntrar === 'function') ticketsAlEntrar(); // Fase 356
 }
 document.getElementById('password').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();});
 
@@ -290,6 +292,7 @@ function doLogout(){
   try{ if(typeof closeCentroCargas === 'function') closeCentroCargas(); }catch(e){}
   if(typeof gdReiniciarFiltros === 'function') gdReiniciarFiltros();
   if(typeof calSondeoReiniciar === 'function') calSondeoReiniciar(); // Fase 236
+  if(typeof ticketsAlSalir === 'function') ticketsAlSalir(); // Fase 356
   currentUser=null; authToken=null; users=[]; historial=[];
   seedDemoActivo=false; renderSeedDemoBanner();
   hideAllPages();

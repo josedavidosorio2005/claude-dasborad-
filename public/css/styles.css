@@ -2550,6 +2550,63 @@ div.ca-bar-fila{cursor:default}
 .wv-campos{display:flex;flex-wrap:wrap;gap:6px;list-style:none;margin:0;padding:0;font-size:var(--fs-small)}
 .wv-campos .wv-campo{border:1px solid var(--c-border);border-radius:var(--r-pill);padding:3px 10px;color:var(--c-text);font-family:ui-monospace,Consolas,monospace}
 @media (max-width:480px){.wv-estado{grid-template-columns:minmax(0,1fr)}.wv-estado dd{margin-bottom:6px}}
+/* Fase 356: «Sugerencias / Tickets». */
+.modal-tickets{position:relative;width:760px}
+.modal-tickets .tk-cerrar{position:absolute;top:10px;right:10px;width:44px;height:44px;border:0;border-radius:var(--r-md);background:transparent;color:var(--c-text-2);font-size:var(--fs-h2);line-height:1;cursor:pointer}
+.modal-tickets .tk-cerrar:hover{background:var(--c-border-soft);color:var(--c-text)}
+.modal-tickets h3{margin-right:44px}
+/* Clase propia (no .gd-subtab-btn): los scripts de pantallas del tablero recorren todos los
+   .gd-subtab-btn de la página y tropezaban con estas pestañas ocultas. Mismo aspecto. */
+.tk-tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.tk-tab-btn{display:inline-flex;align-items:center;min-height:44px;padding:6px 14px;font-size:var(--fs-note);font-weight:600;color:var(--c-text-2);border:1px solid var(--c-border);border-radius:999px;background:var(--c-surface);cursor:pointer;white-space:nowrap}
+.tk-tab-btn:hover{color:var(--c-primary);border-color:var(--c-primary-mid)}
+.tk-tab-btn.on{color:var(--c-on-brand);background:var(--c-brand);border-color:var(--c-brand)}
+.tk-tab-btn.hidden{display:none}
+.tk-fila{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+.modal-tickets .ig textarea{width:100%;padding:11px 14px;border:1.5px solid var(--c-border-control);border-radius:var(--r-sm);font:inherit;font-size:var(--fs-body);color:var(--c-text);background:var(--c-surface-subtle);resize:vertical}
+.modal-tickets .ig textarea:focus{border-color:var(--c-primary-mid);background:var(--c-surface)}
+.modal-tickets .ig select{min-height:44px}
+.tk-ayuda{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:6px;font-size:var(--fs-small)}
+.tk-aviso{color:var(--c-warning-text);font-weight:600}
+.tk-cont{color:var(--c-text-muted);margin-left:auto}
+.tk-filtros{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0 12px}
+.tk-lista{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.tk-item{display:grid;gap:4px;width:100%;min-height:44px;text-align:left;padding:10px 12px;border:1px solid var(--c-border);border-radius:var(--r-md);background:var(--c-surface);color:var(--c-text);font:inherit;cursor:pointer}
+.tk-item:hover{border-color:var(--c-primary-mid)}
+.tk-item-cab{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;font-weight:700;color:var(--c-primary)}
+.tk-num{color:var(--c-text-muted)}
+.tk-resumen{color:var(--c-text);overflow-wrap:anywhere}
+.tk-meta{font-size:var(--fs-small);color:var(--c-text-muted);margin:0}
+.tk-estado{margin-left:auto;padding:2px 10px;border-radius:var(--r-pill);font-size:var(--fs-small);font-weight:700}
+.tk-estado-nuevo{background:var(--c-info-bg);color:var(--c-text-link)}
+.tk-estado-revision{background:var(--c-warning-bg);color:var(--c-warning-text)}
+.tk-estado-resuelto{background:var(--c-success-bg);color:var(--c-success-text)}
+.tk-vacio{color:var(--c-text-muted);text-align:center;padding:18px 8px;margin:0}
+.tk-volver{margin-bottom:12px;min-height:44px}
+.tk-det-titulo{color:var(--c-primary);font-size:var(--fs-body-lg);margin:0 0 4px}
+.tk-texto{white-space:pre-wrap;overflow-wrap:anywhere;margin:6px 0 0;color:var(--c-text)}
+.tk-det-desc{padding:12px 14px;border-radius:var(--r-md);background:var(--c-surface-subtle);border:1px solid var(--c-border-soft)}
+.tk-gestion{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-top:14px}
+.tk-gestion .ig{margin-bottom:0;min-width:200px}
+.tk-gestion .btn-primary{min-height:44px}
+.tk-sub{color:var(--c-primary);font-size:var(--fs-body);margin:18px 0 8px}
+.tk-hilo{list-style:none;margin:0 0 14px;padding:0;display:grid;gap:8px}
+.tk-msg{padding:10px 12px;border-radius:var(--r-md);border:1px solid var(--c-border-soft);background:var(--c-surface)}
+.tk-msg-mio{background:var(--c-info-bg)}
+.modal-tickets .modal-btns{flex-wrap:wrap;align-items:center}
+.modal-tickets .modal-btns .btn-primary,.modal-tickets .modal-btns .btn-cancel{min-height:44px}
+.tk-borrar-wrap{margin-right:auto;display:flex;align-items:center}
+.tk-borrar{color:var(--c-danger-text)}
+.tk-confirmar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;color:var(--c-danger-text);font-weight:600}
+.tk-confirmar.hidden{display:none}
+.btn-danger{background:linear-gradient(90deg,var(--c-danger-dark),var(--c-danger));color:var(--c-on-brand);border:none;border-radius:var(--r-sm);padding:8px 16px;min-height:44px;font-size:var(--fs-small);font-weight:600;cursor:pointer}
+.tk-badge{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;margin-left:6px;padding:0 6px;border-radius:var(--r-pill);background:var(--c-danger-bg);color:var(--c-danger-text);border:1px solid var(--c-danger-text);font-size:var(--fs-small);font-weight:700;line-height:1}
+.tk-badge.hidden{display:none}
+.navbar-profile-toggle{position:relative}
+.tk-badge-punto{position:absolute;top:2px;right:2px;min-width:12px;width:12px;height:12px;padding:0;margin:0;background:var(--c-danger-text);border:2px solid var(--c-on-brand)}
+@media (max-width:600px){.tk-fila,.tk-filtros{grid-template-columns:minmax(0,1fr)}.modal-tickets{padding:22px 16px}}
+/* Estas cajas usan display:flex/grid después de .hidden: sin esto, .hidden no las ocultaba. */
+.tk-gestion.hidden,.tk-borrar-wrap.hidden,.tk-filtros.hidden,.tk-gestion .hidden{display:none}
 /* Fase 355: «Exportar PDF» del mes (Hospital La María). */
 .modal-reporte-pdf{position:relative}
 .modal-reporte-pdf .rp-cerrar{position:absolute;top:10px;right:10px;width:44px;height:44px;border:0;border-radius:var(--r-md);background:transparent;color:var(--c-text-2);font-size:var(--fs-h2);line-height:1;cursor:pointer}

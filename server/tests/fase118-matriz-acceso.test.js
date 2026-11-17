@@ -177,6 +177,11 @@ declarar(['PUT /monitoreos/:id/asesor'], 'admin');
 declarar(['POST /monitoreos/revisar-asesores'], 'calidadEval'); // Fase 353: vista previa de nombres sin usuario (solo lee)
 declarar(['GET /calidad/enlace', 'POST /calidad/enlace', 'POST /calidad/enlace/revertir'], 'admin'); // Fase 353
 declarar(['GET /wolkvox/estado', 'POST /wolkvox/probar'], 'admin'); // Fase W2: solo admin y solo la replica interna (404 para las demas)
+// Fase 356: «Sugerencias / Tickets». Crear, listar y ver: cualquier autenticado, auto-scoped por
+// autor (ajeno: 404). Contador y estado: ADMIN o REPORTES; borrar: solo ADMIN. Esas tres (y que
+// un ajeno no vea ni conteste) se prueban rol por rol en fase356-tickets.test.js.
+declarar(['GET /tickets/campanas', 'GET /tickets', 'GET /tickets/:id', 'POST /tickets', 'POST /tickets/:id/respuestas'], 'open');
+declarar(['GET /tickets/contador', 'PUT /tickets/:id/estado', 'DELETE /tickets/:id'], 'skip');
 declarar(['PUT /monitoreos/:id/fecha'], 'calidadManage'); // Fase 337: quien lo califico, Reportes o admin (fase337-fecha-del-monitoreo.test.js) // Fase 333: corregir solo el asesor "Invalid Date" (fase333-sin-asesor.test.js)
 declarar(['GET /calidad/codificaciones'], 'scopedRead');
 declarar(['POST /calidad/codificaciones/bulk', 'PUT /calidad/codificaciones/:id'], 'cargaCampana'); // Fase 299
