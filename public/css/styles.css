@@ -2555,8 +2555,13 @@ div.ca-bar-fila{cursor:default}
 .modal-tickets .tk-cerrar{position:absolute;top:10px;right:10px;width:44px;height:44px;border:0;border-radius:var(--r-md);background:transparent;color:var(--c-text-2);font-size:var(--fs-h2);line-height:1;cursor:pointer}
 .modal-tickets .tk-cerrar:hover{background:var(--c-border-soft);color:var(--c-text)}
 .modal-tickets h3{margin-right:44px}
-.tk-tabs{margin-bottom:14px}
-.tk-tabs .gd-subtab-btn{min-height:44px}
+/* Clase propia (no .gd-subtab-btn): los scripts de pantallas del tablero recorren todos los
+   .gd-subtab-btn de la página y tropezaban con estas pestañas ocultas. Mismo aspecto. */
+.tk-tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.tk-tab-btn{display:inline-flex;align-items:center;min-height:44px;padding:6px 14px;font-size:var(--fs-note);font-weight:600;color:var(--c-text-2);border:1px solid var(--c-border);border-radius:999px;background:var(--c-surface);cursor:pointer;white-space:nowrap}
+.tk-tab-btn:hover{color:var(--c-primary);border-color:var(--c-primary-mid)}
+.tk-tab-btn.on{color:var(--c-on-brand);background:var(--c-brand);border-color:var(--c-brand)}
+.tk-tab-btn.hidden{display:none}
 .tk-fila{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
 .modal-tickets .ig textarea{width:100%;padding:11px 14px;border:1.5px solid var(--c-border-control);border-radius:var(--r-sm);font:inherit;font-size:var(--fs-body);color:var(--c-text);background:var(--c-surface-subtle);resize:vertical}
 .modal-tickets .ig textarea:focus{border-color:var(--c-primary-mid);background:var(--c-surface)}

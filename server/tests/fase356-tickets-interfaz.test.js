@@ -83,6 +83,11 @@ test('página: botón en los 4 menús de cuenta, contador, diálogo, scripts y E
   assert.match(INDEX, /<textarea id="tk-desc" rows="6" maxlength="2000" required/);
   assert.match(INDEX, /<textarea id="tk-resp" rows="3" maxlength="2000"/);
   assert.match(INDEX, /data-tk-tab="todos"[^>]*>Todos/);
+  // Clase propia: el CI de pantallas recorre todos los .gd-subtab-btn de la página.
+  const dialogo = INDEX.slice(INDEX.indexOf('id="modal-tickets"'), INDEX.indexOf('<!-- Fase 355: «Exportar PDF»'));
+  assert.doesNotMatch(dialogo, /gd-subtab/);
+  assert.equal((dialogo.match(/class="tk-tab-btn[^"]*" data-tk-tab=/g) || []).length, 3);
+  assert.match(fs.readFileSync(path.join(PUB, 'js', 'a11y-teclado.js'), 'utf8'), /SEL_TAB = '[^']*\.tk-tab-btn'/);
   assert.doesNotMatch(INDEX.slice(INDEX.indexOf('id="modal-tickets"'), INDEX.indexOf('<!-- Fase 355: «Exportar PDF»')), /type="file"/);
   const iL = INDEX.indexOf('js/tickets-logic.js'), iU = INDEX.indexOf('js/tickets.js');
   assert.ok(iL > 0 && iU > iL);
