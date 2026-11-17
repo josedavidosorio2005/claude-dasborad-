@@ -556,6 +556,57 @@ router.get(
   })
 );
 
+// ── Fase 357 (C, pedido de Edwin 17/11): pestaña «Vistos» ──
+const vistos = require('../../public/js/vistos-logic.js');
+
+// La asesora abrió su Calidad en el Portal Asesor: se guarda la hora. Solo el rol ASESOR (para
+// los demás no hace nada). Con «ver como» no llega aquí (el servidor bloquea lo que no es GET).
+router.post(
+  '/monitoreos/mios/abierto',
+  requireActor,
+  wrap((req, res) => {
+    if (req.actor.rol !== 'ASESOR' || !req.actor.id) return res.json({ ok: true, registrado: false });
+    db.prepare('UPDATE users SET calidad_abierta_at = ? WHERE id = ?').run(new Date().toISOString(), req.actor.id);
+    res.json({ ok: true, registrado: true });
+  })
+);
+
+// Quién ve «Vistos»: ADMIN, y REPORTES o SUPERVISOR con acceso a la campaña.
+function puedeVerVistos(actor, campana) {
+  if (isFullAdmin(actor)) return true;
+  return !!actor && (actor.rol === 'REPORTES' || actor.rol === 'SUPERVISOR') && campaignAccess(actor, campana);
+}
+
+router.get(
+  '/calidad/vistos',
+  requireActor,
+  wrap((req, res) => {
+    const campana = typeof req.query.campana === 'string' ? req.query.campana.trim() : '';
+    if (!campana || campana.length > 120) return res.status(400).json({ error: 'Elige la campaña' });
+    if (!puedeVerVistos(req.actor, campana)) return res.status(403).json({ error: 'Sin acceso a «Vistos» de esta campaña' });
+    const desde = alertaAsesorDesdeId();
+    const asesores = db.prepare("SELECT id, nombre, calidad_abierta_at FROM users WHERE rol = 'ASESOR' AND active = 1 AND asesorCampana = ?").all(campana);
+    // Mismo criterio de «es suyo» que /monitoreos/mios (por id, o por nombre exacto si no tiene id).
+    const cuenta = db.prepare(
+      `SELECT COUNT(*) AS total,
+              SUM(CASE WHEN vistoPorAsesorAt IS NULL AND id > @desde THEN 1 ELSE 0 END) AS sinVer
+         FROM monitoreos
+        WHERE (asesorUserId = @id) OR (asesorUserId IS NULL AND campana = @campana AND nombre_clave(asesor) = @nombre)`
+    );
+    const ahora = new Date();
+    const filas = asesores.map((a) => {
+      const c = cuenta.get({ id: a.id, campana, nombre: enlace.claveNombre(a.nombre), desde });
+      const total = c.total || 0, sinVer = c.sinVer || 0;
+      return {
+        id: a.id, nombre: a.nombre, ultimaApertura: a.calidad_abierta_at || null,
+        dias: vistos.vistosDiasDesde(a.calidad_abierta_at, ahora),
+        total, sinVer, semaforo: vistos.vistosSemaforo(total, sinVer, a.calidad_abierta_at, ahora),
+      };
+    });
+    res.json({ campana, asesores: vistos.vistosOrdenar(filas) });
+  })
+);
+
 // Marca un monitoreo como visto por el asesor dueño (se llama al abrir el
 // detalle en "Mis Resultados", Fase 95 tema C). Idempotente: si ya estaba
 // marcado, no pisa la fecha original. Solo el asesor dueño puede marcarlo

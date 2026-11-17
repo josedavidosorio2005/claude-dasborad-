@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.202.0` (ver `server/package.json`, expuesta en
+- **Versión**: `1.203.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -565,6 +565,7 @@ mismo orden):
 - Fase 357 (A, producción) — 2 cuentas ADMIN → SISTEMAS con solo Inventario; 1 cuenta SUPERVISOR → ADMIN, con respaldo de sus permisos de supervisor en la bitácora (solo docs, 2026-11-17)
 - Fase 357 (D) — «Ver como este usuario»: solo ADMIN, nunca otro ADMIN, token de solo lectura de 30 min (el servidor rechaza todo lo que no sea GET), inicio y fin en el Historial (v1.201.0, 2026-11-17)
 - Fase 357 (B) — menú único de tarjetas para los internos (ADMIN, SUPERVISOR, GERENCIA, REPORTES, CALIDAD) con «Administración» (ADMIN y Auxiliar Admin) y «Mi portal» (SUPERVISOR); «Inicio» en el panel y el portal (v1.202.0, 2026-11-17)
+- Fase 357 (C) — pestaña «Vistos» en Calidad (ADMIN, REPORTES y SUPERVISOR de la campaña): última apertura de la Calidad de cada asesora, monitoreos sin ver y semáforo verde/amarillo/rojo/gris (v1.203.0, 2026-11-17)
 - Fase 309 — Revisión de seguridad: el cliente ya no recibe el nombre de los líderes en `GET /metas`; resto en `docs/revision-seguridad-2026-11-09.md` (v1.154.1, 2026-11-10)
 - Fase 308 — Revisión antes de la reunión con clientes y pendientes del supervisor (solo docs, 2026-11-10)
 - Fase 307 — Calidad para que los líderes evalúen: ORLANT conserva su Calidad y suma «Resultado de los monitoreos» al final; Aurora ya lo tenía (se muestra con el primer monitoreo) (v1.154.0, 2026-11-10)

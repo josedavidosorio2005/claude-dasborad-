@@ -1104,6 +1104,7 @@
       <button class="atab" data-ctab="detalle" onclick="switchCalTab('detalle')">Detalle por mes</button>
       <button class="atab" data-ctab="diccionario" onclick="switchCalTab('diccionario')">Diccionario</button>
       <button class="atab" data-ctab="reportes" onclick="switchCalTab('reportes')">Reportes</button>
+      <button class="atab" data-ctab="vistos" id="ctab-btn-vistos" onclick="switchCalTab('vistos')" style="display:none">Vistos</button><!-- Fase 357 (C): ADMIN, Reportes y supervisor -->
       <button class="atab" data-ctab="config" id="ctab-btn-config" onclick="switchCalTab('config')">Configuración</button>
       <button class="atab" data-ctab="plantillas" id="ctab-btn-plantillas" onclick="switchCalTab('plantillas')" style="display:none">Plantillas</button>
     </div>
@@ -1179,6 +1180,19 @@
 
     <div id="cpanel-detalle" class="atab-panel">
       <div class="aurora-card"><div class="aurora-card-title">Detalle por mes</div><div id="ca-detalle"></div></div>
+    </div>
+
+    <!-- Fase 357 (C): «Vistos» — cuándo abrió cada asesora su Calidad y cuántos monitoreos no ha visto. -->
+    <div id="cpanel-vistos" class="atab-panel">
+      <div class="aurora-card">
+        <div class="aurora-card-title">Vistos por las asesoras</div>
+        <p class="vis-ayuda">Cuándo abrió cada asesora su Calidad en el Portal Asesor y cuántos monitoreos tiene sin ver.
+          <span class="vis-pill vis-verde">Al día</span> 0 sin ver ·
+          <span class="vis-pill vis-amarillo">Pendiente</span> 1 o 2 sin ver y entró hace menos de 7 días ·
+          <span class="vis-pill vis-rojo">Atrasado</span> 3 o más sin ver, o no entra hace 7 días o más ·
+          <span class="vis-pill vis-gris">Sin monitoreos</span></p>
+        <div id="cal-vistos" aria-live="polite"></div>
+      </div>
     </div>
 
     <div id="cpanel-diccionario" class="atab-panel">
@@ -2176,6 +2190,8 @@
 <script src="js/tickets-logic.js"></script>
 <script src="js/tickets.js"></script>
 <script src="js/ver-como.js"></script>
+<script src="js/vistos-logic.js"></script>
+<script src="js/vistos.js"></script>
 <script src="js/dashboard-generic.js"></script>
 <script src="js/sura-televentas-app.js"></script>
 <script src="js/sura-televentas-paleta-logic.js"></script>

@@ -2550,6 +2550,20 @@ div.ca-bar-fila{cursor:default}
 .wv-campos{display:flex;flex-wrap:wrap;gap:6px;list-style:none;margin:0;padding:0;font-size:var(--fs-small)}
 .wv-campos .wv-campo{border:1px solid var(--c-border);border-radius:var(--r-pill);padding:3px 10px;color:var(--c-text);font-family:ui-monospace,Consolas,monospace}
 @media (max-width:480px){.wv-estado{grid-template-columns:minmax(0,1fr)}.wv-estado dd{margin-bottom:6px}}
+/* Fase 357 (C): pestaña «Vistos» de Calidad. */
+.vis-ayuda{font-size:var(--fs-small);color:var(--c-text-2);line-height:1.8;margin:0 0 12px}
+.vis-resumen{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
+.vis-pill{display:inline-block;padding:2px 10px;border-radius:var(--r-pill);font-size:var(--fs-small);font-weight:700;white-space:nowrap}
+.vis-verde{background:var(--c-success-bg);color:var(--c-success-text)}
+.vis-amarillo{background:var(--c-warning-bg);color:var(--c-warning-text)}
+.vis-rojo{background:var(--c-danger-bg);color:var(--c-danger-text)}
+.vis-gris{background:var(--c-border-soft);color:var(--c-text-2)}
+.vis-tabla{width:100%;border-collapse:collapse;font-size:var(--fs-body)}
+.vis-tabla th,.vis-tabla td{padding:8px 10px;border-bottom:1px solid var(--c-border-soft);text-align:left;vertical-align:middle}
+.vis-tabla th{color:var(--c-text-2);font-size:var(--fs-small)}
+.vis-num{text-align:right;font-variant-numeric:tabular-nums}
+.vis-dias{color:var(--c-text-muted);font-size:var(--fs-small)}
+.vis-vacio{color:var(--c-text-muted);text-align:center;padding:16px 8px;margin:0}
 /* Fase 357 (D): franja de «Ver como este usuario» (solo lectura), fija abajo y por encima de todo. */
 .ver-como-banner{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:var(--z-toast);display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:center;max-width:calc(100vw - 32px);padding:10px 14px;border-radius:var(--r-md);background:var(--c-warning-bg);color:var(--c-warning-text);border:2px solid var(--c-warning-text);font-weight:700;font-size:var(--fs-body)}
 .ver-como-banner.hidden{display:none}

@@ -7,6 +7,19 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.203.0 — Noviembre 2026
+
+**Fase 357 (C): pestaña «Vistos» en Calidad.**
+
+- En el Módulo de Calidad hay una pestaña nueva, «Vistos», para el administrador, Reportes y el
+  supervisor; el supervisor solo ve las campañas que supervisa. Por cada asesora de la campaña
+  muestra cuándo abrió por última vez su Calidad en el Portal Asesor y cuántos monitoreos tiene
+  sin ver.
+- Semáforo: verde «Al día» (nada sin ver); amarillo «Pendiente» (1 o 2 sin ver y entró hace menos
+  de 7 días); rojo «Atrasado» (3 o más sin ver, o no entra hace 7 días o más); gris «Sin
+  monitoreos». Primero salen las que piden atención.
+- Desde esta versión la plataforma guarda cada vez que la asesora abre su Calidad; antes de hoy
+  no hay ese dato, así que al principio puede salir «Nunca».
 ## v1.202.0 — Noviembre 2026
 
 **Fase 357 (B): un solo menú de inicio para todos.**
