@@ -7,6 +7,17 @@ decidir nada, solo priorizar cuándo invertir el tiempo). Lo ya cerrado
 no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 ítem tiene prioridad, cómo se cierra, y la fecha en que se anotó.
 
+## Estado al 17/11/2026 (producción 1.205.0)
+
+- **Hecho y en producción:** Fase 355 (HLM «Exportar PDF», con el logo embebido en 355b), Fase 356
+  («Sugerencias / Tickets»), Fase 357 (A rol «Sistemas» y cambio de roles de usuarios reales, D «Ver como
+  este usuario», B menú único de tarjetas, C pestaña «Vistos» en Calidad), Fase W3 («Diagnóstico de red»
+  de Wolkvox), Fase 358 («Malla de turnos», fase 1 de 3), Fase 359 (filtro por año en Televentas SURA) y
+  Fase 360 (el generador de Televentas produce el tablero publicado byte a byte). Verificado en producción
+  en solo lectura (escrituras solo las autorizadas). Detalle en `docs/historico/progress-fases.md`.
+- **Esperando a Edwin:** Malla fases 2 (puntualidad) y 3 (Portal Asesor ampliado) — ver el bloque 2.
+- **Esperando al soporte de Wolkvox:** el bloqueo de red hacia el servidor — ver el primer ítem de abajo.
+
 ## 1. Esperando una decisión tuya
 
 - **Wolkvox: bloqueo de red del lado de Wolkvox hacia el servidor de producción; esperando a soporte de Wolkvox** (17/11/2026).
@@ -249,6 +260,20 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   (`PUT /monitoreos/:id/asesor`, solo administrador).
 
 ## 2. Esperando una respuesta de Edwin
+
+- **Malla de turnos, fase 2: puntualidad** (pedido de Edwin, 17/11/2026; la fase 1, la malla, está en
+  producción desde la 1.204.0). Falta **un ejemplo real del reporte de Login de Wolkvox** de una semana, tal
+  como sale (Excel o CSV). Se usa solo en local, fuera del repo, para ver la estructura: si trae una fila por
+  ingreso o el primero del día, el formato de la hora, si trae id o nombre del agente y si viene por campaña.
+  Ya decidido por el usuario: tolerancia cero (1 segundo después de la entrada = «Tarde»; la hora se ajusta
+  al ver el archivo), un día con turno y sin login = «Sin ingreso», el supervisor marca excepciones
+  (incapacidad, vacaciones, permiso) con registro en el Historial, y el cliente no ve malla ni puntualidad.
+  Cómo se cierra: llega el archivo → fase 2 (carga desde el Centro de cargas, cruce con la malla, vista del
+  asesor y resumen del supervisor).
+- **Malla de turnos, fase 3: Portal Asesor ampliado** (17/11/2026). Falta que Edwin diga **qué indicadores**
+  ve la asesora (por ejemplo llamadas y WhatsApp contestados, agendas, efectividad, calificación de Calidad)
+  y **de qué campañas**. Los datos ya están cargados en la plataforma; la asesora se une a su nombre de
+  agente por nombre exacto o por los alias que ya existen.
 
 - **Módulo de Calidad: tres listas que crecen sin paginar** (Fase 338, 11/11) — Calidad › Monitoreos
   (ORLANT: 194 filas al 13/11 y creciendo con los monitoreos de noviembre), Calidad › Detalle por mes y «Resueltas» de Calidad de encuestas muestran
