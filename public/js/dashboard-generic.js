@@ -1376,6 +1376,7 @@ function renderGenericHeader(){
   if (typeof wvPruebaPintarBoton === 'function') wvPruebaPintarBoton(_gd.cliente); // Fase W2: solo admin y solo la replica interna
   document.getElementById('gd-title').textContent = _gd.config.titulo || _gd.cliente;
   if (typeof gdPintarSede === 'function') gdPintarSede(_gd.cliente); // Fase 354: en que sede se esta
+  if (typeof reportePdfPintarBoton === 'function') reportePdfPintarBoton(_gd.cliente); // Fase 355: PDF del mes (HLM)
   // Fase 283: el supervisor abre el tablero desde su portal, en su vista (no la del cliente).
   var vistaSup = document.getElementById('gd-vista-sup');
   if (vistaSup) vistaSup.classList.toggle('hidden', !(typeof currentUser !== 'undefined' && currentUser && currentUser.rol === 'SUPERVISOR'));

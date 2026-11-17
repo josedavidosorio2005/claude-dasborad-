@@ -21070,3 +21070,20 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
 - **Producción:** se volvió a correr el último deploy en verde (`0e1417e`, sin cambiar código) y respondió 1.196.0. `/wolkvox/estado` de la réplica dice **no / no / no** (token, servidor, formato), así que no se hizo la prueba. Pasos a revisar en `docs/pendientes.md`.
 - **Seguridad:** solo lectura; Brave con todo lo que no fuera GET bloqueado, salvo el inicio y el cierre de sesión (0 bloqueadas). El Mobilize real no cambió (78 filas de nivel de servicio antes y después) y la sesión se cerró.
 - **Por qué se colgaron los primeros intentos en Brave (HLM y W2):** el script esperaba `currentUser` distinto de null, pero el administrador maestro deja `currentUser = null`, así que nunca detectaba el inicio de sesión. Se corrigió esperando `authToken`.
+
+## Verificación 17/11 — HLM «Datos anteriores» en producción y SSM de Wolkvox (solo docs, 2026-11-17)
+
+- **Producción (v1.196.0, solo lectura):** Brave visible por Playwright; el usuario inició sesión como administrador y todo request que no fuera GET quedó bloqueado (0 bloqueados, 0 errores de consola). Como administrador: pantalla de sedes con Sede Castilla, Sede 33 y «Sin sede»; las dos sedes sin tráfico; «Sin sede» con 12.087 llamadas y 14.202 chats. La vista de quien no es administrador se simuló solo en el navegador: aparece «Datos anteriores (agosto, sin separar por sede) · solo lectura» y abre con 12.087 / 14.202. «Cambiar sede» vuelve a la pantalla de sedes desde cada vista.
+- **Lección del script:** con el administrador maestro `currentUser` es `null`; para simular a otro rol hay que crear el objeto, no solo cambiar `perms`.
+- **Docs:** #814 (`docs/pendientes.md`) y #815 (`docs/infraestructura.md`, `docs/plan-api-wolkvox.md`) aclaran que los parámetros SSM de Wolkvox **todavía no existen**; lo anotado el 13/11 en la entrada de la Fase W2 no era cierto. Las dos con CI en verde y mezcladas con `--match-head-commit`.
+
+## Fase 355 — HLM: «Exportar PDF» del mes (v1.197.0, 2026-11-17)
+
+- **Pedido (17/11):** botón «Exportar PDF» en Hospital La María que genere el PDF del mes elegido con indicadores y gráficas de tráfico (llamadas y chats) y de tipificación, logo de InConexion y nombre de la campaña; en «Datos anteriores» y en cada sede; solo ADMIN, REPORTES y el cliente. Decisiones del usuario: la tipificación sale como «Tipificación: sin datos cargados» (crearla es otra fase); el supervisor no ve el botón; «Guardar como PDF» del navegador, sin librerías nuevas.
+- **Cambio:**
+  - `public/js/reporte-pdf-logic.js` (lógica pura): quién lo ve (`REPORTE_PDF_ROLES`), en qué tableros aplica (cliente con sedes: cada sede y el padre), meses con datos, indicadores del mes con el mismo criterio del tablero (se suma primero, el % sale de la suma; nivel de servicio con las funciones de `trafico-logic.js` / `trafico-whatsapp-logic.js`), serie diaria de las gráficas y el HTML de impresión (todo texto escapado).
+  - `public/js/reporte-pdf.js` (interfaz): botón en el encabezado del tablero, diálogo «Mes» (Escape, foco adentro), gráficas dibujadas fuera de pantalla con el Chart.js que ya trae la app y ventana con «Imprimir» cuando cargan el logo y las gráficas. Solo lee los mismos datos que el tablero; no hay cambios en el servidor.
+  - Sede sin datos: ofrece el mes actual y los 5 anteriores y el PDF dice «sin datos» en cada sección (nunca ceros inventados).
+  - Icono nuevo `i-file-text` (Lucide 0.460.0) para no repetir el de «Exportar» en el teléfono.
+- **Pruebas:** `fase355-reporte-pdf` (10, datos inventados); ajustada la lista de diálogos de `fase144-a3b-dialogos-restantes`.
+- **Visual local** (base temporal con datos inventados, Brave): ADMIN, REPORTES y cliente (375/768/1440) ven el botón en Castilla, Sede 33 y «Datos anteriores»; el supervisor no; ORLANT no lo tiene. El PDF lleva logo cargado, nombre de campaña y sede, 12.087 / 14.202 con las cifras de control y 3 gráficas en «Datos anteriores», «sin datos» en Sede 33, y «Tipificación: sin datos cargados». 140/140 revisiones, 0 errores de consola.

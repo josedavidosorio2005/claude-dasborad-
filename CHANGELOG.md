@@ -7,6 +7,19 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.197.0 — Noviembre 2026
+
+**Fase 355: Hospital La María, «Exportar PDF» del mes.**
+
+- En el tablero de cada sede y en «Datos anteriores» hay un botón nuevo, «Exportar PDF». Se elige
+  el mes y se abre el informe listo para «Guardar como PDF»: logo de InConexion, nombre de la
+  campaña y de la sede, indicadores y gráficas de llamadas, de WhatsApp y del total del tráfico.
+- La tipificación todavía no está cargada para Hospital La María: el informe lo dice
+  («Tipificación: sin datos cargados») y se completará cuando se cree.
+- Lo ven el administrador, Reportes y el cliente. El supervisor y Calidad no lo ven por ahora.
+- Si una sede todavía no tiene datos, el informe sale igual y lo dice en cada sección, sin
+  inventar ceros.
+
 ## v1.196.0 — Noviembre 2026
 
 **Fase 354b: Hospital La María, los datos de agosto se siguen viendo mientras se reparten.**
