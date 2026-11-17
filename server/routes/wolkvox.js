@@ -76,12 +76,38 @@ router.post(
       res.json({ ok: true, reporte: api, dia, desde: '08:00', hasta: '08:59', httpStatus: r.httpStatus, code: s.code, msg: s.msg, filas: s.filas, campos: s.campos, duracionMs: r.duracionMs, usoHoy: wv.usoDelDia(db, op), tope: wv.topeDiario(), limiteLicencia: wv.LIMITE_LICENCIA_DIA });
     } catch (e) {
       if (!(e instanceof wv.WolkvoxError)) throw e;
-      logEvent('WOLKVOX_PRUEBA', null, actorLabel(req.actor), op + ' · ' + api + ' · ' + dia + ' · error ' + e.codigo);
+      // Fase W3: + el codigo de la causa de red (solo el codigo).
+      logEvent('WOLKVOX_PRUEBA', null, actorLabel(req.actor), op + ' · ' + api + ' · ' + dia + ' · error ' + e.codigo + (e.causa ? ' (' + e.causa + ')' : ''));
       const status = e.codigo === 'sin_configurar' ? 409 : e.codigo === 'tope' || e.codigo === 'limite_wolkvox' ? 429 : e.codigo === 'rango' || e.codigo === 'reporte' ? 400 : 502;
-      res.status(status).json({ ok: false, error: e.message, codigo: e.codigo, httpStatus: e.httpStatus || null, usoHoy: wv.usoDelDia(db, op), tope: wv.topeDiario(), limiteLicencia: wv.LIMITE_LICENCIA_DIA });
+      res.status(status).json({ ok: false, error: e.message, codigo: e.codigo, causa: e.causa || null, httpStatus: e.httpStatus || null, usoHoy: wv.usoDelDia(db, op), tope: wv.topeDiario(), limiteLicencia: wv.LIMITE_LICENCIA_DIA });
+    }
+  })
+);
+
+// Fase W3 (17/11): «Diagnóstico de red». Mismo permiso que «Probar conexión» (admin + réplica
+// interna). Solo DNS, conexión TCP al 443 y saludo TLS: no envía token ni petición HTTP y no
+// gasta consultas del día. Una vez cada 30 s. Queda en el Historial (solo códigos).
+const _ultimoDiagnostico = new Map();
+router.post(
+  '/wolkvox/diagnostico-red',
+  requireActor,
+  wrap(async (req, res) => {
+    const b = req.body || {};
+    const op = operacionPermitida(req, res, b.campana);
+    if (!op) return;
+    const espera = (_ultimoDiagnostico.get(op) || 0) + ESPERA_ENTRE_PRUEBAS_MS - Date.now();
+    if (espera > 0) return res.status(429).json({ error: 'Espera ' + Math.ceil(espera / 1000) + ' s antes de volver a diagnosticar', codigo: 'espera' });
+    _ultimoDiagnostico.set(op, Date.now());
+    try {
+      const d = await wv.diagnosticarRed({ operacion: op, red: req.app.locals.wolkvoxRed });
+      logEvent('WOLKVOX_DIAGNOSTICO_RED', null, actorLabel(req.actor), op + ' · ' + wv.resumenDiagnostico(d));
+      res.json(Object.assign({ ok: true }, d));
+    } catch (e) {
+      if (!(e instanceof wv.WolkvoxError)) throw e;
+      res.status(e.codigo === 'sin_configurar' ? 409 : 502).json({ ok: false, error: e.message, codigo: e.codigo });
     }
   })
 );
 
 module.exports = router;
-module.exports._reiniciarEspera = () => _ultimaPrueba.clear(); // solo pruebas
+module.exports._reiniciarEspera = () => { _ultimaPrueba.clear(); _ultimoDiagnostico.clear(); }; // solo pruebas

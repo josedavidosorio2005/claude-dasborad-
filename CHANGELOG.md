@@ -7,6 +7,16 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.199.0 — Noviembre 2026
+
+**Fase W3: diagnóstico de la conexión con Wolkvox.**
+
+- En la réplica «MOBILIZE PRUEBAS API», la ventana «Probar conexión» (solo el administrador)
+  tiene un botón nuevo, «Diagnóstico de red». Revisa desde el servidor si encuentra el nombre de
+  Wolkvox, si abre la conexión segura y si el servidor sale a internet. No envía el token, no
+  pide datos y no gasta consultas del día.
+- Cuando «Probar conexión» falla por la red, ahora dice el motivo técnico (por ejemplo, que la
+  conexión no respondió a tiempo), en pantalla, en el registro y en el Historial.
 ## v1.198.0 — Noviembre 2026
 
 **Fase 356: «Sugerencias / Tickets» dentro de la plataforma.**

@@ -1943,8 +1943,14 @@
       <p class="wv-campos-titulo">Campos que trae <code>data</code> (solo los nombres):</p>
       <ul class="wv-campos" id="wv-campos"></ul>
     </div>
+    <!-- Fase W3: «Diagnóstico de red» (solo DNS, TCP 443 y saludo TLS; sin token, no gasta consultas). -->
+    <div class="wv-resultado hidden" id="wv-red" role="status" aria-live="polite">
+      <p class="wv-campos-titulo">Diagnóstico de red desde el servidor (sin token, no gasta consultas):</p>
+      <dl class="wv-estado" id="wv-red-dl"></dl>
+    </div>
     <div class="modal-btns">
       <button class="btn-cancel" type="button" onclick="wvPruebaCerrar()">Cerrar</button>
+      <button class="btn-cancel" type="button" id="wv-red-btn" onclick="wvDiagnosticoRed()">Diagnóstico de red</button>
       <button class="btn-primary" type="button" id="wv-probar-btn" onclick="wvPruebaProbar()">Probar</button>
     </div>
   </div>
