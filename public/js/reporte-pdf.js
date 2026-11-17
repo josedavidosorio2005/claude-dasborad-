@@ -7,6 +7,28 @@
 
 var _rpEstado = { campana: null, filasLlamadas: [], filasWpp: [] };
 
+// Fase 355b: el logo va DENTRO del documento (data:image/png;base64,…), igual que las gráficas.
+// En producción la ventana del PDF no lo cargaba desde la URL (las gráficas, ya embebidas, sí
+// salían). Se lee una sola vez y queda en memoria; si no se puede, el PDF sale sin logo.
+var RP_LOGO_RUTA = 'img/marca/logo-horizontal-color.png';
+var _rpLogoDataUrl = null;
+async function _rpCargarLogo() {
+  if (_rpLogoDataUrl) return _rpLogoDataUrl;
+  try {
+    var r = await fetch(RP_LOGO_RUTA, { credentials: 'same-origin' });
+    if (!r.ok) return null;
+    var blob = await r.blob();
+    var url = await new Promise(function (ok, mal) {
+      var fr = new FileReader();
+      fr.onload = function () { ok(fr.result); };
+      fr.onerror = function () { mal(fr.error); };
+      fr.readAsDataURL(blob);
+    });
+    if (reportePdfLogoValido(url)) _rpLogoDataUrl = url;
+  } catch (e) { /* sin logo: el PDF sale igual */ }
+  return _rpLogoDataUrl;
+}
+
 function _rpEl(id) { return document.getElementById(id); }
 function _rpRol() { return (typeof currentUser !== 'undefined' && currentUser) ? currentUser.rol : null; }
 function _rpEsAdmin() { return typeof isFullAdmin === 'function' && isFullAdmin(); }
@@ -48,6 +70,8 @@ async function reportePdfAbrir() {
   try { ll = (typeof _traficoCargarDatos === 'function') ? ((await _traficoCargarDatos(campana)) || {}).filas || [] : []; } catch (e) { ll = []; }
   try { wp = (typeof _traficoWppCargarDatos === 'function') ? ((await _traficoWppCargarDatos(campana)) || {}).filas || [] : []; } catch (e) { wp = []; }
   if (_rpEstado.campana !== campana) return; // se cerró y se abrió otro tablero mientras cargaba
+  await _rpCargarLogo(); // Fase 355b: antes de habilitar «Generar PDF» (el clic abre la ventana de una)
+  if (_rpEstado.campana !== campana) return;
   _rpEstado.filasLlamadas = ll; _rpEstado.filasWpp = wp;
   var meses = reportePdfMeses(ll, wp);
   if (!meses.length) {
@@ -131,7 +155,7 @@ function reportePdfGenerar() {
     var nom = _rpNombres(campana);
     var html = reportePdfPrintHtml({
       campana: nom.campana, etiqueta: nom.etiqueta, mes: mes, ind: ind, graficas: graficas,
-      logoUrl: new URL('img/marca/logo-horizontal-color.png', window.location.href).href,
+      logoUrl: _rpLogoDataUrl, // Fase 355b: embebido (data:image/png), nunca una URL
       generado: new Date().toLocaleString('es-CO'),
       demo: (typeof seedDemoActivo !== 'undefined' && seedDemoActivo),
     });
