@@ -7,6 +7,14 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.200.0 — Noviembre 2026
+
+**Fase 357 (A): nuevo rol «Sistemas».**
+
+- Hay un rol nuevo, «Sistemas», para el equipo de sistemas. Por ahora no tiene módulos: quien lo
+  tiene entra al menú de tarjetas con el aviso «No tienes módulos asignados». Más adelante verá el
+  inventario de sistemas.
+- El administrador lo elige en Usuarios, al crear o editar una cuenta.
 ## v1.199.0 — Noviembre 2026
 
 **Fase W3: diagnóstico de la conexión con Wolkvox.**

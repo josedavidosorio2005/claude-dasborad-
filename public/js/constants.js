@@ -70,7 +70,8 @@ var REGULAR_ROLES = [
   {key:'CLIENTES_DASH',  label:'DASHBOARD CLIENTES', icon:'&#129309;'},
   {key:'REPORTES',       label:'REPORTES',           icon:'&#128200;'},
   {key:'ASESOR',         label:'ASESOR',             icon:'&#127942;'},
-  {key:'SUPERVISOR',     label:'SUPERVISOR',         icon:'&#128737;'}
+  {key:'SUPERVISOR',     label:'SUPERVISOR',         icon:'&#128737;'},
+  {key:'SISTEMAS',       label:'SISTEMAS',           icon:'&#128187;'} // Fase 357
 ];
 
 var ALL_ROLES = [
@@ -83,6 +84,7 @@ var ALL_ROLES = [
   {key:'REPORTES',       label:'REPORTES',           icon:'&#128200;'},
   {key:'ASESOR',         label:'ASESOR',             icon:'&#127942;'},
   {key:'SUPERVISOR',     label:'SUPERVISOR',         icon:'&#128737;'},
+  {key:'SISTEMAS',       label:'SISTEMAS',           icon:'&#128187;'}, // Fase 357
   {key:'AUX_ADMIN',     label:'AUXILIAR ADMIN',     icon:'&#128737;'}
 ];
 
@@ -98,6 +100,7 @@ var ROL_DESCRIPCION = {
   REPORTES: 'Ve los reportes de Calidad y puede corregir o eliminar monitoreos.',
   ASESOR: 'Solo ve sus propios resultados de Calidad (Mis resultados).',
   SUPERVISOR: 'Ve los dashboards de sus clientes y también puede calificar monitoreos.',
+  SISTEMAS: 'Equipo de sistemas. Por ahora sin módulos; luego verá el inventario de sistemas.', // Fase 357
   AUX_ADMIN: 'Ayuda a administrar usuarios con los permisos que le des.'
 };
 var RL = {};
