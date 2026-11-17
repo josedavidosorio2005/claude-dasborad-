@@ -568,6 +568,7 @@ mismo orden):
 - Fase 357 (C) — pestaña «Vistos» en Calidad (ADMIN, REPORTES y SUPERVISOR de la campaña): última apertura de la Calidad de cada asesora, monitoreos sin ver y semáforo verde/amarillo/rojo/gris (v1.203.0, 2026-11-17)
 - Fase 358 — «Malla de turnos»: grupos por campaña y semana con horario por día, asignación de asesoras, copiar semana (reemplazar con confirmación) y «Mi malla» en el Portal Asesor (v1.204.0, 2026-11-17)
 - Fase 359 — Televentas (SURA): selector «Año» en el encabezado (por defecto el más reciente con datos), sin mezclar meses de años distintos; «Cargar información» del año elegido (v1.205.0, 2026-11-17)
+- Fase 360 — generador de Televentas al día: los arreglos que solo estaban a mano en el tablero publicado («Descargar» según permiso, 2 ajustes de estilo) pasan al generador; regenerado = publicado byte a byte, con prueba (solo script y pruebas, 2026-11-17)
 - Fase 309 — Revisión de seguridad: el cliente ya no recibe el nombre de los líderes en `GET /metas`; resto en `docs/revision-seguridad-2026-11-09.md` (v1.154.1, 2026-11-10)
 - Fase 308 — Revisión antes de la reunión con clientes y pendientes del supervisor (solo docs, 2026-11-10)
 - Fase 307 — Calidad para que los líderes evalúen: ORLANT conserva su Calidad y suma «Resultado de los monitoreos» al final; Aurora ya lo tenía (se muestra con el primer monitoreo) (v1.154.0, 2026-11-10)
