@@ -560,6 +560,7 @@ mismo orden):
 - Fase W2 (17/11) — parámetros SSM de Wolkvox creados por el usuario; `/wolkvox/estado` dice «Sí», pero la única «Probar conexión» falló por conexión (probable IP del servidor no autorizada en Wolkvox) (solo docs, 2026-11-17)
 - Fase 356 — «Sugerencias / Tickets»: cualquier usuario envía (Sugerencia, Problema o Pregunta; campaña o «General»; hasta 2.000 caracteres, sin adjuntos) y ve solo los suyos con su hilo; ADMIN y REPORTES ven todos, cambian el estado y responden, con contador de «Nuevo»; solo ADMIN borra (v1.198.0, 2026-11-17)
 - Fase W3 — Wolkvox: código de causa en los errores de red y botón «Diagnóstico de red» (solo admin, réplica): DNS, TCP 443 y TLS por IPv4/IPv6 más un control, sin token ni consultas (v1.199.0, 2026-11-17)
+- Fase W3 (resultado) — diagnóstico en producción: DNS ok, TCP 443 IPv4 sin respuesta en 5 s, internet ok → bloqueo de red del lado de Wolkvox hacia 3.85.54.96 (IP estática); mensaje enviado a soporte de Wolkvox (solo docs, 2026-11-17)
 - Fase 309 — Revisión de seguridad: el cliente ya no recibe el nombre de los líderes en `GET /metas`; resto en `docs/revision-seguridad-2026-11-09.md` (v1.154.1, 2026-11-10)
 - Fase 308 — Revisión antes de la reunión con clientes y pendientes del supervisor (solo docs, 2026-11-10)
 - Fase 307 — Calidad para que los líderes evalúen: ORLANT conserva su Calidad y suma «Resultado de los monitoreos» al final; Aurora ya lo tenía (se muestra con el primer monitoreo) (v1.154.0, 2026-11-10)
