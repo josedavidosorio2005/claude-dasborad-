@@ -148,6 +148,9 @@ Así se ve si los campos se llaman igual que las columnas del Excel.
   - `WOLKVOX_MOBILIZE_TOKEN`
   - `WOLKVOX_MOBILIZE_SERVIDOR`
 
+  **Estado (17/11/2026): estos dos parámetros todavía NO existen en producción**; los crea el
+  usuario en la consola (ver `docs/pendientes.md`). Hasta entonces `/wolkvox/estado` dice «no».
+
   Más adelante, `WOLKVOX_<OPERACION>_…` para cada operación nueva. `server/secrets.js` se
   amplía para leer las claves que empiezan por `WOLKVOX_`, sin tener que listarlas una por
   una.
