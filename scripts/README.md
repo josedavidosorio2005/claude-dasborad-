@@ -59,6 +59,15 @@ ahí (`path.join(SERVER_DIR, 'node_modules', ...)`), nunca con un
   node scripts/sura/generar-televentas.js "<ruta>/seguimiento_ventas_offline.html" .
   ```
 
+  **Regla (Fase 360):** todo cambio al tablero se hace en el generador, nunca a
+  mano en el archivo publicado; lo regenerado debe salir **idéntico** a lo
+  publicado. Para comprobarlo en local (en CI se salta, porque el HTML no va
+  a GitHub):
+
+  ```
+  $env:STV_HTML_EDWIN='<ruta>\seguimiento_ventas_offline.html'; node --test server/tests/fase360-generador-televentas.test.js
+  ```
+
 ## scripts/produccion/ — solo lectura contra producción
 
 - **`revision-final.js`** — recorrido de verificación en

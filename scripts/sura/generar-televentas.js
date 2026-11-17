@@ -46,6 +46,10 @@ const iMenu = css.indexOf('/* menú lateral izquierdo */');
 const iFinMenu = css.indexOf('#dicbox table');
 if (iMenu < 0 || iFinMenu < iMenu) throw new Error('no encontre el bloque del menu lateral');
 css = css.slice(0, iMenu) + css.slice(iFinMenu);
+// Fase 216 (llevado al generador en la Fase 360; antes solo estaba a mano en el CSS publicado):
+// nombres de archivo largos y selectores no desbordan, dentro de la misma regla del HTML.
+css = una(css, '.m small{color:var(--mut);display:block;min-height:34px}', '.m small{color:var(--mut);display:block;min-height:34px;overflow-wrap:anywhere} /* Fase 216: nombres de archivo largos no se salen de la tarjeta */');
+css = una(css, '.row label{display:flex;flex-direction:column;font-size:12px;color:var(--mut);gap:3px}', '.row label{display:flex;flex-direction:column;font-size:12px;color:var(--mut);gap:3px;max-width:100%;min-width:0}\n.row label select{max-width:100%} /* Fase 216: opciones largas no ensanchan el tablero en el celular */');
 
 const tokens = `/* sura-televentas-app.css — Fase 215. Estilos del tablero Televentas (HTML
    de Edwin) dentro de su Shadow DOM. Generado desde el HTML original por el
@@ -77,10 +81,6 @@ const layout = `
 }
 @media(max-width:900px){.wrap>header{margin-top:4px}}
 @media(max-width:600px){.seg{display:flex;flex-wrap:wrap;max-width:100%}}
-/* Fase 216: nombres de archivo largos y selectores no desbordan con las bases montadas */
-.m small{overflow-wrap:anywhere}
-.row label{max-width:100%;min-width:0}
-.row label select{max-width:100%}
 /* Fase 217: iconos de campaña con la misma altura visible (~18 px) que el logo de InConexion del encabezado */
 .camp-ico{display:inline-block;font-size:20px;line-height:1;vertical-align:middle}
 /* Fase 218: en el Centro de cargas solo se ve «Cargar información» (la misma app) */
@@ -257,6 +257,12 @@ X('${cName(c)}', '${esc(cName(c))}', 11);
 // suman ese año, sin mezclar «Enero 2026» con «Enero 2027»), y MKT() todos los meses para lo que
 // debe mirar toda la historia (alias, clientes que ya compraron, última venta de cada asesor).
 // El año lo elige sura-televentas.js con anio() (ver el return de abajo).
+// Fase 360 (llevado al generador; antes solo estaba a mano en el tablero publicado): «Descargar»
+// el Excel original solo si el servidor lo permite (PERM.puedeDescargar), en ventas, estrategias
+// e iniciales.
+for (const t of ['dl', 'edl', 'idl']) {
+  X('<button class="btn dl" data-' + t + '="${k}">⬇ Descargar</button>', '${PERM&&PERM.puedeDescargar===false?"":`<button class="btn dl" data-' + t + '="${k}">⬇ Descargar</button>`}', 1);
+}
 X('const YEAR=2026;', 'let YEAR=2026; // Fase 359: el año lo elige el encabezado de la plataforma (anio())', 1);
 X('const MK=()=>Object.keys(DB).filter(k=>!k.startsWith("__")).sort(),MKF=', 'const MKT=()=>Object.keys(DB).filter(k=>!k.startsWith("__")).sort(),MK=()=>MKT().filter(k=>k.startsWith(YEAR+"-")),MKF=', 1);
 X('function agFixDB(){for(const k of MK()){', 'function agFixDB(){for(const k of MKT()){', 1);
