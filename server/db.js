@@ -2693,6 +2693,15 @@ runOnceMigration('users_last_login_v1', () => {
   }
 });
 
+// Fase 357 (C, pedido de Edwin 17/11): última vez que la asesora abrió su Calidad en el Portal
+// Asesor (ISO). Solo agrega la columna (NULL = nunca, o antes de esta fase); no toca datos.
+runOnceMigration('users_calidad_abierta_v1', () => {
+  db.exec(`ALTER TABLE users ADD COLUMN calidad_abierta_at TEXT`);
+  if (!config.isTest) {
+    console.log('[db] Migracion users_calidad_abierta_v1 aplicada.');
+  }
+});
+
 // Fase 113 (tema B): token_version se mete en el JWT al firmar (signToken,
 // server/auth.js) y se compara en cada peticion contra el valor real en BD
 // (getActor) -- al cambiar una contrasena (propia o por reseteo de admin)

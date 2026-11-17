@@ -168,6 +168,8 @@ declarar(['DELETE /users/:id'], 'permiso:eliminarUsuarios');
 // Calidad — plantillas/monitoreos/codificaciones/metas/nivel de servicio
 declarar(['GET /calidad/plantillas', 'GET /calidad/plantillas/todas'], 'open'); // filtra por campana adentro (lista), no 403 -- Fase 102 PR #225; /todas: Fase 237
 declarar(['GET /monitoreos/mios', 'GET /monitoreos/mios/nuevos', 'PUT /monitoreos/:id/visto'], 'open'); // auto-scoped por actor.id/nombre
+declarar(['POST /monitoreos/mios/abierto'], 'open'); // Fase 357 (C): solo registra a la propia asesora (los demás roles: no hace nada)
+declarar(['GET /calidad/vistos'], 'skip'); // Fase 357 (C): ADMIN, o REPORTES/SUPERVISOR con acceso a la campaña -- probado en fase357c-vistos.test.js
 declarar(['GET /monitoreos'], 'scopedRead');
 declarar(['GET /monitoreos/total'], 'scopedRead'); // Fase 334: solo conteos (total de la campaña y los propios)
 declarar(['POST /monitoreos'], 'calidadEval');

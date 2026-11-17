@@ -21159,3 +21159,13 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - Los módulos de cada uno salen de los mismos permisos de siempre (`dashModulosVisibles`). Calidad sigue entrando directo a Calificar.
   - `scripts/produccion/revision-final.js` abre «Administración» antes de sus chequeos de Usuarios.
 - **Pruebas:** `fase357b-menu-unico` (4); ajustada `fase164-iconos` (el ícono de «Cargar Datos» sale de la lista de tarjetas de entrada). Suite 3167/3167. Brave local 25/25: admin maestro (1440) y ADMIN (375) entran a tarjetas («Administración» primero, «Cargar Datos»), Administración ↔ Inicio; supervisor con «Mi portal» ↔ Inicio; Gerencia y Reportes como antes; Auxiliar Admin y asesora como antes; 0 errores de consola. «Ver como» vuelve a pasar 26/26 con la nueva entrada.
+## Fase 357 (C) — pestaña «Vistos» en Calidad (v1.203.0, 2026-11-17)
+
+- **Pedido (Edwin, 17/11):** para supervisor, ADMIN y Reportes, cada asesor con la fecha y hora de la última vez que abrió su Calidad en el Portal Asesor, y un semáforo. Reglas aprobadas por el usuario: verde = 0 sin ver; amarillo = 1 o 2 sin ver y entró hace menos de 7 días; rojo = 3 o más sin ver, o con algo sin ver y 7 días o más sin entrar (o nunca); gris «Sin monitoreos». «Sin ver» cuenta solo los monitoreos desde la Fase 95; los días, en calendario de Colombia.
+- **Servidor:**
+  - Migración `users_calidad_abierta_v1`: columna `users.calidad_abierta_at` (solo la agrega; NULL = nunca o antes de esta fase).
+  - `POST /monitoreos/mios/abierto`: solo el rol ASESOR guarda la hora; los demás, nada. Con «ver como» no llega (el servidor bloquea lo que no es GET).
+  - `GET /calidad/vistos?campana=`: ADMIN, o REPORTES/SUPERVISOR con acceso a la campaña. Asesoras activas de la campaña con total, sin ver (mismo criterio de «es suyo» que `/monitoreos/mios`: por id o por nombre exacto), última apertura, días y semáforo, ordenadas por urgencia.
+  - `public/js/vistos-logic.js`: reglas del semáforo, compartidas por el servidor y la interfaz.
+- **Interfaz:** pestaña «Vistos» (oculta para los demás roles) con leyenda, resumen por estado y tabla escapada; el Portal Asesor registra cada apertura de su Calidad (`showAsesorSection('calidad')`), nunca en «ver como».
+- **Pruebas:** `fase357c-vistos` (5) y `fase357c-vistos-interfaz` (3); `fase118` declara las 2 rutas. Suite 3175/3175. Brave local 31/31: la asesora registra su apertura; ADMIN (1440 y 375), Reportes (1440) y supervisor (768) ven la tabla con Pendiente/Atrasado/Sin monitoreos y el orden correcto; el rol Calidad no ve la pestaña; 0 errores de consola, sin scroll horizontal.
