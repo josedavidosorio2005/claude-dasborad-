@@ -597,7 +597,30 @@ Solo columnas y número de filas, réplica, desde producción. «mes» = 1–17/
 | `diagram_4` (mes, v1.221.1) | 200 · 43 filas | agent_dni, agent_id, agent_name, ani, conn_id, customer_id, date, feeling, q01…q10, result, skill_id, skill_name, time, type_interaction, voice_message, voice_message_duration (25 columnas). **Es la hoja «HistIVR» de la Encuesta** (mismas 25 columnas del export manual). `ani`, `agent_dni` y `customer_id` se descartan como en la carga manual. |
 | `cdr_4` (04/11, v1.221.1) | 200 · 0 filas | Vacío el día que el manual tiene 8 de salida: **no es la salida**. |
 
-**Conclusión (12/12 consultas usadas):** Encuesta → `diagram_4` (módulo `encuesta`, Fase A11, v1.222.0, apagado). Abandonadas →
+**Conclusión (12/12 consultas usadas):** Encuesta → `diagram_4` (módulo `encuesta`, Fase A11, v1.222.0; encendido el 18/11, ver 10.11). Abandonadas →
 `skill_9` solo da conteos por skill (sin detalle para únicas abandonadas). Salida → ninguno de
 `cdr_1`, `cdr_4`, `cdr_5` cuadra con el manual; falta el reporte de salida/campaña. WhatsApp →
 `chat_1`/`chat_13` rechazan las fechas: hay que averiguar el formato (soporte de Wolkvox).
+
+### 10.11 Encuesta con la API: corrida y comparación (18/11/2026, Fase A11)
+
+- **Encendido por el usuario:** `WOLKVOX_AUTO_MODULOS` = `flujo_hora,cdr,encuesta`.
+- **Corrida «Ejecutar ahora»** (16:40): 1 consulta `diagram_4` del 1 al 17/11 → 43 encuestas, 1 aviso del
+  lector, reemplazó 0, con respaldo, 2,4 s.
+- **Comparación por día con MOBILIZE manual** (total de encuestas y respondieron Q01/Q02/Q03/Q04):
+
+| Día | Réplica | Manual | |
+|---|---|---|---|
+| 03/11 | 1 (1/1/1/1) | 1 (1/1/1/1) | = |
+| 04/11 | 7 (0/0/0/0) | 7 (0/0/0/0) | = |
+| 05/11 | 4 (0/0/0/0) | 4 (0/0/0/0) | = |
+| 06/11 | 4 (2/2/2/2) | 4 (2/2/2/2) | = |
+| 09/11 | 5 (2/1/1/1) | 5 (2/1/1/1) | = |
+| 10/11 | 4 (2/2/2/2) | 4 (2/2/2/2) | = |
+| 11/11 | 8 (3/3/3/3) | 8 (3/3/3/3) | = |
+| 12/11 | 2 (0/0/0/0) | 2 (0/0/0/0) | = |
+| 13/11 | 5 (3/2/2/2) | — | solo réplica (el manual llega hasta el 12) |
+| 17/11 | 3 (1/1/1/1) | — | solo réplica |
+
+- **Resultado: 8/8 días iguales** en los días que están en los dos lados. Sin teléfono, documento, cliente,
+  comentario ni CONN_ID guardados (el módulo los descarta; prueba `faseA11-wolkvox-encuesta`).
