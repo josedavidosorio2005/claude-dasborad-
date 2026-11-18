@@ -1554,9 +1554,9 @@ body{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;accent
 .tk-activo{display:inline-flex;align-items:center;gap:6px}
 /* Fase 364 (B3): ventanas de módulo en pantalla completa (lista en motion-helpers.js). */
 #calidad-overlay,#gd-overlay,#stv-overlay,#gerencia-overlay,#gestionhumana-overlay,#inventario-overlay,
-#modal-malla,#modal-tickets,#cargas-overlay,#centro-overlay,#dashcfg-overlay,#supervisar-lider-overlay{padding:0 !important;align-items:stretch !important;justify-content:stretch !important;}
+#modal-malla,#modal-tickets,#cargas-overlay,#centro-overlay,#dashcfg-overlay,#supervisar-lider-overlay,#activos-overlay{padding:0 !important;align-items:stretch !important;justify-content:stretch !important;}
 #calidad-modal,#gd-modal,#stv-modal,#gerencia-modal,#gestionhumana-modal,#inventario-modal,
-#modal-malla > .modal,#modal-tickets > .modal,#cargas-modal,#centro-modal,#dashcfg-modal,#supervisar-lider-modal{
+#modal-malla > .modal,#modal-tickets > .modal,#cargas-modal,#centro-modal,#dashcfg-modal,#supervisar-lider-modal,#activos-overlay > .modal{
   width:100% !important;max-width:none !important;height:100dvh !important;max-height:none !important;margin:0 !important;border-radius:0 !important;overflow-y:auto;box-sizing:border-box;}
 
 /* 6) Tarjetas: un filo de 1px del tono del borde suave, sumado a la
@@ -2623,6 +2623,26 @@ div.ca-bar-fila{cursor:default}
   .modal-malla .table-wrap{margin:0 -4px}
 }
 .ml-dia-corto{display:none}
+/* Fase 369 (E1): Inventario de sistemas. */
+.modal-activos{position:relative}
+/* El «Acciones» solo para lector de pantalla (sr-only, absoluto) no debe escaparse del scroll de la tabla. */
+.modal-activos .table-wrap{position:relative}
+.ac-kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin:0 0 14px}
+.ac-kpi{border:1px solid var(--c-border-soft);border-radius:var(--r-md);padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+.ac-kpi b{font-size:var(--fs-h2);color:var(--c-text)}
+.ac-kpi .vis-pill{align-self:flex-start}
+.modal-activos .tk-cerrar{position:absolute;top:10px;right:10px;width:44px;height:44px;border:0;border-radius:var(--r-md);background:transparent;color:var(--c-text-2);font-size:var(--fs-h2);line-height:1;cursor:pointer}
+.modal-activos .tk-cerrar:hover{background:var(--c-border-soft);color:var(--c-text)}
+.modal-activos > h3{padding-right:52px}
+.ac-filtros{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin:0 0 12px}
+.ac-filtros .ig{margin-bottom:0;min-width:180px;flex:1 1 180px}
+.ac-btn{min-height:44px}
+.ac-sub{margin:14px 0 6px;color:var(--c-text-2)}
+.ac-sedes,.ac-hist{margin:0 0 10px 18px}
+.ac-estado-form{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin:12px 0}
+.ac-estado-form .ig{margin-bottom:0}
+.ac-motivo{flex:1 1 260px}
+.ac-estado-form .btn-primary{min-height:44px}
 /* Fase 368 (D3): «Mi malla» de la asesora: el día en verde (Puntual) o en rojo (Llegaste tarde). */
 .ml-tabla-mia tr.ml-dia-puntual > *{background:var(--c-success-bg)}
 .ml-tabla-mia tr.ml-dia-tarde > *{background:var(--c-danger-bg)}

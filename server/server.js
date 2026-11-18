@@ -380,6 +380,7 @@ function createApp() {
   api.use(require('./routes/guia'));
   api.use(require('./routes/admin'));
   api.use(require('./routes/wolkvox')); // Fase W2: probar conexion (solo admin, solo la replica)
+  api.use(require('./routes/activos')); // Fase 369: «Inventario de sistemas» (ADMIN y SISTEMAS)
   api.use(require('./routes/tickets')); // Fase 356: Sugerencias / Tickets
   api.use(require('./routes/malla')); // Fase 358: Malla de turnos
 

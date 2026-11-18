@@ -337,7 +337,7 @@ router.get(
     // sus datos salen de sus tablas propias (no de dashboard_cargas).
     const adapter = ADAPTERS[cliente];
     if (adapter) {
-      if (!isFullAdmin(req.actor) && !can(req.actor, adapter.permiso)) {
+      if (!isFullAdmin(req.actor) && (adapter.soloAdmin || !can(req.actor, adapter.permiso))) {
         return res.status(403).json({ error: `Sin acceso al modulo de ${adapter.permiso}` });
       }
       return res.json({ cliente, config: adapter.config, secciones: adapter.build(db) });

@@ -5,7 +5,10 @@ const { app, request, tokenFor, MASTER_PASSWORD, SEED } = require('./helpers');
 
 test('Inventario: CRUD de items y control de permisos', async (t) => {
   const adminToken = await tokenFor('admin', MASTER_PASSWORD);
-  const invToken = await tokenFor('mlopez', SEED.mlopez); // rol INVENTARIO con perms.Inventario: true
+  // Fase 369: el Inventario anterior queda solo para ADMIN (el rol INVENTARIO ya no entra).
+  const invToken = adminToken;
+  const rolInvToken = await tokenFor('mlopez', SEED.mlopez); // rol INVENTARIO con perms.Inventario: true
+  assert.equal((await request(app).get('/api/inventario/items').set('Authorization', 'Bearer ' + rolInvToken)).status, 403);
   const noInvToken = await tokenFor('crodriguez', SEED.crodriguez); // rol CALIDAD sin perms.Inventario
 
   // 1. Usuario sin permiso recibe 403
@@ -144,7 +147,9 @@ test('Gerencia: LECTURA con perms.Gerencia, ESCRITURA solo con Cargar Datos (fee
 
 test('M4: dashboards configurables de Inventario y Gerencia (adaptadores)', async () => {
   const admin = await tokenFor('admin', MASTER_PASSWORD);
-  const invToken = await tokenFor('mlopez', SEED.mlopez);   // perms.Inventario
+  const invToken = admin; // Fase 369: el Inventario anterior, solo ADMIN
+  const rolInvToken = await tokenFor('mlopez', SEED.mlopez);   // perms.Inventario, pero ya no entra
+  assert.equal((await request(app).get('/api/dashboard/INVENTARIO').set('Authorization', 'Bearer ' + rolInvToken)).status, 403);
   const gerToken = await tokenFor('jherrera', SEED.jherrera); // perms.Gerencia
   const B = (t) => 'Bearer ' + t;
 
@@ -179,7 +184,7 @@ test('M4: dashboards configurables de Inventario y Gerencia (adaptadores)', asyn
   assert.equal(gr.pct_cumplimiento, 50);
 
   // Permisos: sin el permiso del modulo -> 403
-  assert.equal((await request(app).get('/api/dashboard/GERENCIA').set('Authorization', B(invToken))).status, 403);
+  assert.equal((await request(app).get('/api/dashboard/GERENCIA').set('Authorization', B(rolInvToken))).status, 403);
   assert.equal((await request(app).get('/api/dashboard/INVENTARIO').set('Authorization', B(gerToken))).status, 403);
 
   // No se pueden cargar Excel contra estos (no estan en dashboards_config)

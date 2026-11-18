@@ -26,6 +26,7 @@ function dashModulosVisibles(modulos, currentUser, esFullAdmin) {
   return (modulos || []).filter(function (m) {
     if (m.soon) return true;
     if (esFullAdmin) return true;
+    if (m.key === 'Inventario') return false; // Fase 369: el Inventario anterior queda solo para ADMIN
     return !!(currentUser && currentUser.perms && currentUser.perms[m.key] === true);
   });
 }
@@ -95,6 +96,8 @@ function dashTarjetasEntrada(rol, esFullAdmin, puedeCargar) {
   // Fase 358: «Malla de turnos» (ADMIN y supervisor editan; Reportes la ve).
   if (esFullAdmin || rol === 'SUPERVISOR' || rol === 'REPORTES') t.push({ key: 'malla', label: 'Malla de turnos', sub: 'Horarios por semana y grupos de asesoras', icon: 'i-calendar', accion: 'mallaAbrir' });
   if (puedeCargar) t.push({ key: 'cargar', label: 'Cargar Datos', sub: 'Subir Excel de los dashboards', icon: 'i-upload', accion: 'openCentroCargas' });
+  // Fase 369 (E1): «Inventario de sistemas» (activos), para ADMIN y SISTEMAS.
+  if (esFullAdmin || rol === 'SISTEMAS') t.push({ key: 'activos', label: 'Inventario de sistemas', sub: 'Equipos y elementos tecnológicos', icon: 'i-package', accion: 'activosAbrir' });
   // Fase 364 (pedido de Edwin 18/11, B2): «Sugerencias / Tickets» como tarjeta propia (antes en la barra superior).
   t.push({ key: 'tickets', label: 'Sugerencias / Tickets', sub: 'Reporta un problema, una pregunta o una idea', icon: 'i-message-circle', accion: 'ticketsAbrir' });
   return t;

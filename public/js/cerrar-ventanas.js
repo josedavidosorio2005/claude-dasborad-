@@ -22,6 +22,7 @@ var CERRAR_VENTANAS_FUNCIONES = {
   'gerencia-overlay': 'closeGerencia',
   'gestionhumana-overlay': 'closeGestionHumana',
   'inventario-overlay': 'closeInventario',
+  'activos-overlay': 'activosCerrar', // Fase 369
 };
 
 // `doc` y `global` se pueden pasar en las pruebas; en el navegador son document y window.

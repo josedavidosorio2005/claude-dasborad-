@@ -524,6 +524,12 @@ MOBILIZE antes de pasar al siguiente.
 - **Encender:** `WOLKVOX_AUTO_MODULOS` = `flujo_hora` (String) en SSM; corre después del Flujo en la
   franja de las 7:00 y la 1:00, o con «Ejecutar ahora» (`modulo: 'flujo_hora'`). Historial
   `WOLKVOX_MODULO`.
+- **Comparación tras la corrida de las 13:00 del 18/11 (solo lectura, Brave, sin consultas extra):**
+  la corrida trajo 33 filas día-hora-skill (1 consulta) y AHT/espera en 11 filas del Flujo. En los 8
+  días comunes con el manual de MOBILIZE (03–12/11, SKILL SAC): **25/25 celdas día-hora iguales**
+  (ingresadas/contestadas/abandonadas 29/29/0 en las dos); espera **8/8** (±1 s); AHT **7/8** (el
+  03/11 difiere 3 s: 269 vs 272, por el ponderado de las horas). Skill Key Account: 0 llamadas en
+  las dos. La réplica tiene además 13–17/11 (37/36/1 en el mes).
 
 ### 10.7 Paso 2 hecho: `cdr_1` (Fase A8, 18/11/2026)
 
