@@ -467,18 +467,18 @@ Las columnas reales se confirman con «Probar» (abajo).
 
 | Reporte (Manager) | `api=` probable | Columnas (documentación) | Sirve para |
 |---|---|---|---|
-| Skills 1 · Llamadas y NS por skill | `skill_1` ✔ | skill_name, skill_id, inbound/answer/abandon_calls, service_level_0/10/20/30seg, abandon, asa, ata | **Mobilize Flujo** (ya en uso) |
+| Skills 1 · Llamadas y NS por skill | `skill_1` ✔ prod | abandon, abandon_calls, answer_calls, asa, ata, inbound_calls, service_level_0seg, service_level_10seg, service_level_20seg, service_level_30seg, skill_id, skill_name | **Mobilize Flujo** (ya en uso) |
 | Skills 3 · por día | `skill_3` ✔ | date + lo de skill_1, wait_time, aht (sin skill) | Total del día |
-| Skills 4 · Llamadas y NS por hora | `skill_4` | skill_name, hour, inbound/answer/abandon_calls, service_level_10/20/30sec, asa, abandon, aht, att, acw, ata | **Mobilize Flujo por hora**; AHT por hora |
+| Skills 4 · Llamadas y NS por hora | `skill_4` ✔ prod | abandon, abandon_calls, acw, aht, answer_calls, asa, ata, att, hour, inbound_calls, service_level_10seg, service_level_20seg, service_level_30seg, skill_id (**sin skill_name**) | **Mobilize Flujo por hora**; AHT por hora |
 | Skills 7 · por hora y día, todas las skills | `skill_7` | date, skill_id, skill_name, hour, inbound/answer/abandon_calls, service_level_10/20/30sec, wait_time, abandon, aht, asa, ata | **Flujo por hora del mes** en una consulta; trae **AHT y espera** |
 | Skills 9 · Abandonadas por intervalo | `skill_9` | skill_id, skill_name, abandon_calls, abandon_0sec_10sec … abandon_greater_than_51sec | **Abandonadas** por tiempo de espera |
-| Agentes 1 · Tiempo por estado | `agent_1` | agent_id, agent_dni, agent_name, calls, inbound, outbound, internal, ready/inbound/outbound/acw/ring/login/aux_time, aht, occupancy, hits, rpc, aht_inbound/outbound, login, logout | **Portal Asesor** (llamadas, AHT, ocupación, pausas) |
+| Agentes 1 · Tiempo por estado | `agent_1` ✔ prod | acw_time, agent_dni, agent_id, agent_name, aht, aht_inbound, aht_outbund (así, sin la «o»), aux_time, calls, hits, inbound, inbound_time, internal, login, login_time, logout, occupancy, outbound, outbound_time, ready_time, ring_time, rpc | **Portal Asesor** (llamadas, AHT, ocupación, pausas) |
 | Agentes 5 · Estados por hora y agente | `agent_5` | agent_id, hour, calls, inbound, outbound, internal, ready/inbound/outbound/acw/ring/login/aux_time, aht, occupancy | Portal Asesor por hora |
-| Agentes 7 · Login - Logout | `agent_7` | date, agent_id, login, logout, login_time, agent_name, agent_dni | **Malla: puntualidad** (login vs. inicio del turno, logout vs. fin) |
+| Agentes 7 · Login - Logout | `agent_7` ✔ prod | agent_dni, agent_id, agent_name, date, login, login_time, logout (una fila por sesión) | **Malla: puntualidad** (login vs. inicio del turno, logout vs. fin) |
 | Agentes 8 · Estados hora a hora | `agent_8` | date, hour, agent_id, agent_dni, agent_name + lo de agentes 5 | Adherencia por franja |
-| Chats 1 · Chats | `chat_1` | conn_id, channel (whatsapp…), date, date_close, routing, customer_name/email/phone, agent_id/name, time_on_agent, chat_duration, cod_act, description_cod_act, transfer, skill_id, first_response_time, feeling, user_id, bsuid… | **Mobilize/ORLANT WhatsApp** (hoy HistChat); trae datos personales: se descartan |
+| Chats 1 · Chats | `chat_1` ❌ 404 «Validate dates entered» con el día completo | conn_id, channel (whatsapp…), date, date_close, routing, customer_name/email/phone, agent_id/name, time_on_agent, chat_duration, cod_act, description_cod_act, transfer, skill_id, first_response_time, feeling, user_id, bsuid… | **Mobilize/ORLANT WhatsApp** (hoy HistChat); trae datos personales: se descartan |
 | Chats 13 · Cerrados por canal | `chat_13` | conteo de chats cerrados por canal | Totales de WhatsApp |
-| CDR 1 · Detalle de llamadas | `cdr_1` ✔ (local) | agent_name, date, telephone, destiny, cost, time_seg, time_min, cod_act, description_cod_act, skill… (20 campos) | **Tipificación, Eficacia, únicas, salida**; trae teléfonos: se descartan |
+| CDR 1 · Detalle de llamadas | `cdr_1` ✔ prod | agent_id, agent_name, campaign_id, cod_act, cod_act_2, comment, conn_id, cost, customer_id, date, description_cod_act, description_cod_act_2, destiny, hang_up, skill_id, skill_name, telephone, time_min, time_seg, type_interaction | **Tipificación, Eficacia, únicas, salida**; trae teléfonos: se descartan |
 
-✔ = confirmado con una consulta real. Lo demás: nombre probable según la regla; se confirma con
+✔ prod = columnas confirmadas con «Probar» desde producción el 18/11/2026 (día 17/11, réplica, solo nombres de columnas y número de filas: skill_1 4 filas, skill_4 3, agent_1 3, agent_7 3, cdr_1 6; 5 consultas autorizadas). `cdr_1` con una sola hora (08:00–08:59) había dado 404 el mismo día: con el día completo responde. ✔ = confirmado en otra consulta real. Lo demás: nombre probable según la regla; se confirma con
 «Probar» (lista cerrada en `server/wolkvox.js` → `REPORTES`).
