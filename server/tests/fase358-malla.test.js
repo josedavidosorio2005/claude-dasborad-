@@ -125,3 +125,17 @@ test('editar y borrar un grupo (con su asignación); la asesora ve SOLO su turno
   assert.equal(db.prepare('SELECT COUNT(*) n FROM malla_asignaciones WHERE grupoId = ?').get(g.id).n, 0);
   assert.equal((await request(app).get('/api/malla/mia').set(H(tk.a1))).body.semanas[0].turno, null);
 });
+
+test('Fase 366 (D1): semanas de un mes para el selector (también futuras), y la ventana trae el selector', () => {
+  assert.deepEqual(L.mallaSemanasDelMes('2026-12'), ['2026-11-30', '2026-12-07', '2026-12-14', '2026-12-21', '2026-12-28']);
+  assert.deepEqual(L.mallaSemanasDelMes('2027-02'), ['2027-02-01', '2027-02-08', '2027-02-15', '2027-02-22']);
+  assert.deepEqual(L.mallaSemanasDelMes('2026-13'), []);
+  const idx = require('fs').readFileSync(require('path').join(__dirname, '..', '..', 'public', 'index.html'), 'utf8');
+  assert.match(idx, /<input type="month" id="ml-mes" onchange="mallaElegirMes\(\)">/);
+  assert.match(idx, /id="ml-semanas-mes"/);
+});
+
+test('Fase 366 (D1): se puede crear un grupo en una semana de diciembre', async () => {
+  const r = await nuevo(tk.sup, { campana: C, semana: '2026-12-14', nombre: 'Diciembre', horario: HOR });
+  assert.equal(r.status, 201, JSON.stringify(r.body));
+});

@@ -2021,7 +2021,10 @@
         <button type="button" class="btn-cancel" onclick="mallaMoverSemana(1)" aria-label="Semana siguiente">›</button>
         <button type="button" class="btn-cancel" onclick="mallaIrHoy()">Esta semana</button>
       </div>
+      <!-- Fase 366 (D1): elegir cualquier semana, también futura (p. ej. diciembre). -->
+      <div class="ig ml-mes"><label for="ml-mes">Ir al mes</label><input type="month" id="ml-mes" onchange="mallaElegirMes()"></div>
     </div>
+    <div class="ml-semanas-mes" id="ml-semanas-mes" role="group" aria-label="Semanas del mes"></div>
     <!-- Fase 363: «Turnos» / «Puntualidad» (solo en campañas con puntualidad). -->
     <div class="ml-vistas hidden" id="ml-vistas" role="group" aria-label="Vista">
       <button type="button" class="btn-cancel" id="ml-vista-turnos" aria-pressed="true" onclick="mpMostrar('turnos')">Turnos</button>
