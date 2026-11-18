@@ -2650,6 +2650,11 @@ div.ca-bar-fila{cursor:default}
 .ac-asig-form{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin:12px 0;padding:12px;border:1px solid var(--c-border-soft);border-radius:var(--r-md)}
 .ac-asig-form .ig{margin-bottom:0;flex:1 1 180px}
 .ac-form-titulo{flex-basis:100%;margin:0}
+/* Fase 371 (E3): actas. */
+.ac-acta-elems{flex:1 1 100%;border:0;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:4px 16px}
+.ac-acta-elems legend{font-weight:600;color:var(--c-text-2);margin-bottom:4px}
+.ac-subir{display:inline-flex;align-items:center;cursor:pointer}
+.ac-subir:focus-within{outline:2px solid var(--c-focus);outline-offset:2px}
 .ac-asig-form .btn-primary,.ac-asig-form .btn-cancel{min-height:44px}
 /* Fase 368 (D3): «Mi malla» de la asesora: el día en verde (Puntual) o en rojo (Llegaste tarde). */
 .ml-tabla-mia tr.ml-dia-puntual > *{background:var(--c-success-bg)}

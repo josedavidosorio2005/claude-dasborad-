@@ -770,6 +770,7 @@ require('./cargas-versiones').crearTabla(db);
 require('./sura-televentas').crearTablas(db);
 // Fase 369 (E1): «Inventario de sistemas» (activos tecnológicos). Tablas vacías; solo se siembran los tipos.
 require('./activos').crearTablas(db);
+require('./activos-actas').crearTablas(db); // Fase 371 (E3): actas
 {
   const vencidas = require('./cargas-versiones').purgar(db);
   if (vencidas && !config.isTest) console.log('[db] cargas_versiones: ' + vencidas + ' version(es) vencida(s) borrada(s).');
