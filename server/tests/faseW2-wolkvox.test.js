@@ -236,8 +236,10 @@ test('rutas: probar conexion responde solo code, msg, filas y nombres de campos;
   assert.deepEqual(p.body.campos, ['agent_name', 'cod_act', 'cost', 'date', 'description_cod_act', 'destiny', 'telephone', 'time_min', 'time_seg']);
   assert.equal(p.body.usoHoy, uso0 + 1);
   const u = new URL(falso.ultima.url);
-  assert.equal(u.searchParams.get('date_ini'), '20250602080000');
-  assert.equal(u.searchParams.get('date_end'), '20250602085959');
+  // Fase A2: skill_1 del dia completo (el formato que funciono desde el PC).
+  assert.equal(u.searchParams.get('api'), 'skill_1');
+  assert.equal(u.searchParams.get('date_ini'), '20250602000000');
+  assert.equal(u.searchParams.get('date_end'), '20250602235959');
   const txt = p.text + JSON.stringify(p.headers);
   for (const x of [TOKEN, SERVIDOR, 'wolkvox.com', 'wolkvox-token', CENTINELA_NOMBRE, CENTINELA_TEL, 'Inventada']) {
     assert.ok(!txt.includes(x), 'la respuesta no trae ' + x);
@@ -245,7 +247,7 @@ test('rutas: probar conexion responde solo code, msg, filas y nombres de campos;
   }
   // Historial: una linea corta, sin secretos ni valores.
   const h = db.prepare("SELECT detalle FROM historial WHERE accion = 'WOLKVOX_PRUEBA' ORDER BY id DESC LIMIT 1").get();
-  assert.match(h.detalle, /^MOBILIZE · cdr_1 · 2025-06-02 · 200 · 2 filas$/);
+  assert.match(h.detalle, /^MOBILIZE · skill_1 · 2025-06-02 · 200 · 2 filas$/);
   // Espera minima entre pruebas (cuida las consultas del dia).
   const antes = falso.llamadas;
   const p2 = await request(app).post('/api/wolkvox/probar').set(H(admin)).send({ campana: R, fecha: '2025-06-02' });

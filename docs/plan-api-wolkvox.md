@@ -418,3 +418,20 @@ que esté aprobado.
    réplica con el Flujo manual de Mobilize del mismo mes (sección 5).
 4. Si algo no cuadra: poner el parámetro en `0` y, si hace falta, «Deshacer» el mes en el Centro
    de cargas de la réplica.
+
+### 10.1 Fase A2 (18/11/2026): «Probar» con el mismo formato que funcionó desde el PC
+
+- Wolkvox agregó la IP del servidor; el «Diagnóstico de red» dio DNS, TCP y TLS ok por IPv4. Pero
+  «Probar» con el 17/11 respondió **HTTP 404**: pedía `cdr_1` de 08:00 a 08:59 y mandaba además
+  `Accept: application/json`. Lo que funcionó desde el PC (B0) fue
+  `/api/v2/reports_manager.php?api=skill_1&date_ini=AAAAMMDD000000&date_end=AAAAMMDD235959` con solo
+  el encabezado `wolkvox-token`.
+- Ahora «Probar» pide `skill_1` del **día completo** con ese mismo formato (la consulta automática
+  ya lo usaba), sin `Accept`, y muestra los **nombres de skill** (no son datos personales).
+- Ante un error HTTP se lee del JSON solo `code` y `msg` (limpios, recortados; el `msg` se descarta
+  si trae el token, el servidor o algo con forma de clave) y salen en el mensaje y el Historial.
+- La consulta automática toma un 404 cuyo `msg` dice «sin registros» como un día sin llamadas; otro
+  404 detiene la corrida como antes.
+- Columnas reales de `skill_1` (B0, 17/11): `skill_name, skill_id, inbound_calls, answer_calls,
+  abandon_calls, service_level_10seg, service_level_20seg, service_level_30seg, service_level_0seg,
+  abandon, asa, ata`: coinciden con el lector de la consulta automática.

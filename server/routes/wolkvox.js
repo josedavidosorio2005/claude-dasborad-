@@ -66,21 +66,22 @@ router.post(
     if (espera > 0) return res.status(429).json({ error: 'Espera ' + Math.ceil(espera / 1000) + ' s antes de volver a probar', codigo: 'espera' });
     _ultimaPrueba.set(op, Date.now());
 
-    // Una hora de un dia (08:00 a 08:59:59): pocos registros y siempre dentro del mismo mes.
-    const dateIni = wv.fechaWolkvox(dia, '08:00:00');
-    const dateEnd = wv.fechaWolkvox(dia, '08:59:59');
-    const api = 'cdr_1';
+    // Fase A2 (18/11): el mismo formato que funcionó desde el PC y que usa la consulta automática:
+    // skill_1 del DIA COMPLETO (00:00:00 a 23:59:59). Antes era cdr_1 de 08:00 a 08:59 (404 en prod).
+    const dateIni = wv.fechaWolkvox(dia, '00:00:00');
+    const dateEnd = wv.fechaWolkvox(dia, '23:59:59');
+    const api = 'skill_1';
     try {
       const r = await wv.consultarReporte({ db, operacion: op, api, dateIni, dateEnd, fetchImpl: req.app.locals.wolkvoxFetch });
       const s = wv.resumenSinValores(r.cuerpo);
       logEvent('WOLKVOX_PRUEBA', null, actorLabel(req.actor), op + ' · ' + api + ' · ' + dia + ' · ' + r.httpStatus + ' · ' + s.filas + ' filas');
-      res.json({ ok: true, reporte: api, dia, desde: '08:00', hasta: '08:59', httpStatus: r.httpStatus, code: s.code, msg: s.msg, filas: s.filas, campos: s.campos, duracionMs: r.duracionMs, usoHoy: wv.usoDelDia(db, op), tope: wv.topeDiario(), limiteLicencia: wv.LIMITE_LICENCIA_DIA });
+      res.json({ ok: true, reporte: api, dia, desde: '00:00', hasta: '23:59', httpStatus: r.httpStatus, code: s.code, msg: s.msg, filas: s.filas, campos: s.campos, skills: wv.nombresDeSkill(r.cuerpo), duracionMs: r.duracionMs, usoHoy: wv.usoDelDia(db, op), tope: wv.topeDiario(), limiteLicencia: wv.LIMITE_LICENCIA_DIA });
     } catch (e) {
       if (!(e instanceof wv.WolkvoxError)) throw e;
       // Fase W3: + el codigo de la causa de red (solo el codigo).
-      logEvent('WOLKVOX_PRUEBA', null, actorLabel(req.actor), op + ' · ' + api + ' · ' + dia + ' · error ' + e.codigo + (e.causa ? ' (' + e.causa + ')' : ''));
+      logEvent('WOLKVOX_PRUEBA', null, actorLabel(req.actor), op + ' · ' + api + ' · ' + dia + ' · error ' + e.codigo + (e.causa ? ' (' + e.causa + ')' : '') + (e.httpStatus ? ' ' + e.httpStatus : '') + (e.wolkvoxCode ? ' code ' + e.wolkvoxCode : ''));
       const status = e.codigo === 'sin_configurar' ? 409 : e.codigo === 'tope' || e.codigo === 'limite_wolkvox' ? 429 : e.codigo === 'rango' || e.codigo === 'reporte' ? 400 : 502;
-      res.status(status).json({ ok: false, error: e.message, codigo: e.codigo, causa: e.causa || null, httpStatus: e.httpStatus || null, usoHoy: wv.usoDelDia(db, op), tope: wv.topeDiario(), limiteLicencia: wv.LIMITE_LICENCIA_DIA });
+      res.status(status).json({ ok: false, error: e.message, codigo: e.codigo, causa: e.causa || null, httpStatus: e.httpStatus || null, wolkvoxCode: e.wolkvoxCode || null, wolkvoxMsg: e.wolkvoxMsg || null, usoHoy: wv.usoDelDia(db, op), tope: wv.topeDiario(), limiteLicencia: wv.LIMITE_LICENCIA_DIA });
     }
   })
 );

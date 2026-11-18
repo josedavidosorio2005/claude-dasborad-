@@ -1951,7 +1951,7 @@
   <div class="modal modal-wolkvox">
     <button class="wv-cerrar" type="button" onclick="wvPruebaCerrar()" aria-label="Cerrar">×</button>
     <h3 id="modal-wolkvox-title">Probar conexión con Wolkvox</h3>
-    <p class="wv-ayuda">Pide a Wolkvox el detalle de llamadas (CDR) de <strong>una hora</strong> (08:00 a 08:59) del día que elijas, para <strong id="wv-campana"></strong>. Solo se muestran el código, el mensaje y los <strong>nombres</strong> de los campos; nunca los datos. Cada prueba gasta 1 de las consultas del día.</p>
+    <p class="wv-ayuda">Pide a Wolkvox las llamadas por skill (<code>skill_1</code>) del <strong>día completo</strong> que elijas, para <strong id="wv-campana"></strong>. Solo se muestran el código, el mensaje, los <strong>nombres</strong> de los campos y los nombres de las skills; nunca los datos. Cada prueba gasta 1 de las consultas del día.</p>
     <dl class="wv-estado">
       <dt>Token y servidor guardados</dt><dd id="wv-estado-config">…</dd>
       <dt>Consultas de hoy</dt><dd id="wv-estado-uso">…</dd>
@@ -1973,6 +1973,7 @@
         <dt>msg</dt><dd id="wv-r-msg"></dd>
         <dt>Filas</dt><dd id="wv-r-filas"></dd>
         <dt>Tiempo</dt><dd id="wv-r-tiempo"></dd>
+        <dt>Skills</dt><dd id="wv-r-skills"></dd>
       </dl>
       <p class="wv-campos-titulo">Campos que trae <code>data</code> (solo los nombres):</p>
       <ul class="wv-campos" id="wv-campos"></ul>

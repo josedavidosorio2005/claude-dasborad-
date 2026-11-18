@@ -205,7 +205,8 @@ async function consultarReporte(opts) {
     try {
       resp = await fetchImpl(url.toString(), {
         method: 'GET',
-        headers: { 'wolkvox-token': cred.token, Accept: 'application/json' },
+        // Fase A2: solo el encabezado del token, igual que la consulta que funcionó desde el PC.
+        headers: { 'wolkvox-token': cred.token },
         signal: ctrl.signal,
         redirect: 'error',
       });
@@ -229,7 +230,15 @@ async function consultarReporte(opts) {
     }
     if (st < 200 || st >= 300) {
       _log(operacion, api, st, null, Date.now() - t0);
-      throw new WolkvoxError('http', 'Wolkvox respondió ' + st, st);
+      // Fase A2: Wolkvox suele explicar el error en el JSON ({ code, msg }). Solo esos dos, limpios
+      // y recortados (resumenSinValores): nunca `data`, la URL ni el token.
+      let det = null;
+      try { det = resumenSinValores(await resp.json()); } catch (e) { det = null; }
+      // Si el msg pudiera traer el token, el servidor o algo con forma de clave, no se muestra.
+      if (det && det.msg && (det.msg.includes(cred.token) || det.msg.toLowerCase().includes(cred.servidor.toLowerCase()) || /[A-Za-z0-9_-]{20,}/.test(det.msg))) det.msg = null;
+      const err = new WolkvoxError('http', 'Wolkvox respondió ' + st + (det && (det.code || det.msg) ? ' (code ' + (det.code || '—') + (det.msg ? ': ' + det.msg : '') + ')' : ''), st);
+      if (det) { err.wolkvoxCode = det.code; err.wolkvoxMsg = det.msg; }
+      throw err;
     }
     let cuerpo;
     try { cuerpo = await resp.json(); } catch (e) { cuerpo = undefined; }
@@ -265,6 +274,22 @@ function resumenSinValores(cuerpo) {
   // que no sea letras, numeros y puntuacion simple.
   const msg = cuerpo && typeof cuerpo.msg === 'string' ? cuerpo.msg.replace(/[^\p{L}\p{N} .,:;()%_-]/gu, '').slice(0, 120) : null;
   return { code, msg, filas: data.length, campos: [...campos].sort() };
+}
+
+// Fase A2: nombres de skill de una respuesta de skill_1 (no son datos personales): unicos,
+// ordenados, limpios y con tope. Nada mas de la fila.
+function nombresDeSkill(cuerpo) {
+  const data = Array.isArray(cuerpo && cuerpo.data) ? cuerpo.data : [];
+  const nombres = new Set();
+  for (const fila of data) {
+    if (!fila || typeof fila !== 'object' || Array.isArray(fila)) continue;
+    const v = fila.skill_name;
+    if (typeof v !== 'string') continue;
+    const n = v.replace(/[^\p{L}\p{N} .,:;()_&/-]/gu, '').trim().slice(0, 80);
+    if (n) nombres.add(n);
+    if (nombres.size >= 50) break;
+  }
+  return [...nombres].sort();
 }
 
 // ── Fase W3 (17/11): «Diagnóstico de red» ──
@@ -377,6 +402,7 @@ module.exports = {
   reservarConsulta,
   consultarReporte,
   resumenSinValores,
+  nombresDeSkill, // Fase A2
   operacionDeCampana,
   causaDeRed, diagnosticarRed, resumenDiagnostico, DIAG_TIEMPO_MS, // Fase W3
   _reiniciarArchivoLocal: () => { _archivoLocalLeido = false; }, // solo pruebas

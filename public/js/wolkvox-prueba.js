@@ -85,10 +85,12 @@ async function wvPruebaProbar() {
     _wvTexto('wv-r-msg', r.msg === null ? '—' : r.msg);
     _wvTexto('wv-r-filas', r.filas + ' (' + r.dia + ', ' + r.desde + ' a ' + r.hasta + ')');
     _wvTexto('wv-r-tiempo', (r.duracionMs / 1000).toFixed(1) + ' s');
+    // Fase A2: nombres de skill (no son datos personales), solo con textContent.
+    _wvTexto('wv-r-skills', Array.isArray(r.skills) && r.skills.length ? r.skills.join(' · ') : '—');
     var lista = _wvEl('wv-campos');
     if (r.campos.length === 0) {
       var li0 = document.createElement('li');
-      li0.textContent = 'Sin filas en esa hora: no hay nombres de campos para mostrar. Prueba otro día.';
+      li0.textContent = 'Sin filas ese día: no hay nombres de campos para mostrar. Prueba otro día.';
       lista.appendChild(li0);
     }
     r.campos.forEach(function (c) {
