@@ -56,6 +56,7 @@ async function _entrarTrasLogin(data) {
     await loadDashboardClientes(); await loadData(); await loadHist(); await loadSeedDemoEstado();
     if(typeof cargarAlertasSeguridad==='function') await cargarAlertasSeguridad();
     enterUserDashboard(); // Fase 357 (B): menú único de tarjetas («Administración» lleva al panel)
+    if(typeof calReiniciarSesion === 'function') calReiniciarSesion(); // Fase 365: Calidad sin datos del usuario anterior
     if (typeof ticketsAlEntrar === 'function') ticketsAlEntrar(); // Fase 356
     return;
   }
@@ -88,6 +89,7 @@ async function _entrarTrasLogin(data) {
   if (pantalla==='admin') { enterAdminPanel(); }
   else if (pantalla==='asesor') { enterAsesorPage(); }
   else { enterUserDashboard(); }
+  if(typeof calReiniciarSesion === 'function') calReiniciarSesion(); // Fase 365: Calidad sin datos del usuario anterior
   if (typeof ticketsAlEntrar === 'function') ticketsAlEntrar(); // Fase 356
 }
 document.getElementById('password').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();});
@@ -313,6 +315,7 @@ function doLogout(){
   try{ if(typeof closeCentroCargas === 'function') closeCentroCargas(); }catch(e){}
   if(typeof gdReiniciarFiltros === 'function') gdReiniciarFiltros();
   if(typeof calSondeoReiniciar === 'function') calSondeoReiniciar(); // Fase 236
+  if(typeof calReiniciarSesion === 'function') calReiniciarSesion(); // Fase 365: plantillas de Calidad del usuario anterior
   if(typeof ticketsAlSalir === 'function') ticketsAlSalir(); // Fase 356
   if(typeof cerrarVentanasAbiertas === 'function') cerrarVentanasAbiertas(); // Fase 362: toda ventana abierta (Calidad, etc.)
   currentUser=null; authToken=null; users=[]; historial=[];

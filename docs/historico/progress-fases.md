@@ -21309,3 +21309,12 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - B2: `ticket_tipos` (los 3 de siempre sembrados; ADMIN agrega, renombra y desactiva, con Historial `TICKET_TIPO_*`); la tabla `tickets` tiene un CHECK con los 3 tipos y no se reconstruye: el tipo elegido va en la columna nueva `tipoCodigo` (ADD COLUMN, sin cambiar datos) y se lee `COALESCE(tipoCodigo, tipo)`; rutas `GET/POST /tickets/tipos`, `PUT /tickets/tipos/:codigo`; tarjeta «Sugerencias / Tickets» en el menú (todos) y opción en los menús laterales del Portal Asesor y del supervisor; pestaña «Tipos» (solo ADMIN).
   - B3: `motion-helpers.js` (`VENTANAS_MODULO`: Escape no las cierra; un clic directo sobre su fondo no llega a sus «cerrar al hacer clic afuera»), CSS a pantalla completa. Diálogos chicos encima siguen cerrando con Escape. `cerrar-ventanas.js` sin cambios (las sigue cerrando al salir y con «Ver como»).
 - **Pruebas:** `fase364-interfaz-edwin` (5); `fase356-tickets-interfaz`, `fase357b-menu-unico` y `fase137-partec-escape-popup-interno` ajustadas al pedido; rutas en la matriz de la Fase 118. Revisión local en Brave (base demo) a 1440/768/375: 4/2/1 columnas, las 9 tarjetas visibles sin bajar en 1440, sin desborde lateral; Tickets, Malla y Calidad a pantalla completa, siguen abiertas tras Escape y clic en el fondo, cierran con su botón; 0 errores de consola.
+
+## Fase 365 — Calidad no reconocía los formularios al cambiar de usuario (v1.214.1, 2026-11-18)
+
+- **Pedido (Edwin, 18/11, bloque C):** al entrar con un asesor, salir y entrar con otro usuario, Calidad no reconoce los formularios. Reproducir en local con la base demo y arreglar.
+- **Reproducido (local, base demo, Brave):** `demo_asesor` → salir → `demo_calidad` en la misma pestaña: Calidad con plantillas solo de ORLANT (las de la asesora); en una pestaña limpia, MOBILIZE y ORLANT. Igual con `demo_supervisor`.
+- **Causa:** `calLoadPlantillas` carga una sola vez por página (`_calPlantillasLoaded`) con el acceso de quien entró, y nada lo reiniciaba al cambiar de usuario.
+- **Arreglo:** `calReiniciarSesion()` (`calidad.js`) vacía las plantillas y lo demás de Calidad que depende del usuario; se llama en `doLogout`, en las dos entradas (`session.js`) y al entrar o salir de «Ver como» (`ver-como.js`).
+- **Verificado en local tras el arreglo:** asesora → salir → `demo_calidad` y `demo_supervisor`: MOBILIZE y ORLANT, igual que en pestaña limpia; 0 errores de consola.
+- **Pruebas:** `fase365-calidad-cambio-usuario` (2).

@@ -7,6 +7,15 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.214.1 — Noviembre 2026
+
+**Arreglo: Calidad después de cambiar de usuario.**
+
+- Si una asesora entraba, salía y después entraba otra persona en el mismo computador, Calidad no
+  reconocía los formularios de las otras campañas (se quedaba con los de la asesora). Ahora, al salir,
+  al entrar y con «Ver como», Calidad vuelve a cargar los formularios de quien está usando la
+  plataforma.
+
 ## v1.214.0 — Noviembre 2026
 
 **Pedidos de Edwin (18/11): menú, Tickets y ventanas.**
