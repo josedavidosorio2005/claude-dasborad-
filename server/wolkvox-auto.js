@@ -137,13 +137,15 @@ function convertirFila(r, dia) {
   return { fila };
 }
 
+// Mensaje de Wolkvox que dice «sin registros» (en 200 sin `data`, o en un 404).
+const SIN_REGISTROS = /no\s+(records|data|results)|0\s+records|sin\s+(registros|datos)/i;
 // Respuesta de un dia -> { filas, omitidas } o lanza WolkvoxError('respuesta_invalida').
 function filasDelDia(cuerpo, dia) {
   let data = cuerpo && cuerpo.data;
   if (data === undefined || data === null || data === '') {
     // Dia sin llamadas: Wolkvox puede no mandar `data`. Solo se acepta si lo dice el mensaje.
     const msg = cuerpo && typeof cuerpo.msg === 'string' ? cuerpo.msg : '';
-    if (/no\s+(records|data|results)|0\s+records|sin\s+(registros|datos)/i.test(msg)) data = [];
+    if (SIN_REGISTROS.test(msg)) data = [];
   }
   if (!Array.isArray(data)) throw new wv.WolkvoxError('respuesta_invalida', 'Wolkvox respondió sin la lista de datos');
   const filas = [];
@@ -254,11 +256,18 @@ async function correrUnaVez(opts) {
     try {
       for (const dia of dias) {
         res.consultas++;
-        const r = await wv.consultarReporte({
-          db, operacion: OPERACION, api: API, env, ahora, fetchImpl: opts.fetchImpl, credenciales: cred,
-          dateIni: wv.fechaWolkvox(dia, '00:00:00'), dateEnd: wv.fechaWolkvox(dia, '23:59:59'),
-        });
-        const d = filasDelDia(r.cuerpo, dia);
+        let cuerpo;
+        try {
+          cuerpo = (await wv.consultarReporte({
+            db, operacion: OPERACION, api: API, env, ahora, fetchImpl: opts.fetchImpl, credenciales: cred,
+            dateIni: wv.fechaWolkvox(dia, '00:00:00'), dateEnd: wv.fechaWolkvox(dia, '23:59:59'),
+          })).cuerpo;
+        } catch (e) {
+          // Fase A2: un 404 cuyo mensaje dice «sin registros» es un dia sin llamadas, no una falla.
+          if (e instanceof wv.WolkvoxError && e.httpStatus === 404 && SIN_REGISTROS.test(e.wolkvoxMsg || '')) cuerpo = { data: [] };
+          else throw e;
+        }
+        const d = filasDelDia(cuerpo, dia);
         omitidas += d.omitidas;
         filas.push(...d.filas);
       }

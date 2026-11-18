@@ -7,6 +7,15 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.207.1 — Noviembre 2026
+
+**Wolkvox: «Probar conexión» ahora pide lo mismo que la consulta automática.**
+
+- El botón «Probar conexión» de la campaña de pruebas pide el Flujo por skill del día completo (el
+  formato que ya funcionó desde la oficina), en vez del detalle de llamadas de una hora, y muestra
+  los nombres de las skills.
+- Si Wolkvox responde con un error, ahora se ve su código y su mensaje (sin datos ni claves).
+
 ## v1.207.0 — Noviembre 2026
 
 **Wolkvox (Plan A): la plataforma ya sabe pedir el Flujo de llamadas sola, pero está apagada.**

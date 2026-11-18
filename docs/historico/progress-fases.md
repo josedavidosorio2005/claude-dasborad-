@@ -21231,3 +21231,10 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
 - **Cambio:** `server/wolkvox-auto.js` (programador cada minuto + corrida), arranque en `server.js` (no en pruebas) y parada al cerrar; `skill_1` habilitado en `server/wolkvox.js`; `reemplazarMesFlujo` acepta `archivoNombre` y `conservar` (AHT/espera); `/wolkvox/estado` suma `auto`. Excepción escrita del usuario anotada en `CLAUDE.md`. Detalle en `docs/plan-api-wolkvox.md`, sección 10.
 - **Pruebas:** `faseA1-wolkvox-auto` (14, Wolkvox simulado, ninguna llamada real); las de Wolkvox (W2, W3, B1) siguen pasando.
 - **Producción:** apagada (no existe `WOLKVOX_AUTO_ACTIVO` en SSM). Ninguna consulta a Wolkvox en esta fase.
+
+## Fase A2 — «Probar» de Wolkvox con skill_1 del día completo (v1.207.1, 2026-11-18)
+
+- **Pedido (usuario, 18/11):** Wolkvox ya tiene la IP 3.85.54.96 en su firewall y el «Diagnóstico de red» sale en Sí (DNS, TCP y TLS por IPv4), pero «Probar» con el 17/11 respondía «Wolkvox respondió 404». Revisar reporte y URL de «Probar» y de la consulta automática y usar `skill_1` con el formato que funcionó desde el PC. Autorizadas hasta 2 consultas de prueba desde producción con el 17/11 (solo columnas, cantidad de filas y nombres de skill).
+- **Causa encontrada:** «Probar» pedía `cdr_1` de 08:00 a 08:59 con `Accept: application/json`; el PC (B0) usó `skill_1` del día completo con solo `wolkvox-token`. La consulta automática ya usaba `skill_1` del día completo (solo le sobraba `Accept`, que estaba en el cliente común).
+- **Cambio:** `server/routes/wolkvox.js` («Probar» = `skill_1`, 00:00:00–23:59:59, `skills` en la respuesta), `server/wolkvox.js` (sin `Accept`; `code`/`msg` de Wolkvox en errores HTTP, sin secretos; `nombresDeSkill`), `server/wolkvox-auto.js` (404 «sin registros» = día vacío), modal (texto y fila «Skills»).
+- **Pruebas:** `faseA2-wolkvox-probar-skill1` (4) y `faseW2-wolkvox` ajustada al formato nuevo; la prueba de W2 de «errores sin secretos» obligó a descartar un `msg` que traiga el token o algo con forma de clave.
