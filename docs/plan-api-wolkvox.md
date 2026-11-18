@@ -445,3 +445,11 @@ que esté aprobado.
   `maxConsultas` opcional (1 a 62): si el plan necesita más, no empieza. Un candado común impide
   que corra a la vez que la programada.
 - Historial: `WOLKVOX_AUTO` con «Ejecutar ahora · …» y el administrador como actor.
+
+### 10.3 Primera corrida real y comparación (18/11/2026); Fase A4
+
+- **Primera corrida real (18/11, 10:28 Colombia, «Ejecutar ahora», autorizada hasta 20 consultas):** estado ok, 17 consultas (uso del día 20 de 2.800), noviembre 1–17: 68 filas (17 días × 4 skills), reemplazó 0 (la réplica no tenía noviembre), con respaldo, 1,6 s. Historial: una línea `WOLKVOX_AUTO` «Ejecutar ahora · …».
+- **Comparación con el Flujo manual de MOBILIZE (solo lectura):** el manual de noviembre tiene solo SKILL SAC, 8 días (03–12/11). En esos 8 días × SKILL SAC: llamadas, contestadas, abandonadas, nivel de servicio 20 s, ASA y ATA **8/8 iguales (diferencia máxima 0)**. % de abandono no comparable (el manual lo tiene vacío). Totales SKILL SAC del mes: réplica 37 / 36 / 1, manual 29 / 29 / 0; la diferencia está en días sin fila manual (el archivo manual llega hasta el 12/11).
+- **Skills que sobraban:** ENCUESTA LLAMADAS DE SALIDA, Skill Key Account y Wolk, con 0 llamadas los 17 días (51 filas en cero).
+- **Decisiones del usuario (18/11) → Fase A4 (v1.208.1):** no excluir skills por nombre, sino **descartar las filas con 0 llamadas** (si una skill empieza a recibir llamadas, aparece sola; un mes con todo en cero no se reemplaza); **guardar el nivel de servicio a 10 s y 30 s** (`service_level_10seg`/`_30seg`) sin mostrarlos (la pestaña de Flujo muestra solo 20 s desde la Fase 68; Edwin decide si los quiere ver). La validación común (B1 y A1) acepta esos dos campos (0–100).
+- **Interruptor:** queda en 1. Siguiente: comparar otra vez después de la corrida de las 7:00 del 19/11 y decidir si se pasa al MOBILIZE real (autorización nueva por escrito, ver `CLAUDE.md`).

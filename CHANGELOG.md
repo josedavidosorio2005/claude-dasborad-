@@ -7,6 +7,15 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.208.1 — Noviembre 2026
+
+**Wolkvox: ajustes de la actualización automática del Flujo (campaña de pruebas).**
+
+- Ya no se guardan las filas de skills sin llamadas ese día. Si una skill empieza a recibir
+  llamadas, aparece sola.
+- Se guarda también el nivel de servicio a 10 y 30 segundos, pero todavía no se muestra (la
+  pestaña sigue mostrando el de 20 segundos).
+
 ## v1.208.0 — Noviembre 2026
 
 **Wolkvox: botón «Ejecutar ahora».**
