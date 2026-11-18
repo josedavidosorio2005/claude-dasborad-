@@ -2051,6 +2051,61 @@
   </div>
 </div>
 
+<!-- Fase 369 (E1): «Inventario de sistemas» (ADMIN y SISTEMAS). Pantalla completa, solo se cierra con «Cerrar». -->
+<div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="activos-title" id="activos-overlay">
+  <div class="modal modal-activos">
+    <button class="tk-cerrar" type="button" onclick="activosCerrar()" aria-label="Cerrar">×</button>
+    <h3 id="activos-title">Inventario de sistemas</h3>
+    <div class="ml-vistas" role="group" aria-label="Secciones">
+      <button type="button" class="btn-cancel" data-ac-tab="panel" aria-pressed="true" onclick="activosTab('panel')">Panel</button>
+      <button type="button" class="btn-cancel" data-ac-tab="elementos" aria-pressed="false" onclick="activosTab('elementos')">Elementos</button>
+      <button type="button" class="btn-cancel" data-ac-tab="registrar" aria-pressed="false" onclick="activosTab('registrar')">Registrar</button>
+      <button type="button" class="btn-cancel" data-ac-tab="ajustes" aria-pressed="false" onclick="activosTab('ajustes')">Ajustes</button>
+    </div>
+    <p class="wv-error hidden" id="ac-error" role="alert"></p>
+    <section id="ac-p-panel" aria-label="Panel"></section>
+    <section id="ac-p-elementos" class="hidden" aria-label="Elementos">
+      <div id="ac-lista-zona">
+        <div class="ac-filtros">
+          <div class="ig"><label for="ac-f-tipo">Tipo</label><select id="ac-f-tipo" onchange="activosBuscar()"></select></div>
+          <div class="ig"><label for="ac-f-estado">Estado</label><select id="ac-f-estado" onchange="activosBuscar()"></select></div>
+          <div class="ig"><label for="ac-f-sede">Sede</label><select id="ac-f-sede" onchange="activosBuscar()"></select></div>
+          <div class="ig"><label for="ac-f-q">Buscar</label><input type="search" id="ac-f-q" maxlength="60" placeholder="Código, marca, modelo, serial…" onchange="activosBuscar()"></div>
+        </div>
+        <div id="ac-lista" aria-live="polite"></div>
+      </div>
+      <div id="ac-detalle" class="hidden"></div>
+    </section>
+    <section id="ac-p-registrar" class="hidden" aria-label="Registrar">
+      <form id="ac-r-form" onsubmit="activosRegistrar(event)" novalidate>
+        <div class="ac-filtros">
+          <div class="ig"><label for="ac-r-tipo">Tipo de elemento</label><select id="ac-r-tipo" onchange="activosCambioTipo()"></select></div>
+          <div class="ig"><label for="ac-r-codigo">Código (etiqueta)</label><input type="text" id="ac-r-codigo" maxlength="40" required></div>
+          <div class="ig"><label for="ac-r-estado">Entra como</label><select id="ac-r-estado"><option value="libre">Libre</option><option value="en_reparacion">En reparación</option><option value="malo">Malo</option></select></div>
+          <div class="ig"><label for="ac-r-marca">Marca</label><input type="text" id="ac-r-marca" maxlength="60"></div>
+          <div class="ig"><label for="ac-r-modelo">Modelo</label><input type="text" id="ac-r-modelo" maxlength="60"></div>
+          <div class="ig"><label for="ac-r-serial">Serial</label><input type="text" id="ac-r-serial" maxlength="80"></div>
+          <div class="ig"><label for="ac-r-sede">Sede</label><select id="ac-r-sede"></select></div>
+          <div class="ig"><label for="ac-r-operacion">Operación</label><select id="ac-r-operacion"></select></div>
+          <div class="ig"><label for="ac-r-proveedor">Proveedor</label><select id="ac-r-proveedor"></select></div>
+        </div>
+        <div class="ac-filtros" id="ac-r-campos"></div>
+        <div class="ig"><label for="ac-r-obs">Observaciones</label><textarea id="ac-r-obs" rows="2" maxlength="500"></textarea></div>
+        <p class="ml-nota" id="ac-r-nota" role="status" aria-live="polite"></p>
+        <div class="modal-btns"><button type="submit" class="btn-primary">Registrar</button></div>
+      </form>
+    </section>
+    <section id="ac-p-ajustes" class="hidden" aria-label="Ajustes">
+      <p class="vis-ayuda">Un valor por línea. Se usan en las listas de Registrar y en los filtros.</p>
+      <div class="ac-filtros">
+        <div class="ig"><label for="ac-l-sedes">Sedes</label><textarea id="ac-l-sedes" rows="6"></textarea><button type="button" class="btn-cancel ac-btn" onclick="activosGuardarLista('sedes')">Guardar sedes</button></div>
+        <div class="ig"><label for="ac-l-operaciones">Operaciones</label><textarea id="ac-l-operaciones" rows="6"></textarea><button type="button" class="btn-cancel ac-btn" onclick="activosGuardarLista('operaciones')">Guardar operaciones</button></div>
+        <div class="ig"><label for="ac-l-proveedores">Proveedores</label><textarea id="ac-l-proveedores" rows="6"></textarea><button type="button" class="btn-cancel ac-btn" onclick="activosGuardarLista('proveedores')">Guardar proveedores</button></div>
+      </div>
+    </section>
+  </div>
+</div>
+
 <!-- Fase 356: «Sugerencias / Tickets» (cualquier usuario con sesión; ADMIN y REPORTES gestionan). -->
 <div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-tickets-title" id="modal-tickets">
   <div class="modal modal-tickets">
@@ -2282,6 +2337,7 @@
 <script src="js/malla-puntualidad.js"></script>
 <script src="js/horarios-logic.js"></script>
 <script src="js/centro-horarios.js"></script>
+<script src="js/activos.js"></script>
 <script src="js/dashboard-generic.js"></script>
 <script src="js/sura-televentas-app.js"></script>
 <script src="js/sura-televentas-paleta-logic.js"></script>

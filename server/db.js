@@ -768,6 +768,8 @@ const CAMPANAS_CALIDAD = clientesRegistro.campanasCalidad(db);
 require('./cargas-versiones').crearTabla(db);
 // Fase 215: tablas del tablero Televentas de SURA (antes de asegurarDatosVersion: llevan sus triggers).
 require('./sura-televentas').crearTablas(db);
+// Fase 369 (E1): «Inventario de sistemas» (activos tecnológicos). Tablas vacías; solo se siembran los tipos.
+require('./activos').crearTablas(db);
 {
   const vencidas = require('./cargas-versiones').purgar(db);
   if (vencidas && !config.isTest) console.log('[db] cargas_versiones: ' + vencidas + ' version(es) vencida(s) borrada(s).');

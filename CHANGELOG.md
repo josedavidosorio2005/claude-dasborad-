@@ -7,6 +7,22 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.218.0 — Noviembre 2026
+
+**Nuevo: «Inventario de sistemas».**
+
+- Una tarjeta nueva, «Inventario de sistemas», para el administrador y para el rol Sistemas.
+  Ahí se registra cada elemento por separado (torre, monitor, teclado, mouse, diadema, portátil
+  o equipo administrable como un switch), con su código, marca, modelo, serial, sede y los datos
+  propios de cada tipo.
+- Cada elemento tiene un estado (libre, en uso, en reparación, malo o de baja). Para cambiarlo
+  hay que escribir el motivo, y todo queda en el historial del elemento.
+- El panel muestra cuántos hay en cada estado, por tipo y por sede. Las sedes, operaciones y
+  proveedores se escriben en «Ajustes».
+- Empieza vacío. El Inventario anterior queda solo para el administrador mientras Sistemas
+  revisa el nuevo.
+- Lo que sigue: asignar elementos a los agentes y las actas en PDF.
+
 ## v1.217.0 — Noviembre 2026
 
 **Mi malla: la asesora ve si llegó puntual.**

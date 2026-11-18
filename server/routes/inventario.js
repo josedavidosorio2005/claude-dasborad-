@@ -3,7 +3,7 @@
 // sin tocar ninguna regla de negocio.
 const express = require('express');
 const db = require('../db');
-const { requireActor, can } = require('../auth');
+const { requireActor, isFullAdmin } = require('../auth');
 const { validate, schemas } = require('../validation');
 const { wrap, nowStr, logEvent, actorLabel } = require('./shared');
 
@@ -33,7 +33,7 @@ router.get(
   '/inventario/items',
   requireActor,
   wrap((req, res) => {
-    if (!can(req.actor, 'Inventario')) return res.status(403).json({ error: 'Sin acceso al modulo de Inventario' });
+    if (!isFullAdmin(req.actor)) return res.status(403).json({ error: 'El Inventario anterior solo lo ve el administrador (Fase 369)' });
     const { categoria, estado } = req.query;
     let rows;
     if (categoria && estado) {
@@ -54,7 +54,7 @@ router.get(
   '/inventario/resumen',
   requireActor,
   wrap((req, res) => {
-    if (!can(req.actor, 'Inventario')) return res.status(403).json({ error: 'Sin acceso al modulo de Inventario' });
+    if (!isFullAdmin(req.actor)) return res.status(403).json({ error: 'El Inventario anterior solo lo ve el administrador (Fase 369)' });
     const total = db.prepare('SELECT COUNT(*) AS c FROM inventario_items').get().c;
     const totalUnidades = db.prepare('SELECT COALESCE(SUM(cantidad), 0) AS s FROM inventario_items').get().s;
     const valorTotal = db.prepare('SELECT COALESCE(SUM(cantidad * costoUnitario), 0) AS s FROM inventario_items').get().s;
@@ -74,7 +74,7 @@ router.post(
   requireActor,
   validate(schemas.inventarioItemBody),
   wrap((req, res) => {
-    if (!can(req.actor, 'Inventario')) return res.status(403).json({ error: 'Sin acceso al modulo de Inventario' });
+    if (!isFullAdmin(req.actor)) return res.status(403).json({ error: 'El Inventario anterior solo lo ve el administrador (Fase 369)' });
     const b = req.body;
     const now = nowStr();
     const info = db.prepare(
@@ -94,7 +94,7 @@ router.put(
   validate(schemas.idParamSchema, 'params'),
   validate(schemas.inventarioItemUpdate),
   wrap((req, res) => {
-    if (!can(req.actor, 'Inventario')) return res.status(403).json({ error: 'Sin acceso al modulo de Inventario' });
+    if (!isFullAdmin(req.actor)) return res.status(403).json({ error: 'El Inventario anterior solo lo ve el administrador (Fase 369)' });
     const row = db.prepare('SELECT * FROM inventario_items WHERE id = ?').get(req.params.id);
     if (!row) return res.status(404).json({ error: 'Item no encontrado' });
     const b = req.body;
@@ -118,7 +118,7 @@ router.delete(
   requireActor,
   validate(schemas.idParamSchema, 'params'),
   wrap((req, res) => {
-    if (!can(req.actor, 'Inventario')) return res.status(403).json({ error: 'Sin acceso al modulo de Inventario' });
+    if (!isFullAdmin(req.actor)) return res.status(403).json({ error: 'El Inventario anterior solo lo ve el administrador (Fase 369)' });
     const row = db.prepare('SELECT * FROM inventario_items WHERE id = ?').get(req.params.id);
     if (!row) return res.status(404).json({ error: 'Item no encontrado' });
     db.prepare('DELETE FROM inventario_items WHERE id = ?').run(row.id);
@@ -132,7 +132,7 @@ router.get(
   '/inventario/movimientos',
   requireActor,
   wrap((req, res) => {
-    if (!can(req.actor, 'Inventario')) return res.status(403).json({ error: 'Sin acceso al modulo de Inventario' });
+    if (!isFullAdmin(req.actor)) return res.status(403).json({ error: 'El Inventario anterior solo lo ve el administrador (Fase 369)' });
     const { itemId } = req.query;
     let rows;
     if (itemId) {
@@ -150,7 +150,7 @@ router.post(
   requireActor,
   validate(schemas.inventarioMovimientoBody),
   wrap((req, res) => {
-    if (!can(req.actor, 'Inventario')) return res.status(403).json({ error: 'Sin acceso al modulo de Inventario' });
+    if (!isFullAdmin(req.actor)) return res.status(403).json({ error: 'El Inventario anterior solo lo ve el administrador (Fase 369)' });
     const b = req.body;
     const item = db.prepare('SELECT * FROM inventario_items WHERE id = ?').get(b.itemId);
     if (!item) return res.status(400).json({ error: 'Item no encontrado' });
@@ -196,7 +196,7 @@ router.post(
   requireActor,
   validate(schemas.inventarioCargaBody),
   wrap((req, res) => {
-    if (!can(req.actor, 'Inventario')) return res.status(403).json({ error: 'Sin acceso al modulo de Inventario' });
+    if (!isFullAdmin(req.actor)) return res.status(403).json({ error: 'El Inventario anterior solo lo ve el administrador (Fase 369)' });
     const { items } = req.body;
     const now = nowStr();
     let creados = 0;
@@ -222,7 +222,7 @@ router.post(
   requireActor,
   validate(schemas.inventarioMovCargaBody),
   wrap((req, res) => {
-    if (!can(req.actor, 'Inventario')) return res.status(403).json({ error: 'Sin acceso al modulo de Inventario' });
+    if (!isFullAdmin(req.actor)) return res.status(403).json({ error: 'El Inventario anterior solo lo ve el administrador (Fase 369)' });
     const { movimientos } = req.body;
     const now = nowStr();
     let creados = 0;

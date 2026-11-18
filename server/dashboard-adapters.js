@@ -494,7 +494,7 @@ function buildGestionHumana(db) {
 
 const ADAPTERS = {
   GERENCIA: { permiso: 'Gerencia', config: GERENCIA_CONFIG, build: buildGerencia },
-  INVENTARIO: { permiso: 'Inventario', config: INVENTARIO_CONFIG, build: buildInventario },
+  INVENTARIO: { permiso: 'Inventario', soloAdmin: true, config: INVENTARIO_CONFIG, build: buildInventario }, // Fase 369: el Inventario anterior, solo ADMIN
   GESTION_HUMANA: { permiso: 'GestionHumana', config: GH_CONFIG, build: buildGestionHumana },
 };
 

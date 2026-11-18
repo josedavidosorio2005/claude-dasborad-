@@ -53,11 +53,12 @@ test('matriz de roles: cada rol accede solo a lo suyo', async (t) => {
   });
 
   // ── INVENTARIO (mlopez) ──
-  await t.test('INVENTARIO: su módulo sí, el resto no', async () => {
+  // Fase 369: el Inventario anterior queda solo para ADMIN; el rol INVENTARIO ya no lo ve (ni el de Sistemas).
+  await t.test('INVENTARIO: el Inventario anterior ya no (Fase 369), el resto tampoco', async () => {
     const tok = await tokenFor('mlopez', SEED.mlopez);
-    assert.equal(await G(tok, '/api/inventario/items'), 200);
-    assert.equal(await G(tok, '/api/inventario/resumen'), 200);
-    assert.equal(await G(tok, '/api/dashboard/INVENTARIO'), 200);
+    assert.equal(await G(tok, '/api/inventario/items'), 403);
+    assert.equal(await G(tok, '/api/inventario/resumen'), 403);
+    assert.equal(await G(tok, '/api/dashboard/INVENTARIO'), 403);
     assert.equal(await G(tok, '/api/dashboard/GERENCIA'), 403);
     assert.equal(await G(tok, '/api/gerencia/kpis'), 403);
     assert.equal(await G(tok, '/api/dashboard/ORLANT'), 403);
