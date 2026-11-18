@@ -52,17 +52,35 @@ function ultimoDiaDelMes(mes) {
 }
 
 // Reemplaza el MES COMPLETO de la réplica con las filas recibidas (todas de ese mes, ya validadas).
-function reemplazarMesFlujo(db, { mes, filas, cargadoPorNombre }) {
+// Fase A1 (18/11): `archivoNombre` dice de donde vino (agente o consulta automatica) y
+// `conservar` lista campos que la API no trae (AHT y espera): para cada dia y skill, si la fila
+// nueva no lo trae, se copia el valor que ya estaba (el del archivo manual) en vez de dejarlo vacio.
+const CONSERVABLES = ['ahtSegundos', 'waitTimeSegundos'];
+function reemplazarMesFlujo(db, { mes, filas, cargadoPorNombre, archivoNombre, conservar }) {
   const desde = mes + '-01', hasta = ultimoDiaDelMes(mes);
-  let borradasMes = 0, resultado;
+  let borradasMes = 0, resultado, conservados = 0;
   db.transaction(() => {
     // Respaldo del mes completo ANTES de borrar (Deshacer 30 dias del Centro de cargas).
     respaldarAntesDeCambiar(db, 'calidad_nivel_servicio_diario', { campana: CAMPANA_INGESTA, desde, hasta, guardadoPorNombre: cargadoPorNombre });
+    const campos = Array.isArray(conservar) ? conservar.filter((c) => CONSERVABLES.includes(c)) : [];
+    if (campos.length) {
+      const previas = new Map();
+      for (const r of db.prepare('SELECT fecha, skillName, ahtSegundos, waitTimeSegundos FROM calidad_nivel_servicio_diario WHERE campana = ? AND fecha BETWEEN ? AND ?').all(CAMPANA_INGESTA, desde, hasta)) {
+        previas.set(r.fecha + '|' + r.skillName, r);
+      }
+      filas = filas.map((f) => {
+        const p = previas.get(f.fecha + '|' + f.skillName);
+        if (!p) return f;
+        const g = { ...f };
+        for (const c of campos) if (g[c] === undefined && p[c] !== null && p[c] !== undefined) { g[c] = p[c]; conservados++; }
+        return g;
+      });
+    }
     // Lo que no venga en este envío (otra skill, otro día del mes) también sale: el mes queda igual a lo enviado.
     borradasMes = db.prepare('DELETE FROM calidad_nivel_servicio_diario WHERE campana = ? AND fecha BETWEEN ? AND ?').run(CAMPANA_INGESTA, desde, hasta).changes;
-    resultado = cargarNivelServicioDiario(db, { campana: CAMPANA_INGESTA, sede: null, archivoNombre: 'API Wolkvox (agente)', cargadoPorNombre, filas });
+    resultado = cargarNivelServicioDiario(db, { campana: CAMPANA_INGESTA, sede: null, archivoNombre: archivoNombre || 'API Wolkvox (agente)', cargadoPorNombre, filas });
   })();
-  return { mes, filas: filas.length, skills: new Set(filas.map((f) => f.skillName)).size, reemplazadas: borradasMes, insertadas: resultado.diario.insertadas };
+  return { mes, filas: filas.length, skills: new Set(filas.map((f) => f.skillName)).size, reemplazadas: borradasMes, insertadas: resultado.diario.insertadas, conservados };
 }
 
 const CAMPOS_NUM = ['totalLlamadas', 'contestadas', 'llamadasAbandonadas', 'serviceLevel20secPct', 'abandonPct', 'asaSegundos', 'ataSegundos', 'ahtSegundos', 'waitTimeSegundos'];

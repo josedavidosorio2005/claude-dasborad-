@@ -47,6 +47,7 @@ router.get(
       limiteLicencia: wv.LIMITE_LICENCIA_DIA,
       fechaSugerida: ayerColombia(),
       reportes: Object.keys(wv.REPORTES),
+      auto: require('../wolkvox-auto').estado(db), // Fase A1: horarios, interruptor al arrancar, ultima corrida (sin secretos)
     });
   })
 );

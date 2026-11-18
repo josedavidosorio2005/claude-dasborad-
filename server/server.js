@@ -523,12 +523,16 @@ function start() {
     }
   }, 24 * 3600 * 1000);
   purgaVersiones.unref();
+  // Fase A1 (Plan A de Wolkvox): consulta automatica 7:00 y 13:00 (Colombia), solo la replica y
+  // solo Flujo. APAGADA salvo WOLKVOX_AUTO_ACTIVO=1 en SSM (se lee fresco antes de cada corrida).
+  const wolkvoxAuto = config.isTest ? null : require('./wolkvox-auto').iniciar(db, { logEvent: require('./routes/shared').logEvent });
 
   let shuttingDown = false;
   function shutdown(signal) {
     if (shuttingDown) return;
     shuttingDown = true;
     cancelarPrecalentado();
+    if (wolkvoxAuto) wolkvoxAuto.detener();
     console.log(`\n[shutdown] Recibido ${signal}. Cerrando ordenadamente...`);
 
     const guard = setTimeout(() => {

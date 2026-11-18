@@ -7,6 +7,16 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.207.0 — Noviembre 2026
+
+**Wolkvox (Plan A): la plataforma ya sabe pedir el Flujo de llamadas sola, pero está apagada.**
+
+- Dos veces al día (7:00 a.m. y 1:00 p.m.) la plataforma podrá pedirle a Wolkvox el Flujo de
+  llamadas por skill, día por día, y actualizar el mes. Solo para la campaña de pruebas oculta
+  «MOBILIZE PRUEBAS API»; el Mobilize real y los demás clientes no se tocan.
+- AHT y tiempo de espera siguen saliendo del archivo que se sube a mano.
+- Está apagada: se enciende cuando Wolkvox autorice la conexión desde nuestro servidor.
+
 ## v1.206.0 — Noviembre 2026
 
 **Plan B de Wolkvox (fase B1): la plataforma ya puede recibir datos de un programa en la oficina.**

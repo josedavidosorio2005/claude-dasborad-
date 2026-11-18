@@ -24,7 +24,8 @@ const TIEMPO_MAXIMO_POR_DEFECTO_MS = 30000;
 const ARCHIVO_LOCAL = path.join(__dirname, 'data', 'wolkvox.local.env');
 
 // Reportes que el cliente sabe pedir (se agregan uno por uno en las fases W3+).
-const REPORTES = { cdr_1: 'Detalle de las llamadas (CDR)' };
+// Fase A1 (18/11): skill_1 (una fila por skill del rango pedido) para la consulta automatica del Flujo.
+const REPORTES = { cdr_1: 'Detalle de las llamadas (CDR)', skill_1: 'Llamadas por skill (Flujo)' };
 
 // Campaña de la plataforma -> operacion de Wolkvox (de quien es el token). SOLO la replica.
 const OPERACION_DE_CAMPANA = { 'MOBILIZE PRUEBAS API': 'MOBILIZE' };
