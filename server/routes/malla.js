@@ -194,6 +194,26 @@ router.delete('/malla/excepciones/:id', requireActor, wrap((req, res) => {
   res.json({ ok: true });
 }));
 
+// ── Fase 367 (D2): «Horarios» por archivo (Centro de cargas). Quien edita la malla de la campaña. ──
+router.get('/malla/horarios', requireActor, wrap((req, res) => {
+  const campana = campanaDe(req.query.campana);
+  // Sin puntualidad o sin permiso de editar: «no disponible» (200), así el Centro de cargas no muestra la sección ni un error.
+  if (!P.config(campana) || !M.puedeEditar(req.actor, campana)) return res.json({ disponible: false });
+  const anio = /^\d{4}$/.test(String(req.query.anio || '')) ? String(req.query.anio) : fechaLimitesHoyColombia().slice(0, 4);
+  res.json({ disponible: true, campana, anio, meses: P.resumenMeses(db, campana, anio) });
+}));
+router.post('/malla/horarios/carga', requireActor, wrap((req, res) => {
+  const b = req.body || {};
+  if (!soloClaves(b, ['campana', 'mes', 'archivoNombre', 'filas'])) return res.status(400).json({ error: 'Datos no válidos' });
+  const campana = campanaDe(b.campana);
+  if (!campanaPuntualidad(req, res, campana, true)) return;
+  const filas = Array.isArray(b.filas) ? b.filas.map((f) => (f && typeof f === 'object' ? { agent_id: f.agent_id, agent_name: f.agent_name, date: f.date, login: f.login, logout: f.logout, login_time: f.login_time } : f)) : b.filas;
+  const r = P.cargarArchivo(db, campana, String(b.mes || ''), filas);
+  if (r.error) return res.status(400).json({ error: r.error });
+  log('MALLA_HORARIOS_CARGA', campana, '-', req, String(b.mes) + ' · ' + r.dias.length + ' día(s) · ' + r.agentes + ' agente(s) · ' + r.sesiones + ' sesión(es) · ' + r.sinCoincidencia.length + ' sin coincidencia');
+  res.status(201).json(r);
+}));
+
 // La asesora: SOLO su puntualidad (esta semana y la anterior), en las campañas que lo permiten
 // (asesoraVe). La replica no lo permite: sus datos son de prueba.
 router.get('/malla/mi-puntualidad', requireActor, wrap((req, res) => {

@@ -22,8 +22,12 @@ const { claveNombre } = require('./enlace-asesor');
 // Campañas con puntualidad. operacion = de quien es el token de Wolkvox; asesorasDe = de que
 // campaña salen las asesoras (la replica usa las de MOBILIZE, solo lectura); asesoraVe = si la
 // asesora ve su puntualidad en el Portal Asesor (la replica: no, sus datos son de prueba).
+// Fase 367 (pedido de Edwin 18/11, D2; OK del usuario): también por ARCHIVO (el reporte de Login/
+// Logout de Wolkvox, «HistAgent», mismas columnas que agent_7). SURA: solo por archivo, con sus
+// propias asesoras, y la asesora ve lo suyo (D3). La réplica: API y archivo.
 const CAMPANAS = {
   'MOBILIZE PRUEBAS API': { operacion: 'MOBILIZE', asesorasDe: 'MOBILIZE', asesoraVe: false },
+  SURA: { operacion: 'ARCHIVO_SURA', asesorasDe: 'SURA', asesoraVe: true },
 };
 let _config = CAMPANAS;
 function config(campana) { return Object.prototype.hasOwnProperty.call(_config, campana) ? _config[campana] : null; }
@@ -142,6 +146,28 @@ function agentes(db, campana, hoy) {
     };
   }).sort((a, b) => (a.userId === null) - (b.userId === null) || a.agentName.localeCompare(b.agentName));
 }
+// -> Map(userId -> { agentId, auto }) para la campaña, mirando los agentes con login entre
+// desde-62 días y hasta.
+function enlacesEfectivos(db, campana, desde, hasta) {
+  const cfg = config(campana);
+  const out = new Map();
+  const agentesUsados = new Set();
+  for (const e of enlaces(db, campana)) { out.set(e.userId, { agentId: e.agentId, auto: false }); agentesUsados.add(e.agentId); }
+  const porClave = new Map(); // clave del nombre -> asesora (null si hay dos con la misma)
+  for (const a of asesorasDe(db, campana)) { if (out.has(a.id)) continue; const k = claveNombre(a.nombre); porClave.set(k, porClave.has(k) ? null : a); }
+  const agentesPorClave = new Map();
+  for (const r of db.prepare(`SELECT agentId, agentName FROM wolkvox_login_diario WHERE operacion = ? AND fecha BETWEEN ? AND ? GROUP BY agentId`).all(cfg.operacion, _sumarDias(desde, -62), hasta)) {
+    if (agentesUsados.has(r.agentId) || !r.agentName) continue;
+    const k = claveNombre(r.agentName);
+    agentesPorClave.set(k, agentesPorClave.has(k) ? null : r.agentId);
+  }
+  for (const [k, agentId] of agentesPorClave) {
+    const a = porClave.get(k);
+    if (agentId && a) out.set(a.id, { agentId, auto: true });
+  }
+  return out;
+}
+
 function excepcionesEnRango(db, campana, desde, hasta) {
   return db.prepare(`SELECT e.id, e.userId, e.desde, e.hasta, e.tipo, u.nombre FROM malla_excepciones e LEFT JOIN users u ON u.id = e.userId
                      WHERE e.campana = ? AND e.desde <= ? AND e.hasta >= ? ORDER BY e.desde, u.nombre`).all(campana, hasta, desde);
@@ -179,9 +205,9 @@ function calcular(db, campana, desde, hasta, opts) {
   const cfg = config(campana);
   const ahora = opts.ahora; // 'AAAA-MM-DD HH:MM:SS' hora Colombia
   const hastaDatos = (db.prepare('SELECT hasta FROM wolkvox_login_hasta WHERE operacion = ?').get(cfg.operacion) || {}).hasta || null;
-  const enl = enlaces(db, campana);
-  const agentDe = new Map(enl.map((e) => [e.userId, e.agentId]));
-  const userDe = new Map(enl.map((e) => [e.agentId, e.userId]));
+  const efectivos = enlacesEfectivos(db, campana, desde, hasta); // Fase 367: + automático por nombre exacto
+  const agentDe = new Map([...efectivos].map(([u, e]) => [u, e.agentId]));
+  const userDe = new Map([...efectivos].map(([u, e]) => [e.agentId, u]));
   const logins = new Map();
   for (const r of db.prepare('SELECT * FROM wolkvox_login_diario WHERE operacion = ? AND fecha BETWEEN ? AND ?').all(cfg.operacion, desde, hasta)) logins.set(r.fecha + '|' + r.agentId, r);
   const exc = excepcionesEnRango(db, campana, desde, hasta);
@@ -233,7 +259,54 @@ function calcular(db, campana, desde, hasta, opts) {
   return out;
 }
 
+// ── Fase 367 (D2): carga por archivo ──
+// filas: [{ agent_id, agent_name, date, login, logout, login_time }] (texto «AAAA-MM-DD HH:MM:SS»; el
+// navegador convierte las fechas de Excel). Pasa por resumirSesiones, el MISMO lector de agent_7.
+// Reemplaza SOLO los días que trae el archivo (un día por archivo, o varios). Todas en el mes.
+const MAX_FILAS_ARCHIVO = 5000;
+function cargarArchivo(db, campana, mes, filas) {
+  const cfg = config(campana);
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(String(mes))) return { error: 'Elige el mes (AAAA-MM)' };
+  if (!Array.isArray(filas) || !filas.length) return { error: 'El archivo no trae filas' };
+  if (filas.length > MAX_FILAS_ARCHIVO) return { error: 'Máximo ' + MAX_FILAS_ARCHIVO + ' filas por archivo' };
+  const r = resumirSesiones(filas);
+  if (r.error) return { error: 'Una fila no se pudo leer (' + r.error + '). Sube el reporte de Login/Logout de Wolkvox tal cual.' };
+  const dias = [...new Set([...r.dias.values()].map((d) => d.fecha))].sort();
+  const fuera = dias.filter((f) => f.slice(0, 7) !== mes);
+  if (fuera.length) return { error: 'El archivo trae días de otro mes (' + fuera.slice(0, 3).join(', ') + '): súbelo en su mes' };
+  db.transaction(() => {
+    const del = db.prepare('DELETE FROM wolkvox_login_diario WHERE operacion = ? AND fecha = ?');
+    for (const f of dias) del.run(cfg.operacion, f);
+    const ins = db.prepare('INSERT INTO wolkvox_login_diario (operacion, fecha, agentId, agentName, primerLogin, ultimoLogout, sesiones, segundos) VALUES (?,?,?,?,?,?,?,?)');
+    for (const d of r.dias.values()) ins.run(cfg.operacion, d.fecha, d.agentId, d.agentName, d.primerLogin, d.ultimoLogout, d.sesiones, d.segundos);
+    const hasta = dias[dias.length - 1] + ' 23:59:59';
+    const prev = db.prepare('SELECT hasta FROM wolkvox_login_hasta WHERE operacion = ?').get(cfg.operacion);
+    if (!prev || hasta > prev.hasta) db.prepare('INSERT INTO wolkvox_login_hasta (operacion, hasta, actualizado) VALUES (?,?,?) ON CONFLICT(operacion) DO UPDATE SET hasta = excluded.hasta, actualizado = excluded.actualizado').run(cfg.operacion, hasta, new Date().toISOString());
+  })();
+  // Los que no coinciden por nombre con una asesora de la campaña (lista aparte, para corregir).
+  const efectivos = enlacesEfectivos(db, campana, dias[0], dias[dias.length - 1]);
+  const enlazados = new Set([...efectivos.values()].map((e) => e.agentId));
+  const sinCoincidencia = [...new Map([...r.dias.values()].filter((d) => !enlazados.has(d.agentId)).map((d) => [d.agentId, d.agentName || '(sin nombre)'])).values()].sort();
+  const sesiones = [...r.dias.values()].reduce((s, d) => s + d.sesiones, 0);
+  return { dias, agentes: new Set([...r.dias.values()].map((d) => d.agentId)).size, sesiones, sinCoincidencia };
+}
+// Días cargados por mes de un año (para los botones por mes).
+function resumenMeses(db, campana, anio) {
+  const cfg = config(campana);
+  const filas = db.prepare(`SELECT substr(fecha,1,7) mes, COUNT(DISTINCT fecha) dias, COUNT(DISTINCT agentId) agentes, SUM(sesiones) sesiones
+                             FROM wolkvox_login_diario WHERE operacion = ? AND substr(fecha,1,4) = ? GROUP BY mes`).all(cfg.operacion, String(anio));
+  const m = new Map(filas.map((f) => [f.mes, f]));
+  const out = [];
+  for (let i = 1; i <= 12; i++) {
+    const mes = anio + '-' + String(i).padStart(2, '0');
+    const f = m.get(mes);
+    out.push({ mes, dias: f ? f.dias : 0, agentes: f ? f.agentes : 0, sesiones: f ? f.sesiones : 0 });
+  }
+  return out;
+}
+
 module.exports = {
+  cargarArchivo, resumenMeses, enlacesEfectivos, MAX_FILAS_ARCHIVO, // Fase 367
   CAMPANAS, TIPOS_EXCEPCION, MAX_DIAS_EXCEPCION, MAX_DIAS_CONSULTA,
   config, campanasConPuntualidad, momento, segundosDe, resumirSesiones, guardarResumen,
   asesorasDe, enlaces, agentes, excepcionesEnRango, diasEntre, estadoDelDia, calcular,

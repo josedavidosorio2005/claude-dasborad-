@@ -195,7 +195,9 @@ declarar(['POST /tickets/tipos', 'PUT /tickets/tipos/:codigo'], 'admin'); // Fas
 declarar(['GET /malla/campanas', 'GET /malla/mia', 'GET /malla/mi-puntualidad'], 'open'); // Fase 363: + mi-puntualidad (solo lo suyo)
 declarar(['GET /malla', 'POST /malla/grupos', 'PUT /malla/grupos/:id', 'DELETE /malla/grupos/:id', 'PUT /malla/grupos/:id/asesoras', 'POST /malla/copiar',
   // Fase 363: puntualidad, enlaces y excepciones -- probados rol por rol en fase363-malla-puntualidad.test.js.
-  'GET /malla/puntualidad', 'GET /malla/agentes', 'PUT /malla/agentes/:agentId', 'POST /malla/excepciones', 'DELETE /malla/excepciones/:id'], 'skip');
+  'GET /malla/puntualidad', 'GET /malla/agentes', 'PUT /malla/agentes/:agentId', 'POST /malla/excepciones', 'DELETE /malla/excepciones/:id',
+  // Fase 367: «Horarios» por archivo -- probados rol por rol en fase367-horarios-archivo.test.js.
+  'GET /malla/horarios', 'POST /malla/horarios/carga'], 'skip');
 declarar(['PUT /monitoreos/:id/fecha'], 'calidadManage'); // Fase 337: quien lo califico, Reportes o admin (fase337-fecha-del-monitoreo.test.js) // Fase 333: corregir solo el asesor "Invalid Date" (fase333-sin-asesor.test.js)
 declarar(['GET /calidad/codificaciones'], 'scopedRead');
 declarar(['POST /calidad/codificaciones/bulk', 'PUT /calidad/codificaciones/:id'], 'cargaCampana'); // Fase 299
