@@ -7,6 +7,16 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.212.0 — Noviembre 2026
+
+**Wolkvox: la Tipificación de la campaña de pruebas puede llegar sola (apagado).**
+
+- La actualización automática ya sabe traer de Wolkvox el detalle de llamadas (CDR) para la
+  Tipificación, y de ahí la Eficacia, las llamadas únicas contestadas y las de salida conectadas,
+  solo para la campaña de pruebas «MOBILIZE PRUEBAS API». El Mobilize real no se toca.
+- Los teléfonos, los datos del cliente y los comentarios nunca se guardan.
+- Está apagado: se enciende cuando se apruebe, y después se compara con lo que se sube a mano.
+
 ## v1.211.0 — Noviembre 2026
 
 **Wolkvox: el Flujo por hora y el AHT de la campaña de pruebas pueden llegar solos (apagado).**
