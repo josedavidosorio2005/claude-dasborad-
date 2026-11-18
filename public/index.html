@@ -80,7 +80,7 @@
         <span class="navbar-user" id="nb-user-admin"></span>
         <span class="navbar-role" id="nb-role-admin"></span>
         <span class="navbar-app-version"></span>
-        <button class="navbar-help-link tk-menu-btn" type="button" aria-haspopup="dialog" aria-label="Sugerencias / Tickets" onclick="ticketsAbrir()">Sugerencias / Tickets<span class="tk-badge hidden" data-tk-badge aria-hidden="true"></span></button>
+        <!-- Fase 364: «Sugerencias / Tickets» pasó al menú de tarjetas / menú lateral -->
         <button class="navbar-help-link" type="button" onclick="abrirGuiaUso()">Guía de uso</button>
         <button class="navbar-help-link" type="button" onclick="abrirCambiarPasswordModal()">Cambiar mi contraseña</button>
         <button class="btn-logout" onclick="doLogout()">Cerrar Sesión</button>
@@ -741,7 +741,7 @@
         <span class="navbar-user" id="nb-user-dash"></span>
         <span class="navbar-role" id="nb-role-dash"></span>
         <span class="navbar-app-version"></span>
-        <button class="navbar-help-link tk-menu-btn" type="button" aria-haspopup="dialog" aria-label="Sugerencias / Tickets" onclick="ticketsAbrir()">Sugerencias / Tickets<span class="tk-badge hidden" data-tk-badge aria-hidden="true"></span></button>
+        <!-- Fase 364: «Sugerencias / Tickets» pasó al menú de tarjetas / menú lateral -->
         <button class="navbar-help-link" type="button" onclick="abrirGuiaUso()">Guía de uso</button>
         <button class="navbar-help-link" type="button" onclick="abrirCambiarPasswordModal()">Cambiar mi contraseña</button>
         <button class="btn-logout" onclick="doLogout()">Cerrar Sesión</button>
@@ -1711,7 +1711,7 @@
         <span class="navbar-user" id="nb-user-asesor"></span>
         <span class="navbar-role" id="nb-role-asesor">ASESOR</span>
         <span class="navbar-app-version"></span>
-        <button class="navbar-help-link tk-menu-btn" type="button" aria-haspopup="dialog" aria-label="Sugerencias / Tickets" onclick="ticketsAbrir()">Sugerencias / Tickets<span class="tk-badge hidden" data-tk-badge aria-hidden="true"></span></button>
+        <!-- Fase 364: «Sugerencias / Tickets» pasó al menú de tarjetas / menú lateral -->
         <button class="navbar-help-link" type="button" onclick="abrirGuiaUso()">Guía de uso</button>
         <button class="navbar-help-link" type="button" onclick="abrirCambiarPasswordModal()">Cambiar mi contraseña</button>
         <button class="btn-logout" onclick="doLogout()">Cerrar Sesión</button>
@@ -1725,6 +1725,7 @@
         <li><a id="asesor-menu-calidad" role="button" tabindex="0" onclick="showAsesorSection('calidad')" class="active"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-trophy"></use></svg></span> Resultados de Calidad
           <span id="asesor-menu-calidad-badge" class="hidden" style="background:var(--c-danger-dark);color:var(--c-on-brand);border-radius:10px;padding:1px 7px;font-size:var(--fs-note);font-weight:700;margin-left:6px"></span>
         </a></li>
+        <li><a id="asesor-menu-tickets" class="tk-menu-btn" role="button" tabindex="0" aria-haspopup="dialog" onclick="ticketsAbrir()"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-message-circle"></use></svg></span> Sugerencias / Tickets<span class="tk-badge hidden" data-tk-badge aria-hidden="true"></span></a></li><!-- Fase 364 -->
         <li><a id="asesor-menu-malla" role="button" tabindex="0" onclick="showAsesorSection('malla')"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-calendar"></use></svg></span> Mi malla</a></li><!-- Fase 358 -->
       </ul>
     </aside>
@@ -1804,7 +1805,7 @@
         <span class="navbar-user" id="nb-user-supervisor"></span>
         <span class="navbar-role" id="nb-role-supervisor">SUPERVISOR</span>
         <span class="navbar-app-version"></span>
-        <button class="navbar-help-link tk-menu-btn" type="button" aria-haspopup="dialog" aria-label="Sugerencias / Tickets" onclick="ticketsAbrir()">Sugerencias / Tickets<span class="tk-badge hidden" data-tk-badge aria-hidden="true"></span></button>
+        <!-- Fase 364: «Sugerencias / Tickets» pasó al menú de tarjetas / menú lateral -->
         <button class="navbar-help-link" type="button" onclick="abrirGuiaUso()">Guía de uso</button>
         <button class="navbar-help-link" type="button" onclick="abrirCambiarPasswordModal()">Cambiar mi contraseña</button>
         <button class="btn-logout" onclick="doLogout()">Cerrar Sesión</button>
@@ -1817,6 +1818,7 @@
       <ul class="sidebar-menu" id="supervisor-sidebar-menu">
         <li><a id="supervisor-menu-inicio" role="button" tabindex="0" onclick="enterUserDashboard()"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-arrow-left"></use></svg></span> Inicio</a></li><!-- Fase 357 (B) -->
         <li><a id="supervisor-menu-dashboards" role="button" tabindex="0" onclick="showSupervisorSection('dashboards')" class="active"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-layout-dashboard"></use></svg></span> Dashboards</a></li>
+        <li><a id="supervisor-menu-tickets" class="tk-menu-btn" role="button" tabindex="0" aria-haspopup="dialog" onclick="ticketsAbrir()"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-message-circle"></use></svg></span> Sugerencias / Tickets<span class="tk-badge hidden" data-tk-badge aria-hidden="true"></span></a></li><!-- Fase 364 -->
         <li><a id="supervisor-menu-malla" role="button" tabindex="0" onclick="mallaAbrir()"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-calendar"></use></svg></span> Malla de turnos</a></li><!-- Fase 358 -->
         <li id="supervisor-menu-cargas-li" class="hidden"><a id="supervisor-menu-cargas" role="button" tabindex="0" onclick="openCentroCargas()"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-upload"></use></svg></span> Cargar bases</a></li>
         <li><a id="supervisor-menu-calidad" role="button" tabindex="0" onclick="showSupervisorSection('calidad')"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-circle-check"></use></svg></span> Calidad</a></li>
@@ -2054,6 +2056,7 @@
       <button type="button" class="tk-tab-btn on" data-tk-tab="nuevo" aria-controls="tk-panel-nuevo">Nuevo</button>
       <button type="button" class="tk-tab-btn" data-tk-tab="mios" aria-controls="tk-panel-lista">Mis tickets</button>
       <button type="button" class="tk-tab-btn hidden" data-tk-tab="todos" aria-controls="tk-panel-lista">Todos<span class="tk-badge hidden" data-tk-badge aria-hidden="true"></span></button>
+      <button type="button" class="tk-tab-btn hidden" data-tk-tab="tipos" aria-controls="tk-panel-tipos">Tipos</button><!-- Fase 364: solo ADMIN -->
     </div>
     <p class="wv-error hidden" id="tk-error" role="alert"></p>
     <section id="tk-panel-nuevo" class="tk-panel" role="tabpanel" aria-label="Nuevo ticket">
@@ -2068,6 +2071,15 @@
           <div class="tk-ayuda"><span id="tk-aviso" class="tk-aviso"></span><span id="tk-desc-cont" class="tk-cont" aria-live="polite"></span></div>
         </div>
         <div class="modal-btns"><button class="btn-primary" type="submit" id="tk-enviar-btn">Enviar</button></div>
+      </form>
+    </section>
+    <!-- Fase 364 (B2): tipos de ticket editables por ADMIN. -->
+    <section id="tk-panel-tipos" class="tk-panel hidden" role="tabpanel" aria-label="Tipos de ticket">
+      <p class="vis-ayuda">Los tipos que aparecen al crear un ticket. Un tipo no se borra: se desactiva (los tickets viejos conservan su nombre).</p>
+      <div id="tk-tipos-lista"></div>
+      <form id="tk-tipo-form" class="tk-fila" novalidate>
+        <div class="ig"><label for="tk-tipo-nuevo">Nuevo tipo</label><input type="text" id="tk-tipo-nuevo" maxlength="40" autocomplete="off"></div>
+        <div class="modal-btns"><button class="btn-primary" type="submit">Agregar tipo</button></div>
       </form>
     </section>
     <section id="tk-panel-lista" class="tk-panel hidden" role="tabpanel" aria-label="Lista de tickets">

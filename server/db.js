@@ -734,7 +734,24 @@ CREATE TABLE IF NOT EXISTS malla_excepciones (
   createdAt TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_malla_exc ON malla_excepciones(campana, userId, desde);
+-- Fase 364 (pedido de Edwin 18/11, B2): tipos de ticket editables por ADMIN. Los 3 de siempre
+-- se siembran; un tipo no se borra, se desactiva (los tickets viejos siguen mostrando su nombre).
+CREATE TABLE IF NOT EXISTS ticket_tipos (
+  codigo TEXT PRIMARY KEY,
+  nombre TEXT NOT NULL,
+  activo INTEGER NOT NULL DEFAULT 1,
+  orden INTEGER NOT NULL DEFAULT 0,
+  createdAt TEXT NOT NULL DEFAULT ''
+);
+INSERT OR IGNORE INTO ticket_tipos (codigo, nombre, activo, orden) VALUES ('SUGERENCIA', 'Sugerencia', 1, 1), ('PROBLEMA', 'Problema', 1, 2), ('PREGUNTA', 'Pregunta', 1, 3);
 `);
+// Fase 364: la tabla `tickets` tiene un CHECK con los 3 tipos de siempre (no se reconstruye una
+// tabla con tickets reales): el tipo elegido de la lista editable va en una columna nueva,
+// `tipoCodigo`; `tipo` queda para los 3 de siempre (o SUGERENCIA para un tipo nuevo). Se lee
+// COALESCE(tipoCodigo, tipo). Agregar una columna no cambia ningún dato existente.
+if (!db.prepare('PRAGMA table_info(tickets)').all().some((c) => c.name === 'tipoCodigo')) {
+  db.exec('ALTER TABLE tickets ADD COLUMN tipoCodigo TEXT');
+}
 
 // Fase 153 (Paso 1): registro de clientes. La semilla (ORLANT y MOBILIZE tal
 // como estaban en las listas fijas) corre una sola vez; despues el registro

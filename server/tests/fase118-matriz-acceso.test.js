@@ -187,6 +187,8 @@ declarar(['GET /wolkvox/estado', 'POST /wolkvox/probar', 'POST /wolkvox/diagnost
 // un ajeno no vea ni conteste) se prueban rol por rol en fase356-tickets.test.js.
 declarar(['GET /tickets/campanas', 'GET /tickets', 'GET /tickets/:id', 'POST /tickets', 'POST /tickets/:id/respuestas'], 'open');
 declarar(['GET /tickets/contador', 'PUT /tickets/:id/estado', 'DELETE /tickets/:id'], 'skip');
+declarar(['GET /tickets/tipos'], 'open'); // Fase 364: tipos activos (cualquiera con sesión)
+declarar(['POST /tickets/tipos', 'PUT /tickets/tipos/:codigo'], 'admin'); // Fase 364: solo ADMIN edita los tipos
 // Fase 358: «Malla de turnos». /malla/campanas y /malla/mia son auto-scoped (cualquier autenticado
 // recibe solo lo suyo); el resto exige supervisor de la campaña o ADMIN (leer: también REPORTES),
 // probado rol por rol en fase358-malla.test.js.

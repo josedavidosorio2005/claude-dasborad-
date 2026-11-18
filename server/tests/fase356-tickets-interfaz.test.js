@@ -73,11 +73,12 @@ test('lista e hilo: todo texto escapado; el autor solo para el gestor', () => {
   assert.doesNotMatch(L.ticketsOpcionesHtml([{ valor: '"x', etiqueta: '<i>' }], null, true), /<i>|"x"/);
 });
 
-test('página: botón en los 4 menús de cuenta, contador, diálogo, scripts y Escape', () => {
+test('página: (Fase 364) ya no está en los menús de cuenta: tarjeta del menú y menús laterales; contador, diálogo, scripts y Escape', () => {
   const menus = (INDEX.match(/class="navbar-profile-dropdown"/g) || []).length;
   const botones = (INDEX.match(/class="navbar-help-link tk-menu-btn"[^>]*onclick="ticketsAbrir\(\)">Sugerencias \/ Tickets<span class="tk-badge hidden" data-tk-badge/g) || []).length;
   assert.equal(menus, 4);
-  assert.equal(botones, 4);
+  assert.equal(botones, 0, 'Fase 364: fuera de la barra superior');
+  assert.ok(INDEX.includes('id="asesor-menu-tickets" class="tk-menu-btn"') && INDEX.includes('id="supervisor-menu-tickets" class="tk-menu-btn"'));
   assert.equal((INDEX.match(/<span class="tk-badge tk-badge-punto hidden" data-tk-badge aria-hidden="true"><\/span><\/button>/g) || []).length, 4);
   assert.match(INDEX, /id="modal-tickets"/);
   assert.match(INDEX, /<textarea id="tk-desc" rows="6" maxlength="2000" required/);
@@ -86,7 +87,7 @@ test('página: botón en los 4 menús de cuenta, contador, diálogo, scripts y E
   // Clase propia: el CI de pantallas recorre todos los .gd-subtab-btn de la página.
   const dialogo = INDEX.slice(INDEX.indexOf('id="modal-tickets"'), INDEX.indexOf('<!-- Fase 355: «Exportar PDF»'));
   assert.doesNotMatch(dialogo, /gd-subtab/);
-  assert.equal((dialogo.match(/class="tk-tab-btn[^"]*" data-tk-tab=/g) || []).length, 3);
+  assert.equal((dialogo.match(/class="tk-tab-btn[^"]*" data-tk-tab=/g) || []).length, 4); // Fase 364: + «Tipos»
   assert.match(fs.readFileSync(path.join(PUB, 'js', 'a11y-teclado.js'), 'utf8'), /SEL_TAB = '[^']*\.tk-tab-btn'/);
   assert.doesNotMatch(INDEX.slice(INDEX.indexOf('id="modal-tickets"'), INDEX.indexOf('<!-- Fase 355: «Exportar PDF»')), /type="file"/);
   const iL = INDEX.indexOf('js/tickets-logic.js'), iU = INDEX.indexOf('js/tickets.js');

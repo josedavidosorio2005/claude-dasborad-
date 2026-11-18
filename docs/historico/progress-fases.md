@@ -21300,3 +21300,12 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
 - **Cambio:** `server/wolkvox-modulos.js` (módulo `cdr`: una consulta por mes), `server/wolkvox-auto.js` (franja 00:05–00:59 además de 7:00 y 13:00; `/wolkvox/estado` la muestra). `CLAUDE.md` actualizado.
 - **Pruebas:** `faseA1` (franja de medianoche: 00:05 sí, 00:04 no) y `faseA8` (una consulta por mes).
 - **Nota (paso 1):** el 18/11 a las 12:55 p.m. la franja de las 13:00 todavía no había corrido; la comparación de `flujo_hora` se hace después de esa corrida.
+
+## Fase 364 — pedidos de Edwin, bloque B: menú, Tickets y ventanas (v1.214.0, 2026-11-18)
+
+- **Pedido (reunión con Edwin 18/11):** (1) menú de tarjetas en cuadrícula de 3 o 4 columnas en escritorio, sin scroll (celular igual); (2) «Sugerencias / Tickets» fuera de la barra superior, como tarjeta propia del menú, con tipo de ticket editable por ADMIN; (3) todas las ventanas de módulos en pantalla completa, que no se cierren con clic afuera ni con Escape, solo con «Cerrar»; mantener el cierre al salir de sesión y con «Ver como».
+- **Cambio:**
+  - B1: `styles.css` (desde 900 px: 3 columnas y hasta 1200 px de ancho; desde 1280 px: 4 columnas; tarjetas más compactas; celular igual).
+  - B2: `ticket_tipos` (los 3 de siempre sembrados; ADMIN agrega, renombra y desactiva, con Historial `TICKET_TIPO_*`); la tabla `tickets` tiene un CHECK con los 3 tipos y no se reconstruye: el tipo elegido va en la columna nueva `tipoCodigo` (ADD COLUMN, sin cambiar datos) y se lee `COALESCE(tipoCodigo, tipo)`; rutas `GET/POST /tickets/tipos`, `PUT /tickets/tipos/:codigo`; tarjeta «Sugerencias / Tickets» en el menú (todos) y opción en los menús laterales del Portal Asesor y del supervisor; pestaña «Tipos» (solo ADMIN).
+  - B3: `motion-helpers.js` (`VENTANAS_MODULO`: Escape no las cierra; un clic directo sobre su fondo no llega a sus «cerrar al hacer clic afuera»), CSS a pantalla completa. Diálogos chicos encima siguen cerrando con Escape. `cerrar-ventanas.js` sin cambios (las sigue cerrando al salir y con «Ver como»).
+- **Pruebas:** `fase364-interfaz-edwin` (5); `fase356-tickets-interfaz`, `fase357b-menu-unico` y `fase137-partec-escape-popup-interno` ajustadas al pedido; rutas en la matriz de la Fase 118. Revisión local en Brave (base demo) a 1440/768/375: 4/2/1 columnas, las 9 tarjetas visibles sin bajar en 1440, sin desborde lateral; Tickets, Malla y Calidad a pantalla completa, siguen abiertas tras Escape y clic en el fondo, cierran con su botón; 0 errores de consola.

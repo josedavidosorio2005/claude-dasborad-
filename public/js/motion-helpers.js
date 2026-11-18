@@ -394,6 +394,20 @@ if (typeof document !== 'undefined' && typeof document.getElementById === 'funct
 // movimiento.test.js hace require() directo de este archivo) no tiene
 // `document` global, y un addEventListener de nivel de modulo (no
 // dentro de una funcion) se ejecutaria apenas se cargue el archivo.
+// Fase 364 (pedido de Edwin 18/11, B3): las ventanas de MÓDULO (Calidad, Malla, Inventario...) van
+// en pantalla completa y solo se cierran con su botón «Cerrar»: ni Escape ni un clic afuera las
+// cierran. Los diálogos chicos encima de ellas (confirmaciones, formularios) siguen igual. Al salir
+// de sesión y con «Ver como» se siguen cerrando todas (cerrar-ventanas.js).
+var VENTANAS_MODULO = ['calidad-overlay', 'gd-overlay', 'stv-overlay', 'gerencia-overlay', 'gestionhumana-overlay', 'inventario-overlay',
+  'modal-malla', 'modal-tickets', 'cargas-overlay', 'centro-overlay', 'dashcfg-overlay', 'supervisar-lider-overlay'];
+function esVentanaModulo(id) { return VENTANAS_MODULO.indexOf(id) !== -1; }
+if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
+  // En captura: el clic directo sobre el fondo de una ventana de módulo no llega a sus propios
+  // «cerrar al hacer clic afuera».
+  document.addEventListener('click', function (e) {
+    if (e.target && esVentanaModulo(e.target.id)) e.stopPropagation();
+  }, true);
+}
 if (typeof document !== 'undefined') {
   document.addEventListener('keydown', function (e) {
     if (e.key !== 'Escape') return;
@@ -412,6 +426,7 @@ if (typeof document !== 'undefined') {
       var overlayId = MOTION_OVERLAY_STACK[MOTION_OVERLAY_STACK.length - 1];
       var ov = document.getElementById(overlayId);
       if (ov && ov.classList.contains('show')) {
+        if (esVentanaModulo(overlayId)) return; // Fase 364: solo con su botón «Cerrar»
         var cerrar = MOTION_MODALES_ESC[overlayId];
         if (cerrar) cerrar();
         return;
@@ -427,6 +442,7 @@ if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     motionExit: motionExit, motionEnter: motionEnter, motionAbrirModal: motionAbrirModal, motionCerrarModal: motionCerrarModal,
     motionAbrirDialogo: motionAbrirDialogo, motionCerrarDialogo: motionCerrarDialogo, MOTION_DIALOGOS_SIMPLES: MOTION_DIALOGOS_SIMPLES,
+    VENTANAS_MODULO: VENTANAS_MODULO, esVentanaModulo: esVentanaModulo, // Fase 364
     _modalesEsc: function () { return MOTION_MODALES_ESC; },
     motionRegistrarPopupInterno: motionRegistrarPopupInterno, motionDesregistrarPopupInterno: motionDesregistrarPopupInterno,
     _popupsInternos: function () { return MOTION_POPUPS_INTERNOS; },

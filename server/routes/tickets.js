@@ -27,6 +27,35 @@ router.get('/tickets/campanas', requireActor, wrap((req, res) => {
   res.json({ campanas: T.campanasDe(db, req.actor), gestor: T.esGestor(req.actor), puedeBorrar: T.puedeBorrar(req.actor) });
 }));
 
+// Fase 364 (B2): tipos de ticket. Cualquiera con sesión ve los activos; ADMIN ve todos y los edita.
+const { isFullAdmin } = require('../auth');
+router.get('/tickets/tipos', requireActor, wrap((req, res) => {
+  const todos = req.query.todos === '1' && isFullAdmin(req.actor);
+  res.json({ tipos: T.tipos(db, { todos }), puedeEditar: isFullAdmin(req.actor) });
+}));
+router.post('/tickets/tipos', requireActor, wrap((req, res) => {
+  if (!isFullAdmin(req.actor)) return res.status(403).json({ error: 'Solo el administrador edita los tipos de ticket' });
+  const b = req.body || {};
+  if (!b || typeof b !== 'object' || Object.keys(b).some((k) => k !== 'nombre') || !T.nombreTipoValido(b.nombre)) return res.status(400).json({ error: 'Escribe un nombre de 2 a 40 caracteres (letras, números, espacios)' });
+  const r = T.crearTipo(db, b.nombre, new Date().toISOString());
+  if (r.error) return res.status(409).json({ error: r.error });
+  logEvent('TICKET_TIPO_CREADO', { nombre: r.tipo.nombre, user: '-', rol: 'tickets' }, actorLabel(req.actor), r.tipo.codigo);
+  res.status(201).json(r);
+}));
+router.put('/tickets/tipos/:codigo', requireActor, wrap((req, res) => {
+  if (!isFullAdmin(req.actor)) return res.status(403).json({ error: 'Solo el administrador edita los tipos de ticket' });
+  const b = req.body || {};
+  const permitidas = ['nombre', 'activo'];
+  if (!b || typeof b !== 'object' || !Object.keys(b).length || Object.keys(b).some((k) => !permitidas.includes(k))) return res.status(400).json({ error: 'Datos no válidos' });
+  if (b.nombre !== undefined && !T.nombreTipoValido(b.nombre)) return res.status(400).json({ error: 'Escribe un nombre de 2 a 40 caracteres (letras, números, espacios)' });
+  if (b.activo !== undefined && typeof b.activo !== 'boolean') return res.status(400).json({ error: 'Datos no válidos' });
+  const r = T.editarTipo(db, String(req.params.codigo || ''), b);
+  if (r.error) return res.status(r.status || 400).json({ error: r.error });
+  logEvent('TICKET_TIPO_EDITADO', { nombre: r.tipo.nombre, user: '-', rol: 'tickets' }, actorLabel(req.actor),
+    r.tipo.codigo + (b.nombre !== undefined && r.antes.nombre !== r.tipo.nombre ? ' · antes: ' + r.antes.nombre : '') + (b.activo !== undefined ? ' · ' + (r.tipo.activo ? 'activo' : 'inactivo') : ''));
+  res.json(r.tipo);
+}));
+
 router.get('/tickets/contador', requireActor, wrap((req, res) => {
   if (!T.esGestor(req.actor)) return res.status(403).json({ error: 'Solo el administrador o Reportes' });
   res.json({ nuevos: T.contarNuevos(db) });
@@ -46,6 +75,7 @@ router.get('/tickets/:id', requireActor, wrap((req, res) => {
 
 router.post('/tickets', requireActor, validate(schemas.ticketCrearBody), wrap((req, res) => {
   const b = req.body;
+  if (!T.tipoActivo(db, b.tipo)) return res.status(400).json({ error: 'Elige el tipo' }); // Fase 364: de la lista editable
   if (!T.campanaPermitida(db, req.actor, b.campana)) return res.status(400).json({ error: 'Elige una de tus campañas o «General (plataforma)»' });
   const t = T.crear(db, req.actor, b, ahoraIso());
   res.status(201).json({ ticket: T.publico(Object.assign({}, t, { respuestas: 0 }), req.actor) });

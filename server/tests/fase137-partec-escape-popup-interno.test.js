@@ -118,7 +118,7 @@ test('HALLAZGO REAL: un popup cerrado por OTRO camino (ej. clic en "Excel") deja
   delete global.closeGenericDashboard;
 });
 
-test('sin ningun popup activo ni cierre reciente (periodo de gracia ya vencido), Escape sigue cerrando el overlay de mas arriba -- regresion del PR 8 (F04)', async () => {
+test('sin ningun popup activo ni cierre reciente: el dashboard es una ventana de modulo y desde la Fase 364 Escape YA NO la cierra (solo su boton Cerrar)', async () => {
   var dom = construirDomFalso();
   global.document = dom.documentoFalso;
   var mod = cargarMotionHelpers();
@@ -132,8 +132,9 @@ test('sin ningun popup activo ni cierre reciente (periodo de gracia ya vencido),
 
   dispararEscape(dom.documentoFalso);
 
-  assert.equal(overlayCerrado, true, 'Escape deberia seguir cerrando el dashboard cuando no hay ningun popup interno de por medio -- la funcion original del PR 8 no se rompio');
-  assert.equal(overlay.classList.contains('show'), false);
+  // Fase 364 (pedido de Edwin 18/11): las ventanas de modulo solo se cierran con su boton Cerrar.
+  assert.equal(overlayCerrado, false);
+  assert.equal(overlay.classList.contains('show'), true);
 
   delete global.document;
   delete global.closeGenericDashboard;

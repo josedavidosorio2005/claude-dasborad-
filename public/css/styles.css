@@ -1540,6 +1540,24 @@ body{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;accent
    en 2 columnas dentro de los mismos ~700px. */
 .dash-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),330px));justify-content:center;}
 @media(max-width:520px){.dash-grid{grid-template-columns:1fr;}}
+/* Fase 364 (pedido de Edwin 18/11, B1): en escritorio, 3 o 4 columnas para ver todas las tarjetas
+   sin scroll; en el celular queda igual (una columna). Tarjetas más compactas para que quepan. */
+@media(min-width:900px){
+  .dash-grid{max-width:1200px;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;}
+  .dash-btn{padding:22px 18px;gap:8px;}
+}
+@media(min-width:1280px){.dash-grid{grid-template-columns:repeat(4,minmax(0,1fr));}}
+/* Fase 364 (B2): contador de tickets nuevos en la tarjeta del menú; filas de tipos de ticket. */
+.tk-badge-tarjeta{position:absolute;top:12px;right:14px;}
+.tk-tipo-fila{align-items:flex-end;gap:10px;flex-wrap:wrap}
+.tk-tipo-fila .btn-cancel,.tk-activo{min-height:44px}
+.tk-activo{display:inline-flex;align-items:center;gap:6px}
+/* Fase 364 (B3): ventanas de módulo en pantalla completa (lista en motion-helpers.js). */
+#calidad-overlay,#gd-overlay,#stv-overlay,#gerencia-overlay,#gestionhumana-overlay,#inventario-overlay,
+#modal-malla,#modal-tickets,#cargas-overlay,#centro-overlay,#dashcfg-overlay,#supervisar-lider-overlay{padding:0 !important;align-items:stretch !important;justify-content:stretch !important;}
+#calidad-modal,#gd-modal,#stv-modal,#gerencia-modal,#gestionhumana-modal,#inventario-modal,
+#modal-malla > .modal,#modal-tickets > .modal,#cargas-modal,#centro-modal,#dashcfg-modal,#supervisar-lider-modal{
+  width:100% !important;max-width:none !important;height:100dvh !important;max-height:none !important;margin:0 !important;border-radius:0 !important;overflow-y:auto;box-sizing:border-box;}
 
 /* 6) Tarjetas: un filo de 1px del tono del borde suave, sumado a la
    sombra de siempre -- en oscuro la tarjeta (#132c35) casi se fundia
