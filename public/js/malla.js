@@ -183,10 +183,10 @@ function mallaMiaHtml(r) {
     var filas = MALLA_DIAS.map(function (d) {
       var t = s.turno.horario[d.n] || s.turno.horario[String(d.n)] || null;
       var f = mallaFechaDelDia(s.semana, d.n);
-      return '<tr' + (t ? '' : ' class="ml-descanso"') + '><th scope="row">' + d.largo + ' ' + esc(f.slice(8, 10) + '/' + f.slice(5, 7)) + '</th><td>' + esc(mallaTurnoTexto(t)) + '</td></tr>';
+      return '<tr data-fecha="' + esc(f) + '"' + (t ? '' : ' class="ml-descanso"') + '><th scope="row">' + d.largo + ' ' + esc(f.slice(8, 10) + '/' + f.slice(5, 7)) + '</th><td>' + esc(mallaTurnoTexto(t)) + '</td><td class="ml-punt-celda"></td></tr>'; // Fase 368: celda de puntualidad
     }).join('');
     return '<section class="aurora-card"><div class="aurora-card-title">' + esc(titulo) + '</div><p class="ml-nota">Grupo: <strong>' + esc(s.turno.grupo) + '</strong></p>' +
-      '<div class="table-wrap"><table class="ml-tabla ml-tabla-mia"><thead><tr><th scope="col">Día</th><th scope="col">Horario</th></tr></thead><tbody>' + filas + '</tbody></table></div></section>';
+      '<div class="table-wrap"><table class="ml-tabla ml-tabla-mia"><thead><tr><th scope="col">Día</th><th scope="col">Horario</th><th scope="col"><span class="sr-only">Puntualidad</span></th></tr></thead><tbody>' + filas + '</tbody></table></div></section>';
   }).join('');
 }
 async function mallaMiaRender() {
