@@ -594,3 +594,10 @@ Solo columnas y número de filas, réplica, desde producción. «mes» = 1–17/
 | `diagram_1` (mes) | 200 · 72 filas | ani, cod_opc_menu, conn_id, customer_id, date, dn_transfer, result, rp_id, rp_name, time. Detalle del IVR (opción de menú), **no** las respuestas de la encuesta. |
 | `ivr_1` | 400 «The api you want to consult does not exist» | — |
 | `diagram_5` (mes) | 200 · 3 filas | agent_id, agent_name, average, q01…q10, surveys. **Promedios por agente** (no por encuesta); la hoja «HistIVR» del manual es por encuesta (numeral 4) → probar `diagram_4`. |
+| `diagram_4` (mes, v1.221.1) | 200 · 43 filas | agent_dni, agent_id, agent_name, ani, conn_id, customer_id, date, feeling, q01…q10, result, skill_id, skill_name, time, type_interaction, voice_message, voice_message_duration (25 columnas). **Es la hoja «HistIVR» de la Encuesta** (mismas 25 columnas del export manual). `ani`, `agent_dni` y `customer_id` se descartan como en la carga manual. |
+| `cdr_4` (04/11, v1.221.1) | 200 · 0 filas | Vacío el día que el manual tiene 8 de salida: **no es la salida**. |
+
+**Conclusión (12/12 consultas usadas):** Encuesta → `diagram_4` (siguiente módulo). Abandonadas →
+`skill_9` solo da conteos por skill (sin detalle para únicas abandonadas). Salida → ninguno de
+`cdr_1`, `cdr_4`, `cdr_5` cuadra con el manual; falta el reporte de salida/campaña. WhatsApp →
+`chat_1`/`chat_13` rechazan las fechas: hay que averiguar el formato (soporte de Wolkvox).
