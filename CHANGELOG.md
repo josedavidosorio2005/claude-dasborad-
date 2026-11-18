@@ -7,6 +7,10 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.221.1 — Noviembre 2026
+
+**Réplica de MOBILIZE: dos reportes más para probar** (detalle de encuestas y llamadas de salida).
+
 ## v1.221.0 — Noviembre 2026
 
 **Réplica de MOBILIZE con la API: Eficacia y más reportes para probar.**

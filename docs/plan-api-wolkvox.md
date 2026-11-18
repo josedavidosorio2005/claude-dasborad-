@@ -576,3 +576,21 @@ MOBILIZE antes de pasar al siguiente.
   el módulo descarta `customer_id`, `comment`, `conn_id`, `destiny` y demás, y el teléfono solo
   marca las únicas en memoria. Las respuestas de la réplica revisadas no traen esos campos ni
   números largos.
+- **Fase A10 (v1.221.0):** la réplica usa los códigos positivos de MOBILIZE → **Eficacia 7/8 días
+  igual** (04/11: 6 contestadas y 1 positiva contra 7 y 1, la misma llamada que falta).
+
+### 10.10 Pruebas de reportes candidatos (18/11/2026, Fase A10; 10 de 12 consultas autorizadas)
+
+Solo columnas y número de filas, réplica, desde producción. «mes» = 1–17/11 en una consulta.
+
+| `api=` | Resultado | Columnas / lectura |
+|---|---|---|
+| `cdr_5` (04/11 y 10/11) | 200 · 2 y 7 filas | agent_id, agent_name, campaign_id, conn_id, customer_id, date, destiny, result, ring_time, telephone, type_interaction. **No cuadra** con la salida del manual (8 y 9 de salida; 5 y 4 no conectadas): el manual cuenta las filas `outbound_ma` del CDR y la «no conectada» por código de tipificación; `cdr_5` son intentos del marcador. |
+| `skill_9` (mes) | 200 · 4 filas | abandon_calls y por intervalo (0–10 s … >51 s), skill_id, skill_name. **Conteo por skill, sin día ni llamada**: daría abandonadas por día con una consulta por día, pero no las únicas abandonadas (necesitan el detalle). |
+| `cdr_2` (mes) | 200 · 3 filas | agent_name, calls, cost. No sirve (costo por agente). |
+| `cdr_3` (mes) | 404 «Validate dates entered» | — |
+| `chat_13` (mes) | 404 «Validate dates entered» | — (mismo error que `chat_1`: los chats piden otro formato o rango de fechas) |
+| `chat_1` (mes) | 404 «Validate dates entered» | — |
+| `diagram_1` (mes) | 200 · 72 filas | ani, cod_opc_menu, conn_id, customer_id, date, dn_transfer, result, rp_id, rp_name, time. Detalle del IVR (opción de menú), **no** las respuestas de la encuesta. |
+| `ivr_1` | 400 «The api you want to consult does not exist» | — |
+| `diagram_5` (mes) | 200 · 3 filas | agent_id, agent_name, average, q01…q10, surveys. **Promedios por agente** (no por encuesta); la hoja «HistIVR» del manual es por encuesta (numeral 4) → probar `diagram_4`. |
