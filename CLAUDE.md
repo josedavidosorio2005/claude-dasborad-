@@ -124,6 +124,10 @@ asumir en qué quedó una fase anterior.
   cambiar sus cuentas). Interruptor propio `WOLKVOX_LOGIN_ACTIVO=1` en
   SSM, apagado hasta el OK del usuario (P2). Pasar la puntualidad al
   MOBILIZE real u otra campaña = autorización nueva por escrito.
+  **Ampliación (usuario, 18/11/2026, Fase 367):** puntualidad también por
+  ARCHIVO (reporte de Login/Logout de Wolkvox, sección «Horarios» del Centro
+  de cargas) para la réplica y para **SURA** (solo por archivo, con sus
+  asesoras; la asesora ve solo lo suyo).
 - **Excepción escrita (usuario, 18/11/2026, llenar la réplica con la API):**
   una sola autorización para que la consulta automática pida y GUARDE
   todos los reportes del plan (`docs/plan-api-wolkvox.md` 10.5:

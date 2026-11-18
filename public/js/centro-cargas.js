@@ -80,6 +80,7 @@ async function _ccCargar() {
   var esTablero = typeof stvEsTeleventas === 'function' && stvEsTeleventas(_cc.cliente);
   _ccOcultarTeleventas();
   document.getElementById('cc-anio').closest('.ig').hidden = esTablero;
+  if (typeof ccHorariosPintar === 'function') ccHorariosPintar(_cc.cliente, _cc.anio); // Fase 367: «Horarios» (también SURA)
   if (esTablero) { await _ccCargarTeleventas(body, gen); return; }
   try {
     var r = await apiRequest('GET', '/centro-cargas/' + encodeURIComponent(_cc.cliente) + '?anio=' + _cc.anio);

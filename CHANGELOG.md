@@ -7,6 +7,18 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.216.0 — Noviembre 2026
+
+**Malla de turnos: puntualidad por archivo («Horarios»).**
+
+- En «Cargar Datos», la campaña de pruebas y SURA tienen la sección «Horarios», con un botón por mes,
+  para subir el reporte de Login/Logout de Wolkvox de uno o varios días. Cada archivo reemplaza solo
+  los días que trae.
+- La asesora se reconoce por su nombre, que debe ser igual al de Wolkvox; los agentes que no coinciden
+  salen en una lista para corregirlos.
+- La puntualidad se calcula igual que con la conexión automática a Wolkvox: tolerancia cero, «Sin
+  ingreso» y excepciones.
+
 ## v1.215.0 — Noviembre 2026
 
 **Malla de turnos: elegir cualquier semana, también futura.**
