@@ -7,6 +7,14 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.210.1 — Noviembre 2026
+
+**Wolkvox: «Probar conexión» puede revisar el mes completo.**
+
+- En la campaña de pruebas, «Probar conexión» puede pedir un reporte del 1 del mes hasta el día
+  elegido, y suma dos reportes más a la lista (llamadas por hora y día, y llamadas no conectadas).
+  Sigue mostrando solo los nombres de las columnas y cuántas filas trae.
+
 ## v1.210.0 — Noviembre 2026
 
 **Malla de turnos, fase 2: puntualidad (en la campaña de pruebas, todavía apagada).**

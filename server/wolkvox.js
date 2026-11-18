@@ -34,6 +34,8 @@ const REPORTES = {
   agent_1: 'Tiempos por estado de cada agente',
   agent_7: 'Tiempo de logueo (login y logout)',
   chat_1: 'Chats (detalle de cada chat)',
+  skill_7: 'Llamadas y nivel de servicio por hora y día, todas las skills', // Fase A6
+  cdr_5: 'Detalle de las llamadas no conectadas', // Fase A6 (nombre probable)
 };
 
 // Campaña de la plataforma -> operacion de Wolkvox (de quien es el token). SOLO la replica.

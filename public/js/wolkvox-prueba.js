@@ -78,15 +78,16 @@ async function wvPruebaProbar() {
   var btn = _wvEl('wv-probar-btn');
   var fecha = (_wvEl('wv-fecha') || {}).value || '';
   var reporte = (_wvEl('wv-reporte') || {}).value || 'skill_1'; // Fase A5
+  var rango = (_wvEl('wv-rango') || {}).value || 'dia'; // Fase A6
   try {
     var r = await withButtonLoading(btn, 'Probando…', function () {
-      return apiRequest('POST', '/wolkvox/probar', { campana: _wvCampana, fecha: fecha, reporte: reporte });
+      return apiRequest('POST', '/wolkvox/probar', { campana: _wvCampana, fecha: fecha, reporte: reporte, rango: rango });
     });
     _wvLimpiarResultado();
     _wvTexto('wv-r-http', String(r.httpStatus));
     _wvTexto('wv-r-code', r.code === null ? '—' : r.code);
     _wvTexto('wv-r-msg', r.msg === null ? '—' : r.msg);
-    _wvTexto('wv-r-filas', r.filas + ' (' + r.reporte + ', ' + r.dia + ', ' + r.desde + ' a ' + r.hasta + ')');
+    _wvTexto('wv-r-filas', r.filas + ' (' + r.reporte + ', ' + (r.desdeDia && r.desdeDia !== r.dia ? r.desdeDia + ' a ' : '') + r.dia + ', ' + r.desde + ' a ' + r.hasta + ')');
     _wvTexto('wv-r-tiempo', (r.duracionMs / 1000).toFixed(1) + ' s');
     // Fase A2: nombres de skill (no son datos personales), solo con textContent.
     _wvTexto('wv-r-skills', Array.isArray(r.skills) && r.skills.length ? r.skills.join(' · ') : '—');
