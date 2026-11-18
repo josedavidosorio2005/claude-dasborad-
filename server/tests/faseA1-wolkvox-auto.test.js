@@ -223,7 +223,7 @@ test('programador: apagado no consulta ni deja rastro; encendido corre una vez p
   let ahora = new Date('2026-11-19T12:05:00Z'); // 19/11 07:05 Colombia
   let encendido = false;
   const falso = crearFalso(diaNormal);
-  const p = auto.iniciar(db, { env: ENV, reloj: () => ahora, leerInterruptor: async () => encendido, fetchImpl: falso.fetch, cadaMs: 3600 * 1000 });
+  const p = auto.iniciar(db, { env: ENV, reloj: () => ahora, leerInterruptor: async (e, n) => (n === 'WOLKVOX_LOGIN_ACTIVO' ? false : encendido), fetchImpl: falso.fetch, cadaMs: 3600 * 1000 });
   try {
     const n0 = filasCorridas();
     assert.equal(await p.tick(), null);

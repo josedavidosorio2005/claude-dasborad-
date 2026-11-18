@@ -1736,6 +1736,7 @@
         <div class="page-title">Mi malla</div>
         <div class="page-subtitle">Tu horario de esta semana y de la siguiente.</div>
         <div id="malla-mia" aria-live="polite"></div>
+        <div id="malla-mia-punt" aria-live="polite"></div><!-- Fase 363: «Mi puntualidad» (solo si su campaña lo tiene) -->
       </div>
 
       <!-- Fase 95 (tema C): aviso de monitoreo(s) nuevo(s) de calidad sin ver -->
@@ -2015,6 +2016,11 @@
         <button type="button" class="btn-cancel" onclick="mallaIrHoy()">Esta semana</button>
       </div>
     </div>
+    <!-- Fase 363: «Turnos» / «Puntualidad» (solo en campañas con puntualidad). -->
+    <div class="ml-vistas hidden" id="ml-vistas" role="group" aria-label="Vista">
+      <button type="button" class="btn-cancel" id="ml-vista-turnos" aria-pressed="true" onclick="mpMostrar('turnos')">Turnos</button>
+      <button type="button" class="btn-cancel" id="ml-vista-punt" aria-pressed="false" onclick="mpMostrar('puntualidad')">Puntualidad</button>
+    </div>
     <div class="ml-acciones hidden" id="ml-acciones">
       <button type="button" class="btn-primary" onclick="mallaNuevoGrupo()">Nuevo grupo</button>
       <span class="ml-copiar">
@@ -2031,6 +2037,7 @@
     <p class="wv-error hidden" id="ml-error" role="alert"></p>
     <p class="ml-nota" id="ml-nota" role="status" aria-live="polite"></p>
     <div id="ml-grupos"></div>
+    <div id="ml-puntualidad" class="hidden" aria-live="polite"></div>
   </div>
 </div>
 
@@ -2252,6 +2259,7 @@
 <script src="js/sura-televentas-anio.js"></script>
 <script src="js/malla-logic.js"></script>
 <script src="js/malla.js"></script>
+<script src="js/malla-puntualidad.js"></script>
 <script src="js/dashboard-generic.js"></script>
 <script src="js/sura-televentas-app.js"></script>
 <script src="js/sura-televentas-paleta-logic.js"></script>

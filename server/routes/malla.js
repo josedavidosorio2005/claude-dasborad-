@@ -28,7 +28,7 @@ function grupoEditable(req, res) {
 
 router.get('/malla/campanas', requireActor, wrap((req, res) => {
   const campanas = M.campanasDe(db, req.actor);
-  res.json({ campanas: campanas.map((c) => ({ nombre: c, puedeEditar: M.puedeEditar(req.actor, c) })), hoy: fechaLimitesHoyColombia(), semanaActual: L.mallaLunesDe(fechaLimitesHoyColombia()) });
+  res.json({ campanas: campanas.map((c) => ({ nombre: c, puedeEditar: M.puedeEditar(req.actor, c), puntualidad: !!P.config(c) })), hoy: fechaLimitesHoyColombia(), semanaActual: L.mallaLunesDe(fechaLimitesHoyColombia()) });
 }));
 
 router.get('/malla', requireActor, wrap((req, res) => {
@@ -113,6 +113,100 @@ router.get('/malla/mia', requireActor, wrap((req, res) => {
   const actual = L.mallaLunesDe(fechaLimitesHoyColombia());
   const semanas = [actual, L.mallaSumarSemanas(actual, 1)].map((s) => ({ semana: s, turno: M.turnoDe(db, req.actor.id, req.actor.asesorCampana, s) }));
   res.json({ campana: req.actor.asesorCampana, semanas });
+}));
+
+// ── Fase 363 (Malla fase 2): puntualidad con el login de Wolkvox (agent_7) ──
+// Solo campañas con puntualidad (puntualidad.js: al principio solo la replica). Lee: quien lee la
+// malla (ADMIN, SUPERVISOR de la campaña, REPORTES). Enlaces y excepciones: quien la edita. El
+// cliente no tiene acceso a la malla. Todo cambio queda en el Historial.
+const P = require('../puntualidad');
+const fechaValida = (f) => typeof f === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(f) && new Date(f + 'T00:00:00Z').toISOString().slice(0, 10) === f;
+const ahoraColombia = () => { const d = new Date(Date.now() - 5 * 3600 * 1000); return d.toISOString().slice(0, 10) + ' ' + d.toISOString().slice(11, 19); };
+function campanaPuntualidad(req, res, campana, editar) {
+  if (!campana || !P.config(campana)) { res.status(404).json({ error: 'Esta campaña no tiene puntualidad' }); return false; }
+  if (!M.puedeLeer(req.actor, campana)) { res.status(403).json({ error: 'Sin acceso a la malla de esta campaña' }); return false; }
+  if (editar && !M.puedeEditar(req.actor, campana)) { res.status(403).json({ error: 'Solo el supervisor de la campaña o el administrador' }); return false; }
+  return true;
+}
+
+router.get('/malla/puntualidad', requireActor, wrap((req, res) => {
+  const campana = campanaDe(req.query.campana), lunes = String(req.query.semana || '');
+  if (!L.mallaEsLunes(lunes)) return res.status(400).json({ error: 'Elige una semana (su lunes, AAAA-MM-DD)' });
+  if (!campanaPuntualidad(req, res, campana, false)) return;
+  const r = P.calcular(db, campana, lunes, L.mallaFechaDelDia(lunes, 7), { ahora: ahoraColombia() });
+  const editar = M.puedeEditar(req.actor, campana);
+  if (!editar) { delete r.agentesSinEnlace; delete r.conLoginSinTurno; }
+  res.json(Object.assign(r, { semana: lunes, puedeEditar: editar, tipos: P.TIPOS_EXCEPCION }));
+}));
+
+router.get('/malla/agentes', requireActor, wrap((req, res) => {
+  const campana = campanaDe(req.query.campana);
+  if (!campanaPuntualidad(req, res, campana, true)) return;
+  res.json({ campana, agentes: P.agentes(db, campana, fechaLimitesHoyColombia()), asesoras: P.asesorasDe(db, campana) });
+}));
+
+router.put('/malla/agentes/:agentId', requireActor, wrap((req, res) => {
+  const b = req.body || {};
+  if (!soloClaves(b, ['campana', 'userId'])) return res.status(400).json({ error: 'Datos no válidos' });
+  const campana = campanaDe(b.campana), agentId = String(req.params.agentId || '');
+  if (!campanaPuntualidad(req, res, campana, true)) return;
+  if (!/^[A-Za-z0-9_.-]{1,40}$/.test(agentId) || !db.prepare('SELECT 1 FROM wolkvox_login_diario WHERE operacion = ? AND agentId = ? LIMIT 1').get(P.config(campana).operacion, agentId)) return res.status(404).json({ error: 'Agente no encontrado' });
+  const antes = db.prepare('SELECT e.userId, u.nombre FROM malla_agente_enlace e LEFT JOIN users u ON u.id = e.userId WHERE e.campana = ? AND e.agentId = ?').get(campana, agentId);
+  if (b.userId === null) {
+    if (!antes) return res.json({ ok: true });
+    db.prepare('DELETE FROM malla_agente_enlace WHERE campana = ? AND agentId = ?').run(campana, agentId);
+    log('MALLA_ENLACE_QUITADO', campana, antes.nombre || '-', req, 'agente ' + agentId);
+    return res.json({ ok: true });
+  }
+  if (!Number.isInteger(b.userId) || !P.asesorasDe(db, campana).some((a) => a.id === b.userId)) return res.status(400).json({ error: 'Elige una asesora activa de la campaña' });
+  const otro = db.prepare('SELECT agentId FROM malla_agente_enlace WHERE campana = ? AND userId = ? AND agentId != ?').get(campana, b.userId, agentId);
+  if (otro) return res.status(409).json({ error: 'Esa asesora ya está enlazada al agente ' + otro.agentId });
+  db.prepare(`INSERT INTO malla_agente_enlace (campana, agentId, userId, creadoPor, createdAt) VALUES (?,?,?,?,?)
+              ON CONFLICT(campana, agentId) DO UPDATE SET userId = excluded.userId, creadoPor = excluded.creadoPor, createdAt = excluded.createdAt`).run(campana, agentId, b.userId, actorLabel(req.actor), ahoraIso());
+  const nombre = (db.prepare('SELECT nombre FROM users WHERE id = ?').get(b.userId) || {}).nombre || '-';
+  log('MALLA_ENLACE', campana, nombre, req, 'agente ' + agentId + (antes && antes.userId !== b.userId ? ' (antes: ' + (antes.nombre || '-') + ')' : ''));
+  res.json({ ok: true });
+}));
+
+router.post('/malla/excepciones', requireActor, wrap((req, res) => {
+  const b = req.body || {};
+  if (!soloClaves(b, ['campana', 'userId', 'desde', 'hasta', 'tipo'])) return res.status(400).json({ error: 'Datos no válidos' });
+  const campana = campanaDe(b.campana);
+  if (!campanaPuntualidad(req, res, campana, true)) return;
+  if (!Object.prototype.hasOwnProperty.call(P.TIPOS_EXCEPCION, b.tipo)) return res.status(400).json({ error: 'Elige el tipo: incapacidad, vacaciones o permiso' });
+  const hasta = b.hasta === undefined || b.hasta === '' ? b.desde : b.hasta;
+  if (!fechaValida(b.desde) || !fechaValida(hasta) || hasta < b.desde) return res.status(400).json({ error: 'Revisa las fechas (desde y hasta, AAAA-MM-DD)' });
+  if (P.diasEntre(b.desde, hasta).length > P.MAX_DIAS_EXCEPCION) return res.status(400).json({ error: 'Máximo ' + P.MAX_DIAS_EXCEPCION + ' días por excepción' });
+  const a = P.asesorasDe(db, campana).find((x) => x.id === b.userId);
+  if (!Number.isInteger(b.userId) || !a) return res.status(400).json({ error: 'Elige una asesora activa de la campaña' });
+  const r = db.prepare('INSERT INTO malla_excepciones (campana, userId, desde, hasta, tipo, creadoPor, createdAt) VALUES (?,?,?,?,?,?,?)').run(campana, a.id, b.desde, hasta, b.tipo, actorLabel(req.actor), ahoraIso());
+  log('MALLA_EXCEPCION', campana, a.nombre, req, P.TIPOS_EXCEPCION[b.tipo] + ' · ' + b.desde + (hasta !== b.desde ? ' a ' + hasta : ''));
+  res.status(201).json({ id: Number(r.lastInsertRowid) });
+}));
+
+router.delete('/malla/excepciones/:id', requireActor, wrap((req, res) => {
+  if (!idValido(req.params.id)) return res.status(404).json({ error: 'Excepción no encontrada' });
+  const e = db.prepare('SELECT e.*, u.nombre FROM malla_excepciones e LEFT JOIN users u ON u.id = e.userId WHERE e.id = ?').get(Number(req.params.id));
+  if (!e || !P.config(e.campana) || !M.puedeLeer(req.actor, e.campana)) return res.status(404).json({ error: 'Excepción no encontrada' });
+  if (!M.puedeEditar(req.actor, e.campana)) return res.status(403).json({ error: 'Solo el supervisor de la campaña o el administrador' });
+  db.prepare('DELETE FROM malla_excepciones WHERE id = ?').run(e.id);
+  log('MALLA_EXCEPCION_QUITADA', e.campana, e.nombre || '-', req, (P.TIPOS_EXCEPCION[e.tipo] || e.tipo) + ' · ' + e.desde + (e.hasta !== e.desde ? ' a ' + e.hasta : ''));
+  res.json({ ok: true });
+}));
+
+// La asesora: SOLO su puntualidad (esta semana y la anterior), en las campañas que lo permiten
+// (asesoraVe). La replica no lo permite: sus datos son de prueba.
+router.get('/malla/mi-puntualidad', requireActor, wrap((req, res) => {
+  if (req.actor.rol !== 'ASESOR' || !req.actor.id || !req.actor.asesorCampana) return res.json({ semanas: [] });
+  const campana = P.campanasConPuntualidad().find((c) => { const cfg = P.config(c); return cfg.asesoraVe && cfg.asesorasDe === req.actor.asesorCampana; });
+  if (!campana) return res.json({ semanas: [] });
+  const actual = L.mallaLunesDe(fechaLimitesHoyColombia());
+  const ahora = ahoraColombia();
+  const semanas = [actual, L.mallaSumarSemanas(actual, -1)].map((s) => {
+    const r = P.calcular(db, campana, s, L.mallaFechaDelDia(s, 7), { ahora, soloUserId: req.actor.id });
+    return { semana: s, datosHasta: r.datosHasta, filas: r.filas.map((f) => ({ fecha: f.fecha, entrada: f.entrada, salida: f.salida, estado: f.estado, tardeSeg: f.tardeSeg, salidaAnticipadaSeg: f.salidaAnticipadaSeg, primerLogin: f.primerLogin, ultimoLogout: f.ultimoLogout, excepcion: f.excepcion ? f.excepcion.tipo : null })) };
+  });
+  res.json({ semanas, tipos: P.TIPOS_EXCEPCION });
 }));
 
 module.exports = router;

@@ -115,6 +115,15 @@ asumir en qué quedó una fase anterior.
   corre con `WOLKVOX_AUTO_ACTIVO=1` en SSM (se lee antes de cada corrida;
   borrarlo o ponerle `0` la apaga sin redesplegar). Crear ese parámetro
   necesita OK explícito del usuario.
+- **Excepción escrita (usuario, 18/11/2026, Malla fase 2, Fase 363):** la
+  consulta automática puede pedir y GUARDAR el reporte `agent_7` (login
+  y logout de los agentes de MOBILIZE: un resumen por agente y día en
+  `wolkvox_login_diario`, nunca la respuesta cruda) para la puntualidad
+  de la malla, **solo para la réplica «MOBILIZE PRUEBAS API» al
+  principio** (que usa las asesoras de MOBILIZE solo para leerlas, sin
+  cambiar sus cuentas). Interruptor propio `WOLKVOX_LOGIN_ACTIVO=1` en
+  SSM, apagado hasta el OK del usuario (P2). Pasar la puntualidad al
+  MOBILIZE real u otra campaña = autorización nueva por escrito.
 - Nada de pruebas agresivas contra producción (sin límite de tasa, sin
   volumen alto, sin tocar datos que no sean los explícitamente
   autorizados). No destapar pestañas ocultas a mano, no tocar datos de

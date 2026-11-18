@@ -18,6 +18,7 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 - **Esperando a Edwin:** Malla fases 2 (puntualidad) y 3 (Portal Asesor ampliado) — ver el bloque 2.
 - **Esperando al soporte de Wolkvox:** el bloqueo de red hacia el servidor — ver el primer ítem de abajo.
 - **Plan B de Wolkvox (agente en la oficina):** B1 hecho (v1.206.0, endpoint apagado). Decidido (18/11): `skill_1` día a día.
+- **Malla fase 2 (puntualidad, Fase 363):** P1 hecho (v1.210.0), apagado. **P2 espera OK:** crear `WOLKVOX_LOGIN_ACTIVO=1` en SSM, armar la malla de prueba de la réplica (asesoras de MOBILIZE, solo lectura) y enlazar agentes; luego una semana de prueba comparada con lo que tenga Edwin. P3 (MOBILIZE real) necesita autorización nueva por escrito.
 - **Plan A de Wolkvox (consulta automática desde el servidor):** **ENCENDIDA** desde el 18/11 (`WOLKVOX_AUTO_ACTIVO=1`, solo la réplica). Primera corrida (18/11) y comparación con el Flujo manual: SKILL SAC 8/8 días iguales. **Falta:** comparar otra vez después de la corrida de las 7:00 del 19/11 y decidir si se pasa al MOBILIZE real (necesita autorización nueva por escrito); preguntar a Edwin si quiere ver el nivel de servicio a 10 s y 30 s (ya se guarda). Detalle en `docs/plan-api-wolkvox.md`, sección 10.
 
 ## 1. Esperando una decisión tuya
