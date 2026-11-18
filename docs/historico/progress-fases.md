@@ -21238,3 +21238,9 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
 - **Causa encontrada:** «Probar» pedía `cdr_1` de 08:00 a 08:59 con `Accept: application/json`; el PC (B0) usó `skill_1` del día completo con solo `wolkvox-token`. La consulta automática ya usaba `skill_1` del día completo (solo le sobraba `Accept`, que estaba en el cliente común).
 - **Cambio:** `server/routes/wolkvox.js` («Probar» = `skill_1`, 00:00:00–23:59:59, `skills` en la respuesta), `server/wolkvox.js` (sin `Accept`; `code`/`msg` de Wolkvox en errores HTTP, sin secretos; `nombresDeSkill`), `server/wolkvox-auto.js` (404 «sin registros» = día vacío), modal (texto y fila «Skills»).
 - **Pruebas:** `faseA2-wolkvox-probar-skill1` (4) y `faseW2-wolkvox` ajustada al formato nuevo; la prueba de W2 de «errores sin secretos» obligó a descartar un `msg` que traiga el token o algo con forma de clave.
+
+## Fase A3 — «Ejecutar ahora» de la consulta automática de Wolkvox (v1.208.0, 2026-11-18)
+
+- **Pedido (usuario, 18/11):** el usuario creó `WOLKVOX_AUTO_ACTIVO=1` en SSM y pidió lanzar YA una sola corrida de noviembre 2026 (días 1 a 17), solo réplica y solo Flujo, con respaldo; si no había forma de lanzarla a mano, un botón «Ejecutar ahora» solo para ADMIN que quede en el Historial. Autorizadas hasta 20 consultas para esa corrida.
+- **Cambio:** `ejecutarAhora` en `server/wolkvox-auto.js` (candado común con el programador, interruptor leído fresco, `maxConsultas`, etiqueta y actor en el Historial); `POST /wolkvox/auto/ejecutar` en `server/routes/wolkvox.js` (admin + réplica, 10 min entre ejecuciones); botón y resultado en la ventana de Wolkvox (`wvAutoEjecutar`, `wvAutoFilas`); ruta declarada en la matriz de la Fase 118.
+- **Pruebas:** `faseA3-wolkvox-ejecutar-ahora` (6, Wolkvox simulado).

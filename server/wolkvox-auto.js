@@ -204,10 +204,10 @@ async function leerInterruptor(env) {
 }
 
 // ── Una corrida ──
-function _logHistorial(logEvent, detalle) {
+function _logHistorial(logEvent, detalle, actor) {
   console.log('[wolkvox-auto] ' + detalle);
   if (typeof logEvent === 'function') {
-    try { logEvent(ACCION_HISTORIAL, null, QUIEN, detalle); } catch (e) { console.error('[wolkvox-auto] no se pudo escribir en el Historial'); }
+    try { logEvent(ACCION_HISTORIAL, null, actor || QUIEN, detalle); } catch (e) { console.error('[wolkvox-auto] no se pudo escribir en el Historial'); }
   }
 }
 
@@ -227,9 +227,9 @@ async function correrUnaVez(opts) {
 
   const terminar = () => {
     const seg = ((Date.now() - t0) / 1000).toFixed(1);
-    const detalle = CAMPANA + ' · ' + API + ' · ' + (partes.join(' · ') || 'nada que pedir') + ' · ' + res.consultas + ' consultas · ' + seg + ' s';
+    const detalle = (opts.etiqueta ? opts.etiqueta + ' · ' : '') + CAMPANA + ' · ' + API + ' · ' + (partes.join(' · ') || 'nada que pedir') + ' · ' + res.consultas + ' consultas · ' + seg + ' s';
     db.prepare('UPDATE wolkvox_auto_corridas SET fin = ?, estado = ?, consultas = ?, detalle = ? WHERE franja = ?').run(new Date().toISOString(), res.estado, res.consultas, detalle, franja);
-    _logHistorial(opts.logEvent, detalle);
+    _logHistorial(opts.logEvent, detalle, opts.actor);
     res.detalle = detalle;
     return res;
   };
@@ -241,7 +241,8 @@ async function correrUnaVez(opts) {
   const meses = plan(ahora);
   const necesarias = meses.reduce((n, m) => n + m.dias.length, 0);
   if (!necesarias) { res.estado = 'omitida'; return terminar(); }
-  if (necesarias > MAX_CONSULTAS_POR_CORRIDA) { res.estado = 'omitida'; partes.push('demasiadas consultas (' + necesarias + ')'); return terminar(); }
+  const maximo = Math.min(MAX_CONSULTAS_POR_CORRIDA, Number.isInteger(opts.maxConsultas) && opts.maxConsultas > 0 ? opts.maxConsultas : MAX_CONSULTAS_POR_CORRIDA);
+  if (necesarias > maximo) { res.estado = 'omitida'; partes.push('demasiadas consultas (' + necesarias + ')'); return terminar(); }
   const usadas = wv.usoDelDia(db, OPERACION, ahora);
   const tope = wv.topeDiario(env);
   if (usadas + necesarias > tope) {
@@ -296,6 +297,31 @@ async function correrUnaVez(opts) {
   return terminar();
 }
 
+// Candado comun: el programador y «Ejecutar ahora» nunca corren a la vez.
+let _enCurso = false;
+
+// ── Fase A3 (18/11): «Ejecutar ahora» (solo admin, desde la ruta) ──
+// Misma corrida que la programada (mismo plan, tope, validacion, respaldo y sin reintentos), pero
+// cuando la pide el administrador. Exige el interruptor encendido (leido fresco) y respeta el
+// candado. `maxConsultas`: tope de ESTA corrida (si el plan necesita mas, no empieza).
+// Devuelve el resultado de correrUnaVez, o { estado: 'ocupada' | 'apagada' | 'sin_interruptor' }.
+async function ejecutarAhora(opts) {
+  if (_enCurso) return { estado: 'ocupada' };
+  _enCurso = true;
+  try {
+    const env = opts.env || process.env;
+    let activo;
+    try { activo = await (opts.leerInterruptor || leerInterruptor)(env); } catch (e) { return { estado: 'sin_interruptor' }; }
+    if (!activo) return { estado: 'apagada' };
+    return await correrUnaVez({
+      db: opts.db, env, ahora: opts.ahora, fetchImpl: opts.fetchImpl, logEvent: opts.logEvent,
+      franja: 'manual ' + new Date().toISOString(), etiqueta: 'Ejecutar ahora', actor: opts.actor, maxConsultas: opts.maxConsultas,
+    });
+  } finally {
+    _enCurso = false;
+  }
+}
+
 // ── Programador: revisa cada minuto si toca una franja ──
 // deps (pruebas): { reloj, leerInterruptor, fetchImpl, logEvent, env, cadaMs }
 function iniciar(db, deps) {
@@ -304,16 +330,15 @@ function iniciar(db, deps) {
   const reloj = deps.reloj || (() => new Date());
   const leer = deps.leerInterruptor || leerInterruptor;
   const revisadas = new Set();
-  let corriendo = false;
   async function tick() {
-    if (corriendo) return null;
+    if (_enCurso) return null;
     const ahora = reloj();
     const franja = franjaActual(ahora);
     if (!franja || revisadas.has(franja)) return null;
     revisadas.add(franja); // una sola revision por franja, este o no encendida
     if (revisadas.size > 20) revisadas.delete(revisadas.values().next().value);
     if (franjaYaCorrida(db, franja)) return null;
-    corriendo = true;
+    _enCurso = true;
     try {
       let activo = false;
       try { activo = await leer(env); } catch (e) {
@@ -326,7 +351,7 @@ function iniciar(db, deps) {
       console.error('[wolkvox-auto] error inesperado en la corrida (' + (e && e.name ? String(e.name).slice(0, 60) : 'error') + ')');
       return null;
     } finally {
-      corriendo = false;
+      _enCurso = false;
     }
   }
   const t = setInterval(() => { tick(); }, deps.cadaMs || 60 * 1000);
@@ -348,5 +373,5 @@ function estado(db, env) {
 module.exports = {
   CAMPANA, OPERACION, API, HORAS_COLOMBIA, ARCHIVO, QUIEN, ACCION_HISTORIAL, MAX_CONSULTAS_POR_CORRIDA,
   horaColombia, franjaActual, plan, convertirFila, filasDelDia, aPorcentaje, aSegundos, aEntero,
-  asegurarTablas, franjaYaCorrida, ultimaCorrida, leerInterruptor, correrUnaVez, iniciar, estado,
+  asegurarTablas, franjaYaCorrida, ultimaCorrida, leerInterruptor, correrUnaVez, iniciar, estado, ejecutarAhora,
 };

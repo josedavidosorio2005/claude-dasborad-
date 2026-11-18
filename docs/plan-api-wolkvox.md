@@ -435,3 +435,13 @@ que esté aprobado.
 - Columnas reales de `skill_1` (B0, 17/11): `skill_name, skill_id, inbound_calls, answer_calls,
   abandon_calls, service_level_10seg, service_level_20seg, service_level_30seg, service_level_0seg,
   abandon, asa, ata`: coinciden con el lector de la consulta automática.
+
+### 10.2 Fase A3 (18/11/2026): «Ejecutar ahora»
+
+- `POST /api/wolkvox/auto/ejecutar` (solo admin completo, solo la réplica) y botón «Ejecutar ahora»
+  en la ventana de Wolkvox (con confirmación). Corre la misma corrida que la programada (mismo plan de
+  días, tope diario, validación, respaldo y sin reintentos).
+- Exige `WOLKVOX_AUTO_ACTIVO=1` (leído fresco de SSM): apagada → 409. Una vez cada 10 min (429).
+  `maxConsultas` opcional (1 a 62): si el plan necesita más, no empieza. Un candado común impide
+  que corra a la vez que la programada.
+- Historial: `WOLKVOX_AUTO` con «Ejecutar ahora · …» y el administrador como actor.

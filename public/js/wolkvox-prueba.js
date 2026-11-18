@@ -59,6 +59,7 @@ function wvPruebaCerrar() {
 function _wvLimpiarResultado() {
   var r = _wvEl('wv-resultado'); if (r) r.classList.add('hidden');
   var rd = _wvEl('wv-red'); if (rd) rd.classList.add('hidden'); // Fase W3
+  var au = _wvEl('wv-auto'); if (au) au.classList.add('hidden'); // Fase A3
   var e = _wvEl('wv-error'); if (e) { e.classList.add('hidden'); e.textContent = ''; }
   var c = _wvEl('wv-campos'); if (c) c.textContent = '';
 }
@@ -149,6 +150,38 @@ async function wvDiagnosticoRed() {
   }
 }
 
+// ── Fase A3: «Ejecutar ahora» de la consulta automática ──
+// Filas [titulo, texto] del resultado. Puro (se prueba en Node). Solo conteos, meses y códigos.
+function wvAutoFilas(r) {
+  var filas = [['Estado', String((r && r.estado) || '—') + (r && r.error ? ' (' + r.error + ')' : '')], ['Consultas usadas', String((r && r.consultas) || 0)]];
+  ((r && r.meses) || []).forEach(function (m) {
+    var t = m.estado === 'ok' ? m.dias + ' días, ' + m.filas + ' filas, ' + m.skills + ' skills, reemplazó ' + m.reemplazadas + ' (con respaldo)' : m.estado + (m.codigo ? ' (' + m.codigo + ')' : '') + ', mes sin cambios';
+    filas.push(['Mes ' + m.mes, t]);
+  });
+  if (r && typeof r.usoHoy === 'number') filas.push(['Consultas de hoy', r.usoHoy + ' de ' + r.tope]);
+  return filas;
+}
+
+async function wvAutoEjecutar() {
+  var errPrevio = _wvEl('wv-error'); if (errPrevio) { errPrevio.classList.add('hidden'); errPrevio.textContent = ''; }
+  if (!confirm('Se pedirá a Wolkvox el Flujo del mes (un día por consulta) y se reemplazará el mes de ' + _wvCampana + ', con respaldo para Deshacer. ¿Continuar?')) return;
+  try {
+    var r = await withButtonLoading(_wvEl('wv-auto-btn'), 'Ejecutando…', function () {
+      return apiRequest('POST', '/wolkvox/auto/ejecutar', { campana: _wvCampana });
+    });
+    var dl = _wvEl('wv-auto-dl');
+    dl.textContent = '';
+    wvAutoFilas(r).forEach(function (f) {
+      var dt = document.createElement('dt'); dt.textContent = f[0];
+      var dd = document.createElement('dd'); dd.textContent = f[1];
+      dl.appendChild(dt); dl.appendChild(dd);
+    });
+    _wvEl('wv-auto').classList.remove('hidden');
+  } catch (err) {
+    _wvError(err.message);
+  }
+}
+
 // Esc, Tab dentro de la ventana, fondo inerte y foco de vuelta: motion-helpers.js
 // (MOTION_DIALOGOS_SIMPLES). Aqui solo el clic en el fondo, como los demas dialogos simples.
 if (typeof document !== 'undefined') { // Fase W3: el archivo también se carga en Node (pruebas de wvRedFilas)
@@ -159,5 +192,5 @@ if (typeof document !== 'undefined') { // Fase W3: el archivo también se carga 
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { wvPruebaVisible: wvPruebaVisible, wvRedFilas: wvRedFilas };
+  module.exports = { wvPruebaVisible: wvPruebaVisible, wvRedFilas: wvRedFilas, wvAutoFilas: wvAutoFilas };
 }
