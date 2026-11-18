@@ -50,10 +50,52 @@ async function ticketsAlEntrar() {
 }
 function ticketsAlSalir() {
   if (_tk.timer) clearInterval(_tk.timer);
-  _tk = { campanas: [], gestor: false, borrar: false, tab: 'nuevo', detalle: null, cargado: false, timer: null };
+  _tk = { campanas: [], gestor: false, borrar: false, tab: 'nuevo', detalle: null, cargado: false, timer: null, tipos: [], editaTipos: false };
   _tkPintarContador(0);
   var m = _tkEl('modal-tickets');
   if (m && m.classList.contains('show')) closeModal('modal-tickets');
+}
+
+// ── Fase 364 (B2): tipos de ticket (lista editable por ADMIN) ──
+async function _tkCargarTipos() {
+  var r = await apiRequest('GET', '/tickets/tipos?todos=1');
+  _tk.editaTipos = !!r.puedeEditar;
+  _tk.tipos = (r.tipos || []).map(function (t) { return { valor: t.codigo, etiqueta: t.nombre + (t.activo ? '' : ' (inactivo)'), activo: t.activo, nombre: t.nombre }; });
+  ticketsFijarTipos(_tk.tipos);
+}
+function _tkPintarTipos() {
+  var c = _tkEl('tk-tipos-lista');
+  c.textContent = '';
+  _tk.tipos.forEach(function (t, i) {
+    var fila = document.createElement('div');
+    fila.className = 'tk-fila tk-tipo-fila';
+    fila.innerHTML = '<div class="ig"><label for="tk-tn-' + i + '">Nombre</label><input type="text" id="tk-tn-' + i + '" maxlength="40"></div>' +
+      '<label class="tk-activo"><input type="checkbox" id="tk-ta-' + i + '"> Activo</label>' +
+      '<button type="button" class="btn-cancel" id="tk-tg-' + i + '">Guardar</button>';
+    c.appendChild(fila);
+    _tkEl('tk-tn-' + i).value = t.nombre;
+    _tkEl('tk-ta-' + i).checked = t.activo;
+    _tkEl('tk-tg-' + i).addEventListener('click', function () { _tkGuardarTipo(t.valor, i); });
+  });
+}
+async function _tkGuardarTipo(codigo, i) {
+  _tkError('');
+  try {
+    await apiRequest('PUT', '/tickets/tipos/' + encodeURIComponent(codigo), { nombre: _tkEl('tk-tn-' + i).value, activo: _tkEl('tk-ta-' + i).checked });
+    showToast('Tipo guardado', 'ok');
+    await _tkCargarTipos(); _tkPintarTipos();
+  } catch (e) { _tkError(e.message || 'No se pudo guardar el tipo'); }
+}
+async function _tkAgregarTipo(ev) {
+  if (ev) ev.preventDefault();
+  _tkError('');
+  var inp = _tkEl('tk-tipo-nuevo');
+  try {
+    await apiRequest('POST', '/tickets/tipos', { nombre: inp.value });
+    inp.value = '';
+    showToast('Tipo agregado', 'ok');
+    await _tkCargarTipos(); _tkPintarTipos();
+  } catch (e) { _tkError(e.message || 'No se pudo agregar el tipo'); }
 }
 
 // ── Abrir / cerrar ──
@@ -63,15 +105,17 @@ async function ticketsAbrir() {
   if (!_tk.cargado) {
     try { await _tkCargarCampanas(); } catch (e) { showToast('No se pudo abrir Sugerencias / Tickets: ' + (e.message || 'error'), 'error'); return; }
   }
-  _tkEl('tk-tipo').innerHTML = ticketsOpcionesHtml(TICKETS_TIPOS, 'SUGERENCIA', false);
+  await _tkCargarTipos(); // Fase 364: lista editable
+  _tkEl('tk-tipo').innerHTML = ticketsOpcionesHtml(_tk.tipos.filter(function (t) { return t.activo; }), null, false);
   _tkEl('tk-campana').innerHTML = '<option value="">Elige la campaña</option>' + ticketsOpcionesHtml(_tk.campanas, null, false);
   _tkEl('tk-aviso').textContent = TICKETS_AVISO_PRIVACIDAD;
   _tkEl('tk-aviso-resp').textContent = TICKETS_AVISO_PRIVACIDAD;
   _tkEl('tk-f-estado').innerHTML = ticketsOpcionesHtml(TICKETS_ESTADOS, null, true);
-  _tkEl('tk-f-tipo').innerHTML = ticketsOpcionesHtml(TICKETS_TIPOS, null, true);
+  _tkEl('tk-f-tipo').innerHTML = ticketsOpcionesHtml(_tk.tipos, null, true);
   _tkEl('tk-f-campana').innerHTML = ticketsOpcionesHtml(_tk.campanas, null, true);
   _tkEl('tk-det-estado').innerHTML = ticketsOpcionesHtml(TICKETS_ESTADOS, null, false);
   document.querySelector('[data-tk-tab="todos"]').classList.toggle('hidden', !_tk.gestor);
+  document.querySelector('[data-tk-tab="tipos"]').classList.toggle('hidden', !_tk.editaTipos);
   _tkContadores();
   openModal('modal-tickets');
   _tkMostrarTab(_tk.gestor ? 'todos' : 'nuevo');
@@ -89,7 +133,9 @@ function _tkMostrarTab(tab) {
   _tkError('');
   document.querySelectorAll('[data-tk-tab]').forEach(function (b) { b.classList.toggle('on', b.dataset.tkTab === tab); });
   _tkEl('tk-panel-nuevo').classList.toggle('hidden', tab !== 'nuevo');
-  _tkEl('tk-panel-lista').classList.toggle('hidden', tab === 'nuevo');
+  _tkEl('tk-panel-lista').classList.toggle('hidden', tab === 'nuevo' || tab === 'tipos');
+  _tkEl('tk-panel-tipos').classList.toggle('hidden', tab !== 'tipos');
+  if (tab === 'tipos') { _tkEl('tk-filtros').classList.add('hidden'); _tkPintarTipos(); return; }
   _tkEl('tk-panel-detalle').classList.add('hidden');
   _tkEl('tk-filtros').classList.toggle('hidden', tab !== 'todos');
   // El foco va después de que motion-helpers.js termine de abrir el diálogo (si no, lo pisa).
@@ -154,7 +200,7 @@ async function _tkAbrirDetalle(id) {
   }
 }
 function _tkPintarDetalle(t, respuestas) {
-  _tkEl('tk-det-titulo').textContent = 'Ticket #' + t.id + ' · ' + ticketsTipoLbl(t.tipo) + ' · ' + ticketsCampanaLbl(t.campana);
+  _tkEl('tk-det-titulo').textContent = 'Ticket #' + t.id + ' · ' + (t.tipoNombre || ticketsTipoLbl(t.tipo)) + ' · ' + ticketsCampanaLbl(t.campana);
   _tkEl('tk-det-titulo').setAttribute('tabindex', '-1');
   _tkEl('tk-det-meta').textContent = (t.esMio ? 'Enviado por ti' : 'Enviado por ' + t.autorNombre + ' (' + t.autorRol + ')') +
     ' · ' + ticketsFecha(t.createdAt) + ' · Estado: ' + ticketsEstadoLbl(t.estado);
@@ -244,6 +290,7 @@ async function ticketsBorrar() {
   });
   var f = _tkEl('tk-form');
   if (f) f.addEventListener('submit', _tkEnviar);
+  var ft = _tkEl('tk-tipo-form'); if (ft) ft.addEventListener('submit', _tkAgregarTipo); // Fase 364
   ['tk-desc', 'tk-resp'].forEach(function (id) { var el = _tkEl(id); if (el) el.addEventListener('input', _tkContadores); });
   // Al corregir el campo, el aviso de error se va (si no, «Elige la campaña» quedaba a la vista).
   ['tk-campana', 'tk-desc', 'tk-resp'].forEach(function (id) {

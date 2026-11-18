@@ -46,17 +46,59 @@ function _autor(actor) {
   };
 }
 
+// ── Fase 364 (pedido de Edwin 18/11, B2): tipos de ticket editables por ADMIN ──
+const TIPOS_BASE = ['SUGERENCIA', 'PROBLEMA', 'PREGUNTA']; // los que acepta la columna vieja `tipo`
+const MAX_TIPOS = 30;
+function tipos(db, { todos } = {}) {
+  return db.prepare('SELECT codigo, nombre, activo FROM ticket_tipos' + (todos ? '' : ' WHERE activo = 1') + ' ORDER BY orden, nombre').all()
+    .map((t) => ({ codigo: t.codigo, nombre: t.nombre, activo: t.activo === 1 }));
+}
+function tipoActivo(db, codigo) { return !!db.prepare('SELECT 1 FROM ticket_tipos WHERE codigo = ? AND activo = 1').get(codigo); }
+function nombreTipoValido(n) { return typeof n === 'string' && n.trim().length >= 2 && n.trim().length <= 40 && /^[\p{L}\p{N} ./()&-]+$/u.test(n.trim()); }
+// Código a partir del nombre: MAYÚSCULAS sin tildes, guiones bajos; único.
+function codigoDe(db, nombre) {
+  const base = nombre.trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/[^A-Z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 30) || 'TIPO';
+  let c = base, i = 2;
+  while (db.prepare('SELECT 1 FROM ticket_tipos WHERE codigo = ?').get(c)) c = base.slice(0, 26) + '_' + (i++);
+  return c;
+}
+function crearTipo(db, nombre, ahora) {
+  if (db.prepare('SELECT COUNT(*) n FROM ticket_tipos').get().n >= MAX_TIPOS) return { error: 'Máximo ' + MAX_TIPOS + ' tipos' };
+  if (db.prepare('SELECT 1 FROM ticket_tipos WHERE lower(nombre) = lower(?)').get(nombre.trim())) return { error: 'Ya hay un tipo con ese nombre' };
+  const codigo = codigoDe(db, nombre);
+  const orden = (db.prepare('SELECT MAX(orden) m FROM ticket_tipos').get().m || 0) + 1;
+  db.prepare('INSERT INTO ticket_tipos (codigo, nombre, activo, orden, createdAt) VALUES (?, ?, 1, ?, ?)').run(codigo, nombre.trim(), orden, ahora);
+  return { tipo: { codigo, nombre: nombre.trim(), activo: true } };
+}
+function editarTipo(db, codigo, cambios) {
+  const t = db.prepare('SELECT * FROM ticket_tipos WHERE codigo = ?').get(codigo);
+  if (!t) return { error: 'Tipo no encontrado', status: 404 };
+  if (cambios.nombre !== undefined) {
+    if (db.prepare('SELECT 1 FROM ticket_tipos WHERE lower(nombre) = lower(?) AND codigo != ?').get(cambios.nombre.trim(), codigo)) return { error: 'Ya hay un tipo con ese nombre', status: 409 };
+    db.prepare('UPDATE ticket_tipos SET nombre = ? WHERE codigo = ?').run(cambios.nombre.trim(), codigo);
+  }
+  if (cambios.activo !== undefined) {
+    if (!cambios.activo && db.prepare('SELECT COUNT(*) n FROM ticket_tipos WHERE activo = 1 AND codigo != ?').get(codigo).n === 0) return { error: 'Debe quedar al menos un tipo activo', status: 400 };
+    db.prepare('UPDATE ticket_tipos SET activo = ? WHERE codigo = ?').run(cambios.activo ? 1 : 0, codigo);
+  }
+  const n = db.prepare('SELECT codigo, nombre, activo FROM ticket_tipos WHERE codigo = ?').get(codigo);
+  return { tipo: { codigo: n.codigo, nombre: n.nombre, activo: n.activo === 1 }, antes: t };
+}
+
+const _SELECT_TICKET = `SELECT t.*, COALESCE(t.tipoCodigo, t.tipo) AS tipoEfectivo,
+  (SELECT nombre FROM ticket_tipos tt WHERE tt.codigo = COALESCE(t.tipoCodigo, t.tipo)) AS tipoNombre`;
+
 function crear(db, actor, b, ahora) {
   const a = _autor(actor);
   const r = db.prepare(
-    `INSERT INTO tickets (tipo, campana, descripcion, estado, autorId, autorUser, autorNombre, autorRol, createdAt, updatedAt)
-     VALUES (?, ?, ?, 'NUEVO', ?, ?, ?, ?, ?, ?)`
-  ).run(b.tipo, b.campana, b.descripcion, a.autorId, a.autorUser, a.autorNombre, a.autorRol, ahora, ahora);
+    `INSERT INTO tickets (tipo, tipoCodigo, campana, descripcion, estado, autorId, autorUser, autorNombre, autorRol, createdAt, updatedAt)
+     VALUES (?, ?, ?, ?, 'NUEVO', ?, ?, ?, ?, ?, ?)`
+  ).run(TIPOS_BASE.includes(b.tipo) ? b.tipo : 'SUGERENCIA', b.tipo, b.campana, b.descripcion, a.autorId, a.autorUser, a.autorNombre, a.autorRol, ahora, ahora);
   return obtener(db, r.lastInsertRowid);
 }
 
 function obtener(db, id) {
-  return db.prepare('SELECT * FROM tickets WHERE id = ?').get(id) || null;
+  return db.prepare(_SELECT_TICKET + ' FROM tickets t WHERE t.id = ?').get(id) || null;
 }
 
 // Lista: el autor solo lo suyo; el gestor, «mios» o «todos» con filtros.
@@ -69,9 +111,9 @@ function listar(db, actor, q) {
     else { where.push('t.autorId = ?'); params.push(actor.id); }
   }
   if (q.estado) { where.push('t.estado = ?'); params.push(q.estado); }
-  if (q.tipo) { where.push('t.tipo = ?'); params.push(q.tipo); }
+  if (q.tipo) { where.push('COALESCE(t.tipoCodigo, t.tipo) = ?'); params.push(q.tipo); }
   if (q.campana) { where.push('t.campana = ?'); params.push(q.campana); }
-  const sql = `SELECT t.*, (SELECT COUNT(*) FROM tickets_respuestas r WHERE r.ticketId = t.id) AS respuestas
+  const sql = `${_SELECT_TICKET}, (SELECT COUNT(*) FROM tickets_respuestas r WHERE r.ticketId = t.id) AS respuestas
                FROM tickets t ${where.length ? 'WHERE ' + where.join(' AND ') : ''}
                ORDER BY t.id DESC LIMIT 500`;
   return db.prepare(sql).all(...params);
@@ -113,7 +155,7 @@ function contarNuevos(db) {
 function publico(t, actor) {
   if (!t) return null;
   return {
-    id: t.id, tipo: t.tipo, campana: t.campana, descripcion: t.descripcion, estado: t.estado,
+    id: t.id, tipo: t.tipoEfectivo || t.tipo, tipoNombre: t.tipoNombre || null, campana: t.campana, descripcion: t.descripcion, estado: t.estado,
     autorNombre: t.autorNombre, autorRol: t.autorRol, createdAt: t.createdAt, updatedAt: t.updatedAt,
     respuestas: t.respuestas, esMio: esAutor(actor, t),
   };
@@ -125,6 +167,7 @@ function respuestaPublica(r, actor) {
 module.exports = {
   GENERAL, ETIQUETA_GENERAL,
   esGestor, puedeBorrar, esAutor, puedeVer, campanasDe, campanaPermitida,
+  TIPOS_BASE, tipos, tipoActivo, nombreTipoValido, crearTipo, editarTipo, // Fase 364
   crear, obtener, listar, respuestasDe, responder, cambiarEstado, borrar, contarNuevos,
   publico, respuestaPublica,
 };

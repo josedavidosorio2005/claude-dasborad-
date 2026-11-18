@@ -20,14 +20,14 @@ test('pantalla de entrada: tarjetas para todos los internos; Auxiliar Admin a su
 
 test('tarjetas de entrada: Administración solo ADMIN (y Auxiliar Admin), Mi portal solo SUPERVISOR, Cargar Datos si puede cargar', () => {
   // Fase 358: + «Malla de turnos» para ADMIN, SUPERVISOR y REPORTES.
-  assert.deepEqual(keys(L.dashTarjetasEntrada('ADMIN', true, true)), ['admin', 'malla', 'cargar']);
-  assert.deepEqual(keys(L.dashTarjetasEntrada('ADMIN', true, false)), ['admin', 'malla']);
-  assert.deepEqual(keys(L.dashTarjetasEntrada('SUPERVISOR', false, true)), ['portal', 'malla', 'cargar']);
-  assert.deepEqual(keys(L.dashTarjetasEntrada('SUPERVISOR', false, false)), ['portal', 'malla']);
-  assert.deepEqual(keys(L.dashTarjetasEntrada('AUX_ADMIN', false, false)), ['admin']);
-  assert.deepEqual(keys(L.dashTarjetasEntrada('REPORTES', false, false)), ['malla']);
+  assert.deepEqual(keys(L.dashTarjetasEntrada('ADMIN', true, true)), ['admin', 'malla', 'cargar', 'tickets']);
+  assert.deepEqual(keys(L.dashTarjetasEntrada('ADMIN', true, false)), ['admin', 'malla', 'tickets']);
+  assert.deepEqual(keys(L.dashTarjetasEntrada('SUPERVISOR', false, true)), ['portal', 'malla', 'cargar', 'tickets']);
+  assert.deepEqual(keys(L.dashTarjetasEntrada('SUPERVISOR', false, false)), ['portal', 'malla', 'tickets']);
+  assert.deepEqual(keys(L.dashTarjetasEntrada('AUX_ADMIN', false, false)), ['admin', 'tickets']);
+  assert.deepEqual(keys(L.dashTarjetasEntrada('REPORTES', false, false)), ['malla', 'tickets']);
   for (const r of ['GERENCIA', 'CALIDAD', 'CLIENTES_DASH', 'SISTEMAS']) {
-    assert.deepEqual(keys(L.dashTarjetasEntrada(r, false, false)), [], r);
+    assert.deepEqual(keys(L.dashTarjetasEntrada(r, false, false)), ['tickets'], r); // Fase 364: Tickets para todos
     assert.ok(!keys(L.dashTarjetasEntrada(r, false, true)).includes('admin'), r);
   }
   const t = L.dashTarjetasEntrada('ADMIN', true, false)[0];

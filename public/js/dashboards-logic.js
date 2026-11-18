@@ -95,6 +95,8 @@ function dashTarjetasEntrada(rol, esFullAdmin, puedeCargar) {
   // Fase 358: «Malla de turnos» (ADMIN y supervisor editan; Reportes la ve).
   if (esFullAdmin || rol === 'SUPERVISOR' || rol === 'REPORTES') t.push({ key: 'malla', label: 'Malla de turnos', sub: 'Horarios por semana y grupos de asesoras', icon: 'i-calendar', accion: 'mallaAbrir' });
   if (puedeCargar) t.push({ key: 'cargar', label: 'Cargar Datos', sub: 'Subir Excel de los dashboards', icon: 'i-upload', accion: 'openCentroCargas' });
+  // Fase 364 (pedido de Edwin 18/11, B2): «Sugerencias / Tickets» como tarjeta propia (antes en la barra superior).
+  t.push({ key: 'tickets', label: 'Sugerencias / Tickets', sub: 'Reporta un problema, una pregunta o una idea', icon: 'i-message-circle', accion: 'ticketsAbrir' });
   return t;
 }
 

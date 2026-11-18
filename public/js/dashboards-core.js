@@ -33,14 +33,16 @@ function renderDashGrid(){
   var rolActual = currentUser ? currentUser.rol : 'ADMIN';
   var extra = dashTarjetasEntrada(rolActual, isFullAdmin(), puedeCargar);
   var tarjetaEntrada = function(t){
-    return '<div class="dash-btn mod-clientes dash-entrada-'+t.key+'" role="button" tabindex="0" data-entrada="'+t.key+'" onclick="'+t.accion+'()">'+
+    var esTk = t.key==='tickets'; // Fase 364: la tarjeta lleva el contador de tickets nuevos
+    return '<div class="dash-btn mod-clientes dash-entrada-'+t.key+(esTk?' tk-menu-btn':'')+'" role="button" tabindex="0" data-entrada="'+t.key+'"'+(esTk?' aria-haspopup="dialog"':'')+' onclick="'+t.accion+'()">'+
+      (esTk?'<span class="tk-badge tk-badge-tarjeta hidden" data-tk-badge aria-hidden="true"></span>':'')+
       '<div class="dash-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#'+t.icon+'"></use></svg></div>'+
       '<div class="dash-label">'+t.label+'</div>'+
       '<div class="dash-sub">'+t.sub+'</div></div>';
   };
   // «Administración» y «Mi portal» primero; «Cargar Datos» al final, como antes.
-  var antes = extra.filter(function(t){ return t.key!=='cargar'; }).map(tarjetaEntrada).join('');
-  var despues = extra.filter(function(t){ return t.key==='cargar'; }).map(tarjetaEntrada).join('');
+  var antes = extra.filter(function(t){ return t.key!=='cargar' && t.key!=='tickets'; }).map(tarjetaEntrada).join('');
+  var despues = extra.filter(function(t){ return t.key==='cargar' || t.key==='tickets'; }).map(tarjetaEntrada).join('');
   grid.innerHTML = antes + grid.innerHTML + despues;
   // Sin ningun modulo (ni tarjetas de entrada) -> mensaje claro, sin tarjetas.
   var vacio=document.getElementById('dash-grid-vacio');

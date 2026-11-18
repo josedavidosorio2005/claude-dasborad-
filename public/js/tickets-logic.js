@@ -27,6 +27,11 @@ function _tkLbl(lista, v) {
   return x ? x.etiqueta : String(v || '');
 }
 function ticketsTipoLbl(v) { return _tkLbl(TICKETS_TIPOS, v); }
+// Fase 364: la lista de tipos viene del servidor (editable por ADMIN).
+function ticketsFijarTipos(lista) {
+  if (!Array.isArray(lista) || !lista.length) return;
+  TICKETS_TIPOS = lista.map(function (t) { return { valor: t.valor, etiqueta: t.nombre || t.etiqueta }; });
+}
 function ticketsEstadoLbl(v) { return _tkLbl(TICKETS_ESTADOS, v); }
 function ticketsCampanaLbl(v) { return v === 'GENERAL' ? 'General (plataforma)' : String(v || ''); }
 
@@ -76,7 +81,7 @@ function ticketsListaHtml(tickets, conAutor) {
     if (resumen.length > 140) resumen = resumen.slice(0, 140) + '…';
     return '<li><button type="button" class="tk-item" data-tk-id="' + _tkEsc(t.id) + '">' +
       '<span class="tk-item-cab"><span class="tk-num">#' + _tkEsc(t.id) + '</span> ' +
-      '<span class="tk-tipo">' + _tkEsc(ticketsTipoLbl(t.tipo)) + '</span> · ' +
+      '<span class="tk-tipo">' + _tkEsc(t.tipoNombre || ticketsTipoLbl(t.tipo)) + '</span> · ' +
       '<span class="tk-camp">' + _tkEsc(ticketsCampanaLbl(t.campana)) + '</span>' + _tkEstadoPill(t.estado) + '</span>' +
       '<span class="tk-resumen">' + _tkEsc(resumen) + '</span>' +
       '<span class="tk-meta">' + (conAutor ? _tkEsc(t.autorNombre) + ' (' + _tkEsc(t.autorRol) + ') · ' : '') +
@@ -103,7 +108,7 @@ function ticketsOpcionesHtml(lista, seleccion, conTodos) {
 
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
-    TICKETS_TEXTO_MAX: TICKETS_TEXTO_MAX, TICKETS_TIPOS: TICKETS_TIPOS, TICKETS_ESTADOS: TICKETS_ESTADOS, TICKETS_AVISO_PRIVACIDAD: TICKETS_AVISO_PRIVACIDAD,
+    TICKETS_TEXTO_MAX: TICKETS_TEXTO_MAX, TICKETS_TIPOS: TICKETS_TIPOS, ticketsFijarTipos: ticketsFijarTipos, TICKETS_ESTADOS: TICKETS_ESTADOS, TICKETS_AVISO_PRIVACIDAD: TICKETS_AVISO_PRIVACIDAD,
     ticketsTipoLbl: ticketsTipoLbl, ticketsEstadoLbl: ticketsEstadoLbl, ticketsCampanaLbl: ticketsCampanaLbl,
     ticketsEsGestor: ticketsEsGestor, ticketsPuedeBorrar: ticketsPuedeBorrar,
     ticketsContador: ticketsContador, ticketsTextoValido: ticketsTextoValido, ticketsFecha: ticketsFecha,

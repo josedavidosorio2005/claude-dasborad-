@@ -7,6 +7,20 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.214.0 — Noviembre 2026
+
+**Pedidos de Edwin (18/11): menú, Tickets y ventanas.**
+
+- El menú de tarjetas se ve en 3 o 4 columnas en el computador, para ver todo sin bajar. En el
+  celular queda igual.
+- «Sugerencias / Tickets» ya no está en el menú de la cuenta: es una tarjeta del menú (y una opción
+  del menú lateral en el Portal Asesor y en el Portal del supervisor), con el número de tickets nuevos.
+- El administrador puede agregar, renombrar o desactivar los tipos de ticket (pestaña «Tipos»). Un
+  tipo desactivado ya no se ofrece, pero los tickets viejos conservan su nombre.
+- Las ventanas de los módulos (Calidad, Malla, Inventario, Tickets, tableros...) ocupan toda la
+  pantalla y solo se cierran con su botón «Cerrar»: ya no se cierran al hacer clic afuera ni con la
+  tecla Escape. Al cerrar sesión y con «Ver como» se siguen cerrando todas.
+
 ## v1.213.0 — Noviembre 2026
 
 **Wolkvox (campaña de pruebas): actualización también a medianoche.**

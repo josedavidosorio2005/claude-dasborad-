@@ -1738,7 +1738,7 @@ const ticketTexto = z.string().trim()
   .min(1, 'Escribe la descripción')
   .max(TICKET_TEXTO_MAX, 'La descripción puede tener hasta ' + TICKET_TEXTO_MAX + ' caracteres');
 const ticketCrearBody = z.strictObject({
-  tipo: z.enum(TICKET_TIPOS, { message: 'Elige el tipo' }),
+  tipo: z.string({ message: 'Elige el tipo' }).trim().regex(/^[A-Z0-9_]{1,40}$/, 'Elige el tipo'), // Fase 364: lista editable (el servidor revisa que esté activo)
   campana: z.string().trim().min(1, 'Elige la campaña').max(120),
   descripcion: ticketTexto,
 });
@@ -1751,7 +1751,7 @@ const ticketEstadoBody = z.strictObject({ estado: z.enum(TICKET_ESTADOS, { messa
 const ticketsListaQuery = z.strictObject({
   alcance: z.enum(['mios', 'todos']).optional(),
   estado: z.enum(TICKET_ESTADOS).optional(),
-  tipo: z.enum(TICKET_TIPOS).optional(),
+  tipo: z.string().trim().regex(/^[A-Z0-9_]{1,40}$/).optional(), // Fase 364
   campana: z.string().trim().min(1).max(120).optional(),
 });
 
