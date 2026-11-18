@@ -7,6 +7,19 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.219.0 — Noviembre 2026
+
+**Inventario de sistemas: agentes y asignación de elementos.**
+
+- Pestaña nueva «Agentes»: se agregan los agentes (nombre, documento opcional, sede y operación).
+- A cada agente se le asignan los elementos uno por uno (diadema, teclado, mouse, monitor, torre,
+  portátil). Al asignarlo, el elemento pasa a «En uso».
+- «Devolver» y «Cambiar elemento» piden el motivo y cómo queda el elemento que se entrega (libre,
+  en reparación o malo). El cambio es por otro libre del mismo tipo, en un solo paso.
+- La lista de elementos muestra a quién está asignado cada uno, y se puede buscar por el agente.
+  El panel dice cuántos agentes tienen elementos.
+- Lo que sigue: las actas en PDF.
+
 ## v1.218.0 — Noviembre 2026
 
 **Nuevo: «Inventario de sistemas».**
