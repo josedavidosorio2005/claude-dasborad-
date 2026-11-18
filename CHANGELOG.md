@@ -7,6 +7,15 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.221.0 — Noviembre 2026
+
+**Réplica de MOBILIZE con la API: Eficacia y más reportes para probar.**
+
+- La copia de prueba «MOBILIZE PRUEBAS API» ya calcula la Eficacia con los mismos códigos
+  positivos de MOBILIZE.
+- El administrador puede probar más reportes de Wolkvox (abandonadas, IVR y encuestas, chats)
+  para ver cuáles sirven para llenar las demás pestañas.
+
 ## v1.220.0 — Noviembre 2026
 
 **Inventario de sistemas: actas de entrega y devolución.**

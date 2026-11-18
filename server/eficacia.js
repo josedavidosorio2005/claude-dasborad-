@@ -56,7 +56,8 @@ function eficaciaCodigoDe(tipificacion, codigos) {
 // Por mes del rango: contestadas de ingreso, positivas, % y el detalle por
 // codigo positivo. `codigos` = la lista de la campaña (null si no tiene).
 function eficaciaPorMes(db, { campana, desde, hasta }) {
-  const codigos = EFICACIA_CODIGOS_POSITIVOS[campana] || null;
+  // Fase A10: la réplica interna («MOBILIZE PRUEBAS API») usa los códigos de su campaña original.
+  const codigos = EFICACIA_CODIGOS_POSITIVOS[campana] || EFICACIA_CODIGOS_POSITIVOS[require('./clientes-registro').replicaDe(db, campana)] || null;
   if (!codigos) return { codigos: null, meses: [] };
   const idx = _indice(codigos);
   const params = { campana };

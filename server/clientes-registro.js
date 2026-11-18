@@ -193,6 +193,14 @@ function esCampanaInterna(db, nombre) {
   return !!r && _json(r.parametros, {}).interno === true;
 }
 
+// Fase A10: de qué campaña es réplica una campaña INTERNA (parametros.replicaDe), o null.
+function replicaDe(db, nombre) {
+  if (typeof nombre !== 'string' || !nombre) return null;
+  const r = db.prepare('SELECT parametros FROM clientes_registro WHERE nombre = ?').get(nombre);
+  const p = r ? _json(r.parametros, {}) : {};
+  return p.interno === true && typeof p.replicaDe === 'string' && p.replicaDe ? p.replicaDe : null;
+}
+
 // Lo que el navegador necesita para armar sus listas por modulo
 // (public/js/registro-clientes.js): sin fechas ni orden interno.
 function registroParaNavegador(db) {
@@ -245,6 +253,7 @@ function datosAnterioresVisibles(db, nombre) {
 }
 
 module.exports = {
+  replicaDe, // Fase A10
   REGISTRO_INICIAL,
   datosAnterioresVisibles, // Fase 354b
   HLM_NOMBRE, // Fase 354
