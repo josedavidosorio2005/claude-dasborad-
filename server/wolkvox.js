@@ -44,6 +44,8 @@ const REPORTES = {
   diagram_1: 'Detalle de llamadas de IVR (Diagram 1, probable)',
   ivr_1: 'Detalle de llamadas de IVR (probable)',
   diagram_5: 'Encuesta inteligente por agente (Diagram 5, probable)',
+  diagram_4: 'Detalle de encuestas (HistIVR, Diagram 4, probable)', // Fase A10b
+  cdr_4: 'Detalle de llamadas de salida / campaña (CDR 4, probable)', // Fase A10b
 };
 
 // Campaña de la plataforma -> operacion de Wolkvox (de quien es el token). SOLO la replica.

@@ -61,7 +61,7 @@ test('sin reporte sigue siendo skill_1; uno fuera de la lista: 400 sin consultar
 test('estado trae la lista de reportes con su nombre', async () => {
   const admin = await tokenFor('admin', MASTER_PASSWORD);
   const e = await request(app).get('/api/wolkvox/estado?campana=' + encodeURIComponent(R)).set(H(admin));
-  assert.deepEqual(Object.keys(e.body.reportesNombres).sort(), ['agent_1', 'agent_7', 'cdr_1', 'cdr_2', 'cdr_3', 'cdr_5', 'chat_1', 'chat_13', 'diagram_1', 'diagram_5', 'ivr_1', 'skill_1', 'skill_4', 'skill_7', 'skill_9']); // + Fase A10
+  assert.deepEqual(Object.keys(e.body.reportesNombres).sort(), ['agent_1', 'agent_7', 'cdr_1', 'cdr_2', 'cdr_3', 'cdr_4', 'cdr_5', 'chat_1', 'chat_13', 'diagram_1', 'diagram_4', 'diagram_5', 'ivr_1', 'skill_1', 'skill_4', 'skill_7', 'skill_9']); // + Fase A10
 });
 
 test('navegador: wvLlenarReportes arma las opciones con textContent', () => {
