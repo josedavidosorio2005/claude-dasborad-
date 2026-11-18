@@ -373,7 +373,7 @@ que esté aprobado.
 ## 10. Plan A: consulta automática desde el servidor, fase A1 (18/11/2026)
 
 **Decisión del usuario (18/11):** `skill_1` día por día. Wolkvox todavía no tiene la IP
-3.85.54.96 en su firewall (`wv0072`); A1 deja todo listo y **apagado**.
+3.85.54.96 en su firewall; A1 deja todo listo y **apagado**.
 
 **Qué hace** (`server/wolkvox-auto.js`, arranca con `server.js`, nunca en pruebas):
 - Revisa cada minuto si es la franja de las **7:00 o 13:00 (hora Colombia)**; cada franja corre
