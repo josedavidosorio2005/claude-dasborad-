@@ -79,10 +79,12 @@ function impactoEncuestas(db, { campana, filas }) {
 // Reemplaza por PERIODO (campaña + primera..ultima fecha del archivo) en una
 // sola transaccion: volver a subir una base corregida no duplica, y cargar
 // octubre nunca borra septiembre.
-function cargarEncuestas(db, { campana, archivoNombre, cargadoPorNombre, filas }) {
+function cargarEncuestas(db, { campana, archivoNombre, cargadoPorNombre, filas, desde: desdeFijo, hasta: hastaFijo }) {
   const ts = nowStr();
   const filasObj = filas.map(filaArrayAObjeto);
-  const { desde, hasta } = rangoFechas(filasObj);
+  // Fase A11: la API reemplaza el mes completo (desde/hasta fijos); la carga manual, el rango del archivo.
+  const rango = rangoFechas(filasObj);
+  const desde = desdeFijo || rango.desde, hasta = hastaFijo || rango.hasta;
   const del = db.prepare('DELETE FROM encuestas WHERE campana = ? AND fecha >= ? AND fecha <= ?');
   const insert = db.prepare(
     `INSERT INTO encuestas (campana, fecha, agente, skill, q1, q2, q3, q4, comentario, connId, hora, telefono, archivoNombre, cargadoPorNombre, createdAt)
