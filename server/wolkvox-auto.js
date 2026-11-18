@@ -80,7 +80,9 @@ const CAMPOS = {
   totalLlamadas: ['inbound_calls', 'calls_inbound', 'received_calls', 'total_calls', 'calls'],
   contestadas: ['answer_calls', 'answered_calls', 'calls_answered', 'attended_calls'],
   llamadasAbandonadas: ['abandon_calls', 'abandoned_calls', 'calls_abandon', 'calls_abandoned'],
+  serviceLevel10secPct: ['service_level_10seg', 'service_level_10sec', 'service_level_10'], // Fase A4
   serviceLevel20secPct: ['service_level_20seg', 'service_level_20sec', 'service_level_20', 'service_level'],
+  serviceLevel30secPct: ['service_level_30seg', 'service_level_30sec', 'service_level_30'], // Fase A4
   abandonPct: ['abandon', 'abandon_pct', 'abandon_percentage', 'abandonment'],
   asaSegundos: ['asa'],
   ataSegundos: ['ata'],
@@ -125,7 +127,7 @@ function convertirFila(r, dia) {
   fila.totalLlamadas = total;
   fila.contestadas = cont;
   const opc = [
-    ['llamadasAbandonadas', aEntero], ['serviceLevel20secPct', aPorcentaje], ['abandonPct', aPorcentaje],
+    ['llamadasAbandonadas', aEntero], ['serviceLevel10secPct', aPorcentaje], ['serviceLevel20secPct', aPorcentaje], ['serviceLevel30secPct', aPorcentaje], ['abandonPct', aPorcentaje],
     ['asaSegundos', aSegundos], ['ataSegundos', aSegundos],
   ];
   for (const [campo, conv] of opc) {
@@ -139,7 +141,9 @@ function convertirFila(r, dia) {
 
 // Mensaje de Wolkvox que dice «sin registros» (en 200 sin `data`, o en un 404).
 const SIN_REGISTROS = /no\s+(records|data|results)|0\s+records|sin\s+(registros|datos)/i;
-// Respuesta de un dia -> { filas, omitidas } o lanza WolkvoxError('respuesta_invalida').
+// Respuesta de un dia -> { filas, omitidas, sinLlamadas } o lanza WolkvoxError('respuesta_invalida').
+// Fase A4 (decision del usuario, 18/11): las filas con 0 llamadas se descartan (no se excluye
+// ninguna skill por nombre: si una empieza a recibir llamadas, aparece sola).
 function filasDelDia(cuerpo, dia) {
   let data = cuerpo && cuerpo.data;
   if (data === undefined || data === null || data === '') {
@@ -149,7 +153,7 @@ function filasDelDia(cuerpo, dia) {
   }
   if (!Array.isArray(data)) throw new wv.WolkvoxError('respuesta_invalida', 'Wolkvox respondió sin la lista de datos');
   const filas = [];
-  let omitidas = 0;
+  let omitidas = 0, sinLlamadas = 0;
   for (const r of data) {
     const c = convertirFila(r, dia);
     if (c.error) {
@@ -157,9 +161,11 @@ function filasDelDia(cuerpo, dia) {
       e.campos = wv.resumenSinValores(cuerpo).campos; // solo NOMBRES de campos, para ajustar el lector
       throw e;
     }
-    if (c.omitida) omitidas++; else filas.push(c.fila);
+    if (c.omitida) omitidas++;
+    else if (c.fila.totalLlamadas === 0) sinLlamadas++;
+    else filas.push(c.fila);
   }
-  return { filas, omitidas };
+  return { filas, omitidas, sinLlamadas };
 }
 
 // ── Registro de corridas ──
@@ -253,7 +259,7 @@ async function correrUnaVez(opts) {
 
   for (const { mes, dias } of meses) {
     const filas = [];
-    let omitidas = 0;
+    let omitidas = 0, sinLlamadas = 0;
     try {
       for (const dia of dias) {
         res.consultas++;
@@ -270,6 +276,7 @@ async function correrUnaVez(opts) {
         }
         const d = filasDelDia(cuerpo, dia);
         omitidas += d.omitidas;
+        sinLlamadas += d.sinLlamadas;
         filas.push(...d.filas);
       }
     } catch (e) {
@@ -285,14 +292,14 @@ async function correrUnaVez(opts) {
     const v = ing.validarCuerpo({ reporte: 'flujo', mes, filas });
     if (v.error) {
       res.meses.push({ mes, estado: filas.length ? 'invalido' : 'sin_filas' });
-      partes.push(mes + ': ' + (filas.length ? 'no pasó la validación (' + v.error + ')' : 'Wolkvox no trajo filas') + ', mes sin cambios');
+      partes.push(mes + ': ' + (filas.length ? 'no pasó la validación (' + v.error + ')' : 'Wolkvox no trajo filas con llamadas' + (sinLlamadas ? ' (' + sinLlamadas + ' en cero)' : '')) + ', mes sin cambios');
       if (filas.length) res.estado = 'error';
       continue;
     }
     const w = ing.reemplazarMesFlujo(db, { mes, filas: v.filas, cargadoPorNombre: QUIEN, archivoNombre: ARCHIVO, conservar: CONSERVAR });
-    res.meses.push({ mes, estado: 'ok', dias: dias.length, filas: w.filas, skills: w.skills, reemplazadas: w.reemplazadas, conservados: w.conservados });
+    res.meses.push({ mes, estado: 'ok', dias: dias.length, sinLlamadas, filas: w.filas, skills: w.skills, reemplazadas: w.reemplazadas, conservados: w.conservados });
     partes.push(mes + ': ' + dias.length + ' días, ' + w.filas + ' filas, ' + w.skills + ' skills, reemplazó ' + w.reemplazadas +
-      (w.conservados ? ', ' + w.conservados + ' AHT/espera del archivo' : '') + (omitidas ? ', ' + omitidas + ' filas de total omitidas' : '') + ', con respaldo');
+      (w.conservados ? ', ' + w.conservados + ' AHT/espera del archivo' : '') + (omitidas ? ', ' + omitidas + ' filas de total omitidas' : '') + (sinLlamadas ? ', ' + sinLlamadas + ' filas sin llamadas descartadas' : '') + ', con respaldo');
   }
   return terminar();
 }

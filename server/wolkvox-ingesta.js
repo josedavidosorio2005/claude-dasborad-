@@ -83,9 +83,10 @@ function reemplazarMesFlujo(db, { mes, filas, cargadoPorNombre, archivoNombre, c
   return { mes, filas: filas.length, skills: new Set(filas.map((f) => f.skillName)).size, reemplazadas: borradasMes, insertadas: resultado.diario.insertadas, conservados };
 }
 
-const CAMPOS_NUM = ['totalLlamadas', 'contestadas', 'llamadasAbandonadas', 'serviceLevel20secPct', 'abandonPct', 'asaSegundos', 'ataSegundos', 'ahtSegundos', 'waitTimeSegundos'];
+// Fase A4: + nivel de servicio a 10 s y 30 s (se guardan; la pestaña de Flujo solo muestra 20 s, Fase 68).
+const CAMPOS_NUM = ['totalLlamadas', 'contestadas', 'llamadasAbandonadas', 'serviceLevel10secPct', 'serviceLevel20secPct', 'serviceLevel30secPct', 'abandonPct', 'asaSegundos', 'ataSegundos', 'ahtSegundos', 'waitTimeSegundos'];
 const OBLIGATORIOS = ['totalLlamadas', 'contestadas'];
-const PCT = ['serviceLevel20secPct', 'abandonPct'];
+const PCT = ['serviceLevel10secPct', 'serviceLevel20secPct', 'serviceLevel30secPct', 'abandonPct'];
 
 function fechaValida(f) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(f)) return false;

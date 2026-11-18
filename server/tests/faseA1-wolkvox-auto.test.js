@@ -83,7 +83,7 @@ test('lector de skill_1: porcentajes, tiempos, fila de total y campos faltantes'
   assert.deepEqual(c.fila, { fecha: '2026-11-02', skillName: 'X', totalLlamadas: 5, contestadas: 3 });
   assert.equal(auto.convertirFila({ skill_name: '', inbound_calls: '5', answer_calls: '3' }, 'd').omitida, true);
   assert.ok(auto.convertirFila({ skill_name: 'X', calls_total_raro: '5' }, 'd').error);
-  assert.deepEqual(auto.filasDelDia({ code: 200, msg: '0 records were found' }, 'd'), { filas: [], omitidas: 0 });
+  assert.deepEqual(auto.filasDelDia({ code: 200, msg: '0 records were found' }, 'd'), { filas: [], omitidas: 0, sinLlamadas: 0 });
   assert.throws(() => auto.filasDelDia({ code: 500, msg: 'otra cosa' }, 'd'), (e) => e.codigo === 'respuesta_invalida');
 });
 

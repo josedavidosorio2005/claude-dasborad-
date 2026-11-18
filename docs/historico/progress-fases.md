@@ -21244,3 +21244,13 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
 - **Pedido (usuario, 18/11):** el usuario creó `WOLKVOX_AUTO_ACTIVO=1` en SSM y pidió lanzar YA una sola corrida de noviembre 2026 (días 1 a 17), solo réplica y solo Flujo, con respaldo; si no había forma de lanzarla a mano, un botón «Ejecutar ahora» solo para ADMIN que quede en el Historial. Autorizadas hasta 20 consultas para esa corrida.
 - **Cambio:** `ejecutarAhora` en `server/wolkvox-auto.js` (candado común con el programador, interruptor leído fresco, `maxConsultas`, etiqueta y actor en el Historial); `POST /wolkvox/auto/ejecutar` en `server/routes/wolkvox.js` (admin + réplica, 10 min entre ejecuciones); botón y resultado en la ventana de Wolkvox (`wvAutoEjecutar`, `wvAutoFilas`); ruta declarada en la matriz de la Fase 118.
 - **Pruebas:** `faseA3-wolkvox-ejecutar-ahora` (6, Wolkvox simulado).
+
+## Fase A4 — primera corrida real de la consulta automática y ajustes (v1.208.1, 2026-11-18)
+
+- **Primera corrida real (18/11, 10:28 Colombia, «Ejecutar ahora», autorizada hasta 20 consultas):** estado ok, 17 consultas (uso del día 20 de 2.800), noviembre 1–17: 68 filas (17 días × 4 skills), reemplazó 0 (la réplica no tenía noviembre), con respaldo, 1,6 s. Historial: una línea `WOLKVOX_AUTO` «Ejecutar ahora · …».
+- **Comparación con el Flujo manual de MOBILIZE (solo lectura):** el manual de noviembre tiene solo SKILL SAC, 8 días (03–12/11). En esos 8 días × SKILL SAC: llamadas, contestadas, abandonadas, nivel de servicio 20 s, ASA y ATA **8/8 iguales (diferencia máxima 0)**. % de abandono no comparable (el manual lo tiene vacío). Totales SKILL SAC del mes: réplica 37 / 36 / 1, manual 29 / 29 / 0; la diferencia está en días sin fila manual (el archivo manual llega hasta el 12/11).
+- **Skills que sobraban:** ENCUESTA LLAMADAS DE SALIDA, Skill Key Account y Wolk, con 0 llamadas los 17 días (51 filas en cero).
+- **Pedido (usuario, 18/11):** descartar solo las filas con 0 llamadas (no excluir skills por nombre), guardar NS 10 s y 30 s sin mostrarlos, anotar la comparación aquí y en `docs/plan-api-wolkvox.md`, todo en un PR. Interruptor en 1. Comparar otra vez después de la corrida de las 7:00 del 19/11.
+- **Cambio:** `server/wolkvox-auto.js` (`filasDelDia` descarta `totalLlamadas = 0` y lo cuenta en el Historial; lee `service_level_10seg`/`_30seg`), `server/wolkvox-ingesta.js` (`validarCuerpo` acepta `serviceLevel10secPct`/`serviceLevel30secPct`, 0–100).
+- **Pruebas:** `faseA4-wolkvox-ajustes` (4: filas en cero fuera y skill que aparece sola; mes todo en cero sin reemplazar; validación de 10/30 s; la pestaña de Flujo no pinta 10/30 s).
+- **Scripts:** los dos de verificación en producción (scratchpad) se borraron al terminar.
