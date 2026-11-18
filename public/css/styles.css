@@ -2603,6 +2603,27 @@ div.ca-bar-fila{cursor:default}
   .modal-malla .table-wrap{margin:0 -4px}
 }
 .ml-dia-corto{display:none}
+/* Fase 363: pestaña «Puntualidad» de la malla. La tabla (asesora × 7 días) se desplaza dentro de su
+   .table-wrap en el celular; la página nunca. */
+.ml-vistas{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}
+.ml-vistas.hidden,#ml-puntualidad.hidden,#ml-grupos.hidden{display:none}
+.ml-vistas .btn-cancel{min-height:44px}
+.ml-vistas .btn-cancel[aria-pressed="true"]{background:var(--grad-btn);border-color:transparent;color:var(--c-on-brand)}
+.mp-tabla{width:100%;min-width:760px;border-collapse:collapse;font-size:var(--fs-small)}
+.mp-tabla th,.mp-tabla td{padding:6px 6px;border-bottom:1px solid var(--c-border-soft);text-align:left;vertical-align:top}
+.mp-tabla thead th{color:var(--c-text-2)}
+.mp-tabla tbody th{font-weight:600;color:var(--c-text);min-width:140px}
+.mp-tabla .vis-pill{white-space:normal}
+.mp-turno,.mp-salida{display:block;font-size:var(--fs-note);color:var(--c-text-muted);margin-top:2px}
+.mp-salida{color:var(--c-warning-text);font-weight:600}
+.mp-descanso{color:var(--c-text-muted)}
+.mp-exc{margin-top:14px}
+.mp-exc-form{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
+.mp-exc-form .ig{margin-bottom:0;min-width:160px}
+.mp-exc-form .btn-primary,.mp-quitar,#mp-agentes-btn,#mp-agentes .btn-cancel,#mp-agentes select{min-height:44px}
+.mp-exc-lista{list-style:none;padding:0;margin:10px 0 0}
+.mp-exc-lista li{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:4px 0;border-bottom:1px solid var(--c-border-soft)}
+.mp-mia-tit{margin-top:18px}
 /* Fase 357 (C): pestaña «Vistos» de Calidad. */
 .vis-ayuda{font-size:var(--fs-small);color:var(--c-text-2);line-height:1.8;margin:0 0 12px}
 .vis-resumen{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}

@@ -693,6 +693,47 @@ CREATE TABLE IF NOT EXISTS malla_asignaciones (
   PRIMARY KEY (grupoId, asesorId)
 );
 CREATE INDEX IF NOT EXISTS idx_malla_asig_asesor ON malla_asignaciones(asesorId);
+-- Fase 363 (Malla fase 2, puntualidad): resumen diario del reporte agent_7 de Wolkvox (login y
+-- logout) por operacion, dia (hora Colombia) y agente. Nunca la respuesta cruda.
+CREATE TABLE IF NOT EXISTS wolkvox_login_diario (
+  operacion TEXT NOT NULL,
+  fecha TEXT NOT NULL,
+  agentId TEXT NOT NULL,
+  agentName TEXT NOT NULL DEFAULT '',
+  primerLogin TEXT NOT NULL,
+  ultimoLogout TEXT,
+  sesiones INTEGER NOT NULL,
+  segundos INTEGER,
+  PRIMARY KEY (operacion, fecha, agentId)
+);
+-- Hasta que momento (hora Colombia, AAAA-MM-DD HH:MM:SS) hay datos de login de cada operacion.
+CREATE TABLE IF NOT EXISTS wolkvox_login_hasta (
+  operacion TEXT PRIMARY KEY,
+  hasta TEXT NOT NULL,
+  actualizado TEXT NOT NULL
+);
+-- Agente de Wolkvox (agent_id) <-> usuario de la plataforma, por campaña. Lo decide una persona.
+CREATE TABLE IF NOT EXISTS malla_agente_enlace (
+  campana TEXT NOT NULL,
+  agentId TEXT NOT NULL,
+  userId INTEGER NOT NULL,
+  creadoPor TEXT NOT NULL DEFAULT '',
+  createdAt TEXT NOT NULL,
+  PRIMARY KEY (campana, agentId),
+  UNIQUE (campana, userId)
+);
+-- Excepciones de puntualidad (incapacidad, vacaciones, permiso) por dia o rango de dias.
+CREATE TABLE IF NOT EXISTS malla_excepciones (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  campana TEXT NOT NULL,
+  userId INTEGER NOT NULL,
+  desde TEXT NOT NULL,
+  hasta TEXT NOT NULL,
+  tipo TEXT NOT NULL,
+  creadoPor TEXT NOT NULL DEFAULT '',
+  createdAt TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_malla_exc ON malla_excepciones(campana, userId, desde);
 `);
 
 // Fase 153 (Paso 1): registro de clientes. La semilla (ORLANT y MOBILIZE tal

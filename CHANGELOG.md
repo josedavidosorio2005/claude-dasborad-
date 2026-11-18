@@ -7,6 +7,20 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.210.0 — Noviembre 2026
+
+**Malla de turnos, fase 2: puntualidad (en la campaña de pruebas, todavía apagada).**
+
+- La malla tiene una pestaña nueva, «Puntualidad»: para cada asesora y cada día con turno dice si
+  entró a tiempo, tarde (aunque sea un segundo), sin ingreso, con excepción, sin enlace o pendiente.
+  La hora de entrada es el primer ingreso del día a Wolkvox. La salida antes de tiempo se muestra
+  aparte.
+- El supervisor puede marcar excepciones (incapacidad, vacaciones o permiso) de un día o de varios
+  días seguidos, y enlazar cada agente de Wolkvox con su asesora. Todo queda en el Historial.
+- La asesora podrá ver solo su propia puntualidad en «Mi malla». El cliente no la ve.
+- Por ahora solo en la campaña de pruebas «MOBILIZE PRUEBAS API» y apagada: se enciende cuando se
+  apruebe.
+
 ## v1.209.0 — Noviembre 2026
 
 **Wolkvox: «Probar conexión» puede revisar más reportes.**

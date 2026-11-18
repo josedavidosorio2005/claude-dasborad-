@@ -20,8 +20,10 @@ function campanasDe(db, actor) {
   return leerRegistro(db).map((c) => c.nombre).filter((n) => puedeLeer(actor, n));
 }
 
+// Fase 363: la replica «MOBILIZE PRUEBAS API» usa las asesoras de MOBILIZE, solo para leerlas
+// (sus cuentas no cambian); ver puntualidad.js. El resto, las asesoras de su propia campaña.
 function asesorasDe(db, campana) {
-  return db.prepare("SELECT id, nombre FROM users WHERE rol = 'ASESOR' AND active = 1 AND asesorCampana = ? ORDER BY nombre").all(campana);
+  return require('./puntualidad').asesorasDe(db, campana);
 }
 
 function _grupo(r) {

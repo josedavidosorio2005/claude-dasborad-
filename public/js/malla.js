@@ -45,6 +45,7 @@ async function mallaCargar() {
   for (var k = 1; k <= 4; k++) { var s = mallaSumarSemanas(_ml.semana, k); opts += '<option value="' + s + '">' + esc(mallaSemanaTexto(s)) + '</option>'; }
   _mlEl('ml-copiar-a').innerHTML = opts;
   _mlPintar();
+  if (typeof mpTrasCargar === 'function') mpTrasCargar(); // Fase 363: pestaña «Puntualidad»
 }
 
 // Quién está en otro grupo de la misma semana (para avisar en la lista de asesoras).
@@ -172,6 +173,7 @@ async function mallaMiaRender() {
   c.innerHTML = '<p class="vis-vacio">Cargando…</p>';
   try { c.innerHTML = mallaMiaHtml(await apiRequest('GET', '/malla/mia')); }
   catch (e) { c.innerHTML = '<p class="vis-vacio">' + esc(e.message || 'No se pudo cargar tu malla') + '</p>'; }
+  if (typeof mpMiaRender === 'function') mpMiaRender(); // Fase 363: «Mi puntualidad»
 }
 
 if (typeof module !== 'undefined' && module.exports) {

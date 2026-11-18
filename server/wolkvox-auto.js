@@ -193,17 +193,20 @@ function ultimaCorrida(db) {
 function _activo(valor) { return typeof valor === 'string' && valor.trim() === '1'; }
 // Lee WOLKVOX_AUTO_ACTIVO fresco de SSM (mismo camino y permiso que bootstrap: por prefijo).
 // Sin SSM_PARAM_PREFIX (local), de process.env. Lanza si SSM falla: quien llama NO corre.
-async function leerInterruptor(env) {
+// Fase 363: `nombre` permite leer otro interruptor (WOLKVOX_LOGIN_ACTIVO, agent_7).
+async function leerInterruptor(env, nombre) {
   env = env || process.env;
+  nombre = nombre || 'WOLKVOX_AUTO_ACTIVO';
+  if (!/^WOLKVOX_[A-Z_]{1,40}$/.test(nombre)) return false;
   const prefix = env.SSM_PARAM_PREFIX;
-  if (!prefix) return _activo(env.WOLKVOX_AUTO_ACTIVO);
+  if (!prefix) return _activo(env[nombre]);
   const { SSMClient, GetParametersByPathCommand } = require('@aws-sdk/client-ssm');
   const client = new SSMClient({ region: env.AWS_REGION || env.AWS_DEFAULT_REGION || 'us-east-1' });
   const conBarra = prefix.endsWith('/') ? prefix : prefix + '/';
   let siguiente, valor;
   do {
     const out = await client.send(new GetParametersByPathCommand({ Path: conBarra, WithDecryption: true, Recursive: false, MaxResults: 10, NextToken: siguiente }));
-    for (const p of out.Parameters || []) if (p.Name === conBarra + 'WOLKVOX_AUTO_ACTIVO') valor = p.Value;
+    for (const p of out.Parameters || []) if (p.Name === conBarra + nombre) valor = p.Value;
     siguiente = out.NextToken;
   } while (siguiente);
   return _activo(valor);
@@ -304,6 +307,90 @@ async function correrUnaVez(opts) {
   return terminar();
 }
 
+// ── Fase 363 (Malla fase 2): login/logout de los agentes (agent_7) ──
+// Autorizacion escrita del usuario (18/11): solo para la replica «MOBILIZE PRUEBAS API» al
+// principio. Interruptor propio WOLKVOX_LOGIN_ACTIVO=1 (SSM). Una consulta por tramo: del 1 del mes
+// en curso hasta AHORA (los logins de hoy cuentan) y, los dias 1 a 3, todo el mes anterior. Todo o
+// nada por tramo; sin reintentos; Historial WOLKVOX_LOGIN solo con conteos.
+const API_LOGIN = 'agent_7';
+function planLogin(ahora) {
+  ahora = ahora || new Date();
+  const hoy = fechaLimitesHoyColombia(ahora);
+  const d = new Date(ahora.getTime() - 5 * 3600 * 1000);
+  const hora = String(d.getUTCHours()).padStart(2, '0') + ':' + String(d.getUTCMinutes()).padStart(2, '0') + ':' + String(d.getUTCSeconds()).padStart(2, '0');
+  const mes = hoy.slice(0, 7);
+  const out = [];
+  if (Number(hoy.slice(8, 10)) <= 3) {
+    const ant = _mesAnterior(mes);
+    out.push({ mes: ant, desde: ant + '-01', hasta: ing.ultimoDiaDelMes(ant), hastaMomento: ing.ultimoDiaDelMes(ant) + ' 23:59:59' });
+  }
+  out.push({ mes, desde: mes + '-01', hasta: hoy, hastaMomento: hoy + ' ' + hora });
+  return out;
+}
+async function correrLogin(opts) {
+  const P = require('./puntualidad');
+  const { db } = opts;
+  const env = opts.env || process.env;
+  const ahora = opts.ahora || new Date();
+  const franja = (opts.franja || 'manual ' + new Date().toISOString()) + ' login';
+  asegurarTablas(db);
+  if (db.prepare('INSERT OR IGNORE INTO wolkvox_auto_corridas (franja, inicio, estado) VALUES (?, ?, ?)').run(franja, new Date().toISOString(), 'corriendo').changes === 0) return { estado: 'ya_corrida', consultas: 0 };
+  const t0 = Date.now();
+  const res = { estado: 'ok', consultas: 0, tramos: [] };
+  const partes = [];
+  const terminar = () => {
+    const detalle = (opts.etiqueta ? opts.etiqueta + ' · ' : '') + CAMPANA + ' · ' + API_LOGIN + ' · ' + (partes.join(' · ') || 'nada que pedir') + ' · ' + res.consultas + ' consultas · ' + ((Date.now() - t0) / 1000).toFixed(1) + ' s';
+    db.prepare('UPDATE wolkvox_auto_corridas SET fin = ?, estado = ?, consultas = ?, detalle = ? WHERE franja = ?').run(new Date().toISOString(), res.estado, res.consultas, detalle, franja);
+    console.log('[wolkvox-auto] ' + detalle);
+    if (typeof opts.logEvent === 'function') { try { opts.logEvent('WOLKVOX_LOGIN', null, opts.actor || QUIEN, detalle); } catch (e) { console.error('[wolkvox-auto] no se pudo escribir en el Historial'); } }
+    res.detalle = detalle;
+    return res;
+  };
+  const cfg = P.config(CAMPANA);
+  if (!cfg || !esCampanaInterna(db, CAMPANA)) { res.estado = 'omitida'; partes.push('la réplica no existe o no tiene puntualidad'); return terminar(); }
+  const cred = opts.credenciales || wv.credenciales(cfg.operacion, env);
+  if (!cred) { res.estado = 'omitida'; partes.push('falta el token o el servidor de Wolkvox'); return terminar(); }
+  const tramos = planLogin(ahora);
+  if (wv.usoDelDia(db, cfg.operacion, ahora) + tramos.length > wv.topeDiario(env)) { res.estado = 'omitida'; partes.push('no alcanza el tope del día'); return terminar(); }
+  for (const t of tramos) {
+    let cuerpo;
+    try {
+      res.consultas++;
+      cuerpo = (await wv.consultarReporte({
+        db, operacion: cfg.operacion, api: API_LOGIN, env, ahora, fetchImpl: opts.fetchImpl, credenciales: cred,
+        dateIni: wv.fechaWolkvox(t.desde, '00:00:00'), dateEnd: wv.fechaWolkvox(t.hasta, t.hastaMomento.slice(11)),
+      })).cuerpo;
+    } catch (e) {
+      if (!(e instanceof wv.WolkvoxError)) throw e;
+      if (e.httpStatus === 404 && SIN_REGISTROS.test(e.wolkvoxMsg || '')) cuerpo = { data: [] };
+      else {
+        res.estado = res.tramos.length ? 'parcial' : 'error';
+        res.error = e.codigo;
+        partes.push(t.mes + ': error ' + e.codigo + (e.causa ? ' (' + e.causa + ')' : '') + (e.httpStatus ? ' ' + e.httpStatus : '') + ', sin cambios, sin reintento');
+        return terminar();
+      }
+    }
+    let data = cuerpo && cuerpo.data;
+    if ((data === undefined || data === null || data === '') && SIN_REGISTROS.test(String((cuerpo && cuerpo.msg) || ''))) data = [];
+    const r = P.resumirSesiones(data);
+    if (r.error) {
+      res.estado = 'error';
+      res.error = 'respuesta_invalida';
+      partes.push(t.mes + ': respuesta no esperada (' + r.error + '; campos: ' + wv.resumenSinValores(cuerpo).campos.join(',').slice(0, 300) + '), sin cambios');
+      return terminar();
+    }
+    // Sin sesiones: no se toca lo guardado ni se mueve el «hasta» (como el Flujo con un mes vacío);
+    // si no, un día sin datos de Wolkvox se vería como «Sin ingreso».
+    if (!r.dias.size) { res.tramos.push({ mes: t.mes, filas: 0, agentes: 0, sesiones: 0 }); partes.push(t.mes + ': Wolkvox no trajo sesiones, sin cambios'); continue; }
+    const n = P.guardarResumen(db, cfg.operacion, t.desde, t.hasta, r.dias, t.hastaMomento, new Date().toISOString());
+    const agentesN = new Set([...r.dias.values()].map((x) => x.agentId)).size;
+    const sesiones = [...r.dias.values()].reduce((s, x) => s + x.sesiones, 0);
+    res.tramos.push({ mes: t.mes, filas: n, agentes: agentesN, sesiones });
+    partes.push(t.mes + ': ' + sesiones + ' sesiones, ' + agentesN + ' agentes, ' + n + ' agente-días');
+  }
+  return terminar();
+}
+
 // Candado comun: el programador y «Ejecutar ahora» nunca corren a la vez.
 let _enCurso = false;
 
@@ -352,8 +439,13 @@ function iniciar(db, deps) {
         console.error('[wolkvox-auto] no se pudo leer el interruptor en SSM (' + (e && e.name ? String(e.name).slice(0, 60) : 'error') + '); no se consulta');
         return null;
       }
-      if (!activo) return null; // apagada: no deja rastro
-      return await correrUnaVez({ db, env, ahora, franja, fetchImpl: deps.fetchImpl, logEvent: deps.logEvent });
+      let r = null;
+      if (activo) r = await correrUnaVez({ db, env, ahora, franja, fetchImpl: deps.fetchImpl, logEvent: deps.logEvent });
+      // Fase 363: login de agentes (agent_7), con su propio interruptor. Apagado: no deja rastro.
+      let login = false;
+      try { login = await leer(env, 'WOLKVOX_LOGIN_ACTIVO'); } catch (e) { login = false; }
+      if (login) await correrLogin({ db, env, ahora, franja, fetchImpl: deps.fetchImpl, logEvent: deps.logEvent });
+      return r;
     } catch (e) {
       console.error('[wolkvox-auto] error inesperado en la corrida (' + (e && e.name ? String(e.name).slice(0, 60) : 'error') + ')');
       return null;
@@ -380,5 +472,5 @@ function estado(db, env) {
 module.exports = {
   CAMPANA, OPERACION, API, HORAS_COLOMBIA, ARCHIVO, QUIEN, ACCION_HISTORIAL, MAX_CONSULTAS_POR_CORRIDA,
   horaColombia, franjaActual, plan, convertirFila, filasDelDia, aPorcentaje, aSegundos, aEntero,
-  asegurarTablas, franjaYaCorrida, ultimaCorrida, leerInterruptor, correrUnaVez, iniciar, estado, ejecutarAhora,
+  asegurarTablas, franjaYaCorrida, ultimaCorrida, leerInterruptor, correrUnaVez, iniciar, estado, ejecutarAhora, correrLogin, planLogin, API_LOGIN,
 };

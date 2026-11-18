@@ -190,8 +190,10 @@ declarar(['GET /tickets/contador', 'PUT /tickets/:id/estado', 'DELETE /tickets/:
 // Fase 358: «Malla de turnos». /malla/campanas y /malla/mia son auto-scoped (cualquier autenticado
 // recibe solo lo suyo); el resto exige supervisor de la campaña o ADMIN (leer: también REPORTES),
 // probado rol por rol en fase358-malla.test.js.
-declarar(['GET /malla/campanas', 'GET /malla/mia'], 'open');
-declarar(['GET /malla', 'POST /malla/grupos', 'PUT /malla/grupos/:id', 'DELETE /malla/grupos/:id', 'PUT /malla/grupos/:id/asesoras', 'POST /malla/copiar'], 'skip');
+declarar(['GET /malla/campanas', 'GET /malla/mia', 'GET /malla/mi-puntualidad'], 'open'); // Fase 363: + mi-puntualidad (solo lo suyo)
+declarar(['GET /malla', 'POST /malla/grupos', 'PUT /malla/grupos/:id', 'DELETE /malla/grupos/:id', 'PUT /malla/grupos/:id/asesoras', 'POST /malla/copiar',
+  // Fase 363: puntualidad, enlaces y excepciones -- probados rol por rol en fase363-malla-puntualidad.test.js.
+  'GET /malla/puntualidad', 'GET /malla/agentes', 'PUT /malla/agentes/:agentId', 'POST /malla/excepciones', 'DELETE /malla/excepciones/:id'], 'skip');
 declarar(['PUT /monitoreos/:id/fecha'], 'calidadManage'); // Fase 337: quien lo califico, Reportes o admin (fase337-fecha-del-monitoreo.test.js) // Fase 333: corregir solo el asesor "Invalid Date" (fase333-sin-asesor.test.js)
 declarar(['GET /calidad/codificaciones'], 'scopedRead');
 declarar(['POST /calidad/codificaciones/bulk', 'PUT /calidad/codificaciones/:id'], 'cargaCampana'); // Fase 299
