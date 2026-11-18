@@ -2621,6 +2621,11 @@ div.ca-bar-fila{cursor:default}
   .modal-malla .table-wrap{margin:0 -4px}
 }
 .ml-dia-corto{display:none}
+/* Fase 366 (D1): selector de mes y semanas del mes en la malla. */
+.ml-mes{margin-bottom:0;min-width:180px}
+.ml-semanas-mes{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}
+.ml-sem-btn{min-height:44px}
+.ml-sem-btn[aria-pressed="true"]{background:var(--grad-btn);border-color:transparent;color:var(--c-on-brand)}
 /* Fase 363: pestaña «Puntualidad» de la malla. La tabla (asesora × 7 días) se desplaza dentro de su
    .table-wrap en el celular; la página nunca. */
 .ml-vistas{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}

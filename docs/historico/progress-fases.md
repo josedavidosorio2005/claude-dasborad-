@@ -21318,3 +21318,10 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
 - **Arreglo:** `calReiniciarSesion()` (`calidad.js`) vacía las plantillas y lo demás de Calidad que depende del usuario; se llama en `doLogout`, en las dos entradas (`session.js`) y al entrar o salir de «Ver como» (`ver-como.js`).
 - **Verificado en local tras el arreglo:** asesora → salir → `demo_calidad` y `demo_supervisor`: MOBILIZE y ORLANT, igual que en pestaña limpia; 0 errores de consola.
 - **Pruebas:** `fase365-calidad-cambio-usuario` (2).
+
+## Fase 366 — Malla D1: selector de mes y semanas futuras (v1.215.0, 2026-11-18)
+
+- **Pedido (Edwin, 18/11, D1):** selector de mes y calendario para crear grupos en cualquier semana futura (por ejemplo, diciembre); hoy solo se avanzaba semana por semana.
+- **Cambio:** `mallaSemanasDelMes` (`public/js/malla-logic.js`), selector `<input type="month">` «Ir al mes» y botones con las semanas del mes en la ventana de la malla (`public/js/malla.js`); el selector sigue a la semana que se ve. El servidor ya aceptaba cualquier lunes.
+- **Pruebas:** `fase358-malla` + 2 (semanas de diciembre y febrero, mes inválido, selector en la ventana, grupo creado en diciembre).
+- **Revisión local (Brave, base demo) 1440/768/375:** diciembre muestra sus 5 semanas, ir a la del 14 al 20 y crear un grupo funciona; sin desborde; 0 errores de consola.

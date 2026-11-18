@@ -42,6 +42,18 @@ function mallaFechaDelDia(lunes, dia) {
   return _mIso(d);
 }
 
+// Fase 366 (pedido de Edwin 18/11, D1): las semanas (sus lunes) que tocan un mes AAAA-MM, para el
+// selector de mes de la malla. Incluye la semana que empieza el mes anterior si el día 1 cae en ella.
+function mallaSemanasDelMes(mes) {
+  if (typeof mes !== 'string' || !/^\d{4}-(0[1-9]|1[0-2])$/.test(mes)) return [];
+  var primero = mes + '-01';
+  var d = _mFecha(primero);
+  var ultimo = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0));
+  var out = [];
+  for (var l = mallaLunesDe(primero); l <= _mIso(ultimo); l = mallaSumarSemanas(l, 1)) out.push(l);
+  return out;
+}
+
 var _MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 // «Semana del 16 al 22 de nov de 2026» (o «del 30 de nov al 6 de dic de 2026»).
 function mallaSemanaTexto(lunes) {
@@ -81,7 +93,7 @@ function mallaTurnoTexto(t) { return t && t.entrada ? t.entrada + ' – ' + t.sa
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     MALLA_DIAS: MALLA_DIAS, MALLA_NOMBRE_MAX: MALLA_NOMBRE_MAX,
-    mallaLunesDe: mallaLunesDe, mallaEsLunes: mallaEsLunes, mallaSumarSemanas: mallaSumarSemanas, mallaFechaDelDia: mallaFechaDelDia,
+    mallaLunesDe: mallaLunesDe, mallaEsLunes: mallaEsLunes, mallaSumarSemanas: mallaSumarSemanas, mallaFechaDelDia: mallaFechaDelDia, mallaSemanasDelMes: mallaSemanasDelMes,
     mallaSemanaTexto: mallaSemanaTexto, mallaValidarHorario: mallaValidarHorario, mallaNombreValido: mallaNombreValido, mallaTurnoTexto: mallaTurnoTexto,
   };
 }

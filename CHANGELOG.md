@@ -7,6 +7,13 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.215.0 — Noviembre 2026
+
+**Malla de turnos: elegir cualquier semana, también futura.**
+
+- En la malla hay un selector «Ir al mes» que muestra las semanas de ese mes como botones, para
+  llegar a cualquier semana (por ejemplo, de diciembre) y crear allí sus grupos.
+
 ## v1.214.1 — Noviembre 2026
 
 **Arreglo: Calidad después de cambiar de usuario.**

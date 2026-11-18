@@ -30,12 +30,34 @@ async function mallaAbrir() {
 function mallaCerrar() { closeModal('modal-malla'); mallaCancelarCopia(); }
 
 function mallaMoverSemana(n) { _ml.semana = mallaSumarSemanas(_ml.semana, n); mallaCargar(); }
+// Fase 366 (D1): selector de mes y sus semanas (botones), para llegar a cualquier semana futura.
+function mallaElegirMes() {
+  var mes = (_mlEl('ml-mes') || {}).value;
+  if (mes) mallaPintarSemanasMes(mes);
+}
+function mallaPintarSemanasMes(mes) {
+  var c = _mlEl('ml-semanas-mes');
+  if (!c) return;
+  c.textContent = '';
+  mallaSemanasDelMes(mes).forEach(function (l) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'btn-cancel ml-sem-btn';
+    b.setAttribute('aria-pressed', String(l === _ml.semana));
+    b.textContent = mallaSemanaTexto(l).replace(/^Semana /, '') + (l === _ml.actual ? ' (esta semana)' : '');
+    b.addEventListener('click', function () { _ml.semana = l; mallaCargar(); });
+    c.appendChild(b);
+  });
+}
 function mallaIrHoy() { _ml.semana = _ml.actual; mallaCargar(); }
 
 async function mallaCargar() {
   _ml.campana = _mlEl('ml-campana').value || _ml.campana;
   _mlError(''); mallaCancelarCopia();
   _mlEl('ml-semana-txt').textContent = mallaSemanaTexto(_ml.semana) + (_ml.semana === _ml.actual ? ' (esta semana)' : '');
+  // Fase 366: el selector de mes sigue a la semana que se ve (mes de su jueves: la semana «pertenece» ahí).
+  var mesSem = mallaFechaDelDia(_ml.semana, 4).slice(0, 7);
+  if (_mlEl('ml-mes')) { _mlEl('ml-mes').value = mesSem; mallaPintarSemanasMes(mesSem); }
   _mlEl('ml-grupos').innerHTML = '<p class="vis-vacio">Cargando…</p>';
   try {
     _ml.datos = await apiRequest('GET', '/malla?campana=' + encodeURIComponent(_ml.campana) + '&semana=' + encodeURIComponent(_ml.semana));
