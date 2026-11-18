@@ -17,9 +17,9 @@ guiado, y con su OK.
    - Propiedad de objetos: «ACL deshabilitadas».
    - Cifrado predeterminado: SSE-S3 (la plataforma además pide `AES256` en cada subida).
    - Control de versiones: **activado** (si se reemplaza una firmada, la anterior no se pierde).
-2. **Dar permiso a la instancia** (IAM → Roles → el rol de la instancia → la política en línea):
+2. **Dar permiso al servidor** (IAM → Users → usuario `inconexion-instance` → Add permissions → Create inline policy; Lightsail no usa roles de instancia, el servidor entra con la access key de ese usuario):
    agregar la declaración `ActasFirmadasS3` de `deploy/iam-policy-instance.json`, cambiando
-   `inconexion-actas-tuempresa` por el nombre real. Solo `s3:PutObject` y `s3:GetObject`, solo
+   `inconexion-actas-tuempresa` por el nombre real (hoy `inconexion-actas-2026`, ya en el JSON del repo). Solo `s3:PutObject` y `s3:GetObject`, solo
    sobre `actas/*`. No se agrega `s3:DeleteObject` ni `s3:ListBucket`.
 3. **Crear el parámetro** (Systems Manager → Parameter Store → Crear):
    `/inconexion/prod/ACTAS_S3_BUCKET`, tipo **String**, valor = el nombre del bucket.
