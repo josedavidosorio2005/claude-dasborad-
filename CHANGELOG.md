@@ -7,6 +7,14 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.209.0 — Noviembre 2026
+
+**Wolkvox: «Probar conexión» puede revisar más reportes.**
+
+- En la campaña de pruebas, el administrador puede elegir qué reporte de Wolkvox probar (llamadas
+  por skill, por hora, tiempos de los agentes, login y logout, chats y detalle de llamadas). Solo
+  se muestran los nombres de las columnas y cuántas filas trae; nunca los datos.
+
 ## v1.208.1 — Noviembre 2026
 
 **Wolkvox: ajustes de la actualización automática del Flujo (campaña de pruebas).**

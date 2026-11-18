@@ -25,7 +25,16 @@ const ARCHIVO_LOCAL = path.join(__dirname, 'data', 'wolkvox.local.env');
 
 // Reportes que el cliente sabe pedir (se agregan uno por uno en las fases W3+).
 // Fase A1 (18/11): skill_1 (una fila por skill del rango pedido) para la consulta automatica del Flujo.
-const REPORTES = { cdr_1: 'Detalle de las llamadas (CDR)', skill_1: 'Llamadas por skill (Flujo)' };
+// Fase A5 (18/11): mas reportes SOLO para «Probar» (ver columnas y filas, nunca valores). El nombre
+// de la API es <grupo>_<numero del reporte en Wolkvox Manager> (skill_1 = Skills 1, confirmado).
+const REPORTES = {
+  cdr_1: 'Detalle de las llamadas (CDR)',
+  skill_1: 'Llamadas y nivel de servicio por skill (Flujo)',
+  skill_4: 'Llamadas y nivel de servicio por hora',
+  agent_1: 'Tiempos por estado de cada agente',
+  agent_7: 'Tiempo de logueo (login y logout)',
+  chat_1: 'Chats (detalle de cada chat)',
+};
 
 // Campaña de la plataforma -> operacion de Wolkvox (de quien es el token). SOLO la replica.
 const OPERACION_DE_CAMPANA = { 'MOBILIZE PRUEBAS API': 'MOBILIZE' };

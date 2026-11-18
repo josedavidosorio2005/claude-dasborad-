@@ -1951,7 +1951,7 @@
   <div class="modal modal-wolkvox">
     <button class="wv-cerrar" type="button" onclick="wvPruebaCerrar()" aria-label="Cerrar">×</button>
     <h3 id="modal-wolkvox-title">Probar conexión con Wolkvox</h3>
-    <p class="wv-ayuda">Pide a Wolkvox las llamadas por skill (<code>skill_1</code>) del <strong>día completo</strong> que elijas, para <strong id="wv-campana"></strong>. Solo se muestran el código, el mensaje, los <strong>nombres</strong> de los campos y los nombres de las skills; nunca los datos. Cada prueba gasta 1 de las consultas del día.</p>
+    <p class="wv-ayuda">Pide a Wolkvox el reporte que elijas (por defecto <code>skill_1</code>) del <strong>día completo</strong> que elijas, para <strong id="wv-campana"></strong>. Solo se muestran el código, el mensaje, los <strong>nombres</strong> de los campos y, en los reportes de skills, los nombres de las skills; nunca los datos. Cada prueba gasta 1 de las consultas del día.</p>
     <dl class="wv-estado">
       <dt>Token y servidor guardados</dt><dd id="wv-estado-config">…</dd>
       <dt>Consultas de hoy</dt><dd id="wv-estado-uso">…</dd>
@@ -1964,6 +1964,10 @@
     <div class="ig">
       <label for="wv-fecha">Día a consultar</label>
       <input type="date" id="wv-fecha">
+    </div>
+    <div class="ig">
+      <label for="wv-reporte">Reporte</label>
+      <select id="wv-reporte"><option value="skill_1">skill_1</option></select>
     </div>
     <p class="wv-error hidden" id="wv-error" role="alert"></p>
     <div class="wv-resultado hidden" id="wv-resultado" role="status" aria-live="polite">

@@ -21254,3 +21254,10 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
 - **Cambio:** `server/wolkvox-auto.js` (`filasDelDia` descarta `totalLlamadas = 0` y lo cuenta en el Historial; lee `service_level_10seg`/`_30seg`), `server/wolkvox-ingesta.js` (`validarCuerpo` acepta `serviceLevel10secPct`/`serviceLevel30secPct`, 0–100).
 - **Pruebas:** `faseA4-wolkvox-ajustes` (4: filas en cero fuera y skill que aparece sola; mes todo en cero sin reemplazar; validación de 10/30 s; la pestaña de Flujo no pinta 10/30 s).
 - **Scripts:** los dos de verificación en producción (scratchpad) se borraron al terminar.
+
+## Fase A5 — «Probar» con lista cerrada de reportes y catálogo de la API de Wolkvox (v1.209.0, 2026-11-18)
+
+- **Pedido (usuario, 18/11):** en solo lectura, revisar la documentación de `reports_manager.php` y listar los reportes (agentes, login, por hora, abandonadas, chat/WhatsApp, CDR), sus campos y cuáles sirven para Mobilize, la malla (puntualidad) y el Portal Asesor. Autorizadas hasta 5 consultas desde producción (solo columnas y número de filas). El usuario eligió, con la pregunta de cómo hacerlas, un PR que deja a «Probar» elegir el reporte.
+- **Cambio:** `server/wolkvox.js` (`REPORTES`: skill_1, skill_4, agent_1, agent_7, chat_1, cdr_1), `server/routes/wolkvox.js` («Probar» acepta `reporte` de esa lista, 400 si no está; nombres de skill solo en reportes `skill_*`; `/wolkvox/estado` trae `reportesNombres`), selector «Reporte» en la ventana de Wolkvox (`wvLlenarReportes`).
+- **Catálogo:** `docs/plan-api-wolkvox.md`, sección 10.4.
+- **Pruebas:** `faseA5-wolkvox-probar-reportes` (4).

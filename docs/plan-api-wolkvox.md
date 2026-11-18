@@ -453,3 +453,32 @@ que esté aprobado.
 - **Skills que sobraban:** ENCUESTA LLAMADAS DE SALIDA, Skill Key Account y Wolk, con 0 llamadas los 17 días (51 filas en cero).
 - **Decisiones del usuario (18/11) → Fase A4 (v1.208.1):** no excluir skills por nombre, sino **descartar las filas con 0 llamadas** (si una skill empieza a recibir llamadas, aparece sola; un mes con todo en cero no se reemplaza); **guardar el nivel de servicio a 10 s y 30 s** (`service_level_10seg`/`_30seg`) sin mostrarlos (la pestaña de Flujo muestra solo 20 s desde la Fase 68; Edwin decide si los quiere ver). La validación común (B1 y A1) acepta esos dos campos (0–100).
 - **Interruptor:** queda en 1. Siguiente: comparar otra vez después de la corrida de las 7:00 del 19/11 y decidir si se pasa al MOBILIZE real (autorización nueva por escrito, ver `CLAUDE.md`).
+
+### 10.4 Catálogo de reportes de la API (Fase A5, 18/11/2026)
+
+**Fuente:** el centro de ayuda de Wolkvox (wolkvox.helpjuice.com: columnas de cada reporte de
+Wolkvox Manager) y la guía de la API en wolkvox.com (patrón
+`reports_manager.php?api=…&date_ini=…&date_end=…`, encabezado `wolkvox-token`, fechas
+`AAAAMMDDHHMMSS`, máximo 2 consultas a la vez por token, límite diario = licencias × 1.000). El
+portal developers.wolkvox.com no respondió (522). **Regla observada:** el `api=` es
+`<grupo>_<número del reporte en Manager>`: `skill_1` = Skills 1 (columnas idénticas), `skill_3` =
+Skills 3 (por día); `skill_2` dio 404, así que **no todos los reportes de Manager están en la API**.
+Las columnas reales se confirman con «Probar» (abajo).
+
+| Reporte (Manager) | `api=` probable | Columnas (documentación) | Sirve para |
+|---|---|---|---|
+| Skills 1 · Llamadas y NS por skill | `skill_1` ✔ | skill_name, skill_id, inbound/answer/abandon_calls, service_level_0/10/20/30seg, abandon, asa, ata | **Mobilize Flujo** (ya en uso) |
+| Skills 3 · por día | `skill_3` ✔ | date + lo de skill_1, wait_time, aht (sin skill) | Total del día |
+| Skills 4 · Llamadas y NS por hora | `skill_4` | skill_name, hour, inbound/answer/abandon_calls, service_level_10/20/30sec, asa, abandon, aht, att, acw, ata | **Mobilize Flujo por hora**; AHT por hora |
+| Skills 7 · por hora y día, todas las skills | `skill_7` | date, skill_id, skill_name, hour, inbound/answer/abandon_calls, service_level_10/20/30sec, wait_time, abandon, aht, asa, ata | **Flujo por hora del mes** en una consulta; trae **AHT y espera** |
+| Skills 9 · Abandonadas por intervalo | `skill_9` | skill_id, skill_name, abandon_calls, abandon_0sec_10sec … abandon_greater_than_51sec | **Abandonadas** por tiempo de espera |
+| Agentes 1 · Tiempo por estado | `agent_1` | agent_id, agent_dni, agent_name, calls, inbound, outbound, internal, ready/inbound/outbound/acw/ring/login/aux_time, aht, occupancy, hits, rpc, aht_inbound/outbound, login, logout | **Portal Asesor** (llamadas, AHT, ocupación, pausas) |
+| Agentes 5 · Estados por hora y agente | `agent_5` | agent_id, hour, calls, inbound, outbound, internal, ready/inbound/outbound/acw/ring/login/aux_time, aht, occupancy | Portal Asesor por hora |
+| Agentes 7 · Login - Logout | `agent_7` | date, agent_id, login, logout, login_time, agent_name, agent_dni | **Malla: puntualidad** (login vs. inicio del turno, logout vs. fin) |
+| Agentes 8 · Estados hora a hora | `agent_8` | date, hour, agent_id, agent_dni, agent_name + lo de agentes 5 | Adherencia por franja |
+| Chats 1 · Chats | `chat_1` | conn_id, channel (whatsapp…), date, date_close, routing, customer_name/email/phone, agent_id/name, time_on_agent, chat_duration, cod_act, description_cod_act, transfer, skill_id, first_response_time, feeling, user_id, bsuid… | **Mobilize/ORLANT WhatsApp** (hoy HistChat); trae datos personales: se descartan |
+| Chats 13 · Cerrados por canal | `chat_13` | conteo de chats cerrados por canal | Totales de WhatsApp |
+| CDR 1 · Detalle de llamadas | `cdr_1` ✔ (local) | agent_name, date, telephone, destiny, cost, time_seg, time_min, cod_act, description_cod_act, skill… (20 campos) | **Tipificación, Eficacia, únicas, salida**; trae teléfonos: se descartan |
+
+✔ = confirmado con una consulta real. Lo demás: nombre probable según la regla; se confirma con
+«Probar» (lista cerrada en `server/wolkvox.js` → `REPORTES`).
