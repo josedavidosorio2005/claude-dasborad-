@@ -2643,6 +2643,14 @@ div.ca-bar-fila{cursor:default}
 .ac-estado-form .ig{margin-bottom:0}
 .ac-motivo{flex:1 1 260px}
 .ac-estado-form .btn-primary{min-height:44px}
+/* Fase 370 (E2): agentes y asignación. */
+.ac-check{display:flex;align-items:center;gap:8px;min-height:44px;color:var(--c-text-2)}
+.ac-check input{width:20px;height:20px}
+.ac-acciones{display:flex;flex-wrap:wrap;gap:8px}
+.ac-asig-form{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin:12px 0;padding:12px;border:1px solid var(--c-border-soft);border-radius:var(--r-md)}
+.ac-asig-form .ig{margin-bottom:0;flex:1 1 180px}
+.ac-form-titulo{flex-basis:100%;margin:0}
+.ac-asig-form .btn-primary,.ac-asig-form .btn-cancel{min-height:44px}
 /* Fase 368 (D3): «Mi malla» de la asesora: el día en verde (Puntual) o en rojo (Llegaste tarde). */
 .ml-tabla-mia tr.ml-dia-puntual > *{background:var(--c-success-bg)}
 .ml-tabla-mia tr.ml-dia-tarde > *{background:var(--c-danger-bg)}

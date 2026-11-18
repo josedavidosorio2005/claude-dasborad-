@@ -355,7 +355,9 @@ declarar(['POST /admin/ver-como/fin'], 'skip');
 declarar(['GET /inventario/items', 'GET /inventario/resumen', 'GET /inventario/movimientos'], 'admin'); // Fase 369: el Inventario anterior, solo ADMIN
 declarar(['POST /inventario/items', 'PUT /inventario/items/:id', 'DELETE /inventario/items/:id', 'POST /inventario/movimientos', 'POST /inventario/carga-items', 'POST /inventario/carga-movimientos'], 'admin'); // Fase 369
 // Fase 369 (E1): Inventario de sistemas -- ADMIN y SISTEMAS, probado rol por rol en fase369-inventario-sistemas.test.js.
-declarar(['GET /activos/config', 'GET /activos/resumen', 'GET /activos', 'POST /activos', 'PUT /activos/:id', 'POST /activos/:id/estado', 'GET /activos/:id/historial', 'PUT /activos/listas/:lista'], 'skip');
+declarar(['GET /activos/config', 'GET /activos/resumen', 'GET /activos', 'POST /activos', 'PUT /activos/:id', 'POST /activos/:id/estado', 'GET /activos/:id/historial', 'PUT /activos/listas/:lista',
+  // Fase 370 (E2): agentes y asignación, también probados rol por rol en fase370-inventario-agentes.test.js.
+  'GET /activos/agentes', 'POST /activos/agentes', 'GET /activos/agentes/:id', 'PUT /activos/agentes/:id', 'POST /activos/:id/asignar', 'POST /activos/:id/devolver', 'POST /activos/:id/cambiar'], 'skip');
 declarar(['GET /gerencia/kpis', 'GET /gerencia/periodos', 'GET /gerencia/resumen'], 'modulo:Gerencia');
 declarar(['POST /gerencia/kpis', 'PUT /gerencia/kpis/:id', 'DELETE /gerencia/kpis/:id', 'POST /gerencia/carga'], 'moduloYcarga:Gerencia');
 declarar(['GET /gh/personal', 'GET /gh/resumen'], 'modulo:GestionHumana');

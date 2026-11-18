@@ -79,4 +79,74 @@ router.put('/activos/listas/:lista', requireActor, wrap((req, res) => {
   res.json({ lista: nombre, valores: r });
 }));
 
+// ── Fase 370 (E2): agentes y asignación por elemento. El Historial general solo lleva el id del
+// agente (sin nombre ni documento); el historial del elemento sí dice a quién se asignó.
+const logAg = (accion, g, req, detalle) => logEvent(accion, { nombre: 'agente #' + g.id, user: '-', rol: 'activos' }, actorLabel(req.actor), detalle || '');
+router.get('/activos/agentes', requireActor, wrap((req, res) => {
+  if (!permitido(req, res)) return;
+  const q = { todos: req.query.todos === '1' };
+  if (typeof req.query.q === 'string' && req.query.q.trim()) q.q = req.query.q.trim();
+  res.json({ agentes: A.agentes(db, q) });
+}));
+router.post('/activos/agentes', requireActor, wrap((req, res) => {
+  if (!permitido(req, res)) return;
+  const v = A.validarAgente(db, req.body, true);
+  if (v.error) return res.status(400).json({ error: v.error });
+  const r = A.crearAgente(db, v.valores);
+  if (r.error) return res.status(r.status || 400).json({ error: r.error });
+  logAg('ACTIVO_AGENTE', r.agente, req, 'creado');
+  res.status(201).json(r);
+}));
+function agentePorId(req, res) {
+  const g = idValido(req.params.id) ? A.agente(db, Number(req.params.id)) : null;
+  if (!g) res.status(404).json({ error: 'Agente no encontrado' });
+  return g;
+}
+router.get('/activos/agentes/:id', requireActor, wrap((req, res) => {
+  if (!permitido(req, res)) return;
+  const g = agentePorId(req, res); if (!g) return;
+  res.json(A.agenteDetalle(db, g));
+}));
+router.put('/activos/agentes/:id', requireActor, wrap((req, res) => {
+  if (!permitido(req, res)) return;
+  const g = agentePorId(req, res); if (!g) return;
+  const v = A.validarAgente(db, req.body, false);
+  if (v.error) return res.status(400).json({ error: v.error });
+  const r = A.editarAgente(db, g, v.valores);
+  if (r.error) return res.status(r.status || 400).json({ error: r.error });
+  logAg('ACTIVO_AGENTE', r.agente, req, 'editado' + (v.valores.activo === 0 ? ' (inactivo)' : ''));
+  res.json(r);
+}));
+function activoPorId(req, res) {
+  const a = idValido(req.params.id) ? A.obtener(db, Number(req.params.id)) : null;
+  if (!a) res.status(404).json({ error: 'Elemento no encontrado' });
+  return a;
+}
+router.post('/activos/:id/asignar', requireActor, wrap((req, res) => {
+  if (!permitido(req, res)) return;
+  const a = activoPorId(req, res); if (!a) return;
+  const r = A.asignar(db, a, (req.body || {}).agenteId, actorLabel(req.actor));
+  if (r.error) return res.status(400).json({ error: r.error });
+  log('ACTIVO_ASIGNACION', r.activo, req, 'a agente #' + r.agente.id);
+  res.json({ activo: r.activo });
+}));
+router.post('/activos/:id/devolver', requireActor, wrap((req, res) => {
+  if (!permitido(req, res)) return;
+  const a = activoPorId(req, res); if (!a) return;
+  const b = req.body || {};
+  const r = A.devolver(db, a, b.estado, b.motivo, actorLabel(req.actor));
+  if (r.error) return res.status(400).json({ error: r.error });
+  log('ACTIVO_DEVOLUCION', r.activo, req, 'queda ' + r.activo.estado);
+  res.json(r);
+}));
+router.post('/activos/:id/cambiar', requireActor, wrap((req, res) => {
+  if (!permitido(req, res)) return;
+  const a = activoPorId(req, res); if (!a) return;
+  const b = req.body || {};
+  const r = A.cambiarElemento(db, a, b.nuevoId, b.estado, b.motivo, actorLabel(req.actor));
+  if (r.error) return res.status(400).json({ error: r.error });
+  log('ACTIVO_CAMBIO', r.anterior, req, 'por ' + r.activo.codigo + '; queda ' + r.anterior.estado);
+  res.json(r);
+}));
+
 module.exports = router;
