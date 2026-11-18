@@ -47,6 +47,7 @@ router.get(
       limiteLicencia: wv.LIMITE_LICENCIA_DIA,
       fechaSugerida: ayerColombia(),
       reportes: Object.keys(wv.REPORTES),
+      reportesNombres: wv.REPORTES, // Fase A5: para la lista de «Probar»
       auto: require('../wolkvox-auto').estado(db), // Fase A1: horarios, interruptor al arrancar, ultima corrida (sin secretos)
     });
   })
@@ -70,12 +71,15 @@ router.post(
     // skill_1 del DIA COMPLETO (00:00:00 a 23:59:59). Antes era cdr_1 de 08:00 a 08:59 (404 en prod).
     const dateIni = wv.fechaWolkvox(dia, '00:00:00');
     const dateEnd = wv.fechaWolkvox(dia, '23:59:59');
-    const api = 'skill_1';
+    // Fase A5: el reporte se elige de la lista cerrada (wv.REPORTES); por defecto skill_1.
+    // (nombres de skill en la respuesta solo para los reportes skill_*)
+    const api = b.reporte === undefined ? 'skill_1' : b.reporte;
+    if (typeof api !== 'string' || !Object.prototype.hasOwnProperty.call(wv.REPORTES, api)) return res.status(400).json({ error: 'Ese reporte no está en la lista', codigo: 'reporte' });
     try {
       const r = await wv.consultarReporte({ db, operacion: op, api, dateIni, dateEnd, fetchImpl: req.app.locals.wolkvoxFetch });
       const s = wv.resumenSinValores(r.cuerpo);
       logEvent('WOLKVOX_PRUEBA', null, actorLabel(req.actor), op + ' · ' + api + ' · ' + dia + ' · ' + r.httpStatus + ' · ' + s.filas + ' filas');
-      res.json({ ok: true, reporte: api, dia, desde: '00:00', hasta: '23:59', httpStatus: r.httpStatus, code: s.code, msg: s.msg, filas: s.filas, campos: s.campos, skills: wv.nombresDeSkill(r.cuerpo), duracionMs: r.duracionMs, usoHoy: wv.usoDelDia(db, op), tope: wv.topeDiario(), limiteLicencia: wv.LIMITE_LICENCIA_DIA });
+      res.json({ ok: true, reporte: api, dia, desde: '00:00', hasta: '23:59', httpStatus: r.httpStatus, code: s.code, msg: s.msg, filas: s.filas, campos: s.campos, skills: api.startsWith('skill_') ? wv.nombresDeSkill(r.cuerpo) : [], duracionMs: r.duracionMs, usoHoy: wv.usoDelDia(db, op), tope: wv.topeDiario(), limiteLicencia: wv.LIMITE_LICENCIA_DIA });
     } catch (e) {
       if (!(e instanceof wv.WolkvoxError)) throw e;
       // Fase W3: + el codigo de la causa de red (solo el codigo).

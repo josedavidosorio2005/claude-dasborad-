@@ -43,6 +43,7 @@ async function wvPruebaAbrir() {
     var e = await apiRequest('GET', '/wolkvox/estado?campana=' + encodeURIComponent(_wvCampana));
     _wvPintarEstado(e);
     if (f && !f.value) f.value = e.fechaSugerida;
+    wvLlenarReportes(_wvEl('wv-reporte'), e.reportesNombres); // Fase A5
     if (f) f.max = e.fechaSugerida;
   } catch (err) {
     _wvError(err.message);
@@ -76,15 +77,16 @@ async function wvPruebaProbar() {
   var errPrevio = _wvEl('wv-error'); if (errPrevio) { errPrevio.classList.add('hidden'); errPrevio.textContent = ''; }
   var btn = _wvEl('wv-probar-btn');
   var fecha = (_wvEl('wv-fecha') || {}).value || '';
+  var reporte = (_wvEl('wv-reporte') || {}).value || 'skill_1'; // Fase A5
   try {
     var r = await withButtonLoading(btn, 'Probando…', function () {
-      return apiRequest('POST', '/wolkvox/probar', { campana: _wvCampana, fecha: fecha });
+      return apiRequest('POST', '/wolkvox/probar', { campana: _wvCampana, fecha: fecha, reporte: reporte });
     });
     _wvLimpiarResultado();
     _wvTexto('wv-r-http', String(r.httpStatus));
     _wvTexto('wv-r-code', r.code === null ? '—' : r.code);
     _wvTexto('wv-r-msg', r.msg === null ? '—' : r.msg);
-    _wvTexto('wv-r-filas', r.filas + ' (' + r.dia + ', ' + r.desde + ' a ' + r.hasta + ')');
+    _wvTexto('wv-r-filas', r.filas + ' (' + r.reporte + ', ' + r.dia + ', ' + r.desde + ' a ' + r.hasta + ')');
     _wvTexto('wv-r-tiempo', (r.duracionMs / 1000).toFixed(1) + ' s');
     // Fase A2: nombres de skill (no son datos personales), solo con textContent.
     _wvTexto('wv-r-skills', Array.isArray(r.skills) && r.skills.length ? r.skills.join(' · ') : '—');
@@ -150,6 +152,20 @@ async function wvDiagnosticoRed() {
   }
 }
 
+// Fase A5: opciones del selector de reportes (solo los que el servidor permite), con textContent.
+function wvLlenarReportes(sel, nombres) {
+  if (!sel || !nombres || typeof nombres !== 'object') return;
+  var actual = sel.value || 'skill_1';
+  sel.textContent = '';
+  Object.keys(nombres).sort().forEach(function (k) {
+    var o = document.createElement('option');
+    o.value = k;
+    o.textContent = k + ' — ' + String(nombres[k]);
+    sel.appendChild(o);
+  });
+  sel.value = Object.prototype.hasOwnProperty.call(nombres, actual) ? actual : 'skill_1';
+}
+
 // ── Fase A3: «Ejecutar ahora» de la consulta automática ──
 // Filas [titulo, texto] del resultado. Puro (se prueba en Node). Solo conteos, meses y códigos.
 function wvAutoFilas(r) {
@@ -192,5 +208,5 @@ if (typeof document !== 'undefined') { // Fase W3: el archivo también se carga 
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { wvPruebaVisible: wvPruebaVisible, wvRedFilas: wvRedFilas, wvAutoFilas: wvAutoFilas };
+  module.exports = { wvPruebaVisible: wvPruebaVisible, wvRedFilas: wvRedFilas, wvAutoFilas: wvAutoFilas, wvLlenarReportes: wvLlenarReportes };
 }

@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.208.1` (ver `server/package.json`, expuesta en
+- **Versión**: `1.209.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -577,6 +577,7 @@ mismo orden):
 - Fase A2 — «Probar» de Wolkvox con `skill_1` del día completo (antes `cdr_1` de una hora, 404 en producción), sin encabezado `Accept`, con nombres de skill y el code/msg de Wolkvox en los errores; la consulta automática toma un 404 «sin registros» como día vacío (v1.207.1, 2026-11-18)
 - Fase A3 — «Ejecutar ahora» de la consulta automática de Wolkvox (solo ADMIN, solo la réplica): exige el interruptor en SSM, tope de consultas por corrida, una vez cada 10 min, candado común con la programada, Historial con quién la pidió (v1.208.0, 2026-11-18)
 - Fase A4 — primera corrida real de la consulta automática (réplica, nov 1–17) comparada con el Flujo manual de MOBILIZE: SKILL SAC 8/8 días iguales; ajustes: se descartan filas con 0 llamadas y se guardan NS 10 s y 30 s sin mostrarlos (v1.208.1, 2026-11-18)
+- Fase A5 — «Probar» de Wolkvox con lista cerrada de reportes (skill_1, skill_4, agent_1, agent_7, chat_1, cdr_1), solo columnas y filas; catálogo de reportes de la API en `docs/plan-api-wolkvox.md` 10.4 (v1.209.0, 2026-11-18)
 - Fase 309 — Revisión de seguridad: el cliente ya no recibe el nombre de los líderes en `GET /metas`; resto en `docs/revision-seguridad-2026-11-09.md` (v1.154.1, 2026-11-10)
 - Fase 308 — Revisión antes de la reunión con clientes y pendientes del supervisor (solo docs, 2026-11-10)
 - Fase 307 — Calidad para que los líderes evalúen: ORLANT conserva su Calidad y suma «Resultado de los monitoreos» al final; Aurora ya lo tenía (se muestra con el primer monitoreo) (v1.154.0, 2026-11-10)
