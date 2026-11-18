@@ -541,3 +541,11 @@ MOBILIZE antes de pasar al siguiente.
   únicas (contestadas) y Llamadas de salida (conectadas) leen de ahí.
 - **Encender:** agregar `cdr` a `WOLKVOX_AUTO_MODULOS` (por ejemplo `flujo_hora,cdr`); o «Ejecutar
   ahora» con `modulo: 'cdr'`. Unas 17–31 consultas por corrida.
+
+### 10.8 Fase A9 (18/11/2026, pedido de Edwin): `cdr_1` por mes y franja de medianoche
+
+- `cdr_1` acepta el mes completo (consulta de prueba autorizada: 1–17/11 en UNA consulta, 200, 80
+  filas, las mismas 20 columnas): el módulo `cdr` pide una sola consulta por mes (del 1 a ayer).
+- Nueva franja **00:05–00:59 (Colombia)**, además de las 7:00 y la 13:00: a esa hora «ayer» es el día
+  que acaba de terminar, así que la corrida lo cierra completo. Aplica a todo lo encendido (Flujo,
+  login de agentes y módulos), siempre solo para la réplica.

@@ -68,7 +68,10 @@ test('franjas: solo 7:00 a 7:59 y 13:00 a 13:59 hora Colombia', () => {
   assert.equal(auto.franjaActual(new Date('2026-11-18T12:00:00Z')), '2026-11-18 07');
   assert.equal(auto.franjaActual(new Date('2026-11-18T12:59:59Z')), '2026-11-18 07');
   assert.equal(auto.franjaActual(new Date('2026-11-18T18:15:00Z')), '2026-11-18 13');
-  for (const h of ['11:59:59', '13:00:00', '17:59:00', '19:00:00', '05:00:00']) {
+  // Fase A9: también 00:05 a 00:59 (cierra el día anterior); 00:00 a 00:04 no.
+  assert.equal(auto.franjaActual(new Date('2026-11-19T05:05:00Z')), '2026-11-19 00');
+  assert.equal(auto.franjaActual(new Date('2026-11-19T05:59:59Z')), '2026-11-19 00');
+  for (const h of ['11:59:59', '13:00:00', '17:59:00', '19:00:00', '05:00:00', '05:04:59', '06:00:00']) {
     assert.equal(auto.franjaActual(new Date('2026-11-18T' + h + 'Z')), null, h);
   }
 });
@@ -265,7 +268,7 @@ test('estado del administrador: horarios y ultima corrida, sin secretos; el rest
   const admin = await tokenFor('admin', MASTER_PASSWORD);
   const r = await request(app).get('/api/wolkvox/estado?campana=' + encodeURIComponent(R)).set({ Authorization: 'Bearer ' + admin });
   assert.equal(r.status, 200);
-  assert.deepEqual(r.body.auto.horariosColombia, ['07:00', '13:00']);
+  assert.deepEqual(r.body.auto.horariosColombia, ['00:05', '07:00', '13:00']);
   assert.equal(r.body.auto.reporte, 'skill_1');
   assert.ok(r.body.auto.ultimaCorrida && r.body.auto.ultimaCorrida.franja);
   assert.ok(r.body.reportes.includes('skill_1'));

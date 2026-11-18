@@ -7,6 +7,14 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.213.0 — Noviembre 2026
+
+**Wolkvox (campaña de pruebas): actualización también a medianoche.**
+
+- Además de las 7:00 a.m. y la 1:00 p.m., la actualización automática corre a las 12:05 a.m. para
+  cerrar el día anterior completo.
+- El detalle de llamadas (Tipificación) se pide en una sola consulta por mes, en vez de una por día.
+
 ## v1.212.0 — Noviembre 2026
 
 **Wolkvox: la Tipificación de la campaña de pruebas puede llegar sola (apagado).**
