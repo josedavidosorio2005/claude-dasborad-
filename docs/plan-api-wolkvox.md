@@ -555,3 +555,24 @@ MOBILIZE antes de pasar al siguiente.
 - Nueva franja **00:05–00:59 (Colombia)**, además de las 7:00 y la 13:00: a esa hora «ayer» es el día
   que acaba de terminar, así que la corrida lo cierra completo. Aplica a todo lo encendido (Flujo,
   login de agentes y módulos), siempre solo para la réplica.
+
+### 10.9 Primera corrida de `cdr` y comparación (18/11/2026)
+
+- **Corrida (15:39, «Ejecutar ahora», `modulo: 'cdr'`, tope 1 consulta, autorizada):** estado ok, 1
+  consulta (uso del día 47 de 2.800), noviembre: 35 llamadas, **0 de salida**, 31 únicas de ingreso,
+  reemplazó 0, con respaldo, 0,3 s. MOBILIZE real sin tocar.
+- **Comparación solo lectura, por día, en los 8 días que están en los dos lados (03–12/11):**
+  - **Únicas contestadas: 7/8 iguales**; el 04/11, réplica 4 y manual 5.
+  - **Tipificación (ingreso): 7/8 días con el mismo total**; el 04/11, 6 contra 7 (la misma llamada
+    que falta en únicas). El total de la pestaña difiere todos los días porque el manual incluye
+    las llamadas de salida y `cdr_1` no trajo ninguna.
+  - **Llamadas de salida conectadas: no comparable**: la réplica tiene 0 (`cdr_1` no trae salida);
+    el manual, 38 de salida y 20 conectadas en esos 8 días. La salida tendría que venir de otro
+    reporte (`cdr_5` u otro), por confirmar.
+  - **Eficacia: no comparable**: la lista de códigos positivos (`EFICACIA_CODIGOS_POSITIVOS`,
+    `server/eficacia.js`) es por nombre de campaña y solo tiene `MOBILIZE`; la réplica no la
+    hereda (`replicaDe`). Las contestadas que usaría (ingreso) coinciden con el manual 7/8.
+- **Privacidad:** la tabla `tipificaciones` no tiene columnas de teléfono, cliente ni comentario;
+  el módulo descarta `customer_id`, `comment`, `conn_id`, `destiny` y demás, y el teléfono solo
+  marca las únicas en memoria. Las respuestas de la réplica revisadas no traen esos campos ni
+  números largos.
