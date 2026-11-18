@@ -36,6 +36,14 @@ const REPORTES = {
   chat_1: 'Chats (detalle de cada chat)',
   skill_7: 'Llamadas y nivel de servicio por hora y día, todas las skills', // Fase A6
   cdr_5: 'Detalle de las llamadas no conectadas', // Fase A6 (nombre probable)
+  // Fase A10 (candidatos para probar, nombres probables según la regla <grupo>_<número en Manager>):
+  skill_9: 'Llamadas abandonadas por intervalo de espera',
+  cdr_2: 'Detalle de las llamadas abandonadas (probable)',
+  cdr_3: 'Detalle de llamadas (CDR 3, probable)',
+  chat_13: 'Chats cerrados por canal',
+  diagram_1: 'Detalle de llamadas de IVR (Diagram 1, probable)',
+  ivr_1: 'Detalle de llamadas de IVR (probable)',
+  diagram_5: 'Encuesta inteligente por agente (Diagram 5, probable)',
 };
 
 // Campaña de la plataforma -> operacion de Wolkvox (de quien es el token). SOLO la replica.
