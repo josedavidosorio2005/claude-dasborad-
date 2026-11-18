@@ -290,7 +290,7 @@ async function activosActivarAgente(activo) {
 
 // ── Actas (Fase 371, E3): entrega y devolución. El PDF se arma imprimiendo («Guardar como PDF»);
 // la firmada (escaneada) se sube y se guarda en S3 privado; solo se descarga desde la plataforma. ──
-function activosActaHtml(acta) {
+function activosActaPrintHtml(acta) {
   var entrega = acta.tipo === 'entrega';
   var fecha = new Date(acta.fecha).toLocaleString('es-CO', { timeZone: 'America/Bogota' });
   var g = acta.agente || {};
@@ -319,7 +319,7 @@ function activosImprimirActa(acta) {
   var w = window.open('', '_blank');
   if (!w) { showToast('Permite las ventanas emergentes para imprimir el acta.', 'error'); return; }
   w.document.open();
-  w.document.write(activosActaHtml(acta));
+  w.document.write(activosActaPrintHtml(acta));
   w.document.close();
   setTimeout(function () { try { w.focus(); w.print(); } catch (e) { /* ventana cerrada */ } }, 300);
 }
@@ -364,7 +364,7 @@ async function activosCrearActa(ev) {
   try {
     var r = await apiRequest('POST', '/activos/agentes/' + _ac.agente.agente.id + '/actas', { tipo: _acEl('ac-acta-tipo').value, activoIds: ids });
     showToast('Acta N.º ' + r.acta.numero + ' creada', 'ok');
-    if (w) { w.document.open(); w.document.write(activosActaHtml(r.acta)); w.document.close(); setTimeout(function () { try { w.focus(); w.print(); } catch (e) { /* cerrada */ } }, 300); }
+    if (w) { w.document.open(); w.document.write(activosActaPrintHtml(r.acta)); w.document.close(); setTimeout(function () { try { w.focus(); w.print(); } catch (e) { /* cerrada */ } }, 300); }
     else showToast('Permite las ventanas emergentes para imprimir el acta.', 'error');
     _acActas();
   } catch (e) { if (w) w.close(); _acError(e.message); }
@@ -407,5 +407,5 @@ async function activosDescargarFirmada(id) {
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { activosPanelHtml: activosPanelHtml, activosListaHtml: activosListaHtml, activosCampoHtml: activosCampoHtml, activosAgentesHtml: activosAgentesHtml, activosActaHtml: activosActaHtml };
+  module.exports = { activosPanelHtml: activosPanelHtml, activosListaHtml: activosListaHtml, activosCampoHtml: activosCampoHtml, activosAgentesHtml: activosAgentesHtml, activosActaPrintHtml: activosActaPrintHtml };
 }

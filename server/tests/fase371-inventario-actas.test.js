@@ -103,7 +103,7 @@ test('interfaz: el acta para imprimir escapa los textos y lleva las firmas', () 
   global.esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   try {
     const UI = require(path.join(__dirname, '..', '..', 'public', 'js', 'activos.js'));
-    const html = UI.activosActaHtml({ numero: 7, tipo: 'entrega', tipoNombre: 'Entrega', fecha: '2026-11-18T15:00:00.000Z', quien: 'Admin <x>',
+    const html = UI.activosActaPrintHtml({ numero: 7, tipo: 'entrega', tipoNombre: 'Entrega', fecha: '2026-11-18T15:00:00.000Z', quien: 'Admin <x>',
       agente: { nombre: '<b>Agente</b>', documento: '123', sede: '', operacion: '' }, elementos: [{ tipo: 'Diadema', codigo: 'D-1', marca: '', modelo: '', serial: '' }] });
     assert.ok(html.includes('&lt;b&gt;Agente&lt;/b&gt;') && !html.includes('<b>Agente'));
     assert.match(html, /Acta de entrega N\.º 7/);
