@@ -69,7 +69,11 @@ router.post(
 
     // Fase A2 (18/11): el mismo formato que funcionó desde el PC y que usa la consulta automática:
     // skill_1 del DIA COMPLETO (00:00:00 a 23:59:59). Antes era cdr_1 de 08:00 a 08:59 (404 en prod).
-    const dateIni = wv.fechaWolkvox(dia, '00:00:00');
+    // Fase A6: `rango: 'mes'` pide del 1 del mes de ese día hasta ese día (mismo mes, como exige
+    // Wolkvox), para ver si un reporte acepta el mes completo en una sola consulta.
+    if (b.rango !== undefined && b.rango !== 'dia' && b.rango !== 'mes') return res.status(400).json({ error: 'El rango es «dia» o «mes»', codigo: 'rango' });
+    const desdeDia = b.rango === 'mes' ? dia.slice(0, 8) + '01' : dia;
+    const dateIni = wv.fechaWolkvox(desdeDia, '00:00:00');
     const dateEnd = wv.fechaWolkvox(dia, '23:59:59');
     // Fase A5: el reporte se elige de la lista cerrada (wv.REPORTES); por defecto skill_1.
     // (nombres de skill en la respuesta solo para los reportes skill_*)
@@ -78,8 +82,8 @@ router.post(
     try {
       const r = await wv.consultarReporte({ db, operacion: op, api, dateIni, dateEnd, fetchImpl: req.app.locals.wolkvoxFetch });
       const s = wv.resumenSinValores(r.cuerpo);
-      logEvent('WOLKVOX_PRUEBA', null, actorLabel(req.actor), op + ' · ' + api + ' · ' + dia + ' · ' + r.httpStatus + ' · ' + s.filas + ' filas');
-      res.json({ ok: true, reporte: api, dia, desde: '00:00', hasta: '23:59', httpStatus: r.httpStatus, code: s.code, msg: s.msg, filas: s.filas, campos: s.campos, skills: api.startsWith('skill_') ? wv.nombresDeSkill(r.cuerpo) : [], duracionMs: r.duracionMs, usoHoy: wv.usoDelDia(db, op), tope: wv.topeDiario(), limiteLicencia: wv.LIMITE_LICENCIA_DIA });
+      logEvent('WOLKVOX_PRUEBA', null, actorLabel(req.actor), op + ' · ' + api + ' · ' + (desdeDia !== dia ? desdeDia + ' a ' : '') + dia + ' · ' + r.httpStatus + ' · ' + s.filas + ' filas');
+      res.json({ ok: true, reporte: api, dia, desdeDia, desde: '00:00', hasta: '23:59', httpStatus: r.httpStatus, code: s.code, msg: s.msg, filas: s.filas, campos: s.campos, skills: api.startsWith('skill_') ? wv.nombresDeSkill(r.cuerpo) : [], duracionMs: r.duracionMs, usoHoy: wv.usoDelDia(db, op), tope: wv.topeDiario(), limiteLicencia: wv.LIMITE_LICENCIA_DIA });
     } catch (e) {
       if (!(e instanceof wv.WolkvoxError)) throw e;
       // Fase W3: + el codigo de la causa de red (solo el codigo).

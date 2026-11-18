@@ -482,3 +482,27 @@ Las columnas reales se confirman con «Probar» (abajo).
 
 ✔ prod = columnas confirmadas con «Probar» desde producción el 18/11/2026 (día 17/11, réplica, solo nombres de columnas y número de filas: skill_1 4 filas, skill_4 3, agent_1 3, agent_7 3, cdr_1 6; 5 consultas autorizadas). `cdr_1` con una sola hora (08:00–08:59) había dado 404 el mismo día: con el día completo responde. ✔ = confirmado en otra consulta real. Lo demás: nombre probable según la regla; se confirma con
 «Probar» (lista cerrada en `server/wolkvox.js` → `REPORTES`).
+
+### 10.5 Llenar la réplica con la API (plan aprobado el 18/11/2026)
+
+**Autorización escrita del usuario (18/11, una sola vez, anotada en `CLAUDE.md`):** la consulta
+automática puede guardar todos los reportes de esta tabla **solo para la réplica «MOBILIZE PRUEBAS
+API», nunca para el MOBILIZE real**. De `cdr_1` se descartan en memoria, antes de guardar, los
+teléfonos, los datos del cliente y los comentarios. Calidad queda fuera.
+
+**Cómo:** cada reporte se convierte a las MISMAS columnas del Excel y pasa por el mismo lector
+(`public/js/*-logic.js`) y el mismo escritor del servidor, con la campaña de la réplica y **sin
+tocar el mapeo de skills** (si no, las skills de MOBILIZE pasarían a la réplica). Todo o nada por
+mes, respaldo antes de reemplazar, sin reintentos, Historial sin datos. Cada módulo se enciende
+aparte (`WOLKVOX_AUTO_MODULOS` en SSM, lista separada por comas) y se compara con lo manual de
+MOBILIZE antes de pasar al siguiente.
+
+| Paso | Pestaña | Reporte | Estado |
+|---|---|---|---|
+| 0 | Flujo (día) | `skill_1` | En marcha |
+| 1 | Flujo por hora + AHT y espera del Flujo | `skill_7` | En curso |
+| 2 | Tipificación, Eficacia, únicas contestadas, conectadas de salida | `cdr_1` | Columnas confirmadas |
+| 3 | Llamadas de salida: no conectadas | `cdr_5` (probable) | Por probar |
+| 4 | Llamadas únicas: abandonadas | «Skills 2» no está en la API (`skill_2` = 404) | Preguntar a Wolkvox/Edwin |
+| 5 | Encuesta | Desconocido (hoja «HistIVR») | Preguntar |
+| 6 | WhatsApp | `chat_1` | 404 «Validate dates entered» |

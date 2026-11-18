@@ -61,7 +61,7 @@ test('sin reporte sigue siendo skill_1; uno fuera de la lista: 400 sin consultar
 test('estado trae la lista de reportes con su nombre', async () => {
   const admin = await tokenFor('admin', MASTER_PASSWORD);
   const e = await request(app).get('/api/wolkvox/estado?campana=' + encodeURIComponent(R)).set(H(admin));
-  assert.deepEqual(Object.keys(e.body.reportesNombres).sort(), ['agent_1', 'agent_7', 'cdr_1', 'chat_1', 'skill_1', 'skill_4']);
+  assert.deepEqual(Object.keys(e.body.reportesNombres).sort(), ['agent_1', 'agent_7', 'cdr_1', 'cdr_5', 'chat_1', 'skill_1', 'skill_4', 'skill_7']);
 });
 
 test('navegador: wvLlenarReportes arma las opciones con textContent', () => {
@@ -74,4 +74,16 @@ test('navegador: wvLlenarReportes arma las opciones con textContent', () => {
   } finally { delete global.document; }
   assert.deepEqual(hijos.map((o) => [o.value, o.textContent]), [['agent_7', 'agent_7 — B<img>'], ['skill_1', 'skill_1 — A']]);
   assert.equal(sel.value, 'skill_1');
+});
+
+test('Fase A6: rango «mes» pide del 1 del mes hasta el día; otro rango: 400', async () => {
+  const admin = await tokenFor('admin', MASTER_PASSWORD);
+  rutaWv._reiniciarEspera();
+  const r = await request(app).post('/api/wolkvox/probar').set(H(admin)).send({ campana: R, fecha: '2026-11-17', reporte: 'skill_7', rango: 'mes' });
+  assert.equal(r.status, 200, JSON.stringify(r.body));
+  assert.deepEqual(Object.fromEntries(new URL(ultimaUrl).searchParams), { api: 'skill_7', date_ini: '20261101000000', date_end: '20261117235959' });
+  assert.equal(r.body.desdeDia, '2026-11-01');
+  assert.match(db.prepare("SELECT detalle FROM historial WHERE accion = 'WOLKVOX_PRUEBA' ORDER BY id DESC LIMIT 1").get().detalle, /skill_7 · 2026-11-01 a 2026-11-17 · 200/);
+  rutaWv._reiniciarEspera();
+  assert.equal((await request(app).post('/api/wolkvox/probar').set(H(admin)).send({ campana: R, fecha: '2026-11-17', reporte: 'cdr_5', rango: 'año' })).status, 400);
 });

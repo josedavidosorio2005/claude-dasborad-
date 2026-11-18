@@ -124,6 +124,15 @@ asumir en qué quedó una fase anterior.
   cambiar sus cuentas). Interruptor propio `WOLKVOX_LOGIN_ACTIVO=1` en
   SSM, apagado hasta el OK del usuario (P2). Pasar la puntualidad al
   MOBILIZE real u otra campaña = autorización nueva por escrito.
+- **Excepción escrita (usuario, 18/11/2026, llenar la réplica con la API):**
+  una sola autorización para que la consulta automática pida y GUARDE
+  todos los reportes del plan (`docs/plan-api-wolkvox.md` 10.5:
+  `skill_7`, `cdr_1`, `cdr_5` y los que se confirmen para
+  abandonadas, encuesta y WhatsApp), **solo para la réplica «MOBILIZE
+  PRUEBAS API» y nunca para el MOBILIZE real** ni otro cliente. De
+  `cdr_1` los datos sensibles (teléfonos, datos del cliente,
+  comentarios) se descartan en memoria antes de guardar. Calidad queda
+  fuera. Cada módulo arranca apagado y se enciende con OK del usuario.
 - Nada de pruebas agresivas contra producción (sin límite de tasa, sin
   volumen alto, sin tocar datos que no sean los explícitamente
   autorizados). No destapar pestañas ocultas a mano, no tocar datos de

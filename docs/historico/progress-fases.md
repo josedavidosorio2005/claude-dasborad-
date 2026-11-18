@@ -21273,3 +21273,9 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - Interfaz: pestañas «Turnos / Puntualidad» en la ventana de la malla (solo en campañas con puntualidad), tabla asesora × día con estados (texto + color), resumen, excepciones, «Enlazar agentes de Wolkvox»; «Mi puntualidad» en «Mi malla» (`public/js/malla-puntualidad.js`).
 - **Pruebas:** `fase363-malla-puntualidad` (11) y la matriz de la Fase 118 con las rutas nuevas. Verificación local en Brave (copia de la base demo con datos inventados, Wolkvox apagado y token falso) a 1440, 768 y 375: sin desborde de página, 0 errores de consola, estados correctos (tarde por 1 s, primer login, salida anticipada aparte), enlazar con sugerencia, excepción de un día y de rango, botones de 44 px.
 - **Producción:** sin escribir nada; `WOLKVOX_LOGIN_ACTIVO` no existe (apagado). P2 (encender en la réplica, armar la malla de prueba y enlazar) espera OK.
+
+## Fase A6 — «Probar» con el mes completo y autorización para llenar la réplica (v1.210.1, 2026-11-18)
+
+- **Pedido (usuario, 18/11):** OK al plan de llenar la réplica con la API (menos Calidad). Autorización escrita, una sola vez, para que la consulta automática guarde todos los reportes del plan solo para la réplica y nunca para el MOBILIZE real, descartando los datos sensibles de `cdr_1` antes de guardar (anotada en `CLAUDE.md`). Hasta 4 consultas de prueba (`skill_7` y `cdr_5`, mes completo; solo columnas y filas). Luego paso 1 (`skill_7`) y paso 2 (`cdr_1`).
+- **Cambio:** `server/wolkvox.js` (`skill_7`, `cdr_5` en la lista de «Probar»), `server/routes/wolkvox.js` («Probar» acepta `rango: 'mes'`: del 1 del mes hasta el día elegido), selector «Rango» en la ventana; plan 10.5.
+- **Pruebas:** `faseA5-wolkvox-probar-reportes` + 1 (rango mes, rango inválido).
