@@ -7,6 +7,15 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.208.0 — Noviembre 2026
+
+**Wolkvox: botón «Ejecutar ahora».**
+
+- En la campaña de pruebas «MOBILIZE PRUEBAS API», el administrador puede lanzar en el momento la
+  actualización automática del Flujo (sin esperar a las 7:00 o la 1:00). Hace lo mismo que la
+  automática: pide el mes día por día, guarda un respaldo y queda en el Historial con quién la pidió.
+- Solo funciona si la consulta automática está encendida, y una vez cada 10 minutos.
+
 ## v1.207.1 — Noviembre 2026
 
 **Wolkvox: «Probar conexión» ahora pide lo mismo que la consulta automática.**

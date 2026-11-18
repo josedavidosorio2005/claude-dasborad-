@@ -111,5 +111,39 @@ router.post(
   })
 );
 
+// Fase A3 (18/11): «Ejecutar ahora» de la consulta automatica. Mismo permiso (admin + replica
+// interna). Exige el interruptor WOLKVOX_AUTO_ACTIVO=1 (leido fresco de SSM), una vez cada 10 min,
+// y `maxConsultas` opcional (1 a 62) como tope de esta corrida. Queda en el Historial
+// (WOLKVOX_AUTO, «Ejecutar ahora», con quien la pidio). Responde solo conteos y codigos.
+const ESPERA_ENTRE_EJECUCIONES_MS = 10 * 60 * 1000;
+const _ultimaEjecucion = new Map();
+router.post(
+  '/wolkvox/auto/ejecutar',
+  requireActor,
+  wrap(async (req, res) => {
+    const b = req.body || {};
+    const op = operacionPermitida(req, res, b.campana);
+    if (!op) return;
+    const wvAuto = require('../wolkvox-auto');
+    if (op !== wvAuto.OPERACION || b.campana !== wvAuto.CAMPANA) return res.status(404).json({ error: 'Esta campaña no tiene consulta automática' });
+    let maxConsultas;
+    if (b.maxConsultas !== undefined) {
+      maxConsultas = Number(b.maxConsultas);
+      if (!Number.isInteger(maxConsultas) || maxConsultas < 1 || maxConsultas > wvAuto.MAX_CONSULTAS_POR_CORRIDA) return res.status(400).json({ error: 'maxConsultas debe ser un entero de 1 a ' + wvAuto.MAX_CONSULTAS_POR_CORRIDA, codigo: 'parametro' });
+    }
+    const espera = (_ultimaEjecucion.get(op) || 0) + ESPERA_ENTRE_EJECUCIONES_MS - Date.now();
+    if (espera > 0) return res.status(429).json({ error: 'Espera ' + Math.ceil(espera / 60000) + ' min antes de volver a ejecutar', codigo: 'espera' });
+    _ultimaEjecucion.set(op, Date.now());
+    const r = await wvAuto.ejecutarAhora({
+      db, logEvent, actor: actorLabel(req.actor), maxConsultas,
+      fetchImpl: req.app.locals.wolkvoxFetch, leerInterruptor: req.app.locals.wolkvoxInterruptor,
+    });
+    if (r.estado === 'apagada') return res.status(409).json({ ok: false, codigo: 'apagada', error: 'La consulta automática está apagada (WOLKVOX_AUTO_ACTIVO no es 1 en SSM)' });
+    if (r.estado === 'ocupada') return res.status(409).json({ ok: false, codigo: 'ocupada', error: 'Ya hay una corrida en curso' });
+    if (r.estado === 'sin_interruptor') return res.status(503).json({ ok: false, codigo: 'sin_interruptor', error: 'No se pudo leer el interruptor en SSM; no se consultó' });
+    res.json({ ok: r.estado === 'ok', estado: r.estado, error: r.error || null, consultas: r.consultas, meses: r.meses, detalle: r.detalle, usoHoy: wv.usoDelDia(db, op), tope: wv.topeDiario() });
+  })
+);
+
 module.exports = router;
-module.exports._reiniciarEspera = () => { _ultimaPrueba.clear(); _ultimoDiagnostico.clear(); }; // solo pruebas
+module.exports._reiniciarEspera = () => { _ultimaPrueba.clear(); _ultimoDiagnostico.clear(); _ultimaEjecucion.clear(); }; // solo pruebas

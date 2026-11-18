@@ -1983,9 +1983,15 @@
       <p class="wv-campos-titulo">Diagnóstico de red desde el servidor (sin token, no gasta consultas):</p>
       <dl class="wv-estado" id="wv-red-dl"></dl>
     </div>
+    <!-- Fase A3: «Ejecutar ahora» de la consulta automática (solo conteos y códigos). -->
+    <div class="wv-resultado hidden" id="wv-auto" role="status" aria-live="polite">
+      <p class="wv-campos-titulo">Consulta automática ejecutada ahora (Flujo del mes, con respaldo):</p>
+      <dl class="wv-estado" id="wv-auto-dl"></dl>
+    </div>
     <div class="modal-btns">
       <button class="btn-cancel" type="button" onclick="wvPruebaCerrar()">Cerrar</button>
       <button class="btn-cancel" type="button" id="wv-red-btn" onclick="wvDiagnosticoRed()">Diagnóstico de red</button>
+      <button class="btn-cancel" type="button" id="wv-auto-btn" onclick="wvAutoEjecutar()">Ejecutar ahora</button>
       <button class="btn-primary" type="button" id="wv-probar-btn" onclick="wvPruebaProbar()">Probar</button>
     </div>
   </div>
