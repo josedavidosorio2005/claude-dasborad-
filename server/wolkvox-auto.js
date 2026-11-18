@@ -28,7 +28,10 @@ const { fechaLimitesHoyColombia } = require('./fecha-limites');
 const CAMPANA = ing.CAMPANA_INGESTA; // 'MOBILIZE PRUEBAS API'
 const OPERACION = 'MOBILIZE';
 const API = 'skill_1';
-const HORAS_COLOMBIA = [7, 13];
+// Fase A9 (pedido de Edwin 18/11): además 00:05, para cerrar el día anterior (el plan pide hasta
+// «ayer», que a esa hora es el día que acaba de terminar).
+const HORAS_COLOMBIA = [0, 7, 13];
+const MINUTO_MEDIANOCHE = 5;
 const ARCHIVO = 'API Wolkvox (consulta automática)';
 const QUIEN = 'Consulta automática Wolkvox';
 const ACCION_HISTORIAL = 'WOLKVOX_AUTO';
@@ -44,6 +47,7 @@ function horaColombia(ahora) {
 function franjaActual(ahora) {
   const h = horaColombia(ahora);
   if (!HORAS_COLOMBIA.includes(h)) return null;
+  if (h === 0 && new Date((ahora || new Date()).getTime() - 5 * 3600 * 1000).getUTCMinutes() < MINUTO_MEDIANOCHE) return null;
   return fechaLimitesHoyColombia(ahora) + ' ' + String(h).padStart(2, '0');
 }
 function _mesAnterior(mes) {
@@ -480,7 +484,7 @@ function iniciar(db, deps) {
 function estado(db, env) {
   env = env || process.env;
   return {
-    horariosColombia: HORAS_COLOMBIA.map((h) => String(h).padStart(2, '0') + ':00'),
+    horariosColombia: HORAS_COLOMBIA.map((h) => String(h).padStart(2, '0') + (h === 0 ? ':0' + MINUTO_MEDIANOCHE : ':00')),
     reporte: API,
     activoAlArrancar: _activo(env.WOLKVOX_AUTO_ACTIVO),
     ultimaCorrida: ultimaCorrida(db),

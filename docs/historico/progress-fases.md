@@ -21292,3 +21292,11 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
 - **Cambio:** módulo `cdr` en `server/wolkvox-modulos.js` (una consulta por día; hoja del CDR solo con las columnas que lee la plataforma, sin datos sensibles; `tipificacionParseFilas` con las opciones de MOBILIZE; reemplazo del mes completo con respaldo); `server/tipificaciones.js` (`cargarTipificaciones` acepta `desde`/`hasta` para reemplazar el mes completo). Detalle en `docs/plan-api-wolkvox.md` 10.7.
 - **Pruebas:** `faseA8-wolkvox-cdr` (4): hoja sin columnas sensibles; corrida (una consulta por día, mes completo, «PRUEBA» fuera, únicas por teléfono, salida, sin teléfonos/cliente/comentarios guardados, respaldo, MOBILIZE intacto, Historial sin nombres); falla a mitad de mes, columnas raras y vacío sin cambios ni reintento; apagado por defecto.
 - **Producción:** apagado (no existe `WOLKVOX_AUTO_MODULOS`).
+
+## Fase A9 — Wolkvox: cdr_1 por mes y franja de las 00:05 (v1.213.0, 2026-11-18)
+
+- **Pedido (Edwin, reunión 18/11, bloque A):** `cdr_1` en 1 consulta por mes (ya confirmado) y una corrida a las 12:05 a.m. (Colombia) que cierre el día anterior; solo la réplica.
+- **Consulta de prueba (autorizada):** `cdr_1` 1–17/11 en una consulta: 200, 80 filas, 20 columnas.
+- **Cambio:** `server/wolkvox-modulos.js` (módulo `cdr`: una consulta por mes), `server/wolkvox-auto.js` (franja 00:05–00:59 además de 7:00 y 13:00; `/wolkvox/estado` la muestra). `CLAUDE.md` actualizado.
+- **Pruebas:** `faseA1` (franja de medianoche: 00:05 sí, 00:04 no) y `faseA8` (una consulta por mes).
+- **Nota (paso 1):** el 18/11 a las 12:55 p.m. la franja de las 13:00 todavía no había corrido; la comparación de `flujo_hora` se hace después de esa corrida.

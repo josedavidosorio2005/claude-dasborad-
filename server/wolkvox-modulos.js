@@ -146,8 +146,7 @@ async function correrFlujoHora(opts, partes, res) {
 // (cliente, comentarios, conn_id, destino, costo, ids) NUNCA entran. TELEPHONE entra solo para que el
 // lector marque en memoria la primera llamada de cada número por día (unicaDia) y nunca se guarda.
 // Mismas opciones que la carga manual de MOBILIZE (public/js/cargas.js): excluir «PRUEBA», marcar
-// únicas del día y conservar toda fila de salida («-»). Una consulta por día (cdr_1 respondió con el
-// día completo; el mes en una consulta no se probó).
+// únicas del día y conservar toda fila de salida («-»). Una consulta por mes (Fase A9).
 const T = require('../public/js/tipificacion-logic.js');
 const CDR_COLUMNAS = [ // [columna de la API, columna del Excel]
   ['agent_name', 'AGENT_NAME'], ['date', 'DATE'], ['description_cod_act', 'DESCRIPTION_COD_ACT'], ['skill_name', 'SKILL_NAME'],
@@ -171,11 +170,13 @@ async function correrCdr(opts, partes, res) {
   for (const { mes, dias } of meses) {
     let data = [];
     let campos = [];
-    for (const dia of dias) {
+    // Fase A9 (18/11): cdr_1 acepta el mes completo (prueba autorizada: 1–17/11 en una consulta,
+    // 80 filas): una sola consulta por mes, del 1 a ayer.
+    {
       res.consultas++;
-      const r = await _pedir(opts, 'cdr_1', dia, dia);
-      data = data.concat(r.data);
-      if (!campos.length && r.data.length) campos = wv.resumenSinValores(r.cuerpo).campos;
+      const r = await _pedir(opts, 'cdr_1', dias[0], dias[dias.length - 1]);
+      data = r.data;
+      if (r.data.length) campos = wv.resumenSinValores(r.cuerpo).campos;
     }
     if (!data.length) { partes.push(mes + ': Wolkvox no trajo llamadas, sin cambios'); continue; }
     let p = T.tipificacionParseFilas(hojaCdr(data), null, 'LLAMADAS', opcionesCdrMobilize());
@@ -202,7 +203,7 @@ async function correrCdr(opts, partes, res) {
 
 const MODULOS = {
   flujo_hora: { api: 'skill_7', descripcion: 'Flujo por hora + AHT y espera', correr: correrFlujoHora },
-  cdr: { api: 'cdr_1', descripcion: 'Tipificación, Eficacia, únicas contestadas y conectadas de salida', correr: correrCdr, consultasPorMes: 31 },
+  cdr: { api: 'cdr_1', descripcion: 'Tipificación, Eficacia, únicas contestadas y conectadas de salida', correr: correrCdr },
 };
 function modulosDe(valor) {
   return String(valor == null ? '' : valor).split(',').map((s) => s.trim().toLowerCase()).filter((s) => Object.prototype.hasOwnProperty.call(MODULOS, s));

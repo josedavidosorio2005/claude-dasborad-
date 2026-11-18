@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.212.0` (ver `server/package.json`, expuesta en
+- **Versión**: `1.213.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -582,6 +582,7 @@ mismo orden):
 - Fase A6 — «Probar» con rango «mes» y `skill_7`/`cdr_5` en la lista; autorización escrita para llenar la réplica con la API (solo la réplica, nunca MOBILIZE real) en `CLAUDE.md` y plan 10.5 (v1.210.1, 2026-11-18)
 - Fase A7 — llenar la réplica, paso 1: `skill_7` → Flujo por hora + AHT y espera del Flujo diario (módulo `flujo_hora`, apagado salvo `WOLKVOX_AUTO_MODULOS`); «Ejecutar ahora» por módulo (v1.211.0, 2026-11-18)
 - Fase A8 — llenar la réplica, paso 2: `cdr_1` → Tipificación (Llamadas), y de ahí Eficacia, únicas contestadas y conectadas de salida (módulo `cdr`, apagado); datos sensibles fuera antes de guardar (v1.212.0, 2026-11-18)
+- Fase A9 — Wolkvox: `cdr_1` en una consulta por mes y nueva franja a las 00:05 (Colombia) que cierra el día anterior; solo la réplica (v1.213.0, 2026-11-18)
 - Fase 309 — Revisión de seguridad: el cliente ya no recibe el nombre de los líderes en `GET /metas`; resto en `docs/revision-seguridad-2026-11-09.md` (v1.154.1, 2026-11-10)
 - Fase 308 — Revisión antes de la reunión con clientes y pendientes del supervisor (solo docs, 2026-11-10)
 - Fase 307 — Calidad para que los líderes evalúen: ORLANT conserva su Calidad y suma «Resultado de los monitoreos» al final; Aurora ya lo tenía (se muestra con el primer monitoreo) (v1.154.0, 2026-11-10)

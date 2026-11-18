@@ -36,8 +36,10 @@ function falso(mapa) {
   const f = { urls: [] };
   f.fetch = (url) => {
     f.urls.push(url);
-    const d = new URL(url).searchParams.get('date_ini').slice(0, 8);
-    const data = (mapa || porDia)[d] || [];
+    // Fase A9: una consulta del rango; devuelve las llamadas de todos los días pedidos.
+    const u = new URL(url).searchParams, ini = u.get('date_ini').slice(0, 8), fin = u.get('date_end').slice(0, 8);
+    const m = mapa || porDia;
+    const data = Object.keys(m).filter((d) => d >= ini && d <= fin).sort().flatMap((d) => m[d]);
     return ok({ code: 200, msg: data.length + ' records were found', data });
   };
   return f;
@@ -52,7 +54,7 @@ test('hoja del CDR: solo las columnas que lee la plataforma; lo sensible nunca e
   for (const c of M.CDR_DESCARTADAS) assert.ok(!hoja[0].includes(c.toUpperCase()), c);
 });
 
-test('corrida: un día por consulta, reemplaza el mes de la réplica con respaldo, únicas y salida, sin teléfonos guardados', async () => {
+test('corrida: una consulta por mes, reemplaza el mes de la réplica con respaldo, únicas y salida, sin teléfonos guardados', async () => {
   // Una fila vieja del mes (día que ya no vendrá) y una de MOBILIZE real.
   const ins = db.prepare("INSERT INTO tipificaciones (campana, canal, agente, fecha, tipificacion, skill, archivoNombre, cargadoPorNombre, createdAt) VALUES (?, 'LLAMADAS', 'X', ?, 'Vieja', 'S', 'x', 'x', 'x')");
   ins.run(R, '2026-11-20');
@@ -61,8 +63,8 @@ test('corrida: un día por consulta, reemplaza el mes de la réplica con respald
   const f = falso();
   const r = await M.correrModulo('cdr', { db, env: ENV, ahora: AHORA, fetchImpl: f.fetch, franja: 'a8-1', logEvent: require('../routes/shared').logEvent });
   assert.equal(r.estado, 'ok', r.detalle);
-  assert.equal(f.urls.length, 3);
-  assert.deepEqual(Object.fromEntries(new URL(f.urls[1]).searchParams), { api: 'cdr_1', date_ini: '20261102000000', date_end: '20261102235959' });
+  assert.equal(f.urls.length, 1, 'Fase A9: una consulta por mes');
+  assert.deepEqual(Object.fromEntries(new URL(f.urls[0]).searchParams), { api: 'cdr_1', date_ini: '20261101000000', date_end: '20261103235959' });
   const filas = tip('2026-11');
   assert.equal(filas.length, 4, 'la de PRUEBA sale; la vieja del 20 también (mes completo)');
   assert.ok(!filas.some((x) => x.tipificacion === 'Vieja'));
@@ -77,17 +79,17 @@ test('corrida: un día por consulta, reemplaza el mes de la réplica con respald
   assert.ok(db.prepare('SELECT COUNT(*) n FROM cargas_versiones WHERE campana = ?').get(R).n > versiones, 'respaldo');
   assert.equal(db.prepare("SELECT COUNT(*) n FROM tipificaciones WHERE campana = 'MOBILIZE' AND fecha = '2026-11-02'").get().n, 1);
   const h = db.prepare("SELECT detalle FROM historial WHERE accion = 'WOLKVOX_MODULO' ORDER BY id DESC LIMIT 1").get().detalle;
-  assert.match(h, /cdr \(cdr_1\) · 2026-11: 4 llamadas \(1 de salida, 2 únicas de ingreso, 1 de prueba fuera\), reemplazó 1, con respaldo · 3 consultas/);
+  assert.match(h, /cdr \(cdr_1\) · 2026-11: 4 llamadas \(1 de salida, 2 únicas de ingreso, 1 de prueba fuera\), reemplazó 1, con respaldo · 1 consultas/);
   for (const x of [TEL, 'ASESORA INVENTADA', CLIENTE]) assert.ok(!h.includes(x));
 });
 
-test('falla a mitad de mes o columnas que faltan: el mes no cambia y no reintenta', async () => {
+test('falla de red o columnas que faltan: el mes no cambia y no reintenta', async () => {
   const antes = tip('2026-11');
   let k = 0;
-  const caido = (url) => { k++; return k === 2 ? Promise.reject(Object.assign(new Error('x'), { cause: { code: 'ECONNRESET' } })) : falso().fetch(url); };
+  const caido = (url) => { k++; return k === 1 ? Promise.reject(Object.assign(new Error('x'), { cause: { code: 'ECONNRESET' } })) : falso().fetch(url); };
   const r = await M.correrModulo('cdr', { db, env: ENV, ahora: AHORA, fetchImpl: caido, franja: 'a8-2' });
   assert.equal(r.error, 'red');
-  assert.equal(k, 2);
+  assert.equal(k, 1);
   const raro = falso({ '20261102': [{ agente: 'x', fecha: 'y' }] });
   const r2 = await M.correrModulo('cdr', { db, env: ENV, ahora: AHORA, fetchImpl: raro.fetch, franja: 'a8-3' });
   assert.equal(r2.error, 'respuesta_invalida');
@@ -108,5 +110,5 @@ test('apagado por defecto; con «cdr» en WOLKVOX_AUTO_MODULOS el programador lo
   assert.deepEqual(apis, ['skill_7']);
   apis.length = 0;
   await correr('cdr', '2026-11-05T12:05:00Z'); // 05/11: pide 1 a 4
-  assert.deepEqual(apis, ['cdr_1', 'cdr_1', 'cdr_1', 'cdr_1']);
+  assert.deepEqual(apis, ['cdr_1']); // Fase A9: una consulta por mes
 });
