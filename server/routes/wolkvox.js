@@ -134,6 +134,8 @@ router.post(
     if (!op) return;
     const wvAuto = require('../wolkvox-auto');
     if (op !== wvAuto.OPERACION || b.campana !== wvAuto.CAMPANA) return res.status(404).json({ error: 'Esta campaña no tiene consulta automática' });
+    const modulo = b.modulo === undefined ? 'flujo' : b.modulo;
+    if (modulo !== 'flujo' && !Object.prototype.hasOwnProperty.call(require('../wolkvox-modulos').MODULOS, modulo)) return res.status(400).json({ error: 'Ese módulo no existe', codigo: 'parametro' });
     let maxConsultas;
     if (b.maxConsultas !== undefined) {
       maxConsultas = Number(b.maxConsultas);
@@ -143,10 +145,10 @@ router.post(
     if (espera > 0) return res.status(429).json({ error: 'Espera ' + Math.ceil(espera / 60000) + ' min antes de volver a ejecutar', codigo: 'espera' });
     _ultimaEjecucion.set(op, Date.now());
     const r = await wvAuto.ejecutarAhora({
-      db, logEvent, actor: actorLabel(req.actor), maxConsultas,
-      fetchImpl: req.app.locals.wolkvoxFetch, leerInterruptor: req.app.locals.wolkvoxInterruptor,
+      db, logEvent, actor: actorLabel(req.actor), maxConsultas, modulo,
+      fetchImpl: req.app.locals.wolkvoxFetch, leerInterruptor: req.app.locals.wolkvoxInterruptor, leerValor: req.app.locals.wolkvoxValor,
     });
-    if (r.estado === 'apagada') return res.status(409).json({ ok: false, codigo: 'apagada', error: 'La consulta automática está apagada (WOLKVOX_AUTO_ACTIVO no es 1 en SSM)' });
+    if (r.estado === 'apagada') return res.status(409).json({ ok: false, codigo: 'apagada', error: modulo === 'flujo' ? 'La consulta automática está apagada (WOLKVOX_AUTO_ACTIVO no es 1 en SSM)' : 'El módulo ' + modulo + ' está apagado (no está en WOLKVOX_AUTO_MODULOS en SSM)' });
     if (r.estado === 'ocupada') return res.status(409).json({ ok: false, codigo: 'ocupada', error: 'Ya hay una corrida en curso' });
     if (r.estado === 'sin_interruptor') return res.status(503).json({ ok: false, codigo: 'sin_interruptor', error: 'No se pudo leer el interruptor en SSM; no se consultó' });
     res.json({ ok: r.estado === 'ok', estado: r.estado, error: r.error || null, consultas: r.consultas, meses: r.meses, detalle: r.detalle, usoHoy: wv.usoDelDia(db, op), tope: wv.topeDiario() });

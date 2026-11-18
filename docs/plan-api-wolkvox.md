@@ -500,9 +500,27 @@ MOBILIZE antes de pasar al siguiente.
 | Paso | Pestaña | Reporte | Estado |
 |---|---|---|---|
 | 0 | Flujo (día) | `skill_1` | En marcha |
-| 1 | Flujo por hora + AHT y espera del Flujo | `skill_7` | En curso |
+| 1 | Flujo por hora + AHT y espera del Flujo | `skill_7` ✔ (mes completo en 1 consulta, 33 filas el 1–17/11) | Hecho (Fase A7), apagado |
 | 2 | Tipificación, Eficacia, únicas contestadas, conectadas de salida | `cdr_1` | Columnas confirmadas |
-| 3 | Llamadas de salida: no conectadas | `cdr_5` (probable) | Por probar |
+| 3 | Llamadas de salida: no conectadas | `cdr_5` ✔ (mes completo, 35 filas; columnas agent_id, agent_name, campaign_id, conn_id, customer_id, date, destiny, result, ring_time, telephone, type_interaction) | Columnas confirmadas |
 | 4 | Llamadas únicas: abandonadas | «Skills 2» no está en la API (`skill_2` = 404) | Preguntar a Wolkvox/Edwin |
 | 5 | Encuesta | Desconocido (hoja «HistIVR») | Preguntar |
 | 6 | WhatsApp | `chat_1` | 404 «Validate dates entered» |
+
+### 10.6 Paso 1 hecho: `skill_7` (Fase A7, 18/11/2026)
+
+- **Consultas de prueba (2 de 4 autorizadas, réplica, 1–17/11, solo columnas y filas):** `skill_7` con
+  el mes completo en UNA consulta: 200, 33 filas, columnas abandon, abandon_calls, aht, answer_calls,
+  asa, ata, date, hour, inbound_calls, service_level_10seg/20seg/30seg, skill_id, skill_name,
+  wait_time. `cdr_5` con el mes completo: 200, 35 filas (columnas en la tabla de 10.5).
+- **Módulo `flujo_hora`** (`server/wolkvox-modulos.js`): una consulta por mes (del 1 a ayer; los días
+  1 a 3 también el mes anterior). Las filas se convierten a la hoja del Excel por hora (DATE, HOUR,
+  SKILL_NAME, INBOUND_CALLS, ANSWER_CALLS, ABANDON_CALLS) y pasan por `flujoHoraParseFilas`, el
+  mismo lector de la carga manual. Cualquier fila inválida o fuera del rango = el mes no cambia.
+  Las filas en cero salen. Reemplaza el mes de `flujo_hora` de la réplica con respaldo.
+- **AHT y espera del Flujo diario:** por día y skill, promedio ponderado de las horas (AHT por
+  contestadas, espera por ingresadas), en las filas que ya escribió `skill_1`, con respaldo. La
+  comparación con lo manual dirá si el ponderado coincide con el número de Wolkvox por día.
+- **Encender:** `WOLKVOX_AUTO_MODULOS` = `flujo_hora` (String) en SSM; corre después del Flujo en la
+  franja de las 7:00 y la 1:00, o con «Ejecutar ahora» (`modulo: 'flujo_hora'`). Historial
+  `WOLKVOX_MODULO`.

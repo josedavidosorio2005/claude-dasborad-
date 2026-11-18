@@ -7,6 +7,15 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.211.0 — Noviembre 2026
+
+**Wolkvox: el Flujo por hora y el AHT de la campaña de pruebas pueden llegar solos (apagado).**
+
+- La actualización automática ya sabe traer de Wolkvox el Flujo por hora (para los mapas de calor) y
+  el AHT y el tiempo de espera del Flujo de llamadas, solo para la campaña de pruebas «MOBILIZE
+  PRUEBAS API». El Mobilize real no se toca.
+- Está apagado: se enciende cuando se apruebe, y después se compara con lo que se sube a mano.
+
 ## v1.210.1 — Noviembre 2026
 
 **Wolkvox: «Probar conexión» puede revisar el mes completo.**
