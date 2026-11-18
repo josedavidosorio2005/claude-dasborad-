@@ -105,6 +105,16 @@ asumir en qué quedó una fase anterior.
   Encenderlo en producción (crear la huella en SSM) sigue necesitando OK
   explícito del usuario. Ampliar a otro cliente o reporte = autorización
   nueva por escrito.
+- **Excepción escrita (usuario, 18/11/2026, Plan A de Wolkvox, fase A1):**
+  el propio servidor puede consultar Wolkvox (`skill_1`, un día por
+  consulta) a las 7:00 y 13:00 (Colombia) y REEMPLAZAR el Flujo del mes
+  (`server/wolkvox-auto.js`) **solo de la réplica oculta «MOBILIZE
+  PRUEBAS API»**. Mismos límites que B1 (ni el MOBILIZE real, ni otro
+  cliente, ni otro reporte), tope de 2.800 consultas al día, respaldo
+  antes de reemplazar, sin reintentos en bucle. Arranca APAGADA: solo
+  corre con `WOLKVOX_AUTO_ACTIVO=1` en SSM (se lee antes de cada corrida;
+  borrarlo o ponerle `0` la apaga sin redesplegar). Crear ese parámetro
+  necesita OK explícito del usuario.
 - Nada de pruebas agresivas contra producción (sin límite de tasa, sin
   volumen alto, sin tocar datos que no sean los explícitamente
   autorizados). No destapar pestañas ocultas a mano, no tocar datos de

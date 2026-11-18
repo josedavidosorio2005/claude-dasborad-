@@ -369,3 +369,52 @@ que esté aprobado.
    quiere, la IP de la oficina en `WOLKVOX_AGENTE_IPS` — necesita OK explícito para tocar SSM.
 4. Primer envío real a la réplica y comparar contra la carga manual de Mobilize del mismo mes
    (sección 5).
+
+## 10. Plan A: consulta automática desde el servidor, fase A1 (18/11/2026)
+
+**Decisión del usuario (18/11):** `skill_1` día por día. Wolkvox todavía no tiene la IP
+3.85.54.96 en su firewall (`wv0072`); A1 deja todo listo y **apagado**.
+
+**Qué hace** (`server/wolkvox-auto.js`, arranca con `server.js`, nunca en pruebas):
+- Revisa cada minuto si es la franja de las **7:00 o 13:00 (hora Colombia)**; cada franja corre
+  una sola vez (tabla `wolkvox_auto_corridas`, sobrevive a un reinicio).
+- Antes de correr lee el interruptor **`WOLKVOX_AUTO_ACTIVO` fresco de SSM** (mismo prefijo y
+  permiso que el arranque). Solo con `1` corre. Si SSM no responde, no corre. Apagada no deja
+  rastro. Borrar el parámetro o ponerle `0` la apaga sin redesplegar. Encenderla tampoco necesita
+  redesplegar: basta con que el parámetro exista antes de la franja.
+- Pide `skill_1` **un día por consulta** (`00:00:00` a `23:59:59`) del 1 del mes en curso a
+  **ayer** (hoy está incompleto), y los días 1 a 3 también **todo el mes anterior**. Máximo ~62
+  consultas por corrida, ~124 al día.
+- **Tope:** el contador diario de W2 (2.800, nunca más de 3.000). Si lo que hay que pedir no cabe
+  en lo que queda del día, no empieza.
+- **Todo o nada por mes:** si un día falla, ese mes no se toca. Con el mes completo: la misma
+  validación de la ingesta B1 (`validarCuerpo`), respaldo del mes (Deshacer del Centro de cargas)
+  y reemplazo del mes de la réplica (`reemplazarMesFlujo`), sin tocar el mapeo de skills.
+- **AHT y espera** no vienen en `skill_1`: para cada día y skill se conserva el valor que ya
+  estaba (el del archivo manual). Si no había, queda vacío.
+- **Si Wolkvox no responde** (tiempo agotado de 30 s, sin conexión, 401/403, 429, 5xx, respuesta
+  rara): se detiene en la **primera** falla, lo anota y **no reintenta**; la próxima oportunidad
+  es la franja siguiente.
+- **Historial:** una línea `WOLKVOX_AUTO` por corrida (actor «Consulta automática Wolkvox»):
+  mes, días, filas, cuántas skills, cuántas reemplazó, consultas y segundos, o el código del error.
+  Nunca token, servidor, URL, cuerpo ni nombres de skills. Si los campos de `skill_1` no son los
+  esperados, anota **solo los nombres** de los campos para ajustar el lector.
+- **Lector de `skill_1`:** busca los campos sin importar mayúsculas: `skill_name`,
+  `inbound_calls`, `answer_calls`, `abandon_calls`, `service_level_20seg` («75.0 %»),
+  `abandon`, `asa`/`ata` («h:m:s»), con alternativas. La fila sin skill (total) se omite.
+  Los nombres exactos de `skill_1` no se anotaron en B0: la primera corrida real los confirma.
+- `GET /api/wolkvox/estado` (solo admin, réplica) suma `auto`: horarios, si el interruptor estaba
+  en 1 al arrancar y la última corrida.
+- **Pruebas** (`faseA1-wolkvox-auto`, 14, con Wolkvox simulado): plan de días, franjas, lector,
+  corrida completa (URL, encabezado, respaldo, AHT conservado, Mobilize intacto), una franja una
+  vez, tiempo agotado sin reintento, falla a mitad de mes, 401, campos desconocidos, validación,
+  tope, sin credenciales, programador (apagado/encendido/fuera de franja/SSM caído), interruptor
+  y estado sin secretos.
+
+**Cómo encender (cuando Wolkvox agregue la IP), cada paso con OK:**
+1. «Diagnóstico de red» en la réplica: debe decir TCP y TLS ok por IPv4 (no gasta consultas).
+2. Crear `/inconexion/prod/WOLKVOX_AUTO_ACTIVO` = `1` (tipo String) en SSM.
+3. Una sola corrida de prueba (la franja siguiente), revisar el Historial y comparar el Flujo de la
+   réplica con el Flujo manual de Mobilize del mismo mes (sección 5).
+4. Si algo no cuadra: poner el parámetro en `0` y, si hace falta, «Deshacer» el mes en el Centro
+   de cargas de la réplica.

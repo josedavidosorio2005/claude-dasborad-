@@ -17,7 +17,8 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   en solo lectura (escrituras solo las autorizadas). Detalle en `docs/historico/progress-fases.md`.
 - **Esperando a Edwin:** Malla fases 2 (puntualidad) y 3 (Portal Asesor ampliado) — ver el bloque 2.
 - **Esperando al soporte de Wolkvox:** el bloqueo de red hacia el servidor — ver el primer ítem de abajo.
-- **Plan B de Wolkvox (agente en la oficina):** B1 hecho (v1.206.0, endpoint apagado). **Decisión pendiente del usuario:** `skill_1` día a día (~30 consultas/mes, con detalle por skill) o `skill_3` (total del día, sin skill). Detalle y pasos en `docs/plan-api-wolkvox.md`, sección 9.
+- **Plan B de Wolkvox (agente en la oficina):** B1 hecho (v1.206.0, endpoint apagado). Decidido (18/11): `skill_1` día a día.
+- **Plan A de Wolkvox (consulta automática desde el servidor):** A1 hecho (v1.207.0), **APAGADA**. Espera a que Wolkvox agregue la IP 3.85.54.96 en su firewall (wv0072); después: diagnóstico de red, crear `WOLKVOX_AUTO_ACTIVO=1` en SSM (con OK), una sola corrida de prueba y comparación con el Flujo manual. Pasos en `docs/plan-api-wolkvox.md`, sección 10.
 
 ## 1. Esperando una decisión tuya
 
