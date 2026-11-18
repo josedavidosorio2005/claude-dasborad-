@@ -21279,3 +21279,10 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
 - **Pedido (usuario, 18/11):** OK al plan de llenar la réplica con la API (menos Calidad). Autorización escrita, una sola vez, para que la consulta automática guarde todos los reportes del plan solo para la réplica y nunca para el MOBILIZE real, descartando los datos sensibles de `cdr_1` antes de guardar (anotada en `CLAUDE.md`). Hasta 4 consultas de prueba (`skill_7` y `cdr_5`, mes completo; solo columnas y filas). Luego paso 1 (`skill_7`) y paso 2 (`cdr_1`).
 - **Cambio:** `server/wolkvox.js` (`skill_7`, `cdr_5` en la lista de «Probar»), `server/routes/wolkvox.js` («Probar» acepta `rango: 'mes'`: del 1 del mes hasta el día elegido), selector «Rango» en la ventana; plan 10.5.
 - **Pruebas:** `faseA5-wolkvox-probar-reportes` + 1 (rango mes, rango inválido).
+
+## Fase A7 — llenar la réplica, paso 1: Flujo por hora y AHT/espera con skill_7 (v1.211.0, 2026-11-18)
+
+- **Consultas de prueba (autorizadas, 2 de 4):** `skill_7` y `cdr_5` con el mes completo (1–17/11), solo columnas y filas: los dos responden 200 en una sola consulta (33 y 35 filas). Detalle en `docs/plan-api-wolkvox.md` 10.6.
+- **Cambio:** `server/wolkvox-modulos.js` (módulos de la réplica: `flujo_hora` con `skill_7`; lector del Excel por hora; reemplazo del mes con respaldo; AHT y espera ponderados en el Flujo diario con respaldo); `server/wolkvox-auto.js` (`leerValor`, módulos en la franja según `WOLKVOX_AUTO_MODULOS`, «Ejecutar ahora» con `modulo`); `server/routes/wolkvox.js` (`modulo` en `/wolkvox/auto/ejecutar`).
+- **Pruebas:** `faseA7-wolkvox-flujo-hora` (6): lector, ponderado, corrida completa (una consulta, respaldo, AHT/espera, MOBILIZE intacto, Historial sin nombres), respuesta rara/vacía/caída sin cambios ni reintento, apagado por defecto, «Ejecutar ahora» por módulo.
+- **Producción:** apagado (no existe `WOLKVOX_AUTO_MODULOS`).

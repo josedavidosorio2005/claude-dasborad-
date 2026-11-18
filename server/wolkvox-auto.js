@@ -195,11 +195,14 @@ function _activo(valor) { return typeof valor === 'string' && valor.trim() === '
 // Sin SSM_PARAM_PREFIX (local), de process.env. Lanza si SSM falla: quien llama NO corre.
 // Fase 363: `nombre` permite leer otro interruptor (WOLKVOX_LOGIN_ACTIVO, agent_7).
 async function leerInterruptor(env, nombre) {
+  return _activo(await leerValor(env, nombre || 'WOLKVOX_AUTO_ACTIVO'));
+}
+// Valor de un parámetro WOLKVOX_* leído fresco de SSM (o de process.env sin SSM). Lanza si SSM falla.
+async function leerValor(env, nombre) {
   env = env || process.env;
-  nombre = nombre || 'WOLKVOX_AUTO_ACTIVO';
-  if (!/^WOLKVOX_[A-Z_]{1,40}$/.test(nombre)) return false;
+  if (!/^WOLKVOX_[A-Z_]{1,40}$/.test(String(nombre))) return undefined;
   const prefix = env.SSM_PARAM_PREFIX;
-  if (!prefix) return _activo(env[nombre]);
+  if (!prefix) return env[nombre];
   const { SSMClient, GetParametersByPathCommand } = require('@aws-sdk/client-ssm');
   const client = new SSMClient({ region: env.AWS_REGION || env.AWS_DEFAULT_REGION || 'us-east-1' });
   const conBarra = prefix.endsWith('/') ? prefix : prefix + '/';
@@ -209,7 +212,7 @@ async function leerInterruptor(env, nombre) {
     for (const p of out.Parameters || []) if (p.Name === conBarra + nombre) valor = p.Value;
     siguiente = out.NextToken;
   } while (siguiente);
-  return _activo(valor);
+  return valor;
 }
 
 // ── Una corrida ──
@@ -404,8 +407,18 @@ async function ejecutarAhora(opts) {
   _enCurso = true;
   try {
     const env = opts.env || process.env;
-    let activo;
-    try { activo = await (opts.leerInterruptor || leerInterruptor)(env); } catch (e) { return { estado: 'sin_interruptor' }; }
+    let activo = false;
+    if (!opts.modulo || opts.modulo === 'flujo') {
+      try { activo = await (opts.leerInterruptor || leerInterruptor)(env); } catch (e) { return { estado: 'sin_interruptor' }; }
+    }
+    if (opts.modulo && opts.modulo !== 'flujo') {
+      // Paso 1+ (llenar la réplica): el módulo tiene que estar en WOLKVOX_AUTO_MODULOS.
+      const M = require('./wolkvox-modulos');
+      let lista;
+      try { lista = M.modulosDe(await (opts.leerValor || leerValor)(env, 'WOLKVOX_AUTO_MODULOS')); } catch (e) { return { estado: 'sin_interruptor' }; }
+      if (!lista.includes(opts.modulo)) return { estado: 'apagada' };
+      return await M.correrModulo(opts.modulo, { db: opts.db, env, ahora: opts.ahora, fetchImpl: opts.fetchImpl, logEvent: opts.logEvent, etiqueta: 'Ejecutar ahora', actor: opts.actor });
+    }
     if (!activo) return { estado: 'apagada' };
     return await correrUnaVez({
       db: opts.db, env, ahora: opts.ahora, fetchImpl: opts.fetchImpl, logEvent: opts.logEvent,
@@ -445,6 +458,11 @@ function iniciar(db, deps) {
       let login = false;
       try { login = await leer(env, 'WOLKVOX_LOGIN_ACTIVO'); } catch (e) { login = false; }
       if (login) await correrLogin({ db, env, ahora, franja, fetchImpl: deps.fetchImpl, logEvent: deps.logEvent });
+      // Llenar la réplica: módulos encendidos en WOLKVOX_AUTO_MODULOS (lista). Apagado: no deja rastro.
+      const M = require('./wolkvox-modulos');
+      let mods = [];
+      try { mods = M.modulosDe(await (deps.leerValor || leerValor)(env, 'WOLKVOX_AUTO_MODULOS')); } catch (e) { mods = []; }
+      for (const m of mods) await M.correrModulo(m, { db, env, ahora, franja, fetchImpl: deps.fetchImpl, logEvent: deps.logEvent });
       return r;
     } catch (e) {
       console.error('[wolkvox-auto] error inesperado en la corrida (' + (e && e.name ? String(e.name).slice(0, 60) : 'error') + ')');
@@ -473,4 +491,5 @@ module.exports = {
   CAMPANA, OPERACION, API, HORAS_COLOMBIA, ARCHIVO, QUIEN, ACCION_HISTORIAL, MAX_CONSULTAS_POR_CORRIDA,
   horaColombia, franjaActual, plan, convertirFila, filasDelDia, aPorcentaje, aSegundos, aEntero,
   asegurarTablas, franjaYaCorrida, ultimaCorrida, leerInterruptor, correrUnaVez, iniciar, estado, ejecutarAhora, correrLogin, planLogin, API_LOGIN,
+  leerValor, SIN_REGISTROS,
 };
