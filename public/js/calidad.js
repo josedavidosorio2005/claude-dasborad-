@@ -65,6 +65,19 @@ function calCampanas(){
 // usan la elegida en el formulario (_calPlantillaElegida[camp]); sin elegir,
 // la principal (CAL_PLANTILLAS, una por campaña, la de siempre).
 var CAL_PLANTILLAS_TODAS = [];
+
+// Fase 365 (bug de Edwin 18/11): las plantillas se cargan una vez por sesión con el acceso de QUIEN
+// entró. Sin reiniciarlas, el siguiente usuario en la misma pestaña heredaba las de la asesora
+// (solo su campaña) y Calidad «no reconocía» los formularios de sus otras campañas. Se reinicia todo
+// lo que depende del usuario al cerrar sesión, al entrar y al entrar o salir de «Ver como».
+function calReiniciarSesion() {
+  _calPlantillasLoaded = false;
+  Object.keys(CAL_PLANTILLAS).forEach(function (k) { delete CAL_PLANTILLAS[k]; });
+  CAL_PLANTILLAS_TODAS = [];
+  _calClientesConDashboard = null;
+  _calPlantillaElegida = {};
+  if (typeof _calResOpciones !== 'undefined') _calResOpciones = {};
+}
 var _calPlantillaElegida = {};
 function _calPlantillaDe(camp){
   var id = _calPlantillaElegida[camp];

@@ -68,6 +68,7 @@ function _verComoLimpiarPantalla() {
   try { if (typeof closeClientsModal === 'function') closeClientsModal(); } catch (e) {}
   if (typeof gdReiniciarFiltros === 'function') gdReiniciarFiltros();
   if (typeof calSondeoReiniciar === 'function') calSondeoReiniciar();
+  if (typeof calReiniciarSesion === 'function') calReiniciarSesion(); // Fase 365
   if (typeof ticketsAlSalir === 'function') ticketsAlSalir();
   if (typeof cerrarVentanasAbiertas === 'function') cerrarVentanasAbiertas(); // Fase 362: toda ventana abierta (Calidad, etc.)
   if (typeof hideAllPages === 'function') hideAllPages();
