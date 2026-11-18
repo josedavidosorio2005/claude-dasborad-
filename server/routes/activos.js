@@ -149,4 +149,55 @@ router.post('/activos/:id/cambiar', requireActor, wrap((req, res) => {
   res.json(r);
 }));
 
+// ── Fase 371 (E3): actas de entrega y devolución; la firmada va a S3 privado (apagado sin ACTAS_S3_BUCKET).
+const ACT = require('../activos-actas');
+const s3Prueba = (req) => ({ cliente: req.app.locals.actasS3Cliente }); // solo las pruebas lo ponen
+router.get('/activos/agentes/:id/actas', requireActor, wrap((req, res) => {
+  if (!permitido(req, res)) return;
+  const g = agentePorId(req, res); if (!g) return;
+  res.json({ actas: ACT.deAgente(db, g.id), entrega: ACT.candidatos(db, g, 'entrega'), devolucion: ACT.candidatos(db, g, 'devolucion'), firmadasActivas: !!ACT.bucket() });
+}));
+router.post('/activos/agentes/:id/actas', requireActor, wrap((req, res) => {
+  if (!permitido(req, res)) return;
+  const g = agentePorId(req, res); if (!g) return;
+  const b = req.body || {};
+  const r = ACT.crear(db, g, b.tipo, b.activoIds, actorLabel(req.actor));
+  if (r.error) return res.status(400).json({ error: r.error });
+  logAg('ACTIVO_ACTA', g, req, 'acta ' + r.acta.numero + ' (' + r.acta.tipo + ', ' + r.acta.elementos.length + ' elemento(s))');
+  res.status(201).json(r);
+}));
+function actaPorId(req, res) {
+  const a = idValido(req.params.id) ? ACT.obtener(db, Number(req.params.id)) : null;
+  if (!a) res.status(404).json({ error: 'Acta no encontrada' });
+  return a;
+}
+router.get('/activos/actas/:id', requireActor, wrap((req, res) => {
+  if (!permitido(req, res)) return;
+  const a = actaPorId(req, res); if (!a) return;
+  res.json({ acta: a });
+}));
+router.post('/activos/actas/:id/firmada', requireActor, wrap(async (req, res) => {
+  if (!permitido(req, res)) return;
+  const a = actaPorId(req, res); if (!a) return;
+  if (!ACT.bucket()) return res.status(503).json({ error: 'Falta configurar dónde se guardan las actas firmadas (S3). Pídeselo al administrador.' });
+  const p = ACT.leerPdf((req.body || {}).pdf);
+  if (p.error) return res.status(400).json({ error: p.error });
+  let r;
+  try { r = await ACT.guardarFirmada(db, a, p.buf, actorLabel(req.actor), s3Prueba(req)); }
+  catch (e) { console.error('[actas] no se pudo guardar en S3: ' + (e && e.name)); return res.status(502).json({ error: 'No se pudo guardar el acta firmada. Intenta de nuevo.' }); }
+  if (r.error) return res.status(r.status || 400).json({ error: r.error });
+  logEvent('ACTIVO_ACTA_FIRMADA', { nombre: 'acta ' + a.numero, user: '-', rol: 'activos' }, actorLabel(req.actor), Math.round(p.buf.length / 1024) + ' KB');
+  res.json(r);
+}));
+router.get('/activos/actas/:id/firmada', requireActor, wrap(async (req, res) => {
+  if (!permitido(req, res)) return;
+  const a = actaPorId(req, res); if (!a) return;
+  let r;
+  try { r = await ACT.leerFirmada(db, a.id, s3Prueba(req)); }
+  catch (e) { console.error('[actas] no se pudo leer de S3: ' + (e && e.name)); return res.status(502).json({ error: 'No se pudo traer el acta firmada. Intenta de nuevo.' }); }
+  if (r.error) return res.status(r.status || 400).json({ error: r.error });
+  res.set({ 'Content-Type': 'application/pdf', 'Content-Disposition': 'attachment; filename="' + r.nombre + '"', 'X-Content-Type-Options': 'nosniff' });
+  res.send(r.buf);
+}));
+
 module.exports = router;

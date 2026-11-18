@@ -220,12 +220,13 @@ async function activosVerAgente(id) {
     '<h4 class="ac-sub">Elementos asignados</h4>' + elems + '<div id="ac-soltar"></div>' +
     (g.activo ? '<form class="ac-asig-form" onsubmit="activosAsignar(event)"><div class="ig"><label for="ac-as-tipo">Asignar: tipo</label><select id="ac-as-tipo" onchange="activosLibresParaAsignar()">' + _acOpciones(tiposAsignables) + '</select></div>' +
       '<div class="ig"><label for="ac-as-elem">Elemento libre</label><select id="ac-as-elem"></select></div><button type="submit" class="btn-primary">Asignar</button></form>' : '') +
-    '<h4 class="ac-sub">Historial de asignaciones</h4>' + (hist ? '<ul class="ac-hist">' + hist + '</ul>' : '<p class="vis-vacio">Sin movimientos.</p>') +
+    '<h4 class="ac-sub">Actas</h4><div id="ac-actas"><p class="vis-vacio">Cargando…</p></div>' + '<h4 class="ac-sub">Historial de asignaciones</h4>' + (hist ? '<ul class="ac-hist">' + hist + '</ul>' : '<p class="vis-vacio">Sin movimientos.</p>') +
     '<div class="modal-btns">' + (g.activo ? (r.elementos.length ? '' : '<button type="button" class="btn-cancel" onclick="activosActivarAgente(false)">Marcar inactivo</button>') : '<button type="button" class="btn-cancel" onclick="activosActivarAgente(true)">Volver a activar</button>') +
     '<button type="button" class="btn-cancel" onclick="activosCerrarAgente()">Volver a la lista</button></div></section>';
   _acEl('ac-ag-zona').classList.add('hidden');
   _acEl('ac-ag-detalle').classList.remove('hidden');
   if (g.activo) activosLibresParaAsignar();
+  _acActas(); // Fase 371
 }
 async function _acLibres(tipo) { return (await apiRequest('GET', '/activos?estado=libre&tipo=' + encodeURIComponent(tipo))).activos.filter(function (a) { return !a.agente; }); }
 async function activosLibresParaAsignar() {
@@ -287,6 +288,124 @@ async function activosActivarAgente(activo) {
   } catch (e) { _acError(e.message); }
 }
 
+// ── Actas (Fase 371, E3): entrega y devolución. El PDF se arma imprimiendo («Guardar como PDF»);
+// la firmada (escaneada) se sube y se guarda en S3 privado; solo se descarga desde la plataforma. ──
+function activosActaPrintHtml(acta) {
+  var entrega = acta.tipo === 'entrega';
+  var fecha = new Date(acta.fecha).toLocaleString('es-CO', { timeZone: 'America/Bogota' });
+  var g = acta.agente || {};
+  var filas = (acta.elementos || []).map(function (e, i) {
+    return '<tr><td>' + (i + 1) + '</td><td>' + esc(e.tipo) + '</td><td>' + esc(e.codigo) + '</td><td>' + esc([e.marca, e.modelo].filter(Boolean).join(' ')) + '</td><td>' + esc(e.serial || '') + '</td>' +
+      (entrega ? '' : '<td>' + esc(e.queda || '') + '</td><td>' + esc(e.motivo || '') + '</td>') + '</tr>';
+  }).join('');
+  var texto = entrega
+    ? 'Recibo los elementos de esta acta en buen estado, para uso exclusivo de mis funciones. Me comprometo a cuidarlos y a devolverlos cuando se me pidan o al terminar mi vinculación, y a informar a Sistemas cualquier daño o pérdida.'
+    : 'Se reciben de vuelta los elementos de esta acta, en el estado que se indica en cada uno.';
+  return '<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Acta de ' + esc(acta.tipoNombre.toLowerCase()) + ' ' + Number(acta.numero) + '</title>' +
+    '<style>@page{size:A4;margin:16mm}body{font-family:Arial,Helvetica,sans-serif;color:#1a1a1a;font-size:12px;line-height:1.45}' +
+    'h1{font-size:18px;margin:0 0 4px}.sub{color:#555;margin:0 0 16px}dl{display:grid;grid-template-columns:140px 1fr;gap:4px 12px;margin:0 0 16px}dt{font-weight:bold}dd{margin:0}' +
+    'table{width:100%;border-collapse:collapse;margin:0 0 16px}th,td{border:1px solid #999;padding:5px 6px;text-align:left;vertical-align:top}th{background:#eee}' +
+    '.firmas{display:grid;grid-template-columns:1fr 1fr;gap:48px;margin-top:56px}.firma{border-top:1px solid #1a1a1a;padding-top:6px}.pie{margin-top:32px;color:#666;font-size:10px}</style></head><body>' +
+    '<h1>Acta de ' + esc(acta.tipoNombre.toLowerCase()) + ' N.º ' + Number(acta.numero) + '</h1>' +
+    '<p class="sub">Inventario de sistemas · InConexión · ' + esc(fecha) + '</p>' +
+    '<dl><dt>Agente</dt><dd>' + esc(g.nombre || '') + '</dd><dt>Documento</dt><dd>' + esc(g.documento || '') + '</dd><dt>Sede</dt><dd>' + esc(g.sede || '') + '</dd><dt>Operación</dt><dd>' + esc(g.operacion || '') + '</dd></dl>' +
+    '<table><thead><tr><th>#</th><th>Elemento</th><th>Código</th><th>Marca / modelo</th><th>Serial</th>' + (entrega ? '' : '<th>Queda</th><th>Motivo</th>') + '</tr></thead><tbody>' + filas + '</tbody></table>' +
+    '<p>' + esc(texto) + '</p>' +
+    '<div class="firmas"><div class="firma">Firma de quien entrega<br>Nombre:<br>Documento:</div><div class="firma">Firma de quien recibe<br>Nombre:<br>Documento:</div></div>' +
+    '<p class="pie">Generada por ' + esc(acta.quien || '') + '. Firmada, se escanea en PDF y se sube en la plataforma (Inventario de sistemas → Agentes → Actas).</p>' +
+    '</body></html>';
+}
+function activosImprimirActa(acta) {
+  var w = window.open('', '_blank');
+  if (!w) { showToast('Permite las ventanas emergentes para imprimir el acta.', 'error'); return; }
+  w.document.open();
+  w.document.write(activosActaPrintHtml(acta));
+  w.document.close();
+  setTimeout(function () { try { w.focus(); w.print(); } catch (e) { /* ventana cerrada */ } }, 300);
+}
+async function _acActas() {
+  var g = _ac.agente && _ac.agente.agente;
+  var c = _acEl('ac-actas');
+  if (!g || !c) return;
+  var r;
+  try { r = await apiRequest('GET', '/activos/agentes/' + g.id + '/actas'); } catch (e) { _acError(e.message); return; }
+  _ac.actas = r;
+  var lista = r.actas.length ? '<div class="table-wrap"><table class="vis-tabla"><thead><tr><th scope="col">N.º</th><th scope="col">Tipo</th><th scope="col">Fecha</th><th scope="col">Elementos</th><th scope="col">Firmada</th><th scope="col"><span class="sr-only">Acciones</span></th></tr></thead><tbody>' +
+    r.actas.map(function (a) {
+      var acciones = '<button type="button" class="btn-cancel ac-btn" onclick="activosImprimirActaId(' + Number(a.id) + ')">Imprimir / PDF</button>';
+      if (a.firmada) acciones += '<button type="button" class="btn-cancel ac-btn" onclick="activosDescargarFirmada(' + Number(a.id) + ')">Ver firmada</button>';
+      if (r.firmadasActivas) acciones += '<label class="btn-cancel ac-btn ac-subir">' + (a.firmada ? 'Reemplazar firmada' : 'Subir firmada') + '<input type="file" accept="application/pdf" class="sr-only" onchange="activosSubirFirmada(' + Number(a.id) + ', this)"></label>';
+      return '<tr><th scope="row">' + Number(a.numero) + '</th><td>' + esc(a.tipoNombre) + '</td><td>' + esc(_acFecha(a.fecha)) + '</td><td class="vis-num">' + a.elementos.length + '</td><td>' +
+        (a.firmada ? '<span class="vis-pill vis-verde">Sí</span>' : '<span class="vis-pill vis-gris">No</span>') + '</td><td><div class="ac-acciones">' + acciones + '</div></td></tr>';
+    }).join('') + '</tbody></table></div>' : '<p class="vis-vacio">Aún no hay actas de este agente.</p>';
+  var aviso = r.firmadasActivas ? '' : '<p class="vis-ayuda">Subir el acta firmada se activa cuando el administrador configure el almacenamiento privado (S3).</p>';
+  c.innerHTML = lista + aviso +
+    '<form class="ac-asig-form" onsubmit="activosCrearActa(event)"><h5 class="ac-sub ac-form-titulo">Nueva acta</h5>' +
+    '<div class="ig"><label for="ac-acta-tipo">Tipo</label><select id="ac-acta-tipo" onchange="activosActaCandidatos()"><option value="entrega">Entrega (lo que tiene asignado)</option><option value="devolucion">Devolución (lo que ya entregó)</option></select></div>' +
+    '<fieldset class="ac-acta-elems" id="ac-acta-elems"><legend>Elementos</legend></fieldset>' +
+    '<button type="submit" class="btn-primary">Crear e imprimir</button></form>';
+  activosActaCandidatos();
+}
+function activosActaCandidatos() {
+  var tipo = _acEl('ac-acta-tipo').value;
+  var l = (_ac.actas && _ac.actas[tipo]) || [];
+  var tipoN = function (c) { var t = _acTipo(c); return t ? t.nombre : c; };
+  _acEl('ac-acta-elems').innerHTML = '<legend>Elementos</legend>' + (l.length ? l.map(function (x) {
+    return '<label class="ac-check"><input type="checkbox" value="' + Number(x.id) + '" checked> ' + esc(tipoN(x.tipo)) + ' ' + esc(x.codigo) + (x.queda ? ' · queda ' + esc(_acEstadoNombre(x.queda)) : '') + '</label>';
+  }).join('') : '<p class="vis-vacio">' + (tipo === 'entrega' ? 'No tiene elementos asignados.' : 'No ha devuelto elementos.') + '</p>');
+}
+async function activosCrearActa(ev) {
+  ev.preventDefault();
+  _acError('');
+  var ids = Array.prototype.map.call(document.querySelectorAll('#ac-acta-elems input:checked'), function (i) { return Number(i.value); });
+  if (!ids.length) { _acError('Elige los elementos del acta'); return; }
+  // La ventana se abre en el mismo clic (si no, el navegador la bloquea) y se llena al crear el acta.
+  var w = window.open('', '_blank');
+  try {
+    var r = await apiRequest('POST', '/activos/agentes/' + _ac.agente.agente.id + '/actas', { tipo: _acEl('ac-acta-tipo').value, activoIds: ids });
+    showToast('Acta N.º ' + r.acta.numero + ' creada', 'ok');
+    if (w) { w.document.open(); w.document.write(activosActaPrintHtml(r.acta)); w.document.close(); setTimeout(function () { try { w.focus(); w.print(); } catch (e) { /* cerrada */ } }, 300); }
+    else showToast('Permite las ventanas emergentes para imprimir el acta.', 'error');
+    _acActas();
+  } catch (e) { if (w) w.close(); _acError(e.message); }
+}
+async function activosImprimirActaId(id) {
+  var a = (_ac.actas && _ac.actas.actas || []).find(function (x) { return x.id === id; });
+  if (a) activosImprimirActa(a);
+}
+function _acLeerBase64(file) {
+  return new Promise(function (ok, mal) {
+    var fr = new FileReader();
+    fr.onload = function () { ok(String(fr.result).split(',')[1] || ''); };
+    fr.onerror = function () { mal(new Error('No se pudo leer el archivo')); };
+    fr.readAsDataURL(file);
+  });
+}
+async function activosSubirFirmada(id, input) {
+  _acError('');
+  var f = input.files && input.files[0];
+  input.value = '';
+  if (!f) return;
+  if (f.size > 5 * 1024 * 1024) { _acError('El PDF pesa más de 5 MB'); return; }
+  try {
+    await apiRequest('POST', '/activos/actas/' + id + '/firmada', { pdf: await _acLeerBase64(f) });
+    showToast('Acta firmada guardada', 'ok');
+    _acActas();
+  } catch (e) { _acError(e.message); }
+}
+async function activosDescargarFirmada(id) {
+  _acError('');
+  try {
+    var res = await fetch(API_BASE + '/activos/actas/' + id + '/firmada', { headers: apiHeaders(false) });
+    if (!res.ok) { var d = null; try { d = await res.json(); } catch (e) { /* sin cuerpo */ } throw new Error((d && d.error) || friendlyHttpError(res.status)); }
+    var url = URL.createObjectURL(await res.blob());
+    var a = document.createElement('a');
+    a.href = url; a.download = 'acta-firmada-' + id + '.pdf';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 10000);
+  } catch (e) { _acError(e.message); }
+}
+
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { activosPanelHtml: activosPanelHtml, activosListaHtml: activosListaHtml, activosCampoHtml: activosCampoHtml, activosAgentesHtml: activosAgentesHtml };
+  module.exports = { activosPanelHtml: activosPanelHtml, activosListaHtml: activosListaHtml, activosCampoHtml: activosCampoHtml, activosAgentesHtml: activosAgentesHtml, activosActaPrintHtml: activosActaPrintHtml };
 }

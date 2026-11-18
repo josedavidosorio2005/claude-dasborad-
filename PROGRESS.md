@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.219.0` (ver `server/package.json`, expuesta en
+- **Versión**: `1.220.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -590,6 +590,7 @@ mismo orden):
 - Fase 368 — Malla D3: en «Mi malla» la asesora ve cada día en verde «Puntual» o en rojo «Llegaste tarde» (solo lo suyo; SURA por archivo) (v1.217.0, 2026-11-18)
 - Fase 369 — Inventario de sistemas E1 (ADMIN y SISTEMAS): elementos por código con estado, cambio de estado con motivo, historial, panel y listas; el Inventario anterior queda solo para ADMIN (v1.218.0, 2026-11-18)
 - Fase 370 — Inventario de sistemas E2: agentes, asignación por elemento («En uso»), devolver y cambiar elemento con motivo; columna y búsqueda por agente (v1.219.0, 2026-11-18)
+- Fase 371 — Inventario de sistemas E3: actas de entrega y devolución (número, copia fija, imprimir/PDF); firmada a S3 privado, apagada hasta crear `ACTAS_S3_BUCKET` (guía en `docs/actas-firmadas-s3.md`) (v1.220.0, 2026-11-18)
 - Fase 309 — Revisión de seguridad: el cliente ya no recibe el nombre de los líderes en `GET /metas`; resto en `docs/revision-seguridad-2026-11-09.md` (v1.154.1, 2026-11-10)
 - Fase 308 — Revisión antes de la reunión con clientes y pendientes del supervisor (solo docs, 2026-11-10)
 - Fase 307 — Calidad para que los líderes evalúen: ORLANT conserva su Calidad y suma «Resultado de los monitoreos» al final; Aurora ya lo tenía (se muestra con el primer monitoreo) (v1.154.0, 2026-11-10)

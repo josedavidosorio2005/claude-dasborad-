@@ -226,6 +226,8 @@ function createApp() {
     if (rutaNormalizada(req) === RUTA_LOGIN) return jsonLogin(req, res, next);
     if (RUTAS_LIMITE_MAYOR.includes(rutaNormalizada(req))) return jsonLimiteMayor(req, res, next);
     if (req.method === 'POST' && RUTA_SURA_BASE.test(rutaNormalizada(req))) return jsonLimiteSura(req, res, next);
+    // Fase 371 (E3): el acta firmada llega en base64 (PDF de hasta 5 MB).
+    if (req.method === 'POST' && /^\/api\/activos\/actas\/[1-9]\d{0,9}\/firmada$/.test(rutaNormalizada(req))) return jsonLimiteMayor(req, res, next);
     return jsonLimiteNormal(req, res, next);
   }
 

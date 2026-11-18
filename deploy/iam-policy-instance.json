@@ -25,6 +25,12 @@
       "Resource": "arn:aws:s3:::inconexion-backups-tuempresa/db-backups/*"
     },
     {
+      "Sid": "ActasFirmadasS3",
+      "Effect": "Allow",
+      "Action": ["s3:PutObject", "s3:GetObject"],
+      "Resource": "arn:aws:s3:::inconexion-actas-tuempresa/actas/*"
+    },
+    {
       "Sid": "EnviarLogsYMetricasCloudWatch",
       "Effect": "Allow",
       "Action": [

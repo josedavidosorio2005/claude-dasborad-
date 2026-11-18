@@ -7,6 +7,18 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.220.0 — Noviembre 2026
+
+**Inventario de sistemas: actas de entrega y devolución.**
+
+- En cada agente hay una sección «Actas». Se elige si es de entrega (lo que tiene asignado) o de
+  devolución (lo que ya entregó), se marcan los elementos y se crea el acta con su número.
+- El acta se abre lista para imprimir o guardar en PDF, con los datos del agente, los elementos y
+  los espacios para las firmas.
+- El acta firmada (escaneada en PDF) se podrá subir a la plataforma y guardarla en un lugar
+  privado. Esa parte se activa cuando se configure el almacenamiento; mientras tanto, la pantalla
+  lo avisa.
+
 ## v1.219.0 — Noviembre 2026
 
 **Inventario de sistemas: agentes y asignación de elementos.**
