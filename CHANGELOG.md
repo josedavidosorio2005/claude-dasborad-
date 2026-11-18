@@ -7,6 +7,10 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.222.1 — Noviembre 2026
+
+**Inventario de sistemas: las actas firmadas ya se pueden guardar.** El servidor ahora lee dónde se guardan (el espacio privado en AWS creado el 18/11).
+
 ## v1.222.0 — Noviembre 2026
 
 **Réplica de MOBILIZE: la Encuesta también puede llenarse sola desde Wolkvox.**

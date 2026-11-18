@@ -21376,3 +21376,9 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
 - **Cambio:** `server/wolkvox-modulos.js` módulo `encuesta` (una consulta por mes, reemplaza el mes completo de la réplica con respaldo). Entran solo asesor, skill, fecha/hora y Q01–Q04; se descartan ANI, AGENT_DNI, CUSTOMER_ID, VOICE_MESSAGE, CONN_ID y lo demás. `server/encuestas.js` `cargarEncuestas` acepta `desde`/`hasta` fijos (la carga manual sigue igual).
 - **Apagado:** solo corre si `encuesta` está en `WOLKVOX_AUTO_MODULOS` (SSM). En la réplica, Calidad de encuestas queda sin teléfono ni comentarios (a propósito).
 - **Pruebas:** `faseA11-wolkvox-encuesta` (3).
+
+## Fase 371b — actas firmadas: el servidor lee ACTAS_S3_BUCKET (v1.222.1, 2026-11-18)
+
+- El usuario creó el bucket `inconexion-actas-2026`, pegó la política `ActasFirmadasS3` en el usuario IAM `inconexion-instance` (Lightsail no usa roles de instancia) y creó `/inconexion/prod/ACTAS_S3_BUCKET` en SSM.
+- `server/secrets.js` no lo cargaba (solo una lista fija + `WOLKVOX_*`): se agregó a `SSM_KEYS`. `deploy/iam-policy-instance.json` con el bucket real; `docs/actas-firmadas-s3.md` corregido («usuario», no «rol»).
+- Prueba: `fase371-inventario-actas` (+1). Falta: verificar en producción subir y descargar un acta inventada.

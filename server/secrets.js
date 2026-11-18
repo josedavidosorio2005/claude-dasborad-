@@ -24,6 +24,7 @@ const SSM_KEYS = [
   'MASTER_ADMIN_USER',
   'CORS_ORIGIN',
   'JWT_EXPIRES_IN',
+  'ACTAS_S3_BUCKET', // Fase 371b: bucket privado de las actas firmadas (Inventario de sistemas)
 ];
 
 function esClaveWolkvox(nombre) { return /^WOLKVOX_[A-Z0-9_]{1,60}$/.test(nombre); }

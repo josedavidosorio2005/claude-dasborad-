@@ -28,7 +28,7 @@
       "Sid": "ActasFirmadasS3",
       "Effect": "Allow",
       "Action": ["s3:PutObject", "s3:GetObject"],
-      "Resource": "arn:aws:s3:::inconexion-actas-tuempresa/actas/*"
+      "Resource": "arn:aws:s3:::inconexion-actas-2026/actas/*"
     },
     {
       "Sid": "EnviarLogsYMetricasCloudWatch",

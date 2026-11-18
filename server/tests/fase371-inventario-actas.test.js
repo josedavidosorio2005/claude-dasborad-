@@ -111,3 +111,7 @@ test('interfaz: el acta para imprimir escapa los textos y lleva las firmas', () 
     assert.ok(!/<script/i.test(html), 'sin scripts en la ventana de impresión');
   } finally { delete global.esc; }
 });
+
+test('Fase 371b: el servidor carga ACTAS_S3_BUCKET desde SSM al arrancar', () => {
+  assert.ok(require('../secrets').SSM_KEYS.includes('ACTAS_S3_BUCKET'));
+});
