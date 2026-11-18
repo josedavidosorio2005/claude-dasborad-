@@ -21286,3 +21286,9 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
 - **Cambio:** `server/wolkvox-modulos.js` (módulos de la réplica: `flujo_hora` con `skill_7`; lector del Excel por hora; reemplazo del mes con respaldo; AHT y espera ponderados en el Flujo diario con respaldo); `server/wolkvox-auto.js` (`leerValor`, módulos en la franja según `WOLKVOX_AUTO_MODULOS`, «Ejecutar ahora» con `modulo`); `server/routes/wolkvox.js` (`modulo` en `/wolkvox/auto/ejecutar`).
 - **Pruebas:** `faseA7-wolkvox-flujo-hora` (6): lector, ponderado, corrida completa (una consulta, respaldo, AHT/espera, MOBILIZE intacto, Historial sin nombres), respuesta rara/vacía/caída sin cambios ni reintento, apagado por defecto, «Ejecutar ahora» por módulo.
 - **Producción:** apagado (no existe `WOLKVOX_AUTO_MODULOS`).
+
+## Fase A8 — llenar la réplica, paso 2: Tipificación con cdr_1 (v1.212.0, 2026-11-18)
+
+- **Cambio:** módulo `cdr` en `server/wolkvox-modulos.js` (una consulta por día; hoja del CDR solo con las columnas que lee la plataforma, sin datos sensibles; `tipificacionParseFilas` con las opciones de MOBILIZE; reemplazo del mes completo con respaldo); `server/tipificaciones.js` (`cargarTipificaciones` acepta `desde`/`hasta` para reemplazar el mes completo). Detalle en `docs/plan-api-wolkvox.md` 10.7.
+- **Pruebas:** `faseA8-wolkvox-cdr` (4): hoja sin columnas sensibles; corrida (una consulta por día, mes completo, «PRUEBA» fuera, únicas por teléfono, salida, sin teléfonos/cliente/comentarios guardados, respaldo, MOBILIZE intacto, Historial sin nombres); falla a mitad de mes, columnas raras y vacío sin cambios ni reintento; apagado por defecto.
+- **Producción:** apagado (no existe `WOLKVOX_AUTO_MODULOS`).

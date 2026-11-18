@@ -172,7 +172,9 @@ function impactoTipificaciones(db, { campana, canal, filas }) {
 // Volver a subir el MISMO archivo deja el mismo conteo total (nunca
 // duplica). Subir Llamadas nunca borra ni un solo registro de WhatsApp (la
 // clausula WHERE siempre incluye canal = ?).
-function cargarTipificaciones(db, { campana, canal, archivoNombre, cargadoPorNombre, filas }) {
+// Fase A8 (réplica con la API): `desde`/`hasta` opcionales fijan el periodo a reemplazar (el mes
+// completo), en vez de la primera y la última fecha de las filas.
+function cargarTipificaciones(db, { campana, canal, archivoNombre, cargadoPorNombre, filas, desde: desdeFijo, hasta: hastaFijo }) {
   const ts = nowStr();
   let filasObj = filas.map(filaArrayAObjeto);
   // Fase 122: alias de nombre de asesor ANTES de guardar -- el nombre que
@@ -180,7 +182,9 @@ function cargarTipificaciones(db, { campana, canal, archivoNombre, cargadoPorNom
   // rango de fechas a reemplazar no cambia (sale de `fecha`, nunca de
   // `agente`).
   filasObj = aplicarAliasAFilas(db, campana, filasObj, 'agente').filas;
-  const { desde, hasta } = rangoFechas(filasObj);
+  const r0 = rangoFechas(filasObj);
+  const desde = desdeFijo && desdeFijo < r0.desde ? desdeFijo : r0.desde;
+  const hasta = hastaFijo && hastaFijo > r0.hasta ? hastaFijo : r0.hasta;
 
   const del = db.prepare('DELETE FROM tipificaciones WHERE campana = ? AND canal = ? AND fecha >= ? AND fecha <= ?');
   const insert = db.prepare(

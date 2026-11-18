@@ -501,7 +501,7 @@ MOBILIZE antes de pasar al siguiente.
 |---|---|---|---|
 | 0 | Flujo (día) | `skill_1` | En marcha |
 | 1 | Flujo por hora + AHT y espera del Flujo | `skill_7` ✔ (mes completo en 1 consulta, 33 filas el 1–17/11) | Hecho (Fase A7), apagado |
-| 2 | Tipificación, Eficacia, únicas contestadas, conectadas de salida | `cdr_1` | Columnas confirmadas |
+| 2 | Tipificación, Eficacia, únicas contestadas, conectadas de salida | `cdr_1` | Hecho (Fase A8), apagado |
 | 3 | Llamadas de salida: no conectadas | `cdr_5` ✔ (mes completo, 35 filas; columnas agent_id, agent_name, campaign_id, conn_id, customer_id, date, destiny, result, ring_time, telephone, type_interaction) | Columnas confirmadas |
 | 4 | Llamadas únicas: abandonadas | «Skills 2» no está en la API (`skill_2` = 404) | Preguntar a Wolkvox/Edwin |
 | 5 | Encuesta | Desconocido (hoja «HistIVR») | Preguntar |
@@ -524,3 +524,20 @@ MOBILIZE antes de pasar al siguiente.
 - **Encender:** `WOLKVOX_AUTO_MODULOS` = `flujo_hora` (String) en SSM; corre después del Flujo en la
   franja de las 7:00 y la 1:00, o con «Ejecutar ahora» (`modulo: 'flujo_hora'`). Historial
   `WOLKVOX_MODULO`.
+
+### 10.7 Paso 2 hecho: `cdr_1` (Fase A8, 18/11/2026)
+
+- **Módulo `cdr`** (`server/wolkvox-modulos.js`): una consulta `cdr_1` **por día** (del 1 a ayer; los
+  días 1 a 3 también el mes anterior), porque el mes completo en una consulta no se probó. Las filas
+  se convierten a la hoja del Excel del CDR **solo con las columnas que lee la plataforma**:
+  AGENT_NAME, DATE (trae la hora), DESCRIPTION_COD_ACT, SKILL_NAME, TIME_MIN, TIME_SEC (de
+  `time_seg`), COD_ACT, TYPE_INTERACTION, HUNG_UP (de `hang_up`), SKILL_ID y TELEPHONE. Las demás
+  (`customer_id`, `comment`, `conn_id`, `destiny`, `cost`, `agent_id`, `campaign_id`,
+  `cod_act_2`, `description_cod_act_2`) **nunca entran**. TELEPHONE solo sirve, en memoria, para
+  marcar la primera llamada de cada número por día (`unicaDia`) y nunca se guarda.
+- Pasa por `tipificacionParseFilas` con las mismas opciones que la carga manual de MOBILIZE (excluir
+  «PRUEBA», marcar únicas del día, conservar las de salida) y se guarda con `cargarTipificaciones`
+  (canal Llamadas) **reemplazando el mes completo** de la réplica, con respaldo. Eficacia, Llamadas
+  únicas (contestadas) y Llamadas de salida (conectadas) leen de ahí.
+- **Encender:** agregar `cdr` a `WOLKVOX_AUTO_MODULOS` (por ejemplo `flujo_hora,cdr`); o «Ejecutar
+  ahora» con `modulo: 'cdr'`. Unas 17–31 consultas por corrida.

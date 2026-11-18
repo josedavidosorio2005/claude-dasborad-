@@ -140,8 +140,69 @@ async function correrFlujoHora(opts, partes, res) {
   }
 }
 
+// ── Paso 2: cdr_1 → Tipificación (canal Llamadas), de donde salen Eficacia, las contestadas únicas
+// y las conectadas de salida ──
+// Se arma la hoja del Excel del CDR SOLO con las columnas que la plataforma lee; los datos sensibles
+// (cliente, comentarios, conn_id, destino, costo, ids) NUNCA entran. TELEPHONE entra solo para que el
+// lector marque en memoria la primera llamada de cada número por día (unicaDia) y nunca se guarda.
+// Mismas opciones que la carga manual de MOBILIZE (public/js/cargas.js): excluir «PRUEBA», marcar
+// únicas del día y conservar toda fila de salida («-»). Una consulta por día (cdr_1 respondió con el
+// día completo; el mes en una consulta no se probó).
+const T = require('../public/js/tipificacion-logic.js');
+const CDR_COLUMNAS = [ // [columna de la API, columna del Excel]
+  ['agent_name', 'AGENT_NAME'], ['date', 'DATE'], ['description_cod_act', 'DESCRIPTION_COD_ACT'], ['skill_name', 'SKILL_NAME'],
+  ['time_min', 'TIME_MIN'], ['time_seg', 'TIME_SEC'], ['cod_act', 'COD_ACT'], ['type_interaction', 'TYPE_INTERACTION'],
+  ['hang_up', 'HUNG_UP'], ['skill_id', 'SKILL_ID'], ['telephone', 'TELEPHONE'],
+];
+const CDR_DESCARTADAS = ['agent_id', 'campaign_id', 'cod_act_2', 'comment', 'conn_id', 'cost', 'customer_id', 'description_cod_act_2', 'destiny'];
+function hojaCdr(data) {
+  return [CDR_COLUMNAS.map((c) => c[1])].concat(data.map((r) => CDR_COLUMNAS.map(([api]) => {
+    const v = _v(r || {}, api);
+    return v === undefined || v === null ? '' : v;
+  })));
+}
+function opcionesCdrMobilize() {
+  return { codificacionesExcluidas: T.TIPIFICACION_CDR_EXCLUIR_POR_DEFECTO, marcarUnicasDia: true, conservarSalidaGuion: true };
+}
+
+async function correrCdr(opts, partes, res) {
+  const { cargarTipificaciones } = require('./tipificaciones');
+  const meses = _auto().plan(opts.ahora);
+  for (const { mes, dias } of meses) {
+    let data = [];
+    let campos = [];
+    for (const dia of dias) {
+      res.consultas++;
+      const r = await _pedir(opts, 'cdr_1', dia, dia);
+      data = data.concat(r.data);
+      if (!campos.length && r.data.length) campos = wv.resumenSinValores(r.cuerpo).campos;
+    }
+    if (!data.length) { partes.push(mes + ': Wolkvox no trajo llamadas, sin cambios'); continue; }
+    let p = T.tipificacionParseFilas(hojaCdr(data), null, 'LLAMADAS', opcionesCdrMobilize());
+    data = null; // los teléfonos y demás datos crudos no se guardan ni se quedan en memoria
+    if (p.error) {
+      res.estado = 'error'; res.error = 'respuesta_invalida';
+      partes.push(mes + ': respuesta no esperada (' + String(p.error).slice(0, 120) + '; campos: ' + campos.join(',').slice(0, 300) + '), sin cambios');
+      return;
+    }
+    const filas = p.filas.map(T.tipificacionFilaComoArray);
+    const fuera = filas.filter((f) => String(f[1]).slice(0, 7) !== mes);
+    if (fuera.length) { res.estado = 'error'; res.error = 'respuesta_invalida'; partes.push(mes + ': ' + fuera.length + ' llamadas fuera del mes, sin cambios'); return; }
+    if (!filas.length) { partes.push(mes + ': ninguna llamada válida, sin cambios'); continue; }
+    const w = cargarTipificaciones(opts.db, {
+      campana: CAMPANA, canal: 'LLAMADAS', archivoNombre: 'API Wolkvox (cdr_1)', cargadoPorNombre: QUIEN, filas,
+      desde: mes + '-01', hasta: ing.ultimoDiaDelMes(mes),
+    });
+    const unicas = p.unicasDia ? p.unicasDia.unicas : null;
+    res.meses.push({ mes, filas: w.insertadas, reemplazadas: w.borradas, excluidas: p.excluidas || 0, unicas, salida: p.salida || 0 });
+    partes.push(mes + ': ' + w.insertadas + ' llamadas (' + (p.salida || 0) + ' de salida' + (unicas !== null ? ', ' + unicas + ' únicas de ingreso' : '') + (p.excluidas ? ', ' + p.excluidas + ' de prueba fuera' : '') + '), reemplazó ' + w.borradas + ', con respaldo');
+    p = null;
+  }
+}
+
 const MODULOS = {
   flujo_hora: { api: 'skill_7', descripcion: 'Flujo por hora + AHT y espera', correr: correrFlujoHora },
+  cdr: { api: 'cdr_1', descripcion: 'Tipificación, Eficacia, únicas contestadas y conectadas de salida', correr: correrCdr, consultasPorMes: 31 },
 };
 function modulosDe(valor) {
   return String(valor == null ? '' : valor).split(',').map((s) => s.trim().toLowerCase()).filter((s) => Object.prototype.hasOwnProperty.call(MODULOS, s));
@@ -186,4 +247,4 @@ async function correrModulo(nombre, opts) {
   return terminar();
 }
 
-module.exports = { MODULOS, modulosDe, correrModulo, hojaFlujoHora, ahtEsperaDiarios, reemplazarMesFlujoHora, actualizarAhtEspera };
+module.exports = { MODULOS, modulosDe, correrModulo, hojaFlujoHora, ahtEsperaDiarios, reemplazarMesFlujoHora, actualizarAhtEspera, hojaCdr, CDR_COLUMNAS, CDR_DESCARTADAS, opcionesCdrMobilize };
