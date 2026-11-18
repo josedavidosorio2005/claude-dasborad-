@@ -168,23 +168,50 @@ async function mpGuardarEnlace(i) {
 // ── Portal Asesor: «Mi puntualidad» (solo lo suyo) ──
 function mpMiaHtml(r) {
   if (!r || !r.semanas || !r.semanas.length) return '';
-  return '<div class="page-title mp-mia-tit">Mi puntualidad</div>' + r.semanas.map(function (s, i) {
-    var titulo = (i === 0 ? 'Esta semana' : 'Semana anterior') + ' · ' + mallaSemanaTexto(s.semana).replace(/^Semana /, '');
+  return '<div class="page-title mp-mia-tit">Mi puntualidad</div>' + r.semanas.map(function (s) {
+    var titulo = mallaSemanaTexto(s.semana);
     if (!s.filas.length) return '<section class="aurora-card"><div class="aurora-card-title">' + esc(titulo) + '</div><p class="vis-vacio">Sin turnos esta semana.</p></section>';
     var filas = s.filas.map(function (f) {
-      var e = mpEstadoTexto(f, r.tipos), sal = mpSalidaTexto(f);
-      return '<tr><th scope="row">' + esc(f.fecha.slice(8, 10) + '/' + f.fecha.slice(5, 7)) + '</th><td>' + esc(f.entrada + '–' + f.salida) + '</td><td><span class="vis-pill ' + e.clase + '">' + esc(e.texto) + '</span>' + (sal ? ' <span class="mp-salida">' + esc(sal) + '</span>' : '') + '</td></tr>';
+      var e = mpMiaDia(f, r.tipos); // Fase 368: los mismos textos que en «Mi malla»
+      if (!e) return '';
+      return '<tr class="' + e.fila + '"><th scope="row">' + esc(f.fecha.slice(8, 10) + '/' + f.fecha.slice(5, 7)) + '</th><td>' + esc(f.entrada + '–' + f.salida) + '</td><td><span class="vis-pill ' + e.clase + '">' + esc(e.texto) + '</span></td></tr>';
     }).join('');
     return '<section class="aurora-card"><div class="aurora-card-title">' + esc(titulo) + '</div><div class="table-wrap"><table class="ml-tabla"><thead><tr><th scope="col">Día</th><th scope="col">Turno</th><th scope="col">Entrada</th></tr></thead><tbody>' + filas + '</tbody></table></div></section>';
   }).join('');
 }
+// Fase 368 (pedido de Edwin 18/11, D3): lo que ve la asesora en «Mi malla»: el día en verde con
+// «Puntual» o en rojo con «Llegaste tarde» (y «Sin ingreso» en rojo). Puro.
+function mpMiaDia(f, tipos) {
+  switch (f.estado) {
+    case 'a_tiempo': return { texto: '✓ Puntual', clase: 'vis-verde', fila: 'ml-dia-puntual' };
+    case 'tarde': return { texto: '✕ Llegaste tarde' + (f.tardeSeg ? ' (' + _mpMin(f.tardeSeg) + ')' : ''), clase: 'vis-rojo', fila: 'ml-dia-tarde' };
+    case 'sin_ingreso': return { texto: '✕ Sin ingreso', clase: 'vis-rojo', fila: 'ml-dia-tarde' };
+    case 'excepcion': return { texto: (tipos || {})[f.excepcion] || 'Excepción', clase: 'vis-gris', fila: '' };
+    default: return null; // pendiente o sin enlace: no se muestra nada a la asesora
+  }
+}
 async function mpMiaRender() {
   var c = _mpEl('malla-mia-punt');
   if (!c) return;
-  try { c.innerHTML = mpMiaHtml(await apiRequest('GET', '/malla/mi-puntualidad')); }
-  catch (e) { c.innerHTML = ''; }
+  var r;
+  try { r = await apiRequest('GET', '/malla/mi-puntualidad'); } catch (e) { c.innerHTML = ''; return; }
+  // Esta semana: en la misma tabla de «Mi malla». La semana anterior: abajo, aparte.
+  var usadas = {};
+  ((r && r.semanas) || []).forEach(function (s) {
+    s.filas.forEach(function (f) {
+      var tr = document.querySelector('#malla-mia tr[data-fecha="' + f.fecha + '"]');
+      var d = mpMiaDia(f, r.tipos);
+      if (!tr || !d) return;
+      usadas[f.fecha] = true;
+      if (d.fila) tr.classList.add(d.fila);
+      var celda = tr.querySelector('.ml-punt-celda');
+      if (celda) { celda.textContent = ''; var sp = document.createElement('span'); sp.className = 'vis-pill ' + d.clase; sp.textContent = d.texto; celda.appendChild(sp); }
+    });
+  });
+  var resto = { semanas: ((r && r.semanas) || []).map(function (s) { return { semana: s.semana, filas: s.filas.filter(function (f) { return !usadas[f.fecha]; }) }; }).filter(function (s) { return s.filas.some(function (f) { return mpMiaDia(f, r.tipos); }); }), tipos: r && r.tipos };
+  c.innerHTML = mpMiaHtml(resto);
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { mpEstadoTexto: mpEstadoTexto, mpSalidaTexto: mpSalidaTexto, mpTablaHtml: mpTablaHtml, mpResumenHtml: mpResumenHtml, mpMiaHtml: mpMiaHtml, mpAgentesHtml: mpAgentesHtml };
+  module.exports = { mpEstadoTexto: mpEstadoTexto, mpSalidaTexto: mpSalidaTexto, mpTablaHtml: mpTablaHtml, mpResumenHtml: mpResumenHtml, mpMiaHtml: mpMiaHtml, mpMiaDia: mpMiaDia, mpAgentesHtml: mpAgentesHtml };
 }

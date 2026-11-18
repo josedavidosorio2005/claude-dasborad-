@@ -7,6 +7,14 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.217.0 — Noviembre 2026
+
+**Mi malla: la asesora ve si llegó puntual.**
+
+- En «Mi malla», cada día con turno se marca en verde con «Puntual» o en rojo con «Llegaste tarde»
+  (con los minutos). Cada asesora ve solo lo suyo. Por ahora en SURA, con los horarios que se suben
+  en «Cargar Datos».
+
 ## v1.216.0 — Noviembre 2026
 
 **Malla de turnos: puntualidad por archivo («Horarios»).**
