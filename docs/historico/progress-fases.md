@@ -21369,3 +21369,10 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
 - **Pedido (usuario, 18/11):** que la réplica «MOBILIZE PRUEBAS API» tenga toda la información de MOBILIZE salvo Calidad; primero, Eficacia (la comparación del 18/11 la dio vacía) y probar los reportes de salida, encuestas, abandonadas y WhatsApp (hasta 12 consultas de prueba, solo columnas y filas).
 - **Cambio:** `server/clientes-registro.js` `replicaDe(db, nombre)` (solo campañas internas); `server/eficacia.js` usa la lista de la campaña original si la campaña es réplica; `server/wolkvox.js` `REPORTES` + candidatos `skill_9`, `cdr_2`, `cdr_3`, `chat_13`, `diagram_1`, `ivr_1`, `diagram_5` (nombres probables; «Probar» solo devuelve columnas y número de filas).
 - **Pruebas:** `faseA10-eficacia-replica` (3).
+
+## Fase A11 — réplica: módulo «encuesta» con diagram_4 (v1.222.0, 2026-11-18)
+
+- **Por qué:** la prueba del 18/11 confirmó que `diagram_4` es la hoja «HistIVR» del manual (25 columnas, 43 filas del 1 al 17/11).
+- **Cambio:** `server/wolkvox-modulos.js` módulo `encuesta` (una consulta por mes, reemplaza el mes completo de la réplica con respaldo). Entran solo asesor, skill, fecha/hora y Q01–Q04; se descartan ANI, AGENT_DNI, CUSTOMER_ID, VOICE_MESSAGE, CONN_ID y lo demás. `server/encuestas.js` `cargarEncuestas` acepta `desde`/`hasta` fijos (la carga manual sigue igual).
+- **Apagado:** solo corre si `encuesta` está en `WOLKVOX_AUTO_MODULOS` (SSM). En la réplica, Calidad de encuestas queda sin teléfono ni comentarios (a propósito).
+- **Pruebas:** `faseA11-wolkvox-encuesta` (3).

@@ -201,9 +201,53 @@ async function correrCdr(opts, partes, res) {
   }
 }
 
+// ── Paso 3 (Fase A11): diagram_4 → Encuesta (la hoja «HistIVR» del manual, mismas 25 columnas) ──
+// Solo entran asesor, skill, fecha y hora, y Q01–Q04. NUNCA el teléfono (ANI), AGENT_DNI, CUSTOMER_ID,
+// el comentario (VOICE_MESSAGE) ni el CONN_ID: en la réplica Calidad de encuestas queda sin teléfono ni
+// comentarios (pedido del usuario, 18/11: los datos sensibles nunca se guardan). Una consulta por mes.
+const EN = require('../public/js/encuesta-logic.js');
+const ENCUESTA_COLUMNAS_API = [['agent_name', 'AGENT_NAME'], ['skill_name', 'SKILL_NAME'], ['q01', 'Q01'], ['q02', 'Q02'], ['q03', 'Q03'], ['q04', 'Q04']];
+const ENCUESTA_DESCARTADAS = ['ani', 'agent_dni', 'agent_id', 'customer_id', 'conn_id', 'voice_message', 'voice_message_duration', 'feeling', 'result', 'skill_id', 'type_interaction', 'q05', 'q06', 'q07', 'q08', 'q09', 'q10'];
+function hojaEncuesta(data) {
+  const cab = ['AGENT_NAME', 'SKILL_NAME', 'DATE', 'Q01', 'Q02', 'Q03', 'Q04'];
+  return [cab].concat(data.map((r) => {
+    const g = (k) => { const v = _v(r || {}, k); return v === undefined || v === null ? '' : v; };
+    let fecha = String(g('date')).trim();
+    const hora = String(g('time')).trim();
+    if (fecha && !fecha.includes(':') && /^\d{1,2}:\d{2}/.test(hora)) fecha += ' ' + hora;
+    return [g('agent_name'), g('skill_name'), fecha, g('q01'), g('q02'), g('q03'), g('q04')];
+  }));
+}
+
+async function correrEncuesta(opts, partes, res) {
+  const { cargarEncuestas } = require('./encuestas');
+  for (const { mes, dias } of _auto().plan(opts.ahora)) {
+    res.consultas++;
+    let { data, cuerpo } = await _pedir(opts, 'diagram_4', dias[0], dias[dias.length - 1]);
+    if (!data.length) { partes.push(mes + ': Wolkvox no trajo encuestas, sin cambios'); continue; }
+    const campos = wv.resumenSinValores(cuerpo).campos;
+    let p = EN.encuestaParseFilas(hojaEncuesta(data));
+    data = null; cuerpo = null; // lo crudo (teléfonos, comentarios) no se queda en memoria
+    if (p.error) {
+      res.estado = 'error'; res.error = 'respuesta_invalida';
+      partes.push(mes + ': respuesta no esperada (' + String(p.error).slice(0, 120) + '; campos: ' + campos.join(',').slice(0, 300) + '), sin cambios');
+      return;
+    }
+    const filas = p.filas.map((f) => { const x = f.slice(); x[7] = ''; x[8] = ''; x[10] = ''; return x; }); // sin comentario, conn_id ni teléfono
+    const fuera = filas.filter((f) => String(f[0]).slice(0, 7) !== mes);
+    if (fuera.length) { res.estado = 'error'; res.error = 'respuesta_invalida'; partes.push(mes + ': ' + fuera.length + ' encuestas fuera del mes, sin cambios'); return; }
+    if (!filas.length) { partes.push(mes + ': ninguna encuesta válida, sin cambios'); continue; }
+    const w = cargarEncuestas(opts.db, { campana: CAMPANA, archivoNombre: 'API Wolkvox (diagram_4)', cargadoPorNombre: QUIEN, filas, desde: mes + '-01', hasta: ing.ultimoDiaDelMes(mes) });
+    res.meses.push({ mes, filas: w.insertadas, reemplazadas: w.borradas });
+    partes.push(mes + ': ' + w.insertadas + ' encuestas (' + (p.avisos.length ? p.avisos.length + ' avisos, ' : '') + 'reemplazó ' + w.borradas + ', con respaldo)');
+    p = null;
+  }
+}
+
 const MODULOS = {
   flujo_hora: { api: 'skill_7', descripcion: 'Flujo por hora + AHT y espera', correr: correrFlujoHora },
   cdr: { api: 'cdr_1', descripcion: 'Tipificación, Eficacia, únicas contestadas y conectadas de salida', correr: correrCdr },
+  encuesta: { api: 'diagram_4', descripcion: 'Encuesta (HistIVR) sin teléfono ni comentarios', correr: correrEncuesta }, // Fase A11
 };
 function modulosDe(valor) {
   return String(valor == null ? '' : valor).split(',').map((s) => s.trim().toLowerCase()).filter((s) => Object.prototype.hasOwnProperty.call(MODULOS, s));
@@ -248,4 +292,4 @@ async function correrModulo(nombre, opts) {
   return terminar();
 }
 
-module.exports = { MODULOS, modulosDe, correrModulo, hojaFlujoHora, ahtEsperaDiarios, reemplazarMesFlujoHora, actualizarAhtEspera, hojaCdr, CDR_COLUMNAS, CDR_DESCARTADAS, opcionesCdrMobilize };
+module.exports = { MODULOS, modulosDe, correrModulo, hojaFlujoHora, ahtEsperaDiarios, reemplazarMesFlujoHora, actualizarAhtEspera, hojaCdr, CDR_COLUMNAS, CDR_DESCARTADAS, opcionesCdrMobilize, hojaEncuesta, ENCUESTA_DESCARTADAS };

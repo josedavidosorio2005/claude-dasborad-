@@ -7,6 +7,15 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.222.0 — Noviembre 2026
+
+**Réplica de MOBILIZE: la Encuesta también puede llenarse sola desde Wolkvox.**
+
+- Nuevo módulo «encuesta» de la consulta automática (solo para la copia de prueba «MOBILIZE PRUEBAS API»).
+  Trae las respuestas de la encuesta por asesor y día; nunca guarda el teléfono, el documento, el cliente
+  ni el comentario de voz.
+- Arranca apagado: se enciende agregando «encuesta» a la lista de módulos en AWS.
+
 ## v1.221.1 — Noviembre 2026
 
 **Réplica de MOBILIZE: dos reportes más para probar** (detalle de encuestas y llamadas de salida).

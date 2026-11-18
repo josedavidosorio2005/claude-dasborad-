@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.221.1` (ver `server/package.json`, expuesta en
+- **Versión**: `1.222.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -592,6 +592,7 @@ mismo orden):
 - Fase 370 — Inventario de sistemas E2: agentes, asignación por elemento («En uso»), devolver y cambiar elemento con motivo; columna y búsqueda por agente (v1.219.0, 2026-11-18)
 - Fase 371 — Inventario de sistemas E3: actas de entrega y devolución (número, copia fija, imprimir/PDF); firmada a S3 privado, apagada hasta crear `ACTAS_S3_BUCKET` (guía en `docs/actas-firmadas-s3.md`) (v1.220.0, 2026-11-18)
 - Fase A10 — réplica: Eficacia con los códigos de MOBILIZE (`replicaDe`); reportes candidatos en «Probar» (skill_9, cdr_2, cdr_3, chat_13, diagram_1, ivr_1, diagram_5) (v1.221.0, 2026-11-18)
+- Fase A11 — réplica: módulo «encuesta» (diagram_4 = HistIVR) sin teléfono, documento, cliente, comentario ni CONN_ID; apagado (v1.222.0, 2026-11-18)
 - Fase 309 — Revisión de seguridad: el cliente ya no recibe el nombre de los líderes en `GET /metas`; resto en `docs/revision-seguridad-2026-11-09.md` (v1.154.1, 2026-11-10)
 - Fase 308 — Revisión antes de la reunión con clientes y pendientes del supervisor (solo docs, 2026-11-10)
 - Fase 307 — Calidad para que los líderes evalúen: ORLANT conserva su Calidad y suma «Resultado de los monitoreos» al final; Aurora ya lo tenía (se muestra con el primer monitoreo) (v1.154.0, 2026-11-10)
