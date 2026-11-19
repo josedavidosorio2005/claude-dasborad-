@@ -20,7 +20,7 @@ test('conteo por tipo y por razón de descarte, sin valores de las filas', () =>
     fila({ type_interaction: '' }),
     fila({ type_interaction: 'raro <script>' + TEL }),
   ]);
-  assert.equal(t.split(' · ')[0], 'API 7 filas: inbound 3, outbound_ma 1, internalcall 1, vacio 1, otro 1; sin asesor 1, sin tipificación 1, skill «-» 1'); // Fase A13 agrega la forma tras « · »
+  assert.equal(t.split(' · ')[0], 'API 7 filas: inbound 3, outbound_ma 1, internalcall 1, vacio 1, otro 1; sin asesor 1, sin tipificación 1 (con COD_ACT 0, con otra descripción 0), skill «-» 1'); // Fase A13 agrega la forma tras « · »; A16, los otros códigos
   for (const x of [TEL, ASESORA, TIP, CLIENTE, 'script']) assert.ok(!t.includes(x), x);
 });
 

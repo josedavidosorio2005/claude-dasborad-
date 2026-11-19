@@ -158,12 +158,17 @@ const CDR_DESCARTADAS = ['agent_id', 'campaign_id', 'cod_act_2', 'comment', 'con
 // export manual traen «-», que el lector ya convierte en «Llamadas de salida». Sin skill, el lector las
 // omitía como «falta un dato» (corrida del 19/11: 47 de 93 filas). Se completa con «-» SOLO si es de salida.
 const _SALIDA = ['outbound_ma', 'out_pre'];
+// Fase A16 (19/11): una llamada puede llegar SIN tipificación (corrida del 19/11: 1 de 93, entrada del 04/11
+// que el manual trae como «Otros_motivos»). El lector la omitía y faltaba en Eficacia y únicas. Se completa
+// con «-», el marcador del export manual que la plataforma muestra como «Sin tipificación».
+const _vacio = (v) => v === undefined || v === null || String(v).trim() === '';
 function hojaCdr(data) {
   return [CDR_COLUMNAS.map((c) => c[1])].concat(data.map((r) => {
     const salida = _SALIDA.includes(String(_v(r || {}, 'type_interaction') || '').trim().toLowerCase());
     return CDR_COLUMNAS.map(([api]) => {
       const v = _v(r || {}, api);
-      if (salida && (api === 'skill_name' || api === 'skill_id') && (v === undefined || v === null || String(v).trim() === '')) return '-';
+      if (salida && (api === 'skill_name' || api === 'skill_id') && _vacio(v)) return '-';
+      if (api === 'description_cod_act' && _vacio(v)) return '-';
       return v === undefined || v === null ? '' : v;
     });
   }));
@@ -191,19 +196,24 @@ function formaCdr(data) {
 }
 function conteoCdr(data) {
   const tipos = {};
-  let sinAgente = 0, sinTip = 0, guion = 0;
+  let sinAgente = 0, sinTip = 0, guion = 0, sinTipConCod = 0, sinTipConCod2 = 0;
   for (const r of data) {
     const t = String(_v(r || {}, 'type_interaction') || '').trim().toLowerCase();
     const k = /^[a-z_]{1,24}$/.test(t) ? t : (t ? 'otro' : 'vacio');
     tipos[k] = (tipos[k] || 0) + 1;
     if (!String(_v(r || {}, 'agent_name') || '').trim()) sinAgente++;
-    if (!String(_v(r || {}, 'description_cod_act') || '').trim()) sinTip++;
+    if (!String(_v(r || {}, 'description_cod_act') || '').trim()) {
+      sinTip++;
+      // Fase A16: solo si traen otro código (nunca el valor), para saber de dónde sacar la tipificación.
+      if (!_vacio(_v(r || {}, 'cod_act'))) sinTipConCod++;
+      if (!_vacio(_v(r || {}, 'description_cod_act_2'))) sinTipConCod2++;
+    }
     if (String(_v(r || {}, 'skill_name') || '').trim() === '-') guion++;
   }
   const lista = Object.entries(tipos).sort((a, b) => b[1] - a[1]);
   const extra = lista.length > 6 ? lista.slice(6).reduce((n, x) => n + x[1], 0) : 0;
   return 'API ' + data.length + ' filas: ' + lista.slice(0, 6).map(([k, n]) => k + ' ' + n).join(', ') + (extra ? ', otros ' + extra : '') +
-    '; sin asesor ' + sinAgente + ', sin tipificación ' + sinTip + ', skill «-» ' + guion + formaCdr(data);
+    '; sin asesor ' + sinAgente + ', sin tipificación ' + sinTip + (sinTip ? ' (con COD_ACT ' + sinTipConCod + ', con otra descripción ' + sinTipConCod2 + ')' : '') + ', skill «-» ' + guion + formaCdr(data);
 }
 function opcionesCdrMobilize() {
   return { codificacionesExcluidas: T.TIPIFICACION_CDR_EXCLUIR_POR_DEFECTO, marcarUnicasDia: true, conservarSalidaGuion: true };

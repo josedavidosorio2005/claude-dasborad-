@@ -7,6 +7,14 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.233.1 — Noviembre 2026
+
+**Réplica de MOBILIZE con la API: ya no se pierde la llamada sin tipificación.**
+
+- Si Wolkvox manda una llamada sin tipificación, ahora entra como «Sin tipificación» (igual que en el Excel manual)
+  en vez de quedarse por fuera. Con eso la Eficacia y las llamadas únicas de la réplica cuadran con el MOBILIZE real
+  (faltaba 1 llamada del 4 de noviembre). Se ve después de la próxima consulta de cdr. El MOBILIZE real no cambia.
+
 ## v1.233.0 — Noviembre 2026
 
 **Réplica de MOBILIZE con la API: llamadas de salida no conectadas (listo, apagado).**
