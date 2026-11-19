@@ -25,7 +25,8 @@ const post = (t, b) => request(app).post('/api/activos').set(H(t)).send(b);
 
 test('empieza limpio: ningún elemento ni lista; los 7 tipos sembrados', async () => {
   assert.equal(db.prepare('SELECT COUNT(*) n FROM activos').get().n, 0);
-  assert.equal(db.prepare('SELECT COUNT(*) n FROM activos_listas').get().n, 0);
+  // Fase 376: las listas traen precargadas las sedes y operaciones del diseño de Edwin (sin elementos).
+  assert.deepEqual(db.prepare('SELECT lista, COUNT(*) n FROM activos_listas GROUP BY lista ORDER BY lista').all().map((r) => [r.lista, r.n]), [['operaciones', 9], ['sedes', 3]]);
   const c = await request(app).get('/api/activos/config').set(H(tk.sis));
   assert.equal(c.status, 200);
   assert.deepEqual(c.body.tipos.map((t) => t.codigo), ['TORRE', 'MONITOR', 'TECLADO', 'MOUSE', 'DIADEMA', 'PORTATIL', 'ADMINISTRABLE']);

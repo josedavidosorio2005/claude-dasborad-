@@ -5386,6 +5386,23 @@ function prenderDatosAnterioresHlm() {
 }
 runOnceMigration('fase354b_hlm_datos_anteriores_v1', prenderDatosAnterioresHlm);
 
+// Fase 376 (Inventario I1, OK del usuario 19/11): precarga las sedes y operaciones del diseño de Edwin
+// en las listas del Inventario. Solo AGREGA las que falten (nunca quita ni reordena lo que Sistemas ya
+// escribió). Idempotente.
+runOnceMigration('fase376_inventario_listas_v1', () => {
+  const PRE = {
+    sedes: ['Jericó', 'Sonsón', 'Medellín'],
+    operaciones: ['Clínica Orlant', 'Clínica Aurora', 'Hospital La María', 'Clínica Bivett', 'Infondo', 'Mobilize', 'Sascha Fitness', 'Tecnología', 'Administrativos'],
+  };
+  const sinTilde = (s) => String(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+  for (const [lista, valores] of Object.entries(PRE)) {
+    const hay = db.prepare('SELECT valor FROM activos_listas WHERE lista = ?').all(lista).map((r) => sinTilde(r.valor));
+    let orden = (db.prepare('SELECT COALESCE(MAX(orden), -1) n FROM activos_listas WHERE lista = ?').get(lista).n) + 1;
+    const ins = db.prepare('INSERT OR IGNORE INTO activos_listas (lista, valor, orden) VALUES (?, ?, ?)');
+    for (const v of valores) if (!hay.includes(sinTilde(v))) ins.run(lista, v, orden++);
+  }
+});
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {

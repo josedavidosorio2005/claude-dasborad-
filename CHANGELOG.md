@@ -7,6 +7,16 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.227.0 — Noviembre 2026
+
+**Inventario, como lo diseñó Edwin (parte 1 de 6).**
+
+- Menú lateral con el ciclo de cada elemento: Panel general · 1 Registrar ingreso · 2 Libres · 3 Asignados ·
+  4 En reparación · 5 Malos · Inventario completo · Agentes · Ajustes y datos, con cuántos hay en cada uno.
+- Libres, Asignados, En reparación y Malos juntan todos los tipos, con filtros por tipo, sede y operación.
+- Nueva tarjeta **«Inventario de inmuebles»** (sillas, mesas, papeleras), por ahora vacía.
+- Las listas de sedes y operaciones vienen con las del diseño de Edwin (se pueden editar en Ajustes).
+
 ## v1.226.0 — Noviembre 2026
 
 **SURA: «Ventas por día».** En la pestaña Agentes, el botón «Ver ventas por día» abre un recuadro aparte:

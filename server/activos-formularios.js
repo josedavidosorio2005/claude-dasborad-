@@ -93,7 +93,7 @@ function validarTipo(db, b, actual) {
   return { valores: { nombre, plural, campos } };
 }
 
-function crearTipo(db, b) {
+function crearTipo(db, b, ambito) {
   const v = validarTipo(db, b, null);
   if (v.error) return v;
   const base = slug(v.valores.nombre, 20).toUpperCase() || 'TIPO';
@@ -101,7 +101,7 @@ function crearTipo(db, b) {
   let codigo = base, i = 2;
   while (existentes.has(codigo)) codigo = base.slice(0, 17) + '_' + i++;
   const orden = (db.prepare('SELECT COALESCE(MAX(orden), 0) n FROM activos_tipos').get().n) + 1;
-  db.prepare('INSERT INTO activos_tipos (codigo, nombre, plural, orden, activo, campos) VALUES (?,?,?,?,1,?)').run(codigo, v.valores.nombre, v.valores.plural, orden, JSON.stringify(v.valores.campos));
+  db.prepare('INSERT INTO activos_tipos (codigo, nombre, plural, orden, activo, campos, ambito) VALUES (?,?,?,?,1,?,?)').run(codigo, v.valores.nombre, v.valores.plural, orden, JSON.stringify(v.valores.campos), A.ambitoDe(ambito));
   return { tipo: A.tipo(db, codigo, { todos: true }) };
 }
 function editarTipo(db, codigo, b) {

@@ -2702,6 +2702,30 @@ div.ca-bar-fila{cursor:default}
 .ac-subir{display:inline-flex;align-items:center;cursor:pointer}
 .ac-subir:focus-within{outline:2px solid var(--c-focus);outline-offset:2px}
 .ac-asig-form .btn-primary,.ac-asig-form .btn-cancel{min-height:44px}
+/* Fase 376 (I1, diseño de Edwin): menú lateral del Inventario y el ciclo de un elemento. */
+.ac-layout{display:grid;grid-template-columns:230px minmax(0,1fr);gap:18px;align-items:start}
+.ac-menu{position:sticky;top:0;display:flex;flex-direction:column;gap:4px;padding:10px;border:1px solid var(--c-border-soft);border-radius:var(--r-md);background:var(--c-surface-subtle)}
+.ac-menu-sec{margin:10px 6px 2px;font-size:var(--fs-small);font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--c-text-2)}
+.ac-menu-sec:first-child{margin-top:0}
+.ac-menu-btn{display:flex;align-items:center;gap:8px;min-height:44px;width:100%;padding:8px 10px;border:0;border-radius:var(--r-sm);background:transparent;color:var(--c-text);font:inherit;font-size:var(--fs-body);text-align:left;cursor:pointer}
+.ac-menu-btn:hover{background:var(--c-surface)}
+.ac-menu-btn[aria-current="page"]{background:var(--c-primary);color:var(--c-on-brand);font-weight:600}
+.ac-menu-btn:focus-visible,.ac-flujo-paso:focus-visible{outline:2px solid var(--c-focus);outline-offset:2px}
+.ac-menu-txt{flex:1 1 auto}
+.ac-menu-n{min-width:28px;padding:1px 8px;border-radius:999px;background:var(--c-surface);color:var(--c-text);font-size:var(--fs-small);text-align:center}
+.ac-paso{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:var(--c-info-bg);color:var(--c-text);font-size:var(--fs-small);font-weight:700;flex:0 0 auto}
+.ac-menu-btn[aria-current="page"] .ac-paso{background:var(--c-surface);color:var(--c-text)}
+.ac-vista-tit{margin:0 0 2px;font-size:var(--fs-h3);color:var(--c-text)}
+.ac-flujo{list-style:none;margin:10px 0 14px;padding:0;display:flex;flex-wrap:wrap;gap:6px 8px}
+.ac-flujo li{display:flex;align-items:center}
+.ac-flujo li+li::before{content:"→";margin-right:8px;color:var(--c-text-muted)}
+.ac-flujo-paso{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:6px 10px;border:1px solid var(--c-border-soft);border-radius:var(--r-md);background:var(--c-surface);color:var(--c-text);font:inherit;font-size:var(--fs-small);cursor:pointer}
+@media (max-width: 760px){
+  .ac-layout{grid-template-columns:minmax(0,1fr)}
+  .ac-menu{position:static;flex-direction:row;flex-wrap:wrap}
+  .ac-menu-sec{display:none}
+  .ac-menu-btn{width:auto;flex:1 1 calc(50% - 4px)}
+}
 /* Fase 372 (E4): editor de formularios por tipo. */
 .ac-tipo-form{margin:0 0 12px}
 .ac-ce-lista{list-style:none;margin:8px 0 10px;padding:0;display:flex;flex-direction:column;gap:8px}
