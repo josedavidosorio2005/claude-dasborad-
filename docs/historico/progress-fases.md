@@ -21459,3 +21459,10 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
 - **No incluido:** vistas extra del Panel (el Panel ya tenía estados y rendimiento); queda en `docs/pendientes.md` si Edwin las pide.
 - **Pruebas:** `fase381-inventario-i6` (4); matriz de la Fase 118 con las 2 rutas nuevas.
 - **Revisión local (Brave sin ventana, base aislada, datos INVENTADOS) 1440, 768 y 375:** importar con revisión (1 lista, 2 con error) y confirmar, historial con búsqueda, Excel del historial y del inventario, PDF del historial; sin desborde; 0 errores de consola.
+
+## Fase A13 — réplica: diagnóstico de la salida en cdr_1 (v1.232.1, 2026-11-19)
+
+- **Corrida autorizada (usuario, 19/11, 12:18, «Ejecutar ahora», solo `cdr`, 1 consulta, réplica):** estado ok, noviembre 45 llamadas (0 de salida, 36 únicas de ingreso), reemplazó 45 con respaldo; uso del día 43 de 2.800. Conteo A12: **API 93 filas: outbound_ma 47, inbound 46; sin asesor 0, sin tipificación 1, skill «-» 0**. MOBILIZE real sin tocar.
+- **Lectura:** `cdr_1` SÍ trae la salida; las 47 filas `outbound_ma` se pierden en el lector (`tipificacionParseFilas`), no en la consulta. Como ninguna trae skill «-» (el manual la marca así), la hipótesis es que llegan con el skill vacío y el lector las omite como «falta un dato» (o con otra forma de fecha).
+- **Cambio:** `server/wolkvox-modulos.js` `formaCdr`: la línea del módulo cdr agrega, para inbound y salida, cuántas filas llegan sin skill y la forma de la fecha (dígitos → 9, letras → a; nunca el valor). Sin consultas extra: lo trae la próxima corrida programada.
+- **Pruebas:** `faseA13-cdr-salida-diagnostico` (2); `faseA12` y `faseA8` ajustadas.

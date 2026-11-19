@@ -7,6 +7,14 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.232.1 — Noviembre 2026
+
+**Réplica de MOBILIZE con la API: por qué no entran las llamadas de salida.**
+
+- La consulta de Wolkvox sí trae las llamadas de salida, pero no se estaban guardando. Ahora el Historial anota,
+  solo con números, cuántas llegan sin skill y en qué formato viene su fecha, para encontrar la causa sin gastar
+  consultas extra. No cambia ningún dato.
+
 ## v1.232.0 — Noviembre 2026
 
 **Inventario, como lo diseñó Edwin (parte 6 de 6): historial, descargas e importación.**
