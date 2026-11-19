@@ -20,7 +20,7 @@ var AC_VISTA_TXT = {
   asignados: ['Asignados', 'Elementos entregados a un agente.'],
   reparacion: ['En reparación', 'Elementos pendientes por arreglo. Al repararse vuelven a «Libres».'],
   malos: ['Malos', 'Elementos que no se pueden entregar.'],
-  elementos: ['Inventario completo', 'Todos los elementos, con filtros por tipo, estado, sede y operación.'],
+  elementos: ['Inventario completo', 'Todos los elementos, con filtros por tipo, estado, sede, operación, propietario y rendimiento.'],
   agentes: ['Agentes', 'Quién tiene cada elemento: asignar, devolver y cambiar, con actas.'],
   ajustes: ['Ajustes y datos', 'Listas, formularios por tipo y textos del acta.'],
 };
@@ -99,7 +99,11 @@ function activosPanelHtml(r, config) {
     return '<tr><th scope="row">' + esc(t.plural) + '</th>' + est.map(function (e) { return '<td class="vis-num">' + (x[e.codigo] || 0) + '</td>'; }).join('') + '</tr>';
   }).join('');
   var sedes = (r.porSede || []).map(function (s) { return '<li>' + esc(s.sede) + ': <b>' + s.n + '</b></li>'; }).join('');
-  return tarjetas + '<div class="table-wrap"><table class="vis-tabla"><thead><tr><th scope="col">Tipo</th>' + est.map(function (e) { return '<th scope="col" class="vis-num">' + esc(e.nombre) + '</th>'; }).join('') + '</tr></thead><tbody>' + filas + '</tbody></table></div>' +
+  // Fase 377 (I2): rendimiento por RAM (torres y portátiles); cada tarjeta abre el inventario con ese filtro.
+  var rend = r.porRendimiento ? '<h4 class="ac-sub">Rendimiento según la RAM (sin los dados de baja)</h4><div class="ac-kpis">' + (config.rendimientos || []).map(function (x) {
+    return '<button type="button" class="ac-kpi ac-rend-kpi" onclick="activosVerRendimiento(\'' + x.codigo + '\')"><b>' + (r.porRendimiento[x.codigo] || 0) + '</b><span class="vis-pill ' + AC_CLASE_REND[x.codigo] + '">' + esc(x.nombre) + '</span><span class="vis-ayuda">' + esc(x.ayuda) + '</span></button>';
+  }).join('') + '</div>' : '';
+  return tarjetas + rend + '<div class="table-wrap"><table class="vis-tabla"><thead><tr><th scope="col">Tipo</th>' + est.map(function (e) { return '<th scope="col" class="vis-num">' + esc(e.nombre) + '</th>'; }).join('') + '</tr></thead><tbody>' + filas + '</tbody></table></div>' +
     (sedes ? '<h4 class="ac-sub">Por sede (sin los dados de baja)</h4><ul class="ac-sedes">' + sedes + '</ul>' : '');
 }
 async function _acPanel() {
@@ -118,25 +122,64 @@ function _acFiltrosYLista() {
   _acEl('ac-f-estado').innerHTML = _acOpciones(_ac.config.estados, _acEl('ac-f-estado').value, 'Todos los estados');
   _acEl('ac-f-sede').innerHTML = _acOpciones(_ac.config.listas.sedes, _acEl('ac-f-sede').value, 'Todas las sedes');
   _acEl('ac-f-operacion').innerHTML = _acOpciones(_ac.config.listas.operaciones, _acEl('ac-f-operacion').value, 'Todas las operaciones'); // Fase 376
+  // Fase 377 (I2): «Sin sede/operación/propietario», propietario y rendimiento por RAM (solo si algún tipo lleva RAM).
+  _acSinValor('ac-f-sede', 'Sin sede'); _acSinValor('ac-f-operacion', 'Sin operación');
+  _acEl('ac-f-proveedor').innerHTML = _acOpciones(_ac.config.listas.proveedores || [], _acEl('ac-f-proveedor').value, 'Todos');
+  _acSinValor('ac-f-proveedor', 'Sin propietario');
+  var conRam = (_ac.config.tipos || []).some(function (t) { return t.campos.some(function (c) { return c.k === 'ram_gb'; }); });
+  _acEl('ac-f-rend-ig').classList.toggle('hidden', !conRam);
+  _acEl('ac-f-rend').innerHTML = _acOpciones((_ac.config.rendimientos || []).map(function (r) { return { codigo: r.codigo, nombre: r.nombre + ' (' + r.ayuda + ')' }; }), _ac.rendInicial || _acEl('ac-f-rend').value, 'Todos');
+  _ac.rendInicial = null;
   activosBuscar();
 }
+// Agrega la opción «__none» (sin valor) al final de un filtro, conservando lo elegido.
+function _acSinValor(id, txt) {
+  var s = _acEl(id), v = s.getAttribute('data-v') || '';
+  s.insertAdjacentHTML('beforeend', '<option value="__none">' + esc(txt) + '</option>');
+  if (v === '__none') s.value = '__none';
+}
+function activosLimpiarFiltros() {
+  ['tipo', 'estado', 'sede', 'operacion', 'proveedor', 'rend', 'q'].forEach(function (k) { var el = _acEl('ac-f-' + k); el.value = ''; el.removeAttribute('data-v'); });
+  _acEl('ac-f-pend').checked = false; _acEl('ac-f-dup').checked = false;
+  activosBuscar();
+}
+// Parámetros de la búsqueda (exportada para las pruebas).
+function activosConsulta(f) {
+  var q = ['ambito=' + f.ambito]; // Fase 376: solo el inventario abierto
+  ['tipo', 'sede', 'operacion', 'proveedor', 'rend'].forEach(function (k) { if (f[k]) q.push(k + '=' + encodeURIComponent(f[k])); });
+  if (f.estado) q.push('estado=' + encodeURIComponent(f.estado)); // vista por estado o filtro
+  if (f.q) q.push('q=' + encodeURIComponent(f.q));
+  if (f.pend) q.push('pend=1');
+  if (f.dup) q.push('dup=1');
+  return q.join('&');
+}
 async function activosBuscar() {
-  var q = ['ambito=' + _ac.ambito]; // Fase 376: solo el inventario abierto
-  ['tipo', 'sede', 'operacion'].forEach(function (k) { var v = _acEl('ac-f-' + k).value; if (v) q.push(k + '=' + encodeURIComponent(v)); });
-  var est = _ac.estadoFijo || _acEl('ac-f-estado').value; if (est) q.push('estado=' + encodeURIComponent(est)); // vista por estado o filtro
-  var t = _acEl('ac-f-q').value.trim(); if (t) q.push('q=' + encodeURIComponent(t));
+  var f = { ambito: _ac.ambito, estado: _ac.estadoFijo || _acEl('ac-f-estado').value, q: _acEl('ac-f-q').value.trim(), pend: _acEl('ac-f-pend').checked, dup: _acEl('ac-f-dup').checked };
+  ['tipo', 'sede', 'operacion', 'proveedor', 'rend'].forEach(function (k) { var el = _acEl('ac-f-' + k); f[k] = el.value; el.setAttribute('data-v', el.value); });
   var c = _acEl('ac-lista');
   c.innerHTML = '<p class="vis-vacio">Cargando…</p>';
-  try { _ac.lista = (await apiRequest('GET', '/activos?' + q.join('&'))).activos; c.innerHTML = activosListaHtml(_ac.lista, _ac.config); }
-  catch (e) { c.innerHTML = ''; _acError(e.message); }
+  try {
+    _ac.lista = (await apiRequest('GET', '/activos?' + activosConsulta(f))).activos;
+    c.innerHTML = activosListaHtml(_ac.lista, _ac.config);
+    _acEl('ac-conteo').textContent = _ac.lista.length + (_ac.lista.length === 1 ? ' elemento' : ' elementos') + ' con estos filtros';
+  } catch (e) { c.innerHTML = ''; _acError(e.message); }
+}
+var AC_CLASE_REND = { bajo: 'vis-rojo', medio: 'vis-amarillo', alto: 'vis-verde', sin: 'vis-gris' };
+function activosRendHtml(a, config) {
+  if (!a.rendimiento) return '';
+  var r = ((config && config.rendimientos) || []).find(function (x) { return x.codigo === a.rendimiento; });
+  var ram = a.datos && typeof a.datos.ram_gb === 'number' ? a.datos.ram_gb + ' GB' : 'sin RAM registrada';
+  return '<span class="vis-pill ' + (AC_CLASE_REND[a.rendimiento] || '') + '" title="' + esc(ram) + '">' + esc(r ? r.nombre : a.rendimiento) + '</span>';
 }
 function activosListaHtml(lista, config) {
   if (!lista.length) return '<p class="vis-vacio">Ningún elemento coincide.</p>';
   var tipoN = function (c) { var t = config.tipos.find(function (x) { return x.codigo === c; }); return t ? t.nombre : c; };
   var estN = function (c) { var e = config.estados.find(function (x) { return x.codigo === c; }); return e ? e.nombre : c; };
-  return '<div class="table-wrap"><table class="vis-tabla"><thead><tr><th scope="col">Código</th><th scope="col">Tipo</th><th scope="col">Estado</th><th scope="col">Marca / modelo</th><th scope="col">Serial</th><th scope="col">Sede</th><th scope="col">Agente</th><th scope="col"><span class="sr-only">Acciones</span></th></tr></thead><tbody>' +
+  var conRend = lista.some(function (a) { return a.rendimiento; }); // Fase 377: columna solo si algún elemento lleva RAM
+  return '<div class="table-wrap"><table class="vis-tabla"><thead><tr><th scope="col">Código</th><th scope="col">Tipo</th><th scope="col">Estado</th><th scope="col">Marca / modelo</th><th scope="col">Serial</th>' + (conRend ? '<th scope="col">RAM</th><th scope="col">Rendimiento</th>' : '') + '<th scope="col">Sede</th><th scope="col">Operación</th><th scope="col">Agente</th><th scope="col"><span class="sr-only">Acciones</span></th></tr></thead><tbody>' +
     lista.map(function (a) {
-      return '<tr><th scope="row">' + esc(a.codigo) + '</th><td>' + esc(tipoN(a.tipo)) + '</td><td><span class="vis-pill ' + (AC_CLASE_ESTADO[a.estado] || '') + '">' + esc(estN(a.estado)) + '</span></td><td>' + esc([a.marca, a.modelo].filter(Boolean).join(' ')) + '</td><td>' + esc(a.serial) + '</td><td>' + esc(a.sede) + '</td><td>' + esc(a.agente ? a.agente.nombre : '') + '</td>' +
+      var rend = conRend ? '<td class="vis-num">' + (a.rendimiento && typeof a.datos.ram_gb === 'number' ? esc(a.datos.ram_gb) + ' GB' : '') + '</td><td>' + activosRendHtml(a, config) + '</td>' : '';
+      return '<tr><th scope="row">' + esc(a.codigo) + '</th><td>' + esc(tipoN(a.tipo)) + '</td><td><span class="vis-pill ' + (AC_CLASE_ESTADO[a.estado] || '') + '">' + esc(estN(a.estado)) + '</span></td><td>' + esc([a.marca, a.modelo].filter(Boolean).join(' ')) + '</td><td>' + esc(a.serial) + '</td>' + rend + '<td>' + esc(a.sede) + '</td><td>' + esc(a.operacion) + '</td><td>' + esc(a.agente ? a.agente.nombre : '') + '</td>' +
         '<td><button type="button" class="btn-cancel ac-btn" onclick="activosVer(' + Number(a.id) + ')">Ver</button></td></tr>';
     }).join('') + '</tbody></table></div>';
 }
@@ -152,7 +195,7 @@ async function activosVer(id) {
   var opciones = _ac.config.estados.filter(function (e) { return e.codigo !== a.estado && (e.codigo !== 'en_uso' || a.tipo === 'ADMINISTRABLE'); });
   var hist = r.historial.map(function (h) { return '<li><b>' + esc(h.accion) + '</b> · ' + esc(new Date(h.fecha).toLocaleString('es-CO', { timeZone: 'America/Bogota' })) + (h.estadoAntes && h.estadoDespues && h.estadoAntes !== h.estadoDespues ? ' · ' + esc(_acEstadoNombre(h.estadoAntes)) + ' → ' + esc(_acEstadoNombre(h.estadoDespues)) : '') + (h.motivo ? ' · ' + esc(h.motivo) : '') + ' · ' + esc(h.quien) + '</li>'; }).join('');
   _acEl('ac-detalle').innerHTML = '<section class="aurora-card"><div class="aurora-card-title">' + esc(t.nombre) + ' ' + esc(a.codigo) + ' · <span class="vis-pill ' + AC_CLASE_ESTADO[a.estado] + '">' + esc(_acEstadoNombre(a.estado)) + '</span></div>' +
-    '<dl class="wv-estado"><dt>Marca</dt><dd>' + esc(a.marca || '—') + '</dd><dt>Modelo</dt><dd>' + esc(a.modelo || '—') + '</dd><dt>Serial</dt><dd>' + esc(a.serial || '—') + '</dd><dt>Sede</dt><dd>' + esc(a.sede || '—') + '</dd><dt>Operación</dt><dd>' + esc(a.operacion || '—') + '</dd><dt>Proveedor</dt><dd>' + esc(a.proveedor || '—') + '</dd>' + (a.agente ? '<dt>Asignado a</dt><dd>' + esc(a.agente.nombre) + '</dd>' : '') + datos + (a.observaciones ? '<dt>Observaciones</dt><dd>' + esc(a.observaciones) + '</dd>' : '') + '</dl>' +
+    '<dl class="wv-estado"><dt>Marca</dt><dd>' + esc(a.marca || '—') + '</dd><dt>Modelo</dt><dd>' + esc(a.modelo || '—') + '</dd><dt>Serial</dt><dd>' + esc(a.serial || '—') + '</dd><dt>Sede</dt><dd>' + esc(a.sede || '—') + '</dd><dt>Operación</dt><dd>' + esc(a.operacion || '—') + '</dd><dt>Propietario / proveedor</dt><dd>' + esc(a.proveedor || '—') + '</dd>' + (a.rendimiento ? '<dt>Rendimiento</dt><dd>' + activosRendHtml(a, _ac.config) + '</dd>' : '') + (a.agente ? '<dt>Asignado a</dt><dd>' + esc(a.agente.nombre) + '</dd>' : '') + datos + (a.observaciones ? '<dt>Observaciones</dt><dd>' + esc(a.observaciones) + '</dd>' : '') + '</dl>' +
     (a.agente ? '<p class="vis-ayuda">Para devolverlo o cambiarlo, ve a «Agentes» y abre a ' + esc(a.agente.nombre) + '.</p>' : '') +
     (!a.agente && a.estado !== 'de_baja' && opciones.length ? '<form class="ac-estado-form" onsubmit="activosCambiarEstado(event)"><div class="ig"><label for="ac-nuevo-estado">Cambiar estado a</label><select id="ac-nuevo-estado">' + _acOpciones(opciones) + '</select></div>' +
       '<div class="ig ac-motivo"><label for="ac-motivo">Motivo / diagnóstico</label><input type="text" id="ac-motivo" maxlength="300" list="ac-motivos-lista" placeholder="Ej.: no enciende, pantalla dañada, reparado…"></div><button type="submit" class="btn-primary">Cambiar estado</button></form>' : '') +
@@ -160,6 +203,13 @@ async function activosVer(id) {
   _acEl('ac-detalle').classList.remove('hidden');
   _acEl('ac-lista-zona').classList.add('hidden');
   _acEl('ac-detalle').scrollIntoView({ block: 'start' });
+}
+// Fase 377: desde el Panel, el inventario completo filtrado por un rendimiento.
+function activosVerRendimiento(codigo) {
+  ['tipo', 'estado', 'sede', 'operacion', 'proveedor', 'rend', 'q'].forEach(function (k) { var el = _acEl('ac-f-' + k); el.value = ''; el.removeAttribute('data-v'); });
+  _acEl('ac-f-pend').checked = false; _acEl('ac-f-dup').checked = false;
+  _ac.rendInicial = codigo;
+  activosTab('elementos');
 }
 function activosCerrarDetalle() { activosCerrarDetalleSinBuscar(); activosBuscar(); _acRefrescarMenu(); }
 function activosCerrarDetalleSinBuscar() { _acEl('ac-detalle').classList.add('hidden'); _acEl('ac-lista-zona').classList.remove('hidden'); }
@@ -588,5 +638,5 @@ async function activosDescargarFirmada(id) {
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { activosMenuHtml: activosMenuHtml, activosFlujoHtml: activosFlujoHtml, AC_MENU: AC_MENU, AC_VISTA_ESTADO: AC_VISTA_ESTADO, activosTiposHtml: activosTiposHtml, activosCampoEditorHtml: activosCampoEditorHtml, activosEditorTipoHtml: activosEditorTipoHtml, activosLeerCampos: activosLeerCampos, activosPanelHtml: activosPanelHtml, activosListaHtml: activosListaHtml, activosCampoHtml: activosCampoHtml, activosAgentesHtml: activosAgentesHtml, activosActaPrintHtml: activosActaPrintHtml };
+  module.exports = { activosMenuHtml: activosMenuHtml, activosFlujoHtml: activosFlujoHtml, AC_MENU: AC_MENU, AC_VISTA_ESTADO: AC_VISTA_ESTADO, activosTiposHtml: activosTiposHtml, activosCampoEditorHtml: activosCampoEditorHtml, activosEditorTipoHtml: activosEditorTipoHtml, activosLeerCampos: activosLeerCampos, activosPanelHtml: activosPanelHtml, activosListaHtml: activosListaHtml, activosConsulta: activosConsulta, activosRendHtml: activosRendHtml, activosCampoHtml: activosCampoHtml, activosAgentesHtml: activosAgentesHtml, activosActaPrintHtml: activosActaPrintHtml };
 }

@@ -7,6 +7,18 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.228.0 — Noviembre 2026
+
+**Inventario, como lo diseñó Edwin (parte 2 de 6): campos y rendimiento.**
+
+- Campos nuevos: **velocidad** (torres y portátiles), **tipo de disco** (portátiles), **precio** y **precio de renta
+  mensual** (torres, monitores, teclados, mouse, diademas y portátiles). Se pueden ocultar o renombrar en Ajustes.
+- **Rendimiento según la RAM** de torres y portátiles: Bajo (menos de 8 GB), Medio (8 a 15 GB), Alto (16 GB o más) o
+  Sin dato. Se ve en la lista, en el detalle y en el Panel; cada tarjeta del Panel abre esos equipos.
+- Filtros nuevos: propietario o proveedor, rendimiento, «Sin sede», «Sin operación», «Con datos pendientes» (sin marca,
+  modelo, serial, sede u operación) y «Seriales repetidos», con «Limpiar filtros» y cuántos hay.
+- La lista de propietarios trae InConexión y Alcom (editable en Ajustes).
+
 ## v1.227.0 — Noviembre 2026
 
 **Inventario, como lo diseñó Edwin (parte 1 de 6).**

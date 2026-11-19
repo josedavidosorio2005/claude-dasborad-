@@ -20,7 +20,7 @@ const log = (accion, a, req, detalle) => logEvent(accion, { nombre: a ? a.tipo +
 router.get('/activos/config', requireActor, wrap((req, res) => {
   if (!permitido(req, res)) return;
   const ambito = A.ambitoDe(req.query.ambito); // Fase 376: sistemas (por defecto) o inmuebles
-  res.json({ ambito, estados: A.ESTADOS, tipos: A.tipos(db, { ambito }), listas: Object.fromEntries(Object.keys(A.LISTAS).map((k) => [k, A.lista(db, k)])),
+  res.json({ ambito, estados: A.ESTADOS, rendimientos: A.RENDIMIENTOS, /* Fase 377 */ tipos: A.tipos(db, { ambito }), listas: Object.fromEntries(Object.keys(A.LISTAS).map((k) => [k, A.lista(db, k)])),
     // Fase 372 (E4): para Ajustes › Formularios (todos los tipos, también los desactivados) y los textos del acta.
     tiposTodos: A.tipos(db, { todos: true, ambito }), textos: F.textos(db), textosNombres: Object.fromEntries(Object.entries(F.TEXTOS).map(([k, t]) => [k, t.nombre])) });
 }));
@@ -68,6 +68,8 @@ router.get('/activos', requireActor, wrap((req, res) => {
   if (!permitido(req, res)) return;
   const q = {};
   for (const k of ['tipo', 'estado', 'sede', 'q', 'ambito', 'operacion']) if (typeof req.query[k] === 'string' && req.query[k].trim()) q[k] = req.query[k].trim(); // Fase 376: + ámbito y operación
+  for (const k of ['proveedor', 'rend']) if (typeof req.query[k] === 'string' && req.query[k].trim()) q[k] = req.query[k].trim().slice(0, 120); // Fase 377
+  for (const k of ['pend', 'dup']) if (req.query[k] === '1') q[k] = true;
   res.json({ activos: A.listar(db, q) });
 }));
 router.post('/activos', requireActor, wrap((req, res) => {

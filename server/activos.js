@@ -44,6 +44,44 @@ const TIPOS_INMUEBLES = [
 ];
 const ambitoDe = (v) => (AMBITOS.includes(v) ? v : 'sistemas');
 
+// Fase 377 (I2, diseño de Edwin): campos que faltaban. Se agregan a los tipos ya guardados por la
+// migración fase377_inventario_campos_v1 (solo si la clave no existe: nunca quita, ni toca lo que
+// Sistemas ocultó o renombró). `tras` = clave después de la cual va (si no está, al final).
+const CAMPOS_I2 = [
+  { tipos: ['TORRE', 'PORTATIL'], campo: { k: 'velocidad', l: 'Velocidad', t: 'texto' }, tras: 'procesador' },
+  { tipos: ['PORTATIL'], campo: { k: 'tipo_disco', l: 'Tipo de disco', t: 'lista', o: ['HDD', 'SSD', 'NVMe'] }, tras: 'disco' },
+  { tipos: ['TORRE', 'MONITOR', 'TECLADO', 'MOUSE', 'DIADEMA', 'PORTATIL'], campo: { k: 'precio', l: 'Precio', t: 'numero' } },
+  { tipos: ['TORRE', 'MONITOR', 'TECLADO', 'MOUSE', 'DIADEMA', 'PORTATIL'], campo: { k: 'renta_mensual', l: 'Precio de renta mensual', t: 'numero' } },
+];
+function agregarCamposI2(db) {
+  const upd = db.prepare('UPDATE activos_tipos SET campos = ? WHERE codigo = ?');
+  for (const t of db.prepare('SELECT codigo, campos FROM activos_tipos').all()) {
+    const campos = JSON.parse(t.campos || '[]');
+    let cambio = false;
+    for (const x of CAMPOS_I2) {
+      if (!x.tipos.includes(t.codigo) || campos.some((c) => c.k === x.campo.k)) continue;
+      const i = x.tras ? campos.findIndex((c) => c.k === x.tras) : -1;
+      campos.splice(i >= 0 ? i + 1 : campos.length, 0, JSON.parse(JSON.stringify(x.campo)));
+      cambio = true;
+    }
+    if (cambio) upd.run(JSON.stringify(campos), t.codigo);
+  }
+}
+// Rendimiento según la RAM (mismos cortes del diseño): bajo < 8 GB, medio 8 a 15, alto 16 o más.
+const RENDIMIENTOS = [
+  { codigo: 'bajo', nombre: 'Bajo', ayuda: 'menos de 8 GB' },
+  { codigo: 'medio', nombre: 'Medio', ayuda: '8 a 15 GB' },
+  { codigo: 'alto', nombre: 'Alto', ayuda: '16 GB o más' },
+  { codigo: 'sin', nombre: 'Sin dato', ayuda: 'RAM no registrada' },
+];
+function rendimientoDe(ram) {
+  if (typeof ram !== 'number' || !Number.isFinite(ram) || ram <= 0) return 'sin';
+  return ram < 8 ? 'bajo' : ram < 16 ? 'medio' : 'alto';
+}
+// Tipos que llevan RAM (campo ram_gb visible u oculto): solo ellos tienen rendimiento.
+function tiposConRam(db) { return tipos(db, { todos: true }).filter((t) => t.campos.some((c) => c.k === 'ram_gb')).map((t) => t.codigo); }
+const SQL_REND = "CASE WHEN json_type(a.datos, '$.ram_gb') IN ('integer', 'real') AND json_extract(a.datos, '$.ram_gb') > 0 THEN CASE WHEN json_extract(a.datos, '$.ram_gb') < 8 THEN 'bajo' WHEN json_extract(a.datos, '$.ram_gb') < 16 THEN 'medio' ELSE 'alto' END ELSE 'sin' END";
+
 // auth se carga aquí (no arriba): db.js carga este archivo y auth.js necesita db.js (dependencia circular).
 function puede(actor) { return !!actor && (require('./auth').isFullAdmin(actor) || actor.rol === 'SISTEMAS'); }
 
@@ -134,7 +172,7 @@ function validar(db, b, { nuevo, tipo: tipoActual }) {
     if (c.oculto) continue; // Fase 372: campo oculto -- no se recibe; editar() conserva lo guardado
     const x = d[c.k];
     if (x === undefined || x === null || x === '') continue;
-    if (c.t === 'numero') { const n = Number(x); if (!Number.isFinite(n) || n < 0 || n > 1e7) return { error: c.l + ': escribe un número' }; datos[c.k] = n; }
+    if (c.t === 'numero') { const n = Number(x); if (!Number.isFinite(n) || n < 0 || n > 1e10) return { error: c.l + ': escribe un número' }; datos[c.k] = n; }
     else if (c.t === 'lista') { if (!(c.o || []).includes(x)) return { error: c.l + ': elige una opción' }; datos[c.k] = x; }
     else datos[c.k] = _txt(String(x), 120);
   }
@@ -157,12 +195,16 @@ function _hist(db, activoId, accion, antes, despues, motivo, quien) {
 function _publico(a) {
   if (!a) return null;
   const o = Object.assign({}, a, { datos: JSON.parse(a.datos || '{}') });
+  o.rendimiento = a.conRam ? rendimientoDe(o.datos.ram_gb) : null; // Fase 377
+  delete o.conRam;
   o.agente = a.agenteId ? { id: a.agenteId, nombre: a.agenteNombre } : null;
   delete o.agenteId; delete o.agenteNombre;
   return o;
 }
 // El agente actual de cada elemento sale de su asignación abierta (hasta IS NULL).
-const SELECT_ACTIVO = `SELECT a.*, s.agenteId, g.nombre AS agenteNombre FROM activos a
+// Fase 377: conRam = el tipo lleva RAM (para el rendimiento).
+const SELECT_ACTIVO = `SELECT a.*, s.agenteId, g.nombre AS agenteNombre,
+  EXISTS (SELECT 1 FROM activos_tipos t, json_each(t.campos) c WHERE t.codigo = a.tipo AND json_extract(c.value, '$.k') = 'ram_gb') AS conRam FROM activos a
   LEFT JOIN activos_asignaciones s ON s.activoId = a.id AND s.hasta IS NULL
   LEFT JOIN activos_agentes g ON g.id = s.agenteId`;
 
@@ -211,8 +253,15 @@ function listar(db, q) {
   if (q.ambito) { where.push('a.tipo IN (SELECT codigo FROM activos_tipos WHERE ambito = ?)'); p.push(ambitoDe(q.ambito)); } // Fase 376
   if (q.tipo) { where.push('a.tipo = ?'); p.push(q.tipo); }
   if (q.estado) { where.push('a.estado = ?'); p.push(q.estado); }
-  if (q.sede) { where.push('a.sede = ?'); p.push(q.sede); }
-  if (q.operacion) { where.push('a.operacion = ?'); p.push(q.operacion); } // Fase 376
+  // Fase 377: «__none» = sin sede / sin operación / sin propietario.
+  for (const k of ['sede', 'operacion', 'proveedor']) if (q[k]) { where.push('a.' + k + ' = ?'); p.push(q[k] === '__none' ? '' : q[k]); }
+  if (q.rend && RENDIMIENTOS.some((r) => r.codigo === q.rend)) {
+    const conRam = tiposConRam(db);
+    if (!conRam.length) where.push('0');
+    else { where.push('a.tipo IN (' + conRam.map(() => '?').join(',') + ') AND ' + SQL_REND + ' = ?'); p.push(...conRam, q.rend); }
+  }
+  if (q.pend) where.push("(a.marca = '' OR a.modelo = '' OR a.serial = '' OR a.sede = '' OR a.operacion = '')"); // datos pendientes
+  if (q.dup) where.push("a.serial != '' AND EXISTS (SELECT 1 FROM activos b WHERE b.tipo = a.tipo AND b.serial = a.serial AND b.id != a.id)"); // seriales repetidos
   if (q.q) { where.push("(a.codigo LIKE ? OR a.marca LIKE ? OR a.modelo LIKE ? OR a.serial LIKE ? OR a.datos LIKE ? OR g.nombre LIKE ?)"); const s = '%' + String(q.q).slice(0, 60).replace(/[%_]/g, '') + '%'; p.push(s, s, s, s, s, s); }
   return db.prepare(SELECT_ACTIVO + ' ' + (where.length ? 'WHERE ' + where.join(' AND ') : '') + ' ORDER BY a.tipo, a.codigo LIMIT 3000').all(...p).map(_publico);
 }
@@ -229,7 +278,14 @@ function resumen(db, ambito) {
   const porSede = db.prepare("SELECT CASE WHEN sede = '' THEN '(sin sede)' ELSE sede END sede, COUNT(*) n FROM activos" + F + " AND estado != 'de_baja' GROUP BY 1 ORDER BY n DESC").all();
   const agentes = db.prepare(`SELECT COUNT(*) activos, COALESCE(SUM(EXISTS (SELECT 1 FROM activos_asignaciones s WHERE s.agenteId = g.id AND s.hasta IS NULL)), 0) conElementos
     FROM activos_agentes g WHERE g.activo = 1`).get(); // Fase 370
-  return { total: Object.values(porEstado).reduce((a, b) => a + b, 0), porEstado, porTipo, porSede, agentes };
+  // Fase 377: rendimiento por RAM de los que la llevan (sin los dados de baja); null si no hay ninguno.
+  const conRam = tiposConRam(db), porRendimiento = Object.fromEntries(RENDIMIENTOS.map((r) => [r.codigo, 0]));
+  if (conRam.length) {
+    for (const r of db.prepare('SELECT ' + SQL_REND + " rend, COUNT(*) n FROM activos a WHERE a.estado != 'de_baja' AND a.tipo IN (" + conRam.map(() => '?').join(',') +
+      ') AND a.tipo IN (SELECT codigo FROM activos_tipos WHERE ambito = ?) GROUP BY 1').all(...conRam, amb)) porRendimiento[r.rend] = r.n;
+  }
+  const hayRam = Object.values(porRendimiento).some((n) => n > 0);
+  return { total: Object.values(porEstado).reduce((a, b) => a + b, 0), porEstado, porTipo, porSede, agentes, porRendimiento: hayRam ? porRendimiento : null };
 }
 function historial(db, id) { return db.prepare('SELECT fecha, accion, estadoAntes, estadoDespues, motivo, quien FROM activos_historial WHERE activoId = ? ORDER BY ts DESC, id DESC').all(id); }
 
@@ -339,5 +395,5 @@ function cambiarElemento(db, a, nuevoId, estado, motivo, quien) {
   return { anterior: obtener(db, a.id), activo: obtener(db, n.id) };
 }
 
-module.exports = { AMBITOS, TIPOS_INMUEBLES, ambitoDe, ESTADOS_AL_SOLTAR, validarAgente, agentes, agente, crearAgente, editarAgente, agenteDetalle, asignar, devolver, cambiarElemento,
+module.exports = { CAMPOS_I2, agregarCamposI2, RENDIMIENTOS, rendimientoDe, AMBITOS, TIPOS_INMUEBLES, ambitoDe, ESTADOS_AL_SOLTAR, validarAgente, agentes, agente, crearAgente, editarAgente, agenteDetalle, asignar, devolver, cambiarElemento,
   ESTADOS, ESTADO_CODIGOS, LISTAS, TIPOS_BASE, puede, crearTablas, tipos, tipo, lista, guardarLista, validar, crear, obtener, editar, cambiarEstado, listar, resumen, historial };

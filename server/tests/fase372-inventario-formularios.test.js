@@ -49,10 +49,10 @@ test('editar campos: agregar, ocultar y reordenar; la clave y el tipo de dato no
   const e = await put(tk.sis, '/activos/config/tipos/TORRE', { nombre: 'Torre', plural: 'Torres', campos });
   assert.equal(e.status, 200, JSON.stringify(e.body));
   const t1 = e.body.tipo;
-  assert.deepEqual(t1.campos.map((c) => c.k), ['garantia_hasta', 'nombre_equipo', 'procesador', 'ram_gb', 'disco', 'tipo_disco', 'puertos_usb']);
+  assert.deepEqual(t1.campos.map((c) => c.k), ['garantia_hasta', 'nombre_equipo', 'procesador', 'velocidad', 'ram_gb', 'disco', 'tipo_disco', 'precio', 'renta_mensual', 'puertos_usb']); // Fase 377: + campos del diseño
   assert.equal(t1.campos.find((c) => c.k === 'procesador').oculto, true);
   assert.equal(t1.campos.find((c) => c.k === 'tipo_disco').l, 'Tipo de disco duro');
-  assert.match(hist('ACTIVO_TIPO_EDITADO')[0].detalle, /^7 campo\(s\), 1 oculto\(s\)$/);
+  assert.match(hist('ACTIVO_TIPO_EDITADO')[0].detalle, /^10 campo\(s\), 1 oculto\(s\)$/); // Fase 377: + 3 campos del diseño
   // Al editar el elemento, lo guardado en el campo oculto se conserva aunque no se envíe (ni se puede cambiar).
   const ed = await put(tk.sis, '/activos/' + id, { datos: { ram_gb: 32, puertos_usb: 4, tipo_disco: 'SSD', procesador: 'Otro inventado' } });
   assert.equal(ed.status, 200, JSON.stringify(ed.body));
