@@ -21479,3 +21479,15 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
 - **Pestaña «Llamadas de salida»:** las conectadas salen del CDR (réplica = manual: 3, 8, 5, 7, 3, 9, 2, 1); las **no conectadas, el total y la tasa de contacto** necesitan la base «5. Detalle de las llamadas no conectadas». Manual: 04/11 = 2 y 10/11 = 7; la prueba de `cdr_5` del 18/11 dio **2 y 7 filas** esos días (en §10.10 se había comparado contra otros números). **`cdr_5` es ese reporte.**
 - **Cambio:** módulo `no_conectadas` (`server/wolkvox-modulos.js`): una consulta `cdr_5` por mes → mismas columnas del Excel (AGENT_NAME, DATE, RING_TIME, RESULT) → `llamadasNoConectadasParseFilas` → `cargarLlamadasNoConectadas` (ahora acepta desde/hasta: reemplaza el mes completo de la réplica, con respaldo). Nunca entran teléfono, destino, cliente ni CONN_ID. Arranca apagado (`WOLKVOX_AUTO_MODULOS`).
 - **Pruebas:** `faseA15-wolkvox-no-conectadas` (3).
+
+## Fase A16 — réplica: llamada sin tipificación (v1.233.1, 2026-11-19)
+
+- **Comparación tarjeta por tarjeta, SOLO LECTURA, réplica vs MOBILIZE real, 01–12/11** (lo que tiene el manual):
+  - Flujo: ingresadas 29/29, contestadas 29/29, abandonadas 0/0, nivel de servicio 100/100 %, nivel de atención 100/100 %, abandono 0/0 %, Solución en primer contacto 70/70 % → iguales. **Eficacia 34,5 % vs 35,7 %** (diferente).
+  - Llamadas únicas de ingreso **25 vs 24** (diferente). Salida conectadas 38/38; total, no conectadas y tasa: real 71 / 33 / 53,5 %, réplica «Pendiente» (falta `cdr_5`).
+  - Flujo por hora: igual hora por hora los 12 días (29/29/0). Tipificación (salida): 38 / 20 / 18 en las dos. Encuesta: 67 de 67 números iguales (35 encuestas, FCR 20 %).
+- **Causa de las dos diferencias (un solo día, 04/11):** la corrida de cdr trajo 93 filas y cargó 92; el Historial dice «sin tipificación 1». En el real esa llamada de entrada del 04/11 es «Otros_motivos». El lector la omitía como «falta un dato»: Eficacia del 04/11 1/6 en vez de 1/7, únicas 4 en vez de 5. Los demás días son iguales.
+- **Cambio:** `hojaCdr` completa la tipificación vacía con «-» (marcador del export manual, «Sin tipificación»). El conteo del Historial dice además, sin valores, si esas filas traen COD_ACT u otra descripción. Sin consultas nuevas: se ve con la próxima corrida de cdr.
+- **«Llamadas de salida conectadas» = 47 sin filtro:** es la réplica del 1 al 18/11; del 1 al 12/11 da 38, igual que el real. En esa pestaña «conectadas» son todas las llamadas de salida del CDR (plantilla de Edwin, Fase 163/191); las 20 «Conectadas» de Tipificación descuentan las tipificadas «Cliente_no_contesta». Las dos pestañas dan lo mismo en el real y en la réplica; la diferencia de criterio entre pestañas queda para Edwin.
+- **«Total / Contestadas / Abandonadas únicas»:** del 1 al 12/11 tampoco salen en el real: con 0 abandonadas en el filtro se muestra una sola tarjeta (Fase 163). Las abandonadas únicas salen del reporte «2. Detalle de llamadas abandonadas» (`skill_2` = 404 en la API).
+- **Pruebas:** `faseA16-cdr-sin-tipificacion` (3); faseA12 ajustada al nuevo texto del conteo.

@@ -629,3 +629,7 @@ Solo columnas y número de filas, réplica, desde producción. «mes» = 1–17/
 
 - **Conectadas (A13–A14):** `cdr_1` trae la salida (`outbound_ma`) **sin skill**; el lector la omitía. Desde v1.232.2 se completa con «-» y entra como «Llamadas de salida»: réplica = manual los 8 días comunes (03–12/11).
 - **No conectadas (A15):** **`cdr_5` es el reporte «5»**: 04/11 = 2 y 10/11 = 7 filas, igual que el manual (la nota de §10.10 lo comparó contra otros números). Módulo `no_conectadas` (v1.233.0), apagado hasta el OK del usuario.
+
+### 10.13 Comparación tarjeta por tarjeta (19/11/2026, Fase A16)
+
+Réplica vs MOBILIZE real, 01–12/11: Flujo, Flujo por hora, Tipificación y Encuesta iguales; Eficacia y únicas difieren solo el 04/11 por una llamada que `cdr_1` trae sin tipificación (arreglo v1.233.1: entra como «Sin tipificación»). Faltan las no conectadas (`cdr_5`, módulo `no_conectadas`) y las abandonadas únicas (reporte «2», sin equivalente en la API). Detalle en `docs/historico/progress-fases.md` (Fase A16).
