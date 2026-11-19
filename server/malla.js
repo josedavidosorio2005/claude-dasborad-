@@ -8,6 +8,9 @@
 const { isFullAdmin, campaignAccess } = require('./auth');
 const { leerRegistro } = require('./clientes-registro');
 const L = require('../public/js/malla-logic.js');
+const X = require('./malla-extra'); // Fase 373
+// Fase 373 (Edwin 19/11): cada grupo con un color distinto (serie 1 a 8 de la paleta, por su orden en la semana).
+const COLORES = 8;
 
 function puedeEditar(actor, campana) {
   return isFullAdmin(actor) || (!!actor && actor.rol === 'SUPERVISOR' && campaignAccess(actor, campana));
@@ -35,7 +38,7 @@ function _grupo(r) {
 function semana(db, campana, lunes) {
   const grupos = db.prepare('SELECT * FROM malla_grupos WHERE campana = ? AND semana = ? ORDER BY nombre').all(campana, lunes).map(_grupo);
   const asig = db.prepare('SELECT a.grupoId, u.id, u.nombre FROM malla_asignaciones a JOIN users u ON u.id = a.asesorId WHERE a.grupoId = ? ORDER BY u.nombre');
-  grupos.forEach((g) => { g.asesoras = asig.all(g.id).map((x) => ({ id: x.id, nombre: x.nombre })); });
+  grupos.forEach((g, i) => { g.asesoras = asig.all(g.id).map((x) => ({ id: x.id, nombre: x.nombre })); g.color = (i % COLORES) + 1; });
   return grupos;
 }
 
@@ -114,7 +117,11 @@ function turnoDe(db, asesorId, campana, lunes) {
                          WHERE a.asesorId = ? AND g.campana = ? AND g.semana = ?`).get(asesorId, campana, lunes);
   if (!r) return null;
   const g = _grupo(r);
-  return { semana: g.semana, grupo: g.nombre, horario: g.horario };
+  // Fase 373: color del grupo (mismo orden que semana()) y horario especial de la asesora encima.
+  const orden = db.prepare('SELECT id FROM malla_grupos WHERE campana = ? AND semana = ? ORDER BY nombre').all(campana, lunes).map((x) => x.id);
+  const dias = L.MALLA_DIAS.map((d) => L.mallaFechaDelDia(lunes, d.n));
+  const aj = X.aplicarAjustes(g.horario, lunes, X.ajustesDeAsesora(db, asesorId, campana, dias[0], dias[6]));
+  return { semana: g.semana, grupo: g.nombre, horario: aj.horario, especiales: aj.especiales, color: (orden.indexOf(g.id) % COLORES) + 1 };
 }
 
 module.exports = { L, puedeEditar, puedeLeer, campanasDe, asesorasDe, semana, obtener, crear, editar, borrar, asignar, copiar, turnoDe };

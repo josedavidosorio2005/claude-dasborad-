@@ -6,6 +6,7 @@ const db = require('../db');
 const { requireActor } = require('../auth');
 const { fechaLimitesHoyColombia } = require('../fecha-limites');
 const M = require('../malla');
+const X = require('../malla-extra'); // Fase 373: novedades y horario especial
 const { wrap, actorLabel, logEvent } = require('./shared');
 
 const router = express.Router();
@@ -35,7 +36,8 @@ router.get('/malla', requireActor, wrap((req, res) => {
   const campana = campanaDe(req.query.campana), lunes = String(req.query.semana || '');
   if (!campana || !L.mallaEsLunes(lunes)) return res.status(400).json({ error: 'Elige la campaña y una semana (su lunes, AAAA-MM-DD)' });
   if (!M.puedeLeer(req.actor, campana)) return res.status(403).json({ error: 'Sin acceso a la malla de esta campaña' });
-  res.json({ campana, semana: lunes, grupos: M.semana(db, campana, lunes), asesoras: M.asesorasDe(db, campana), puedeEditar: M.puedeEditar(req.actor, campana) });
+  res.json({ campana, semana: lunes, grupos: M.semana(db, campana, lunes), asesoras: M.asesorasDe(db, campana), puedeEditar: M.puedeEditar(req.actor, campana),
+    novedades: X.novedadesSemana(db, campana, lunes, { incluirQuitadas: true }), ajustes: X.ajustesSemana(db, campana, lunes) }); // Fase 373
 }));
 
 router.post('/malla/grupos', requireActor, wrap((req, res) => {
@@ -111,8 +113,50 @@ router.post('/malla/copiar', requireActor, wrap((req, res) => {
 router.get('/malla/mia', requireActor, wrap((req, res) => {
   if (req.actor.rol !== 'ASESOR' || !req.actor.id || !req.actor.asesorCampana) return res.json({ semanas: [] });
   const actual = L.mallaLunesDe(fechaLimitesHoyColombia());
-  const semanas = [actual, L.mallaSumarSemanas(actual, 1)].map((s) => ({ semana: s, turno: M.turnoDe(db, req.actor.id, req.actor.asesorCampana, s) }));
+  const semanas = [actual, L.mallaSumarSemanas(actual, 1)].map((s) => ({ semana: s, turno: M.turnoDe(db, req.actor.id, req.actor.asesorCampana, s),
+    novedades: X.novedadesDeAsesora(db, req.actor.id, req.actor.asesorCampana, s) })); // Fase 373: sus novedades
   res.json({ campana: req.actor.asesorCampana, semanas });
+}));
+
+// ── Fase 373 (Edwin 19/11): novedades por asesora y horario especial. Quien edita la malla de la
+// campaña. El Historial nunca lleva el texto de la novedad (puede traer datos de salud).
+const nombreDe = (id) => (db.prepare('SELECT nombre FROM users WHERE id = ?').get(id) || {}).nombre || '-';
+router.post('/malla/novedades', requireActor, wrap((req, res) => {
+  const b = req.body || {};
+  const campana = campanaDe(b.campana);
+  if (!campana) return res.status(400).json({ error: 'Elige la campaña' });
+  if (!M.puedeEditar(req.actor, campana)) return res.status(403).json({ error: 'Solo el supervisor de la campaña o el administrador editan la malla' });
+  const r = X.crearNovedad(db, Object.assign({}, b, { campana }), actorLabel(req.actor), ahoraIso());
+  if (r.error) return res.status(400).json({ error: r.error });
+  log('MALLA_NOVEDAD', campana, nombreDe(r.novedad.asesorId), req, 'semana ' + r.novedad.semana + (r.novedad.fecha ? ' · día ' + r.novedad.fecha : ''));
+  res.status(201).json(r);
+}));
+router.delete('/malla/novedades/:id', requireActor, wrap((req, res) => {
+  const n = idValido(req.params.id) ? X.obtenerNovedad(db, Number(req.params.id)) : null;
+  if (!n || !M.puedeLeer(req.actor, n.campana)) return res.status(404).json({ error: 'Novedad no encontrada' });
+  if (!M.puedeEditar(req.actor, n.campana)) return res.status(403).json({ error: 'Solo el supervisor de la campaña o el administrador editan la malla' });
+  const r = X.quitarNovedad(db, n, actorLabel(req.actor), ahoraIso());
+  if (r.error) return res.status(400).json({ error: r.error });
+  log('MALLA_NOVEDAD_QUITADA', n.campana, nombreDe(n.asesorId), req, 'semana ' + n.semana + (n.fecha ? ' · día ' + n.fecha : ''));
+  res.json(r);
+}));
+router.put('/malla/ajustes', requireActor, wrap((req, res) => {
+  const b = req.body || {};
+  const campana = campanaDe(b.campana);
+  if (!campana) return res.status(400).json({ error: 'Elige la campaña' });
+  if (!M.puedeEditar(req.actor, campana)) return res.status(403).json({ error: 'Solo el supervisor de la campaña o el administrador editan la malla' });
+  const r = X.guardarAjuste(db, Object.assign({}, b, { campana }), actorLabel(req.actor), ahoraIso());
+  if (r.error) return res.status(400).json({ error: r.error });
+  log('MALLA_HORARIO_ESPECIAL', campana, nombreDe(b.asesorId), req, r.fechas.join(', ') + ' · ' + L.mallaTurnoTexto(r.turno));
+  res.json({ ok: true, fechas: r.fechas, turno: r.turno });
+}));
+router.delete('/malla/ajustes/:id', requireActor, wrap((req, res) => {
+  const a = idValido(req.params.id) ? X.obtenerAjuste(db, Number(req.params.id)) : null;
+  if (!a || !M.puedeLeer(req.actor, a.campana)) return res.status(404).json({ error: 'Horario especial no encontrado' });
+  if (!M.puedeEditar(req.actor, a.campana)) return res.status(403).json({ error: 'Solo el supervisor de la campaña o el administrador editan la malla' });
+  X.quitarAjuste(db, a);
+  log('MALLA_HORARIO_ESPECIAL_QUITADO', a.campana, nombreDe(a.asesorId), req, a.fecha);
+  res.json({ ok: true });
 }));
 
 // ── Fase 363 (Malla fase 2): puntualidad con el login de Wolkvox (agent_7) ──

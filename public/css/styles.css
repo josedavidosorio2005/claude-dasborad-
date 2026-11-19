@@ -2598,6 +2598,44 @@ div.ca-bar-fila{cursor:default}
 .ml-confirmar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 12px;margin-bottom:12px;border-radius:var(--r-md);background:var(--c-warning-bg);color:var(--c-warning-text);font-weight:600}
 .ml-nota{font-size:var(--fs-body);color:var(--c-text-2);margin:0 0 10px;min-height:1em}
 .ml-grupo{margin-bottom:14px}
+/* Fase 373 (Edwin 19/11): cada grupo con su color (serie 1 a 8 de paleta.css), novedades y horario especial. */
+.ml-grupo,.ml-mia{border-left:6px solid var(--ml-color,var(--c-border));}
+.ml-punto{display:inline-block;width:12px;height:12px;border-radius:50%;background:var(--ml-color,var(--c-border));margin-right:6px;vertical-align:middle}
+.ml-color-1{--ml-color:var(--serie-1)}
+.ml-color-2{--ml-color:var(--serie-2)}
+.ml-color-3{--ml-color:var(--serie-3)}
+.ml-color-4{--ml-color:var(--serie-4)}
+.ml-color-5{--ml-color:var(--serie-5)}
+.ml-color-6{--ml-color:var(--serie-6)}
+.ml-color-7{--ml-color:var(--serie-7)}
+.ml-color-8{--ml-color:var(--serie-8)}
+.ml-casos{margin-top:12px;border:1px solid var(--c-border-soft);border-radius:var(--r-md);padding:6px 12px}
+.ml-casos summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-weight:600;color:var(--c-text-2)}
+.ml-casos-lista{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.ml-caso{padding:8px 0;border-top:1px solid var(--c-border-soft)}
+.ml-caso-cab{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
+.ml-caso-btns{display:flex;flex-wrap:wrap;gap:8px}
+.ml-btn{min-height:44px}
+.ml-chips{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:6px}
+.ml-chip{display:inline-flex;align-items:center;gap:4px;padding:4px 4px 4px 10px;border-radius:var(--r-sm);background:var(--c-surface-subtle);border:1px solid var(--c-border-soft);font-size:var(--fs-small);color:var(--c-text);max-width:100%;overflow-wrap:anywhere}
+.ml-chip-nov{background:var(--c-info-bg)}
+.ml-chip-x{min-width:32px;min-height:32px;border:0;background:transparent;color:var(--c-text-2);font-size:var(--fs-body-lg);cursor:pointer;border-radius:var(--r-sm)}
+.ml-chip-x:focus-visible{outline:2px solid var(--c-focus);outline-offset:1px}
+.ml-form-caso{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin-top:8px;padding:10px;border:1px dashed var(--c-border);border-radius:var(--r-md)}
+.ml-form-caso .ig{margin-bottom:0;flex:1 1 140px}
+.ml-form-caso .ml-form-texto{flex:3 1 240px}
+.ml-form-caso .modal-btns{flex-basis:100%;margin-top:0}
+.ml-dias{border:0;margin:0;padding:0;flex-basis:100%;display:flex;flex-wrap:wrap;gap:4px 14px}
+.ml-dias legend{font-weight:600;color:var(--c-text-2);margin-bottom:4px}
+.ml-especial{margin-left:6px}
+.ml-hist-nov{list-style:none;margin:0;padding:0}
+.ml-hist-nov li{padding:8px 0;border-top:1px solid var(--c-border-soft);overflow-wrap:anywhere}
+.ml-nov-meta{display:block;font-size:var(--fs-small);color:var(--c-text-muted)}
+.ml-nov-quitada{color:var(--c-text-muted)}
+.ml-mis-nov{margin-top:12px;padding:10px 12px;border-radius:var(--r-md);background:var(--c-info-bg)}
+.ml-mis-nov-tit{margin:0 0 6px;font-size:var(--fs-body);color:var(--c-text)}
+.ml-mis-nov ul{margin:0;padding-left:18px}
+#ml-novedades{margin-top:14px}
 .ml-tabla{width:100%;border-collapse:collapse;font-size:var(--fs-body)}
 .ml-tabla th,.ml-tabla td{padding:6px 8px;border-bottom:1px solid var(--c-border-soft);text-align:left;vertical-align:middle}
 .ml-tabla thead th{color:var(--c-text-2);font-size:var(--fs-small)}

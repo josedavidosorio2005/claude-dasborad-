@@ -7,6 +7,18 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.224.0 — Noviembre 2026
+
+**Malla de turnos: colores, novedades y horario especial** (pedidos de Edwin del 19/11).
+
+- Se quitó el botón «Esta semana»: se cambia de semana con las flechas o con «Ir al mes».
+- Cada grupo tiene su color (también en «Mi malla» de la asesora).
+- **Novedades:** en cada grupo, «Novedad» deja un comentario para una asesora (de un día o de toda la semana),
+  por ejemplo «cita médica, entra a las 9:00 el jueves». La asesora lo ve en «Mi malla». Abajo queda el
+  historial «Novedades de la semana», también con las que se quitaron.
+- **Horario especial:** cambia el horario de una sola asesora en uno o varios días (o le da descanso) sin crear
+  otro grupo. Se ve en «Mi malla» y cuenta para la puntualidad.
+
 ## v1.223.1 — Noviembre 2026
 
 **Réplica de MOBILIZE (Wolkvox): diagnóstico de la Tipificación.** Cada corrida del CDR anota en el Historial
