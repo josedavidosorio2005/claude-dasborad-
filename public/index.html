@@ -2107,7 +2107,7 @@
       <form id="ac-r-form" onsubmit="activosRegistrar(event)" novalidate>
         <div class="ac-filtros">
           <div class="ig"><label for="ac-r-tipo">Tipo de elemento</label><select id="ac-r-tipo" onchange="activosCambioTipo()"></select></div>
-          <div class="ig"><label for="ac-r-codigo">Código (etiqueta)</label><input type="text" id="ac-r-codigo" maxlength="40" required></div>
+          <div class="ig"><label for="ac-r-codigo">Código (etiqueta)</label><input type="text" id="ac-r-codigo" maxlength="40" required aria-describedby="ac-r-codigo-ayuda"><p class="vis-ayuda hidden" id="ac-r-codigo-ayuda">Equipo administrable: déjalo vacío y se asigna solo según el tipo (servidor desde 5001, switch 6001, DVR / NVR 7001, router o firewall 8001, access point 9001, UPS 4001, otro 4501).</p></div>
           <div class="ig"><label for="ac-r-estado">Entra como</label><select id="ac-r-estado"><option value="libre">Libre</option><option value="en_reparacion">En reparación</option><option value="malo">Malo</option></select></div>
           <div class="ig"><label for="ac-r-marca">Marca</label><input type="text" id="ac-r-marca" maxlength="60"></div>
           <div class="ig"><label for="ac-r-modelo">Modelo</label><input type="text" id="ac-r-modelo" maxlength="60"></div>
@@ -2121,6 +2121,17 @@
         <p class="ml-nota" id="ac-r-nota" role="status" aria-live="polite"></p>
         <div class="modal-btns"><button type="submit" class="btn-primary">Registrar</button></div>
       </form>
+    </section>
+    <section id="ac-p-admin" class="hidden" aria-label="Equipos administrables"><!-- Fase 380 (I5): red e infraestructura -->
+      <div id="ac-ad-kpis"></div>
+      <div id="ac-ad-subtipos" class="ac-acciones" role="group" aria-label="Tipo de equipo"></div>
+      <div class="ac-filtros">
+        <div class="ig"><label for="ac-ad-sede">Sede</label><select id="ac-ad-sede" onchange="activosAdminBuscar()"></select></div>
+        <div class="ig"><label for="ac-ad-estado">Estado</label><select id="ac-ad-estado" onchange="activosAdminBuscar()"></select></div>
+        <div class="ig"><label for="ac-ad-q">Buscar</label><input type="search" id="ac-ad-q" maxlength="60" placeholder="Código, marca, modelo, serial, IP, responsable…" onchange="activosAdminBuscar()"></div>
+      </div>
+      <p id="ac-ad-conteo" class="vis-ayuda"></p>
+      <div id="ac-ad-lista" aria-live="polite"></div>
     </section>
     <section id="ac-p-actas" class="hidden" aria-label="Actas"><!-- Fase 379 (I4): todas las actas, automáticas y manuales -->
       <div id="ac-actas-kpis"></div>

@@ -67,6 +67,37 @@ function agregarCamposI2(db) {
     if (cambio) upd.run(JSON.stringify(campos), t.codigo);
   }
 }
+// Fase 380 (I5, diseño de Edwin): equipos administrables (red e infraestructura). Subtipos que faltaban,
+// ubicación, precio y renta (solo se agregan) y el código automático por subtipo.
+const ADMIN_SUBTIPOS_I5 = ['DVR / NVR', 'Firewall', 'Access Point', 'UPS'];
+const ADMIN_CODIGO_BASE = { Servidor: 5001, Switch: 6001, 'DVR / NVR': 7001, Router: 8001, Firewall: 8001, 'Access Point': 9001, UPS: 4001, Otro: 4501 };
+function agregarCamposI5(db) {
+  const t = db.prepare("SELECT campos FROM activos_tipos WHERE codigo = 'ADMINISTRABLE'").get();
+  if (!t) return;
+  const campos = JSON.parse(t.campos || '[]');
+  const sub = campos.find((c) => c.k === 'subtipo');
+  if (sub && sub.t === 'lista') { sub.o = sub.o || []; const iOtro = sub.o.indexOf('Otro'); for (const o of ADMIN_SUBTIPOS_I5) if (!sub.o.includes(o)) sub.o.splice(iOtro >= 0 ? sub.o.indexOf('Otro') : sub.o.length, 0, o); }
+  const poner = (campo, tras) => { if (campos.some((c) => c.k === campo.k)) return; const i = tras ? campos.findIndex((c) => c.k === tras) : -1; campos.splice(i >= 0 ? i + 1 : campos.length, 0, campo); };
+  poner({ k: 'ubicacion', l: 'Ubicación', t: 'texto' }, 'ip');
+  poner({ k: 'precio', l: 'Precio', t: 'numero' });
+  poner({ k: 'renta_mensual', l: 'Precio de renta mensual', t: 'numero' });
+  db.prepare("UPDATE activos_tipos SET campos = ? WHERE codigo = 'ADMINISTRABLE'").run(JSON.stringify(campos));
+}
+// Siguiente código libre del subtipo: el mayor código numérico de ese subtipo + 1, o su base.
+function siguienteCodigoAdmin(db, subtipo) {
+  const base = ADMIN_CODIGO_BASE[subtipo] || ADMIN_CODIGO_BASE.Otro;
+  const usados = db.prepare("SELECT codigo FROM activos WHERE tipo = 'ADMINISTRABLE' AND json_extract(datos, '$.subtipo') IS ?").all(subtipo || null)
+    .map((r) => (/^\d+$/.test(r.codigo) ? Number(r.codigo) : NaN)).filter((n) => Number.isFinite(n));
+  let n = usados.length ? Math.max(...usados) + 1 : base;
+  const existe = db.prepare("SELECT 1 FROM activos WHERE tipo = 'ADMINISTRABLE' AND codigo = ?");
+  while (existe.get(String(n))) n++;
+  return String(n);
+}
+// Aviso (no error): otra IP igual entre los equipos administrables.
+function ipRepetida(db, ip, id) {
+  if (!ip) return null;
+  return db.prepare("SELECT codigo FROM activos WHERE tipo = 'ADMINISTRABLE' AND json_extract(datos, '$.ip') = ? AND id != ? AND estado != 'de_baja'").get(ip, id || 0) || null;
+}
 // Rendimiento según la RAM (mismos cortes del diseño): bajo < 8 GB, medio 8 a 15, alto 16 o más.
 const RENDIMIENTOS = [
   { codigo: 'bajo', nombre: 'Bajo', ayuda: 'menos de 8 GB' },
@@ -160,7 +191,10 @@ function validar(db, b, { nuevo, tipo: tipoActual }) {
   // Un elemento de un tipo ya desactivado se sigue pudiendo editar (Fase 372); uno nuevo, no.
   const t = tipo(db, nuevo ? b.tipo : tipoActual, { todos: !nuevo });
   if (!t) return { error: 'Elige el tipo de elemento' };
-  const codigo = _txt(b.codigo, 40);
+  let codigo = _txt(b.codigo, 40);
+  // Fase 380 (I5): un equipo administrable nuevo sin código recibe el siguiente de su subtipo.
+  const subtipoNuevo = b.datos && typeof b.datos === 'object' ? b.datos.subtipo : undefined;
+  if (nuevo && !codigo && t.codigo === 'ADMINISTRABLE') codigo = siguienteCodigoAdmin(db, subtipoNuevo);
   if (nuevo && !/^[\p{L}\p{N}][\p{L}\p{N} ._/-]{0,39}$/u.test(codigo)) return { error: 'El código es obligatorio (letras, números, punto, guion o barra; hasta 40)' };
   const v = { sede: _txt(b.sede), operacion: _txt(b.operacion), proveedor: _txt(b.proveedor), marca: _txt(b.marca, 60), modelo: _txt(b.modelo, 60), serial: _txt(b.serial, 80), observaciones: _txt(b.observaciones, 500) };
   for (const [campo, nombreLista] of [['sede', 'sedes'], ['operacion', 'operaciones'], ['proveedor', 'proveedores']]) {
@@ -433,5 +467,5 @@ function agenteParaAsignar(db, b) {
   return c.error ? c : { agenteId: c.agente.id, creado: true };
 }
 
-module.exports = { reasignar, agenteParaAsignar, CAMPOS_I2, agregarCamposI2, RENDIMIENTOS, rendimientoDe, AMBITOS, TIPOS_INMUEBLES, ambitoDe, ESTADOS_AL_SOLTAR, validarAgente, agentes, agente, crearAgente, editarAgente, agenteDetalle, asignar, devolver, cambiarElemento,
+module.exports = { ADMIN_SUBTIPOS_I5, ADMIN_CODIGO_BASE, agregarCamposI5, siguienteCodigoAdmin, ipRepetida, reasignar, agenteParaAsignar, CAMPOS_I2, agregarCamposI2, RENDIMIENTOS, rendimientoDe, AMBITOS, TIPOS_INMUEBLES, ambitoDe, ESTADOS_AL_SOLTAR, validarAgente, agentes, agente, crearAgente, editarAgente, agenteDetalle, asignar, devolver, cambiarElemento,
   ESTADOS, ESTADO_CODIGOS, LISTAS, TIPOS_BASE, puede, crearTablas, tipos, tipo, lista, guardarLista, validar, crear, obtener, editar, cambiarEstado, listar, resumen, historial };
