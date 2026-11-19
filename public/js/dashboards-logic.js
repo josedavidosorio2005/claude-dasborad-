@@ -98,6 +98,8 @@ function dashTarjetasEntrada(rol, esFullAdmin, puedeCargar) {
   if (puedeCargar) t.push({ key: 'cargar', label: 'Cargar Datos', sub: 'Subir Excel de los dashboards', icon: 'i-upload', accion: 'openCentroCargas' });
   // Fase 369 (E1): «Inventario de sistemas» (activos), para ADMIN y SISTEMAS.
   if (esFullAdmin || rol === 'SISTEMAS') t.push({ key: 'activos', label: 'Inventario de sistemas', sub: 'Equipos y elementos tecnológicos', icon: 'i-package', accion: 'activosAbrir' });
+  // Fase 376 (I1, Edwin 19/11): «Inventario de inmuebles» (sillas, mesas, papeleras), mismo motor, por ahora vacío.
+  if (esFullAdmin || rol === 'SISTEMAS') t.push({ key: 'inmuebles', label: 'Inventario de inmuebles', sub: 'Sillas, mesas, papeleras', icon: 'i-armchair', accion: 'activosAbrirInmuebles' });
   // Fase 364 (pedido de Edwin 18/11, B2): «Sugerencias / Tickets» como tarjeta propia (antes en la barra superior).
   t.push({ key: 'tickets', label: 'Sugerencias / Tickets', sub: 'Reporta un problema, una pregunta o una idea', icon: 'i-message-circle', accion: 'ticketsAbrir' });
   return t;

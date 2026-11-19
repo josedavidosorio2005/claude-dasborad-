@@ -19,9 +19,10 @@ const log = (accion, a, req, detalle) => logEvent(accion, { nombre: a ? a.tipo +
 
 router.get('/activos/config', requireActor, wrap((req, res) => {
   if (!permitido(req, res)) return;
-  res.json({ estados: A.ESTADOS, tipos: A.tipos(db), listas: Object.fromEntries(Object.keys(A.LISTAS).map((k) => [k, A.lista(db, k)])),
+  const ambito = A.ambitoDe(req.query.ambito); // Fase 376: sistemas (por defecto) o inmuebles
+  res.json({ ambito, estados: A.ESTADOS, tipos: A.tipos(db, { ambito }), listas: Object.fromEntries(Object.keys(A.LISTAS).map((k) => [k, A.lista(db, k)])),
     // Fase 372 (E4): para Ajustes › Formularios (todos los tipos, también los desactivados) y los textos del acta.
-    tiposTodos: A.tipos(db, { todos: true }), textos: F.textos(db), textosNombres: Object.fromEntries(Object.entries(F.TEXTOS).map(([k, t]) => [k, t.nombre])) });
+    tiposTodos: A.tipos(db, { todos: true, ambito }), textos: F.textos(db), textosNombres: Object.fromEntries(Object.entries(F.TEXTOS).map(([k, t]) => [k, t.nombre])) });
 }));
 
 // ── Fase 372 (E4): formularios editables (tipos y sus campos) y textos del acta. Historial sin datos personales.
@@ -29,7 +30,7 @@ const logTipo = (accion, t, req, detalle) => logEvent(accion, { nombre: t.nombre
 const resumenCampos = (t) => t.campos.length + ' campo(s)' + (t.campos.some((c) => c.oculto) ? ', ' + t.campos.filter((c) => c.oculto).length + ' oculto(s)' : '');
 router.post('/activos/config/tipos', requireActor, wrap((req, res) => {
   if (!permitido(req, res)) return;
-  const r = F.crearTipo(db, req.body);
+  const r = F.crearTipo(db, req.body, A.ambitoDe(req.query.ambito)); // Fase 376: el tipo nuevo es del inventario abierto
   if (r.error) return res.status(r.status || 400).json({ error: r.error });
   logTipo('ACTIVO_TIPO_CREADO', r.tipo, req, resumenCampos(r.tipo));
   res.status(201).json(r);
@@ -61,12 +62,12 @@ router.put('/activos/config/textos/:clave', requireActor, wrap((req, res) => {
 }));
 router.get('/activos/resumen', requireActor, wrap((req, res) => {
   if (!permitido(req, res)) return;
-  res.json(A.resumen(db));
+  res.json(A.resumen(db, req.query.ambito));
 }));
 router.get('/activos', requireActor, wrap((req, res) => {
   if (!permitido(req, res)) return;
   const q = {};
-  for (const k of ['tipo', 'estado', 'sede', 'q']) if (typeof req.query[k] === 'string' && req.query[k].trim()) q[k] = req.query[k].trim();
+  for (const k of ['tipo', 'estado', 'sede', 'q', 'ambito', 'operacion']) if (typeof req.query[k] === 'string' && req.query[k].trim()) q[k] = req.query[k].trim(); // Fase 376: + ámbito y operación
   res.json({ activos: A.listar(db, q) });
 }));
 router.post('/activos', requireActor, wrap((req, res) => {

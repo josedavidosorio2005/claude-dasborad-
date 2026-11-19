@@ -2057,21 +2057,20 @@
   <div class="modal modal-activos">
     <button class="tk-cerrar" type="button" onclick="activosCerrar()" aria-label="Cerrar">×</button>
     <h3 id="activos-title">Inventario de sistemas</h3>
-    <div class="ml-vistas" role="group" aria-label="Secciones">
-      <button type="button" class="btn-cancel" data-ac-tab="panel" aria-pressed="true" onclick="activosTab('panel')">Panel</button>
-      <button type="button" class="btn-cancel" data-ac-tab="elementos" aria-pressed="false" onclick="activosTab('elementos')">Elementos</button>
-      <button type="button" class="btn-cancel" data-ac-tab="agentes" aria-pressed="false" onclick="activosTab('agentes')">Agentes</button>
-      <button type="button" class="btn-cancel" data-ac-tab="registrar" aria-pressed="false" onclick="activosTab('registrar')">Registrar</button>
-      <button type="button" class="btn-cancel" data-ac-tab="ajustes" aria-pressed="false" onclick="activosTab('ajustes')">Ajustes</button>
-    </div>
+    <!-- Fase 376 (I1, diseño de Edwin): menú lateral en vez de pestañas (activos.js lo arma según el inventario). -->
+    <div class="ac-layout">
+    <nav class="ac-menu" id="ac-menu" aria-label="Menú del inventario"></nav>
+    <div class="ac-main">
+    <div class="ac-vista-cab" id="ac-vista-cab"></div>
     <p class="wv-error hidden" id="ac-error" role="alert"></p>
     <section id="ac-p-panel" aria-label="Panel"></section>
     <section id="ac-p-elementos" class="hidden" aria-label="Elementos">
       <div id="ac-lista-zona">
         <div class="ac-filtros">
           <div class="ig"><label for="ac-f-tipo">Tipo</label><select id="ac-f-tipo" onchange="activosBuscar()"></select></div>
-          <div class="ig"><label for="ac-f-estado">Estado</label><select id="ac-f-estado" onchange="activosBuscar()"></select></div>
+          <div class="ig" id="ac-f-estado-ig"><label for="ac-f-estado">Estado</label><select id="ac-f-estado" onchange="activosBuscar()"></select></div>
           <div class="ig"><label for="ac-f-sede">Sede</label><select id="ac-f-sede" onchange="activosBuscar()"></select></div>
+          <div class="ig"><label for="ac-f-operacion">Operación</label><select id="ac-f-operacion" onchange="activosBuscar()"></select></div>
           <div class="ig"><label for="ac-f-q">Buscar</label><input type="search" id="ac-f-q" maxlength="60" placeholder="Código, marca, modelo, serial…" onchange="activosBuscar()"></div>
         </div>
         <div id="ac-lista" aria-live="polite"></div>
@@ -2133,6 +2132,8 @@
       <div id="ac-textos" class="ac-filtros"></div>
     </section>
     <datalist id="ac-motivos-lista"></datalist>
+    </div><!-- .ac-main -->
+    </div><!-- .ac-layout -->
   </div>
 </div>
 

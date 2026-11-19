@@ -34,6 +34,16 @@ const TIPOS_BASE = [
   { codigo: 'ADMINISTRABLE', nombre: 'Equipo administrable', plural: 'Equipos administrables', campos: [{ k: 'subtipo', l: 'Tipo', t: 'lista', o: ['Servidor', 'Switch', 'Router', 'Otro'] }, { k: 'ip', l: 'Dirección IP', t: 'texto' }, { k: 'responsable', l: 'Responsable', t: 'texto' }] },
 ];
 
+// Fase 376 (I1, diseño de Edwin): «Inventario de inmuebles» con el mismo motor y sus propios tipos
+// (ámbito «inmuebles»), vacío al empezar. Los tipos de antes son del ámbito «sistemas».
+const AMBITOS = ['sistemas', 'inmuebles'];
+const TIPOS_INMUEBLES = [
+  { codigo: 'SILLA', nombre: 'Silla', plural: 'Sillas', campos: [] },
+  { codigo: 'MESA', nombre: 'Mesa', plural: 'Mesas', campos: [] },
+  { codigo: 'PAPELERA', nombre: 'Papelera', plural: 'Papeleras', campos: [] },
+];
+const ambitoDe = (v) => (AMBITOS.includes(v) ? v : 'sistemas');
+
 // auth se carga aquí (no arriba): db.js carga este archivo y auth.js necesita db.js (dependencia circular).
 function puede(actor) { return !!actor && (require('./auth').isFullAdmin(actor) || actor.rol === 'SISTEMAS'); }
 
@@ -76,13 +86,21 @@ CREATE INDEX IF NOT EXISTS idx_activos_asig_agente ON activos_asignaciones(agent
 CREATE UNIQUE INDEX IF NOT EXISTS ux_activos_asig_abierta ON activos_asignaciones(activoId) WHERE hasta IS NULL;`);
   const ins = db.prepare('INSERT OR IGNORE INTO activos_tipos (codigo, nombre, plural, orden, campos) VALUES (?, ?, ?, ?, ?)');
   TIPOS_BASE.forEach((t, i) => ins.run(t.codigo, t.nombre, t.plural, i + 1, JSON.stringify(t.campos)));
+  // Fase 376: ámbito de cada tipo; los de inmuebles se siembran (sin elementos).
+  if (!db.prepare('PRAGMA table_info(activos_tipos)').all().some((c) => c.name === 'ambito')) db.exec("ALTER TABLE activos_tipos ADD COLUMN ambito TEXT NOT NULL DEFAULT 'sistemas'");
+  const insI = db.prepare("INSERT OR IGNORE INTO activos_tipos (codigo, nombre, plural, orden, campos, ambito) VALUES (?, ?, ?, ?, ?, 'inmuebles')");
+  TIPOS_INMUEBLES.forEach((t, i) => insI.run(t.codigo, t.nombre, t.plural, 100 + i, JSON.stringify(t.campos)));
 }
 
 // Fase 372 (E4): con { todos: true } también los tipos desactivados (con su marca `activo`).
+// Fase 376: con { ambito } solo los tipos de ese inventario (sin él, todos: así validar() encuentra cualquiera).
 function tipos(db, opts) {
-  const todos = !!(opts && opts.todos);
-  return db.prepare('SELECT * FROM activos_tipos ' + (todos ? '' : 'WHERE activo = 1 ') + 'ORDER BY orden, codigo').all()
-    .map((t) => ({ codigo: t.codigo, nombre: t.nombre, plural: t.plural, activo: !!t.activo, campos: JSON.parse(t.campos || '[]') }));
+  const todos = !!(opts && opts.todos), amb = opts && opts.ambito ? ambitoDe(opts.ambito) : null;
+  const w = [];
+  if (!todos) w.push('activo = 1');
+  if (amb) w.push("ambito = '" + amb + "'");
+  return db.prepare('SELECT * FROM activos_tipos ' + (w.length ? 'WHERE ' + w.join(' AND ') + ' ' : '') + 'ORDER BY orden, codigo').all()
+    .map((t) => ({ codigo: t.codigo, nombre: t.nombre, plural: t.plural, activo: !!t.activo, ambito: t.ambito || 'sistemas', campos: JSON.parse(t.campos || '[]') }));
 }
 function tipo(db, codigo, opts) { return tipos(db, opts).find((t) => t.codigo === codigo) || null; }
 function lista(db, nombre) { return db.prepare('SELECT valor FROM activos_listas WHERE lista = ? ORDER BY orden, valor').all(nombre).map((r) => r.valor); }
@@ -190,21 +208,25 @@ function cambiarEstado(db, a, estado, motivo, quien) {
 
 function listar(db, q) {
   const where = [], p = [];
+  if (q.ambito) { where.push('a.tipo IN (SELECT codigo FROM activos_tipos WHERE ambito = ?)'); p.push(ambitoDe(q.ambito)); } // Fase 376
   if (q.tipo) { where.push('a.tipo = ?'); p.push(q.tipo); }
   if (q.estado) { where.push('a.estado = ?'); p.push(q.estado); }
   if (q.sede) { where.push('a.sede = ?'); p.push(q.sede); }
+  if (q.operacion) { where.push('a.operacion = ?'); p.push(q.operacion); } // Fase 376
   if (q.q) { where.push("(a.codigo LIKE ? OR a.marca LIKE ? OR a.modelo LIKE ? OR a.serial LIKE ? OR a.datos LIKE ? OR g.nombre LIKE ?)"); const s = '%' + String(q.q).slice(0, 60).replace(/[%_]/g, '') + '%'; p.push(s, s, s, s, s, s); }
   return db.prepare(SELECT_ACTIVO + ' ' + (where.length ? 'WHERE ' + where.join(' AND ') : '') + ' ORDER BY a.tipo, a.codigo LIMIT 3000').all(...p).map(_publico);
 }
-function resumen(db) {
+function resumen(db, ambito) {
+  // Fase 376: por ámbito (sistemas o inmuebles).
+  const amb = ambitoDe(ambito), F = " WHERE tipo IN (SELECT codigo FROM activos_tipos WHERE ambito = '" + amb + "')";
   const porEstado = Object.fromEntries(ESTADO_CODIGOS.map((e) => [e, 0]));
-  for (const r of db.prepare('SELECT estado, COUNT(*) n FROM activos GROUP BY estado').all()) porEstado[r.estado] = r.n;
+  for (const r of db.prepare('SELECT estado, COUNT(*) n FROM activos' + F + ' GROUP BY estado').all()) porEstado[r.estado] = r.n;
   const porTipo = {};
-  for (const r of db.prepare('SELECT tipo, estado, COUNT(*) n FROM activos GROUP BY tipo, estado').all()) {
+  for (const r of db.prepare('SELECT tipo, estado, COUNT(*) n FROM activos' + F + ' GROUP BY tipo, estado').all()) {
     porTipo[r.tipo] = porTipo[r.tipo] || Object.fromEntries(ESTADO_CODIGOS.map((e) => [e, 0]));
     porTipo[r.tipo][r.estado] = r.n;
   }
-  const porSede = db.prepare("SELECT CASE WHEN sede = '' THEN '(sin sede)' ELSE sede END sede, COUNT(*) n FROM activos WHERE estado != 'de_baja' GROUP BY 1 ORDER BY n DESC").all();
+  const porSede = db.prepare("SELECT CASE WHEN sede = '' THEN '(sin sede)' ELSE sede END sede, COUNT(*) n FROM activos" + F + " AND estado != 'de_baja' GROUP BY 1 ORDER BY n DESC").all();
   const agentes = db.prepare(`SELECT COUNT(*) activos, COALESCE(SUM(EXISTS (SELECT 1 FROM activos_asignaciones s WHERE s.agenteId = g.id AND s.hasta IS NULL)), 0) conElementos
     FROM activos_agentes g WHERE g.activo = 1`).get(); // Fase 370
   return { total: Object.values(porEstado).reduce((a, b) => a + b, 0), porEstado, porTipo, porSede, agentes };
@@ -317,5 +339,5 @@ function cambiarElemento(db, a, nuevoId, estado, motivo, quien) {
   return { anterior: obtener(db, a.id), activo: obtener(db, n.id) };
 }
 
-module.exports = { ESTADOS_AL_SOLTAR, validarAgente, agentes, agente, crearAgente, editarAgente, agenteDetalle, asignar, devolver, cambiarElemento,
+module.exports = { AMBITOS, TIPOS_INMUEBLES, ambitoDe, ESTADOS_AL_SOLTAR, validarAgente, agentes, agente, crearAgente, editarAgente, agenteDetalle, asignar, devolver, cambiarElemento,
   ESTADOS, ESTADO_CODIGOS, LISTAS, TIPOS_BASE, puede, crearTablas, tipos, tipo, lista, guardarLista, validar, crear, obtener, editar, cambiarEstado, listar, resumen, historial };
