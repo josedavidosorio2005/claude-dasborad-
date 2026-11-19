@@ -7,6 +7,17 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.231.0 — Noviembre 2026
+
+**Inventario, como lo diseñó Edwin (parte 5 de 6): equipos administrables.**
+
+- Nueva sección **«Equipos administrables»** (red e infraestructura): cuántos hay disponibles, activos, en
+  mantenimiento, fuera de servicio y dados de baja; botones por tipo (servidor, switch, router, DVR / NVR, firewall,
+  access point, UPS, otro) con su conteo; filtros por sede, estado y búsqueda (código, IP, responsable…).
+- Al registrar uno, si se deja el código vacío **se asigna solo** según el tipo (servidor desde 5001, switch 6001,
+  DVR / NVR 7001, router o firewall 8001, access point 9001, UPS 4001, otro 4501).
+- Campos nuevos: ubicación, precio y renta mensual. Si la IP ya la tiene otro equipo, la plataforma avisa (no bloquea).
+
 ## v1.230.0 — Noviembre 2026
 
 **Inventario, como lo diseñó Edwin (parte 4 de 6): actas automáticas.**

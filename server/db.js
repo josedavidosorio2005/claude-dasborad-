@@ -5415,6 +5415,10 @@ runOnceMigration('fase377_inventario_campos_v1', () => {
   for (const v of ['InConexión', 'Alcom']) if (!hay.includes(clave(v))) ins.run(v, orden++);
 });
 
+// Fase 380 (Inventario I5, diseño de Edwin): subtipos, ubicación, precio y renta de los equipos
+// administrables. Solo agrega (nunca quita opciones ni campos, ni toca lo que Sistemas ocultó o renombró).
+runOnceMigration('fase380_inventario_administrables_v1', () => { require('./activos').agregarCamposI5(db); });
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {

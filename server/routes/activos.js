@@ -81,6 +81,8 @@ router.post('/activos', requireActor, wrap((req, res) => {
   const r = A.crear(db, v.valores, actorLabel(req.actor));
   if (r.error) return res.status(r.status || 400).json({ error: r.error });
   log('ACTIVO_INGRESO', r.activo, req, 'estado ' + r.activo.estado);
+  const ipRep = A.ipRepetida(db, r.activo.datos.ip, r.activo.id); // Fase 380: aviso, no error
+  if (ipRep) r.aviso = 'La IP ' + r.activo.datos.ip + ' ya está registrada en el equipo ' + ipRep.codigo;
   res.status(201).json(r);
 }));
 router.put('/activos/:id', requireActor, wrap((req, res) => {
@@ -93,7 +95,8 @@ router.put('/activos/:id', requireActor, wrap((req, res) => {
   if (v.error) return res.status(400).json({ error: v.error });
   const n = A.editar(db, a, v.valores, actorLabel(req.actor));
   log('ACTIVO_EDICION', n, req);
-  res.json({ activo: n });
+  const ipRep = A.ipRepetida(db, n.datos.ip, n.id); // Fase 380
+  res.json(ipRep ? { activo: n, aviso: 'La IP ' + n.datos.ip + ' ya está registrada en el equipo ' + ipRep.codigo } : { activo: n });
 }));
 router.post('/activos/:id/estado', requireActor, wrap((req, res) => {
   if (!permitido(req, res)) return;
@@ -105,7 +108,8 @@ router.post('/activos/:id/estado', requireActor, wrap((req, res) => {
     r = A.cambiarEstado(db, a, b.estado, b.motivo, actorLabel(req.actor), b.tecnico); // Fase 378: + técnico; también si está asignado
     if (r.error) return;
     // Fase 379 (I4): acta automática del cambio (reparación, malo, baja, recibo de reparación o devolución).
-    const tipo = ACT.tipoPorEstado(a.estado, r.activo.estado);
+    let tipo = ACT.tipoPorEstado(a.estado, r.activo.estado);
+    if (tipo === 'devolucion' && !a.agente) tipo = null; // Fase 380: un administrable «en uso» no tiene agente
     if (tipo && ACT.llevaActa(db, a)) actas.push(ACT.auto(db, { tipo, agente: a.agente ? A.agente(db, a.agente.id) : null, items: [{ a, dir: a.agente ? 'devuelve' : '', queda: r.activo.estado }],
       motivo: b.motivo, tecnico: r.activo.estado === 'en_reparacion' ? b.tecnico : '', quien: actorLabel(req.actor) }));
   })();

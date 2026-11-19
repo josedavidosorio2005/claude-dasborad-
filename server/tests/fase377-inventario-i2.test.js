@@ -29,7 +29,7 @@ test('campos nuevos en su lugar y propietarios precargados (migración)', async 
   assert.deepEqual(k('TORRE'), ['nombre_equipo', 'procesador', 'velocidad', 'ram_gb', 'disco', 'tipo_disco', 'precio', 'renta_mensual']);
   assert.deepEqual(k('PORTATIL'), ['nombre_equipo', 'procesador', 'velocidad', 'ram_gb', 'disco', 'tipo_disco', 'cargador', 'precio', 'renta_mensual']);
   for (const c of ['MONITOR', 'TECLADO', 'MOUSE', 'DIADEMA']) assert.deepEqual(k(c).slice(-2), ['precio', 'renta_mensual'], c);
-  assert.ok(!k('ADMINISTRABLE').includes('precio'));
+  assert.ok(k('ADMINISTRABLE').includes('precio'), 'Fase 380: el administrable también lleva precio');
   assert.deepEqual((await get('/activos/config?ambito=inmuebles')).body.tipos.map((t) => t.campos.length), [0, 0, 0]);
   assert.deepEqual(cfg.listas.proveedores, ['InConexión', 'Alcom']);
   assert.deepEqual(cfg.rendimientos.map((r) => r.codigo), ['bajo', 'medio', 'alto', 'sin']);

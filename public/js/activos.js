@@ -7,7 +7,7 @@ var _ac = { config: null, tab: 'panel', lista: [], sel: null, ambito: 'sistemas'
 // Fase 376 (I1, diseño de Edwin): menú lateral con el ciclo de cada elemento. «sec» = título de sección.
 var AC_MENU = {
   sistemas: [['sec', 'Menú'], ['panel', 'Panel general'], ['sec', 'Ciclo de elementos'], ['registrar', 'Registrar ingreso', '1'], ['libres', 'Libres', '2'], ['asignados', 'Asignados', '3'],
-    ['reparacion', 'En reparación', '4'], ['malos', 'Malos', '5'], ['sec', 'Gestión'], ['elementos', 'Inventario completo'], ['agentes', 'Agentes'], ['actas', 'Actas'], ['ajustes', 'Ajustes y datos']], // Fase 379: + Actas
+    ['reparacion', 'En reparación', '4'], ['malos', 'Malos', '5'], ['sec', 'Gestión'], ['elementos', 'Inventario completo'], ['agentes', 'Agentes'], ['admin', 'Equipos administrables'], ['actas', 'Actas'], ['ajustes', 'Ajustes y datos']], // Fase 379: + Actas; Fase 380: + administrables
   inmuebles: [['sec', 'Menú'], ['panel', 'Panel general'], ['sec', 'Ciclo de elementos'], ['registrar', 'Registrar ingreso', '1'], ['libres', 'Libres', '2'],
     ['reparacion', 'En reparación', '3'], ['malos', 'Malos', '4'], ['sec', 'Gestión'], ['elementos', 'Inventario completo'], ['ajustes', 'Ajustes y datos']],
 };
@@ -22,6 +22,7 @@ var AC_VISTA_TXT = {
   malos: ['Malos', 'Elementos que no se pueden entregar.'],
   elementos: ['Inventario completo', 'Todos los elementos, con filtros por tipo, estado, sede, operación, propietario y rendimiento.'],
   agentes: ['Agentes', 'Quién tiene cada elemento: asignar, devolver y cambiar, con actas.'],
+  admin: ['Equipos administrables', 'Red e infraestructura: servidores, switches, DVR / NVR, routers y firewalls, access points y UPS. Se registran en «Registrar ingreso»; el código se asigna solo según el tipo.'],
   actas: ['Actas', 'Cada movimiento (entrega, devolución, cambio, envío a reparación, recibo de reparación, elemento malo o baja) crea su acta. Imprímela, hazla firmar y súbela escaneada.'],
   ajustes: ['Ajustes y datos', 'Listas, formularios por tipo y textos del acta.'],
 };
@@ -72,11 +73,11 @@ function activosCerrar() { closeModal('activos-overlay'); }
 
 function activosTab(tab) {
   if (!AC_VISTA_TXT[tab]) tab = 'panel';
-  if (_ac.ambito === 'inmuebles' && (tab === 'agentes' || tab === 'asignados' || tab === 'actas')) tab = 'panel'; // inmuebles no se asignan a agentes
+  if (_ac.ambito === 'inmuebles' && (tab === 'agentes' || tab === 'asignados' || tab === 'actas' || tab === 'admin')) tab = 'panel'; // inmuebles no se asignan a agentes
   _ac.tab = tab;
   _acError('');
   var seccion = AC_VISTA_ESTADO[tab] ? 'elementos' : tab; // las vistas por estado usan la lista de elementos
-  ['panel', 'elementos', 'agentes', 'registrar', 'ajustes', 'actas'].forEach(function (t) { _acEl('ac-p-' + t).classList.toggle('hidden', t !== seccion); });
+  ['panel', 'elementos', 'agentes', 'registrar', 'ajustes', 'actas', 'admin'].forEach(function (t) { _acEl('ac-p-' + t).classList.toggle('hidden', t !== seccion); });
   var txt = AC_VISTA_TXT[tab];
   _acEl('ac-vista-cab').innerHTML = '<h4 class="ac-vista-tit">' + esc(txt[0]) + '</h4><p class="vis-ayuda">' + esc(txt[1]) + '</p>' + (tab === 'panel' || tab === 'registrar' ? activosFlujoHtml(_ac.ambito) : '');
   _acRefrescarMenu();
@@ -87,6 +88,7 @@ function activosTab(tab) {
   if (tab === 'registrar') _acFormulario();
   if (tab === 'ajustes') _acAjustes();
   if (tab === 'actas') activosActasBuscar(); // Fase 379
+  if (tab === 'admin') { _ac.adSubtipo = ''; activosAdminBuscar(); } // Fase 380
 }
 
 // ── Panel ──
@@ -287,6 +289,59 @@ async function activosGestionEnviar(ev, modo) {
     _acRefrescarMenu();
   } catch (e) { _acError(e.message); }
 }
+// ── Fase 380 (I5, diseño de Edwin): vista «Equipos administrables» ──
+// Mismos estados del inventario, con los nombres del diseño para la red.
+var AC_ESTADO_ADMIN = { libre: 'Disponible', en_uso: 'Activo', en_reparacion: 'En mantenimiento', malo: 'Fuera de servicio', de_baja: 'Dado de baja' };
+function activosAdminHtml(lista) {
+  if (!lista.length) return '<p class="vis-vacio">Ningún equipo administrable con estos filtros. Regístralos en «Registrar ingreso».</p>';
+  return '<div class="table-wrap"><table class="vis-tabla"><thead><tr><th scope="col">Código</th><th scope="col">Tipo</th><th scope="col">Marca / modelo</th><th scope="col">Serial</th><th scope="col">Dirección IP</th><th scope="col">Sede</th><th scope="col">Ubicación</th><th scope="col">Responsable</th><th scope="col">Estado</th><th scope="col"><span class="sr-only">Acciones</span></th></tr></thead><tbody>' +
+    lista.map(function (a) {
+      var d = a.datos || {};
+      return '<tr><th scope="row">' + esc(a.codigo) + '</th><td>' + esc(d.subtipo || '') + '</td><td>' + esc([a.marca, a.modelo].filter(Boolean).join(' ')) + '</td><td>' + esc(a.serial) + '</td><td class="ac-ip">' + esc(d.ip || '') + '</td>' +
+        '<td>' + esc(a.sede) + '</td><td>' + esc(d.ubicacion || '') + '</td><td>' + esc(d.responsable || '') + '</td><td><span class="vis-pill ' + (AC_CLASE_ESTADO[a.estado] || '') + '">' + esc(AC_ESTADO_ADMIN[a.estado] || a.estado) + '</span></td>' +
+        '<td><button type="button" class="btn-cancel ac-btn" onclick="activosAdminVer(' + Number(a.id) + ')">Ver</button></td></tr>';
+    }).join('') + '</tbody></table></div>';
+}
+function activosAdminKpisHtml(todos) {
+  var n = function (e) { return todos.filter(function (a) { return a.estado === e; }).length; };
+  return '<div class="ac-kpis"><div class="ac-kpi"><b>' + todos.length + '</b><span>Registrados</span></div>' + Object.keys(AC_ESTADO_ADMIN).map(function (e) {
+    return '<button type="button" class="ac-kpi ac-rend-kpi" onclick="activosAdminFiltrarEstado(\'' + e + '\')"><b>' + n(e) + '</b><span class="vis-pill ' + AC_CLASE_ESTADO[e] + '">' + esc(AC_ESTADO_ADMIN[e]) + '</span></button>';
+  }).join('') + '</div>';
+}
+function activosAdminSubtiposHtml(todos, subtipos, actual) {
+  return [''].concat(subtipos).map(function (s) {
+    var c = s ? todos.filter(function (a) { return (a.datos || {}).subtipo === s; }).length : todos.length;
+    return '<button type="button" class="btn-cancel ac-btn" aria-pressed="' + String(s === actual) + '" onclick="activosAdminSubtipo(this.dataset.s)" data-s="' + esc(s) + '">' + esc(s || 'Todos') + ' (' + c + ')</button>';
+  }).join('');
+}
+function activosAdminFiltrarEstado(e) { _acEl('ac-ad-estado').value = e; activosAdminBuscar(); }
+function activosAdminSubtipo(s) { _ac.adSubtipo = s || ''; activosAdminBuscar(); }
+async function activosAdminBuscar() {
+  _acError('');
+  var sedeSel = _acEl('ac-ad-sede'), estSel = _acEl('ac-ad-estado');
+  var sv = sedeSel.value, ev = estSel.value;
+  sedeSel.innerHTML = _acOpciones(_ac.config.listas.sedes, sv, 'Todas') + '<option value="__none"' + (sv === '__none' ? ' selected' : '') + '>Sin sede</option>';
+  estSel.innerHTML = '<option value="">Todos</option>' + Object.keys(AC_ESTADO_ADMIN).map(function (e) { return '<option value="' + e + '"' + (e === ev ? ' selected' : '') + '>' + esc(AC_ESTADO_ADMIN[e]) + '</option>'; }).join('');
+  var c = _acEl('ac-ad-lista');
+  c.innerHTML = '<p class="vis-vacio">Cargando…</p>';
+  try {
+    var todos = (await apiRequest('GET', '/activos?ambito=sistemas&tipo=ADMINISTRABLE')).activos;
+    var t = _acTipo('ADMINISTRABLE'), sub = t ? (t.campos.find(function (x) { return x.k === 'subtipo'; }) || {}).o || [] : [];
+    var q = _acEl('ac-ad-q').value.trim().toLowerCase();
+    var l = todos.filter(function (a) {
+      if (_ac.adSubtipo && (a.datos || {}).subtipo !== _ac.adSubtipo) return false;
+      if (sedeSel.value && (sedeSel.value === '__none' ? a.sede : a.sede !== sedeSel.value)) return false;
+      if (estSel.value && a.estado !== estSel.value) return false;
+      return !q || [a.codigo, a.marca, a.modelo, a.serial, a.sede, (a.datos || {}).ip, (a.datos || {}).responsable, (a.datos || {}).ubicacion].join(' ').toLowerCase().indexOf(q) !== -1;
+    });
+    var base = todos.filter(function (a) { return !_ac.adSubtipo || (a.datos || {}).subtipo === _ac.adSubtipo; });
+    _acEl('ac-ad-kpis').innerHTML = activosAdminKpisHtml(base);
+    _acEl('ac-ad-subtipos').innerHTML = activosAdminSubtiposHtml(todos, sub, _ac.adSubtipo || '');
+    _acEl('ac-ad-conteo').textContent = l.length + (l.length === 1 ? ' equipo' : ' equipos') + ' con estos filtros (de ' + todos.length + ')';
+    c.innerHTML = activosAdminHtml(l);
+  } catch (e) { c.innerHTML = ''; _acError(e.message); }
+}
+function activosAdminVer(id) { activosTab('elementos'); activosVer(id); }
 // Fase 377: desde el Panel, el inventario completo filtrado por un rendimiento.
 function activosVerRendimiento(codigo) {
   ['tipo', 'estado', 'sede', 'operacion', 'proveedor', 'rend', 'q'].forEach(function (k) { var el = _acEl('ac-f-' + k); el.value = ''; el.removeAttribute('data-v'); });
@@ -322,6 +377,8 @@ function _acFormulario() {
   activosCambioTipo();
 }
 function activosCambioTipo() {
+  var esAdm = _acEl('ac-r-tipo').value === 'ADMINISTRABLE'; // Fase 380: código automático
+  _acEl('ac-r-codigo').required = !esAdm; _acEl('ac-r-codigo-ayuda').classList.toggle('hidden', !esAdm);
   var t = _acTipo(_acEl('ac-r-tipo').value);
   _acEl('ac-r-campos').innerHTML = t ? t.campos.filter(function (c) { return !c.oculto; }).map(activosCampoHtml).join('') : ''; // Fase 372: sin los ocultos
 }
@@ -334,7 +391,7 @@ async function activosRegistrar(ev) {
     sede: _acEl('ac-r-sede').value, operacion: _acEl('ac-r-operacion').value, proveedor: _acEl('ac-r-proveedor').value, observaciones: _acEl('ac-r-obs').value, datos: datos };
   try {
     var r = await apiRequest('POST', '/activos', b);
-    showToast('Registrado: ' + r.activo.codigo, 'ok');
+    showToast('Registrado: ' + r.activo.codigo + (r.aviso ? '. Ojo: ' + r.aviso : ''), r.aviso ? 'warning' : 'ok');
     _acEl('ac-r-form').reset();
     activosCambioTipo();
     _acEl('ac-r-nota').textContent = 'Se registró ' + r.activo.codigo + '. Puedes registrar el siguiente.';
@@ -806,5 +863,5 @@ async function activosDescargarFirmada(id) {
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { activosMenuHtml: activosMenuHtml, activosFlujoHtml: activosFlujoHtml, AC_MENU: AC_MENU, AC_VISTA_ESTADO: AC_VISTA_ESTADO, activosTiposHtml: activosTiposHtml, activosCampoEditorHtml: activosCampoEditorHtml, activosEditorTipoHtml: activosEditorTipoHtml, activosLeerCampos: activosLeerCampos, activosPanelHtml: activosPanelHtml, activosListaHtml: activosListaHtml, activosConsulta: activosConsulta, activosRendHtml: activosRendHtml, activosGestionHtml: activosGestionHtml, activosAgenteSelectHtml: activosAgenteSelectHtml, activosAgenteBody: activosAgenteBody, activosActasHtml: activosActasHtml, activosActasKpisHtml: activosActasKpisHtml, activosActasAviso: activosActasAviso, activosCampoHtml: activosCampoHtml, activosAgentesHtml: activosAgentesHtml, activosActaPrintHtml: activosActaPrintHtml };
+  module.exports = { activosMenuHtml: activosMenuHtml, activosFlujoHtml: activosFlujoHtml, AC_MENU: AC_MENU, AC_VISTA_ESTADO: AC_VISTA_ESTADO, activosTiposHtml: activosTiposHtml, activosCampoEditorHtml: activosCampoEditorHtml, activosEditorTipoHtml: activosEditorTipoHtml, activosLeerCampos: activosLeerCampos, activosPanelHtml: activosPanelHtml, activosListaHtml: activosListaHtml, activosConsulta: activosConsulta, activosRendHtml: activosRendHtml, activosGestionHtml: activosGestionHtml, activosAgenteSelectHtml: activosAgenteSelectHtml, activosAgenteBody: activosAgenteBody, activosActasHtml: activosActasHtml, activosActasKpisHtml: activosActasKpisHtml, activosActasAviso: activosActasAviso, activosAdminHtml: activosAdminHtml, activosAdminKpisHtml: activosAdminKpisHtml, activosAdminSubtiposHtml: activosAdminSubtiposHtml, AC_ESTADO_ADMIN: AC_ESTADO_ADMIN, activosCampoHtml: activosCampoHtml, activosAgentesHtml: activosAgentesHtml, activosActaPrintHtml: activosActaPrintHtml };
 }
