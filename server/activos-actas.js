@@ -19,12 +19,14 @@ CREATE TABLE IF NOT EXISTS activos_actas (
   quien TEXT NOT NULL DEFAULT '', firmadaKey TEXT, firmadaEn TEXT, firmadaPor TEXT, firmadaBytes INTEGER
 );
 CREATE INDEX IF NOT EXISTS idx_activos_actas_agente ON activos_actas(agenteId, numero);`);
+  // Fase 372 (E4): copia del texto del acta al crearla (el texto se edita en Ajustes; las actas viejas no cambian).
+  if (!db.prepare('PRAGMA table_info(activos_actas)').all().some((c) => c.name === 'texto')) db.exec('ALTER TABLE activos_actas ADD COLUMN texto TEXT');
 }
 
 function _publica(r) {
   if (!r) return null;
   return { id: r.id, numero: r.numero, tipo: r.tipo, tipoNombre: TIPOS_ACTA[r.tipo] || r.tipo, agenteId: r.agenteId, fecha: r.fecha,
-    agente: JSON.parse(r.agente), elementos: JSON.parse(r.elementos), quien: r.quien,
+    agente: JSON.parse(r.agente), elementos: JSON.parse(r.elementos), quien: r.quien, texto: r.texto || null,
     firmada: r.firmadaKey ? { en: r.firmadaEn, por: r.firmadaPor, bytes: r.firmadaBytes } : null };
 }
 function obtener(db, id) { return _publica(db.prepare('SELECT * FROM activos_actas WHERE id = ?').get(id)); }
@@ -47,7 +49,8 @@ function crear(db, g, tipo, ids, quien) {
   const disponibles = new Map(candidatos(db, g, tipo).map((c) => [c.id, c]));
   const elegidos = [...new Set(ids)].map((x) => disponibles.get(x));
   if (elegidos.some((x) => !x)) return { error: tipo === 'entrega' ? 'Solo elementos que el agente tiene asignados' : 'Solo elementos que el agente ya devolvió' };
-  const nombresTipo = Object.fromEntries(A.tipos(db).map((t) => [t.codigo, t.nombre]));
+  const nombresTipo = Object.fromEntries(A.tipos(db, { todos: true }).map((t) => [t.codigo, t.nombre]));
+  const texto = require('./activos-formularios').textoActa(db, tipo); // Fase 372: copia fija
   const elementos = elegidos.map((c) => {
     const e = { tipo: nombresTipo[c.tipo] || c.tipo, codigo: c.codigo, marca: c.marca, modelo: c.modelo, serial: c.serial };
     if (tipo === 'devolucion') { e.queda = (A.ESTADOS.find((s) => s.codigo === c.queda) || {}).nombre || c.queda; e.motivo = c.motivo; }
@@ -57,8 +60,8 @@ function crear(db, g, tipo, ids, quien) {
   let id;
   db.transaction(() => {
     const numero = (db.prepare('SELECT COALESCE(MAX(numero), 0) n FROM activos_actas').get().n) + 1;
-    id = Number(db.prepare('INSERT INTO activos_actas (numero, tipo, agenteId, fecha, agente, elementos, quien) VALUES (?,?,?,?,?,?,?)')
-      .run(numero, tipo, g.id, new Date().toISOString(), JSON.stringify(agente), JSON.stringify(elementos), quien).lastInsertRowid);
+    id = Number(db.prepare('INSERT INTO activos_actas (numero, tipo, agenteId, fecha, agente, elementos, quien, texto) VALUES (?,?,?,?,?,?,?,?)')
+      .run(numero, tipo, g.id, new Date().toISOString(), JSON.stringify(agente), JSON.stringify(elementos), quien, texto).lastInsertRowid);
   })();
   return { acta: obtener(db, id) };
 }

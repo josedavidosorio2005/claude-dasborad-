@@ -2120,8 +2120,18 @@
         <div class="ig"><label for="ac-l-sedes">Sedes</label><textarea id="ac-l-sedes" rows="6"></textarea><button type="button" class="btn-cancel ac-btn" onclick="activosGuardarLista('sedes')">Guardar sedes</button></div>
         <div class="ig"><label for="ac-l-operaciones">Operaciones</label><textarea id="ac-l-operaciones" rows="6"></textarea><button type="button" class="btn-cancel ac-btn" onclick="activosGuardarLista('operaciones')">Guardar operaciones</button></div>
         <div class="ig"><label for="ac-l-proveedores">Proveedores</label><textarea id="ac-l-proveedores" rows="6"></textarea><button type="button" class="btn-cancel ac-btn" onclick="activosGuardarLista('proveedores')">Guardar proveedores</button></div>
+        <div class="ig"><label for="ac-l-motivos">Motivos frecuentes</label><textarea id="ac-l-motivos" rows="6" aria-describedby="ac-l-motivos-ayuda"></textarea><span class="vis-ayuda" id="ac-l-motivos-ayuda">Se sugieren al escribir un motivo; se puede escribir otro.</span><button type="button" class="btn-cancel ac-btn" onclick="activosGuardarLista('motivos')">Guardar motivos</button></div>
       </div>
+      <!-- Fase 372 (E4): formularios editables (tipos y campos) y textos del acta. -->
+      <h4 class="ac-sub">Formularios por tipo</h4>
+      <p class="vis-ayuda">Un campo no se borra: se oculta y lo ya guardado se conserva. El tipo de dato de un campo no cambia. Un tipo se desactiva solo si no tiene elementos sin dar de baja.</p>
+      <div id="ac-tipos"></div>
+      <div id="ac-tipo-editor" class="hidden"></div>
+      <h4 class="ac-sub">Textos del acta</h4>
+      <p class="vis-ayuda">Cada acta guarda el texto vigente al crearla: cambiarlo no altera las actas ya creadas.</p>
+      <div id="ac-textos" class="ac-filtros"></div>
     </section>
+    <datalist id="ac-motivos-lista"></datalist>
   </div>
 </div>
 
