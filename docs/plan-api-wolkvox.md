@@ -627,5 +627,5 @@ Solo columnas y número de filas, réplica, desde producción. «mes» = 1–17/
 
 ### 10.12 Salida completa con la API (19/11/2026, Fases A13–A15)
 
-- **Conectadas (A13–A14):**  trae la salida () **sin skill**; el lector la omitía. Desde v1.232.2 se completa con «-» y entra como «Llamadas de salida»: réplica = manual los 8 días comunes (03–12/11).
-- **No conectadas (A15):** ** es el reporte «5»**: 04/11 = 2 y 10/11 = 7 filas, igual que el manual (la nota de §10.10 lo comparó contra otros números). Módulo  (v1.233.0), apagado hasta el OK del usuario.
+- **Conectadas (A13–A14):** `cdr_1` trae la salida (`outbound_ma`) **sin skill**; el lector la omitía. Desde v1.232.2 se completa con «-» y entra como «Llamadas de salida»: réplica = manual los 8 días comunes (03–12/11).
+- **No conectadas (A15):** **`cdr_5` es el reporte «5»**: 04/11 = 2 y 10/11 = 7 filas, igual que el manual (la nota de §10.10 lo comparó contra otros números). Módulo `no_conectadas` (v1.233.0), apagado hasta el OK del usuario.
