@@ -7,26 +7,60 @@ decidir nada, solo priorizar cuándo invertir el tiempo). Lo ya cerrado
 no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 ítem tiene prioridad, cómo se cierra, y la fecha en que se anotó.
 
-## Estado al 17/11/2026 (producción 1.205.0)
+## Estado al 19/11/2026 (producción 1.223.0)
 
-- **Hecho y en producción:** Fase 355 (HLM «Exportar PDF», con el logo embebido en 355b), Fase 356
-  («Sugerencias / Tickets»), Fase 357 (A rol «Sistemas» y cambio de roles de usuarios reales, D «Ver como
-  este usuario», B menú único de tarjetas, C pestaña «Vistos» en Calidad), Fase W3 («Diagnóstico de red»
-  de Wolkvox), Fase 358 («Malla de turnos», fase 1 de 3), Fase 359 (filtro por año en Televentas SURA) y
-  Fase 360 (el generador de Televentas produce el tablero publicado byte a byte). Verificado en producción
-  en solo lectura (escrituras solo las autorizadas). Detalle en `docs/historico/progress-fases.md`.
+- **Hecho hoy (19/11):**
+  - **Wolkvox, consulta automática:** las corridas de las 00:05 y las 7:00 terminaron bien. En cada una
+    corrieron los 4 reportes: Flujo (`skill_1`), flujo_hora (`skill_7`), cdr (`cdr_1`) y encuesta (`diagram_4`),
+    todos con respaldo y 21 consultas por corrida. Ya no hay bloqueo de red con Wolkvox.
+  - **Comparación de la réplica con el manual** (solo lectura, 8 días comunes del 03 al 12/11):
+    - iguales en todos los días: Flujo (llamadas, contestadas, abandonadas y NS 20 s), Flujo por hora
+      (25/25 celdas) y Encuesta (8/8);
+    - AHT 7/8 y espera 8/8, con una diferencia de ±1 s (el 03/11, AHT 269 contra 272 s);
+    - Tipificación de ingreso, Eficacia y únicas contestadas 7/8: el 04/11 falta una llamada en la API.
+  - **Horarios de SURA (noviembre, por archivo):** 10 días, 25 agentes y 161 sesiones.
+    - 4 agentes se enlazaron solos por nombre exacto;
+    - 19 se enlazaron a mano con OK del usuario (`MALLA_ENLACE`, tabla `malla_agente_enlace`);
+    - quedan 2 sin enlace a propósito: los agentes de prueba de Wolkvox;
+    - las 23 asesoras activas de SURA quedaron enlazadas.
+  - **Revisión en producción**, solo lectura, con «Ver como» (admin, supervisor, asesora y sistemas) a 1440 y 375 px:
+    - funcionan el menú en cuadrícula (4 columnas en 1440 y 1 en 375), Tickets, las ventanas a pantalla completa
+      (no se cierran con Escape ni con clic afuera, sí con «Cerrar»), Calidad sin heredar plantillas al cambiar
+      de usuario, la Malla con selector de mes, «Mi malla» de la asesora y el Inventario con las actas;
+    - 0 errores de consola y sin desborde lateral.
+  - **Fase 372 (v1.223.0):** Inventario de sistemas E4, formularios editables por Sistemas.
+- **Pendiente, del usuario:**
+  - **Actas de prueba, opción A:** el usuario la hace a mano. Pasos:
+    1. devolver el elemento #1 (motivo «Prueba 371b», queda «Malo»);
+    2. darlo de baja;
+    3. desactivar el agente #1.
+    El acta #1 y su PDF se quedan. Al 19/11 a mediodía todavía no estaba hecho.
+  - **SURA no tiene malla de turnos.** Sin turnos, la puntualidad no da a tiempo ni tarde: las asesoras salen en
+    «con ingreso sin turno» (158 días-asesora del 26/10 al 22/11) y «Mi malla» dice «Todavía no tienes turno
+    asignado». Hay que armar la malla de SURA (supervisor o administrador) o que Edwin diga los turnos.
+  - **Wolkvox, reportes que faltan** (salida, abandonadas con detalle y WhatsApp):
+    1. el usuario revisa en el Manager las pantallas sugeridas (CDR 1 y su filtro de salida, Campañas, el
+       detalle de abandonadas y Chats 1 con su rango de fechas);
+    2. después se proponen las consultas de prueba con un número exacto, y se espera su OK.
+  - **Pasar al MOBILIZE real:** necesita autorización nueva por escrito.
+  - **Pregunta para Edwin:** si quiere ver el nivel de servicio a 10 s y a 30 s (ya se guarda).
+- **Detalle visual menor, sin arreglar:** la franja de «Ver como» mide 178 px de alto a 375 px (el texto ocupa
+  5 líneas). No tapa el botón «Cerrar» de las ventanas.
+- **Inventario de sistemas:** E1–E4 hechos (Fases 369–372); las actas firmadas en S3 funcionan desde el 18/11.
+  **Falta:** que Sistemas valide el inventario nuevo y, con OK del usuario, retirar el Inventario anterior (hoy
+  solo lo ve ADMIN).
+- **Malla fase 2 (puntualidad, Fase 363):**
+  - **réplica por la API:** sigue apagada (`WOLKVOX_LOGIN_ACTIVO`) hasta el OK del usuario;
+  - **SURA por archivo:** ya funciona (ver arriba).
+  - **MOBILIZE real:** necesita autorización nueva por escrito.
 - **Esperando a Edwin:** Malla fases 2 (puntualidad) y 3 (Portal Asesor ampliado) — ver el bloque 2.
-- **Esperando al soporte de Wolkvox:** el bloqueo de red hacia el servidor — ver el primer ítem de abajo.
 - **Plan B de Wolkvox (agente en la oficina):** B1 hecho (v1.206.0, endpoint apagado). Decidido (18/11): `skill_1` día a día.
-- **Malla fase 2 (puntualidad, Fase 363):** P1 hecho (v1.210.0), apagado. **P2 espera OK:** crear `WOLKVOX_LOGIN_ACTIVO=1` en SSM, armar la malla de prueba de la réplica (asesoras de MOBILIZE, solo lectura) y enlazar agentes; luego una semana de prueba comparada con lo que tenga Edwin. P3 (MOBILIZE real) necesita autorización nueva por escrito.
-- **Inventario de sistemas (Fases 369–371):** E1–E3 hechos. **Falta:** (1) crear en AWS, guiado y con OK del usuario, el bucket privado, el permiso de la instancia y `ACTAS_S3_BUCKET` para las actas firmadas (`docs/actas-firmadas-s3.md`); (2) que Sistemas valide el inventario nuevo y, con OK del usuario, retirar el Inventario anterior (hoy solo ADMIN); (3) E4: formularios editables y demás administrables.
-- **Actas firmadas en producción (Fase 371b, v1.222.1, 18/11 17:20): funcionan.** Prueba con datos INVENTADOS: subir un PDF como firmada y descargarlo llega igual (149 bytes, `application/pdf`). **Quedó de prueba en producción (decide el usuario si se borra):** agente #1 «PRUEBA ACTAS 371B …», elemento #1 (tipo TORRE, código PRUEBA-371B-…, asignado a ese agente), acta de entrega #1 (número 1 del consecutivo) y su PDF en `inconexion-actas-2026/actas/000001-entrega-….pdf`. Hoy no hay forma de borrar actas desde la app: borrarlas sería a mano y necesita OK escrito.
 - **Réplica completa con la API (pedido del 18/11):** Flujo, Flujo por hora, Tipificación de ingreso, Eficacia y únicas contestadas ya salen de la API (7/8 o mejor contra el manual). Encuesta con `diagram_4` encendida el 18/11 (8/8 días iguales). **Falta:** salida (ningún reporte probado cuadra: preguntar a Wolkvox el de llamadas de salida/campaña); abandonadas con detalle (`skill_9` solo da conteos); WhatsApp (`chat_1` rechaza el formato de fechas). Detalle en `docs/plan-api-wolkvox.md` §10.9–10.10.
-- **Plan A de Wolkvox (consulta automática desde el servidor):** **ENCENDIDA** desde el 18/11 (`WOLKVOX_AUTO_ACTIVO=1`, solo la réplica). Primera corrida (18/11) y comparación con el Flujo manual: SKILL SAC 8/8 días iguales; `flujo_hora` tras la corrida de las 13:00: 25/25 celdas día-hora iguales, espera 8/8, AHT 7/8 (un día 3 s). **Falta:** comparar otra vez después de la corrida de las 7:00 del 19/11 y decidir si se pasa al MOBILIZE real (necesita autorización nueva por escrito); preguntar a Edwin si quiere ver el nivel de servicio a 10 s y 30 s (ya se guarda). Detalle en `docs/plan-api-wolkvox.md`, sección 10.
+- **Plan A de Wolkvox (consulta automática desde el servidor):** **ENCENDIDA** desde el 18/11 (`WOLKVOX_AUTO_ACTIVO=1`, solo la réplica). Primera corrida (18/11) y comparación con el Flujo manual: SKILL SAC 8/8 días iguales; `flujo_hora` tras la corrida de las 13:00: 25/25 celdas día-hora iguales, espera 8/8, AHT 7/8 (un día 3 s). Comparado otra vez el 19/11 tras la corrida de las 7:00 (mismo resultado, ver arriba). **Falta:** decidir si se pasa al MOBILIZE real (necesita autorización nueva por escrito); preguntar a Edwin si quiere ver el nivel de servicio a 10 s y 30 s (ya se guarda). Detalle en `docs/plan-api-wolkvox.md`, sección 10.
 
 ## 1. Esperando una decisión tuya
 
-- **Wolkvox: bloqueo de red del lado de Wolkvox hacia el servidor de producción; esperando a soporte de Wolkvox** (17/11/2026).
+- ~~**Wolkvox: bloqueo de red del lado de Wolkvox hacia el servidor de producción**~~ — **RESUELTO** (18/11/2026): la consulta automática corre desde producción (corridas del 18 y 19/11 bien). Se deja el detalle como histórico. (17/11/2026).
   En local funciona (13/11): «Probar conexión» en la réplica «MOBILIZE PRUEBAS API» dio código 200 y 20 campos de `cdr_1`.
   En producción:
   - Los parámetros SSM `/inconexion/prod/WOLKVOX_MOBILIZE_TOKEN` y `/inconexion/prod/WOLKVOX_MOBILIZE_SERVIDOR`
