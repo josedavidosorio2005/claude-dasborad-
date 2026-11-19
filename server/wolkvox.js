@@ -46,6 +46,7 @@ const REPORTES = {
   diagram_5: 'Encuesta inteligente por agente (Diagram 5, probable)',
   diagram_4: 'Detalle de encuestas (HistIVR, Diagram 4, probable)', // Fase A10b
   cdr_4: 'Detalle de llamadas de salida / campaña (CDR 4, probable)', // Fase A10b
+  skill_2: 'Detalle de llamadas abandonadas (Skills 2, probable)', // Fase A18
 };
 
 // Campaña de la plataforma -> operacion de Wolkvox (de quien es el token). SOLO la replica.
@@ -297,6 +298,23 @@ function resumenSinValores(cuerpo) {
   return { code, msg, filas: data.length, campos: [...campos].sort() };
 }
 
+// Fase A18: cuantas filas trae cada dia (solo la fecha AAAA-MM-DD, nunca la hora ni otro valor),
+// para comparar un reporte con la carga manual por dia. Toma el primer campo de fecha de la fila
+// (date, fecha, *_date, date_*) cuyo valor empiece con AAAA-MM-DD. Tope de 62 dias.
+function filasPorDia(cuerpo) {
+  const data = Array.isArray(cuerpo && cuerpo.data) ? cuerpo.data : [];
+  const out = {};
+  for (const fila of data) {
+    if (!fila || typeof fila !== 'object' || Array.isArray(fila)) continue;
+    const k = Object.keys(fila).find((c) => /^(date|fecha|date_[a-z_]+|[a-z_]+_date)$/i.test(c) && typeof fila[c] === 'string' && /^\d{4}-\d{2}-\d{2}/.test(fila[c]));
+    if (!k) continue;
+    const d = fila[k].slice(0, 10);
+    if (!(d in out) && Object.keys(out).length >= 62) continue;
+    out[d] = (out[d] || 0) + 1;
+  }
+  return Object.fromEntries(Object.keys(out).sort().map((d) => [d, out[d]]));
+}
+
 // Fase A2: nombres de skill de una respuesta de skill_1 (no son datos personales): unicos,
 // ordenados, limpios y con tope. Nada mas de la fila.
 function nombresDeSkill(cuerpo) {
@@ -409,6 +427,7 @@ module.exports = {
   LIMITE_LICENCIA_DIA,
   TOPE_POR_DEFECTO,
   REPORTES,
+  filasPorDia,
   OPERACION_DE_CAMPANA,
   ARCHIVO_LOCAL,
   WolkvoxError,

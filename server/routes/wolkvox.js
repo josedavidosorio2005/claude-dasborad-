@@ -83,7 +83,7 @@ router.post(
       const r = await wv.consultarReporte({ db, operacion: op, api, dateIni, dateEnd, fetchImpl: req.app.locals.wolkvoxFetch });
       const s = wv.resumenSinValores(r.cuerpo);
       logEvent('WOLKVOX_PRUEBA', null, actorLabel(req.actor), op + ' · ' + api + ' · ' + (desdeDia !== dia ? desdeDia + ' a ' : '') + dia + ' · ' + r.httpStatus + ' · ' + s.filas + ' filas');
-      res.json({ ok: true, reporte: api, dia, desdeDia, desde: '00:00', hasta: '23:59', httpStatus: r.httpStatus, code: s.code, msg: s.msg, filas: s.filas, campos: s.campos, skills: api.startsWith('skill_') ? wv.nombresDeSkill(r.cuerpo) : [], duracionMs: r.duracionMs, usoHoy: wv.usoDelDia(db, op), tope: wv.topeDiario(), limiteLicencia: wv.LIMITE_LICENCIA_DIA });
+      res.json({ ok: true, reporte: api, dia, desdeDia, desde: '00:00', hasta: '23:59', httpStatus: r.httpStatus, code: s.code, msg: s.msg, filas: s.filas, porDia: wv.filasPorDia(r.cuerpo), campos: s.campos, skills: api.startsWith('skill_') ? wv.nombresDeSkill(r.cuerpo) : [], duracionMs: r.duracionMs, usoHoy: wv.usoDelDia(db, op), tope: wv.topeDiario(), limiteLicencia: wv.LIMITE_LICENCIA_DIA });
     } catch (e) {
       if (!(e instanceof wv.WolkvoxError)) throw e;
       // Fase W3: + el codigo de la causa de red (solo el codigo).
