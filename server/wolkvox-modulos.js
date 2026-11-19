@@ -154,11 +154,19 @@ const CDR_COLUMNAS = [ // [columna de la API, columna del Excel]
   ['hang_up', 'HUNG_UP'], ['skill_id', 'SKILL_ID'], ['telephone', 'TELEPHONE'],
 ];
 const CDR_DESCARTADAS = ['agent_id', 'campaign_id', 'cod_act_2', 'comment', 'conn_id', 'cost', 'customer_id', 'description_cod_act_2', 'destiny'];
+// Fase A14 (19/11): en la API, las llamadas de salida (outbound_ma / out_pre) llegan SIN skill; en el
+// export manual traen «-», que el lector ya convierte en «Llamadas de salida». Sin skill, el lector las
+// omitía como «falta un dato» (corrida del 19/11: 47 de 93 filas). Se completa con «-» SOLO si es de salida.
+const _SALIDA = ['outbound_ma', 'out_pre'];
 function hojaCdr(data) {
-  return [CDR_COLUMNAS.map((c) => c[1])].concat(data.map((r) => CDR_COLUMNAS.map(([api]) => {
-    const v = _v(r || {}, api);
-    return v === undefined || v === null ? '' : v;
-  })));
+  return [CDR_COLUMNAS.map((c) => c[1])].concat(data.map((r) => {
+    const salida = _SALIDA.includes(String(_v(r || {}, 'type_interaction') || '').trim().toLowerCase());
+    return CDR_COLUMNAS.map(([api]) => {
+      const v = _v(r || {}, api);
+      if (salida && (api === 'skill_name' || api === 'skill_id') && (v === undefined || v === null || String(v).trim() === '')) return '-';
+      return v === undefined || v === null ? '' : v;
+    });
+  }));
 }
 // Fase A12 (19/11): conteos SIN valores de lo que trae cdr_1, para saber por qué no entran llamadas de
 // salida sin gastar consultas: por tipo de interacción (solo nombres del sistema, [a-z_], hasta 6) y
