@@ -21520,3 +21520,25 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
 - **Cambio:** `server/wolkvox-auto.js` `planMes`/`planDe` (mes cerrado completo, hasta 12 atrás) usados por el Flujo y por todos los módulos; `ejecutarAhora` con `mes` y `modulo: 'todos'`; ruta `/wolkvox/auto/ejecutar` valida `mes` y exige mes para «todos». Ver plan §10.16.
 - **Pruebas:** `faseA20-wolkvox-meses-pasados` (4). Suite local 3365/3366 (1 saltada a propósito); `npm audit` limpio.
 
+## Fase A21 — réplica: julio a octubre con la API y comparación (solo docs, 2026-11-19)
+
+- **Pedido (usuario, 19/11):** traer julio–octubre de 2026 a la réplica (v1.235.0, «todos» + mes), mes por mes, con respaldo; comparar cada mes con el MOBILIZE real (solo lectura); en la misma sesión, revisión de SURA en solo lectura.
+- **Corridas:** 143 consultas (36/36/35/36), todas con respaldo; MOBILIZE real sin tocar. Septiembre: `abandonadas` 404 (mes sin abandonadas), el resto ok.
+- **Comparación:**
+
+| Pestaña (réplica / real) | Julio | Agosto | Septiembre | Octubre |
+|---|---|---|---|---|
+| Flujo ingresadas/contestadas/abandonadas | 26/18/8 / sin datos | 67/64/3 = | 104/104/0 = | 131/129/2 = |
+| Flujo por hora | 26/18/8 / sin datos | 67/64/3 = | 104/104/0 = | 131/129/2 = |
+| Tipificación (llamadas, total) | — / sin datos | 81 = 81 | 170 = 170 | **205 / 204** |
+| Eficacia (positivas de contestadas) | 0 de 5 / sin datos | 24 de 53 = | 55 de 103 = | 51 de 114 = |
+| Llamadas únicas (contestadas + abandonadas) | 2+4 / sin datos | 48+2 = | 87+0 = | 83+2 = |
+| Salida total/conectadas/no conectadas | 5/2/3 / sin datos | 81/28/53 = | 157/67/90 = | **167/91/76 / 166/90/76** |
+| Encuesta (total) | 2 / sin datos | 21 = | 45 = | 113 = |
+
+- **Julio:** el MOBILIZE real no tiene julio (nada que comparar).
+- **Tipificación por tipo** (los totales cuadran): lo que la API trae sin tipificación (`-`, «Sin tipificación», Fase A16) y `TIMEOUTACW` en el real aparecen como **Otros_motivos**: ago 34+2 = 36; sep 22+5+1 = 28; oct 37+4 (+1) ≈ 42. Las demás diferencias son solo del agrupado «Otras (N tipificaciones)» del top 10. Propuesta (espera OK): en `hojaCdr`, tipificación vacía y `TIMEOUTACW` → «Otros_motivos» (cambia lo decidido en A16; Eficacia y únicas no cambian).
+- **Octubre:** 1 llamada de salida de más en la réplica (91 vs 90 conectadas; total 205 vs 204). Por revisar por día.
+- **Septiembre, abandonadas:** `skill_2` respondió **HTTP 404** (el mensaje no quedó en el detalle); septiembre tiene 0 abandonadas en el Flujo, así que es casi seguro el «sin registros» de `skill_2` con un texto que `SIN_REGISTROS` no reconoce. El mes no cambió (réplica 0 = real 0). Propuesta: guardar el `msg` del 404 en el detalle y reconocer ese texto.
+- **SURA (solo lectura):** el cálculo de `server/puntualidad.js` es el que confirmó Edwin: primer ingreso del día de «Horarios» (archivo HistAgent) contra la entrada del turno de Malla (o el horario especial del día), tolerancia cero. En producción: Horarios de noviembre cargados hasta el 17/11; 25 agentes vistos (19 enlazados, 4 con sugerencia por nombre exacto, que el cálculo enlaza solo); 23 asesoras SURA activas; **ninguna semana de noviembre tiene malla todavía** (por eso la puntualidad da 0). «Fecha de venta» = «Fecha evento» (confirmado por Edwin).
+

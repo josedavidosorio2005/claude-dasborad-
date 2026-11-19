@@ -612,6 +612,7 @@ mismo orden):
 - Fase A18 — réplica: «Probar» con skill_2 y filas por día; skill_2 existe (200, mes completo), 14/11 = Flujo, 01–12/11 = manual (v1.233.2, 2026-11-19)
 - Fase A19 — réplica: módulo abandonadas (skill_2 → únicas abandonadas, sin teléfono), apagado (v1.234.0, 2026-11-19)
 - Fase A20 — réplica: «Ejecutar ahora» con mes pasado y «todos» (v1.235.0, 2026-11-19)
+- Fase A21 — réplica: julio–octubre con la API (143 consultas) = real en todas las pestañas salvo el reparto de Tipificación y 1 salida de octubre; SURA sin malla de noviembre (solo docs, 2026-11-19)
 - Fase 309 — Revisión de seguridad: el cliente ya no recibe el nombre de los líderes en `GET /metas`; resto en `docs/revision-seguridad-2026-11-09.md` (v1.154.1, 2026-11-10)
 - Fase 308 — Revisión antes de la reunión con clientes y pendientes del supervisor (solo docs, 2026-11-10)
 - Fase 307 — Calidad para que los líderes evalúen: ORLANT conserva su Calidad y suma «Resultado de los monitoreos» al final; Aurora ya lo tenía (se muestra con el primer monitoreo) (v1.154.0, 2026-11-10)
