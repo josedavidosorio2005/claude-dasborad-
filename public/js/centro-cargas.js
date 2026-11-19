@@ -121,6 +121,7 @@ async function _ccCargarTeleventas(body, gen) {
     }
     body.innerHTML = '<p class="cc-intro">Bases del mes, metas y códigos del tablero Televentas: es lo mismo de «Cargar información» dentro del tablero.</p>';
     host.hidden = false;
+    if (typeof ccSuraAlias === 'function') ccSuraAlias(host.parentNode, _cc.cliente); // Fase 374: solo administrador
   } catch (e) {
     if (gen !== undefined && gen !== _ccGeneracion) return;
     body.innerHTML = '<div class="cc-aviso cc-aviso-error">' + esc(e.message) + '</div>';
@@ -130,6 +131,7 @@ async function _ccCargarTeleventas(body, gen) {
 function _ccOcultarTeleventas() {
   var host = document.getElementById('cc-stv-host');
   if (host) host.hidden = true;
+  var sa = document.getElementById('sa-host'); if (sa) { sa.hidden = true; sa.innerHTML = ''; } // Fase 374
   if (typeof stvDesmontarCarga === 'function') stvDesmontarCarga();
 }
 

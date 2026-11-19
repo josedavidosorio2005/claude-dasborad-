@@ -7,6 +7,13 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.225.0 — Noviembre 2026
+
+**SURA: «Alias de asesores».** Si una asesora aparece con varios nombres en las bases (por ejemplo con y sin
+segundo nombre), el administrador los une en uno solo desde Cargar Datos › SURA. Las bases no se cambian: el
+tablero muestra el nombre final al abrirse, y así deja de verse como «Retirada» con el nombre viejo. Queda en el
+Historial qué alias se agregó o quitó.
+
 ## v1.224.0 — Noviembre 2026
 
 **Malla de turnos: colores, novedades y horario especial** (pedidos de Edwin del 19/11).

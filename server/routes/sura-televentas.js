@@ -103,10 +103,23 @@ router.delete(BASE + '/bases/:tipo/:mes', requireActor, conAcceso('cargar'), wra
 
 router.put(BASE + '/config/:clave', requireActor, conAcceso('cargar'), wrap((req, res) => {
   const clave = req.params.clave;
-  const valor = req.body ? req.body.valor : undefined;
+  let valor = req.body ? req.body.valor : undefined;
+  // Fase 374: los alias de asesores cambian cómo se ve el histórico de cada asesor: solo el administrador.
+  if (clave === 'agalias' && !req.sura.esAdmin) return res.status(403).json({ error: 'Solo el administrador cambia los alias de asesores' });
   const err = valor === undefined ? 'Falta el valor' : sura.validarConfig(clave, valor);
   if (err) return res.status(400).json({ error: err });
+  let detalleAlias = null;
+  if (clave === 'agalias' && valor !== null) {
+    const n = sura.normalizarAlias(valor);
+    if (n.error) return res.status(400).json({ error: n.error });
+    detalleAlias = sura.difAlias(sura.leerConfig(db, req.sura.cliente).agalias, n.valor);
+    valor = n.valor;
+  }
   sura.guardarConfig(db, { cliente: req.sura.cliente, clave, valor, actorNombre: req.actor.nombre || '-' });
+  if (detalleAlias) {
+    logEvent('SURA_ALIAS_ASESOR', { nombre: '-', user: '-', rol: req.sura.cliente }, actorLabel(req.actor), Object.keys(valor).length + ' alias' + (detalleAlias.length ? ' · ' + detalleAlias.join(' · ').slice(0, 900) : ' · sin cambios'));
+    return res.json({ ok: true, valor });
+  }
   // Fase 299: queda en el Historial quien cambio metas/codigos (ademas de
   // actualizadoPorNombre/actualizadoEn en sura_config). Solo la clave, nunca el valor.
   logEvent('SURA_CONFIG_CAMBIADA', { nombre: '-', user: '-', rol: req.sura.cliente }, actorLabel(req.actor), 'clave ' + clave);
