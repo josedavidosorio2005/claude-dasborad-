@@ -163,6 +163,24 @@ function hojaCdr(data) {
 // Fase A12 (19/11): conteos SIN valores de lo que trae cdr_1, para saber por qué no entran llamadas de
 // salida sin gastar consultas: por tipo de interacción (solo nombres del sistema, [a-z_], hasta 6) y
 // cuántas filas no traen asesor o tipificación (el lector las omite) o traen la skill «-».
+// Fase A13 (19/11): por tipo de interacción, cuántas filas llegan SIN skill (el lector las omite como
+// «falta un dato») y la FORMA de la fecha (dígitos → 9, letras → a; nunca el valor), para saber por
+// qué la salida no entra sin gastar consultas. Solo inbound y salida (outbound_ma/out_pre).
+function formaCdr(data) {
+  const por = {};
+  for (const r of data) {
+    const t = String(_v(r || {}, 'type_interaction') || '').trim().toLowerCase();
+    if (!['inbound', 'outbound_ma', 'out_pre'].includes(t)) continue;
+    const x = por[t] || (por[t] = { sinSkill: 0, formas: {} });
+    if (!String(_v(r || {}, 'skill_name') == null ? '' : _v(r || {}, 'skill_name')).trim()) x.sinSkill++;
+    const d = _v(r || {}, 'date');
+    const f = d === null || d === undefined || d === '' ? 'vacía' : typeof d === 'number' ? 'número' : String(d).slice(0, 25).replace(/[0-9]/g, '9').replace(/[A-Za-z]/g, 'a');
+    x.formas[f] = (x.formas[f] || 0) + 1;
+  }
+  const partes = Object.keys(por).sort().map((t) => t + ': sin skill ' + por[t].sinSkill + ', fecha ' +
+    Object.entries(por[t].formas).sort((a, b) => b[1] - a[1]).slice(0, 2).map(([f, n]) => '«' + f + '» ' + n).join(' / '));
+  return partes.length ? ' · ' + partes.join('; ') : '';
+}
 function conteoCdr(data) {
   const tipos = {};
   let sinAgente = 0, sinTip = 0, guion = 0;
@@ -177,7 +195,7 @@ function conteoCdr(data) {
   const lista = Object.entries(tipos).sort((a, b) => b[1] - a[1]);
   const extra = lista.length > 6 ? lista.slice(6).reduce((n, x) => n + x[1], 0) : 0;
   return 'API ' + data.length + ' filas: ' + lista.slice(0, 6).map(([k, n]) => k + ' ' + n).join(', ') + (extra ? ', otros ' + extra : '') +
-    '; sin asesor ' + sinAgente + ', sin tipificación ' + sinTip + ', skill «-» ' + guion;
+    '; sin asesor ' + sinAgente + ', sin tipificación ' + sinTip + ', skill «-» ' + guion + formaCdr(data);
 }
 function opcionesCdrMobilize() {
   return { codificacionesExcluidas: T.TIPIFICACION_CDR_EXCLUIR_POR_DEFECTO, marcarUnicasDia: true, conservarSalidaGuion: true };
