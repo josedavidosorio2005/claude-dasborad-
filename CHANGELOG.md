@@ -7,6 +7,16 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.229.0 — Noviembre 2026
+
+**Inventario, como lo diseñó Edwin (parte 3 de 6): todo desde el elemento.**
+
+- Al abrir un elemento libre: **«Asignar a un agente»**, eligiendo uno de la lista o creando uno nuevo con su nombre y
+  cédula (si la cédula ya existe, se usa ese agente).
+- Al abrir un elemento asignado: **Reasignar a otro agente**, **Cambiar elemento**, **Quitar asignación** y «Ver agente».
+- Un elemento asignado ya puede cambiar de estado (por ejemplo, mandarlo a reparación): queda registrada la devolución.
+- Al mandarlo a reparación se puede anotar el **técnico o proveedor**.
+
 ## v1.228.0 — Noviembre 2026
 
 **Inventario, como lo diseñó Edwin (parte 2 de 6): campos y rendimiento.**

@@ -98,7 +98,7 @@ router.post('/activos/:id/estado', requireActor, wrap((req, res) => {
   const a = idValido(req.params.id) ? A.obtener(db, Number(req.params.id)) : null;
   if (!a) return res.status(404).json({ error: 'Elemento no encontrado' });
   const b = req.body || {};
-  const r = A.cambiarEstado(db, a, b.estado, b.motivo, actorLabel(req.actor));
+  const r = A.cambiarEstado(db, a, b.estado, b.motivo, actorLabel(req.actor), b.tecnico); // Fase 378: + técnico; también si está asignado
   if (r.error) return res.status(400).json({ error: r.error });
   log('ACTIVO_ESTADO', r.activo, req, a.estado + ' → ' + r.activo.estado);
   res.json(r);
@@ -167,10 +167,35 @@ function activoPorId(req, res) {
 router.post('/activos/:id/asignar', requireActor, wrap((req, res) => {
   if (!permitido(req, res)) return;
   const a = activoPorId(req, res); if (!a) return;
-  const r = A.asignar(db, a, (req.body || {}).agenteId, actorLabel(req.actor));
-  if (r.error) return res.status(400).json({ error: r.error });
-  log('ACTIVO_ASIGNACION', r.activo, req, 'a agente #' + r.agente.id);
-  res.json({ activo: r.activo });
+  // Fase 378 (I3): también a un agente nuevo (nombre y cédula) desde el detalle del elemento; si la
+  // asignación falla, el agente nuevo no queda creado.
+  let r, g;
+  try {
+    db.transaction(() => {
+      g = A.agenteParaAsignar(db, req.body || {});
+      if (g.error) throw Object.assign(new Error(g.error), { esperado: true });
+      r = A.asignar(db, a, g.agenteId, actorLabel(req.actor));
+      if (r.error) throw Object.assign(new Error(r.error), { esperado: true });
+    })();
+  } catch (e) { if (e.esperado) return res.status(e.message.startsWith('Ya hay') ? 409 : 400).json({ error: e.message }); throw e; }
+  log('ACTIVO_ASIGNACION', r.activo, req, 'a agente #' + r.agente.id + (g.creado ? ' (nuevo)' : ''));
+  res.json({ activo: r.activo, agente: r.agente, agenteCreado: !!g.creado });
+}));
+router.post('/activos/:id/reasignar', requireActor, wrap((req, res) => { // Fase 378 (I3)
+  if (!permitido(req, res)) return;
+  const a = activoPorId(req, res); if (!a) return;
+  const b = req.body || {};
+  let r, g;
+  try {
+    db.transaction(() => {
+      g = A.agenteParaAsignar(db, b);
+      if (g.error) throw Object.assign(new Error(g.error), { esperado: true });
+      r = A.reasignar(db, a, g.agenteId, b.motivo, actorLabel(req.actor));
+      if (r.error) throw Object.assign(new Error(r.error), { esperado: true });
+    })();
+  } catch (e) { if (e.esperado) return res.status(400).json({ error: e.message }); throw e; }
+  log('ACTIVO_REASIGNACION', r.activo, req, 'a agente #' + r.agente.id + (g.creado ? ' (nuevo)' : ''));
+  res.json({ activo: r.activo, agente: r.agente, agenteCreado: !!g.creado });
 }));
 router.post('/activos/:id/devolver', requireActor, wrap((req, res) => {
   if (!permitido(req, res)) return;

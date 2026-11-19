@@ -53,8 +53,8 @@ test('asignar: solo libres, no administrables, agente activo; queda «En uso» c
   assert.deepEqual([r.body.activo.estado, r.body.activo.agente.nombre], ['en_uso', 'Agente Inventado Uno']);
   assert.equal((await P('/' + ids['E2-D1'] + '/asignar', { agenteId: ids.ag2 })).status, 400, 'ya asignado');
   assert.equal((await P('/' + ids['E2-M1'] + '/asignar', { agenteId: ids.ag1 })).status, 200);
-  // Asignado: no cambia de estado por la vía normal.
-  assert.equal((await P('/' + ids['E2-D1'] + '/estado', { estado: 'malo', motivo: 'Se dañó' })).status, 400);
+  // Asignado: «en uso» no se pide por la vía normal (Fase 378: los demás estados registran la devolución, ver fase378).
+  assert.equal((await P('/' + ids['E2-D1'] + '/estado', { estado: 'en_uso', motivo: 'Se dañó' })).status, 400);
   // No se desactiva un agente con elementos.
   assert.equal((await request(app).put('/api/activos/agentes/' + ids.ag1).set(H(tk.sis)).send({ activo: false })).status, 400);
   const d = (await request(app).get('/api/activos/agentes/' + ids.ag1).set(H(tk.sis))).body;
