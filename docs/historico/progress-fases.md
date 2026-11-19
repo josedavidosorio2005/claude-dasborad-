@@ -21499,3 +21499,18 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
 - **Comparación SOLO LECTURA 01–12/11, réplica = real:** total de salida 71, conectadas 38, no conectadas 33, tasa 53,5 %; los 9 días con salida iguales (04/11: 10/8/2); 04/11 Eficacia 1/7 y únicas 5; 01–12/11 Eficacia 10/29 y únicas 25.
 - **Abandonadas únicas:** una sola abandonada en noviembre en la réplica (14/11, 14 h). Propuesta de 3 consultas de `skill_2` en `docs/plan-api-wolkvox.md` §10.14; espera OK.
 - **Sin cambios de código** (no sube la versión).
+
+## Fase A18 — réplica: «Probar» con skill_2 (v1.233.2, 2026-11-19)
+
+- **Pedido (usuario, 19/11):** OK al PR de `skill_2` y a 3 consultas de prueba en orden, solo la réplica.
+- **Cambio (#878):** `skill_2` en `REPORTES` (`server/wolkvox.js`); «Probar» devuelve `porDia` (`filasPorDia`: filas por fecha AAAA-MM-DD, nunca hora ni otros valores).
+- **Pruebas:** `faseA18-wolkvox-skill2` (2); `faseA5` ajustada (lista de reportes).
+- **Consultas (Brave con la sesión de administrador del usuario):** (1) 14/11 → 200, 1 fila (14/11). (2) Con OK aparte del usuario, 1–18/11 → 200, 1 fila (14/11): acepta el mes completo. La (3) no hizo falta. El 404 de B0 era un día sin abandonadas. Comparación: 14/11 = Flujo por hora de la réplica (1); 01–12/11 = 0, igual que el manual. Uso del día 70.
+
+## Fase A19 — réplica: módulo abandonadas con skill_2 (v1.234.0, 2026-11-19)
+
+- **Pedido (usuario, 19/11):** construir el módulo abandonadas (`skill_2` → abandonadas únicas de la réplica) sin guardar teléfono ni datos sensibles, apagado, con pruebas.
+- **Cambio:** módulo `abandonadas` en `server/wolkvox-modulos.js` (`hojaAbandonadas`, `correrAbandonadas`; ver plan §10.15); `cargarLlamadasAbandonadas` acepta desde/hasta (mes completo). Usa el mismo lector de la carga manual (`llamadasAbandonadasParseFilas`). El Historial dice filas, únicas, repetidas, avisos y reemplazadas (sin valores).
+- **Pruebas:** `faseA19-wolkvox-abandonadas` (5: hoja sin datos sensibles; corrida con únicas día+teléfono, mes completo, respaldo, nada sensible guardado y MOBILIZE intacto; sin abandonadas válidas/sin filas no cambia; fila de otro mes = error; módulo en la lista). Suite local 3361/3362 (1 saltada a propósito); `npm audit` limpio.
+- **Encender (usuario):** `WOLKVOX_AUTO_MODULOS` = `flujo_hora,cdr,encuesta,no_conectadas,abandonadas`.
+

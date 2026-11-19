@@ -329,11 +329,50 @@ async function correrNoConectadas(opts, partes, res) {
   }
 }
 
+// ── Fase A19: skill_2 → Llamadas únicas: abandonadas ──
+// skill_2 = Manager «Skills & Servicios › 2. Detalle de llamadas abandonadas» (mismas columnas del
+// Excel: date, ani, skill_name, result, type_interaction, conn_id, customer_id, skill_id,
+// abandon_time). Pasa por llamadasAbandonadasParseFilas, el lector de la carga manual: el teléfono
+// (ANI) se usa SOLO en memoria para la clave día+teléfono y nunca se guarda; conn_id, customer_id,
+// skill_id y abandon_time ni siquiera entran a la hoja.
+const LU = require('../public/js/llamadas-unicas-logic.js');
+const AB_COLUMNAS = [['date', 'DATE'], ['ani', 'ANI'], ['skill_name', 'SKILL_NAME'], ['result', 'RESULT'], ['type_interaction', 'TYPE_INTERACTION']];
+const AB_DESCARTADAS = ['conn_id', 'customer_id', 'skill_id', 'abandon_time'];
+function hojaAbandonadas(data) {
+  return [AB_COLUMNAS.map((c) => c[1])].concat(data.map((r) => AB_COLUMNAS.map(([k]) => {
+    const v = _v(r || {}, k);
+    return v === undefined || v === null ? '' : v;
+  })));
+}
+async function correrAbandonadas(opts, partes, res) {
+  const { cargarLlamadasAbandonadas } = require('./llamadas-unicas');
+  for (const { mes, dias } of _auto().plan(opts.ahora)) {
+    res.consultas++;
+    let { data } = await _pedir(opts, 'skill_2', dias[0], dias[dias.length - 1]);
+    if (!data.length) { partes.push(mes + ': Wolkvox no trajo abandonadas, sin cambios'); continue; }
+    const llegaron = data.length;
+    let p = LU.llamadasAbandonadasParseFilas(hojaAbandonadas(data));
+    data = null; // teléfonos y demás datos crudos no se guardan ni se quedan en memoria
+    if (p.error) {
+      // Ninguna fila válida (p. ej. todas con RESULT distinto de ABANDON): el mes no cambia, sin error.
+      if (/^Ninguna llamada abandonada/.test(p.error)) { partes.push(mes + ': ' + llegaron + ' filas, 0 abandonadas válidas (' + (p.avisos || []).length + ' avisos), sin cambios'); continue; }
+      res.estado = 'error'; res.error = 'respuesta_invalida'; partes.push(mes + ': respuesta no esperada (' + String(p.error).slice(0, 120) + '), sin cambios'); return;
+    }
+    const fuera = p.filas.filter((f) => String(f[0]).slice(0, 7) !== mes);
+    if (fuera.length) { res.estado = 'error'; res.error = 'respuesta_invalida'; partes.push(mes + ': ' + fuera.length + ' llamadas fuera del mes, sin cambios'); return; }
+    const w = cargarLlamadasAbandonadas(opts.db, { campana: CAMPANA, archivoNombre: 'API Wolkvox (skill_2)', cargadoPorNombre: QUIEN, filas: p.filas, desde: mes + '-01', hasta: ing.ultimoDiaDelMes(mes) });
+    res.meses.push({ mes, filas: w.insertadas, reemplazadas: w.borradas, repetidas: p.duplicadosQuitados });
+    partes.push(mes + ': ' + llegaron + ' filas → ' + w.insertadas + ' abandonadas únicas (' + p.duplicadosQuitados + ' repetidas día+teléfono, ' + p.avisos.length + ' avisos; reemplazó ' + w.borradas + ', con respaldo)');
+    p = null;
+  }
+}
+
 const MODULOS = {
   flujo_hora: { api: 'skill_7', descripcion: 'Flujo por hora + AHT y espera', correr: correrFlujoHora },
   cdr: { api: 'cdr_1', descripcion: 'Tipificación, Eficacia, únicas contestadas y conectadas de salida', correr: correrCdr },
   encuesta: { api: 'diagram_4', descripcion: 'Encuesta (HistIVR) sin teléfono ni comentarios', correr: correrEncuesta }, // Fase A11
   no_conectadas: { api: 'cdr_5', descripcion: 'Llamadas de salida no conectadas (sin teléfono)', correr: correrNoConectadas }, // Fase A15
+  abandonadas: { api: 'skill_2', descripcion: 'Llamadas únicas: abandonadas (sin teléfono)', correr: correrAbandonadas }, // Fase A19
 };
 function modulosDe(valor) {
   return String(valor == null ? '' : valor).split(',').map((s) => s.trim().toLowerCase()).filter((s) => Object.prototype.hasOwnProperty.call(MODULOS, s));
@@ -378,4 +417,4 @@ async function correrModulo(nombre, opts) {
   return terminar();
 }
 
-module.exports = { conteoCdr, MODULOS, modulosDe, correrModulo, hojaFlujoHora, ahtEsperaDiarios, reemplazarMesFlujoHora, actualizarAhtEspera, hojaCdr, CDR_COLUMNAS, CDR_DESCARTADAS, opcionesCdrMobilize, hojaEncuesta, ENCUESTA_DESCARTADAS, hojaNoConectadas, NC_DESCARTADAS };
+module.exports = { conteoCdr, MODULOS, modulosDe, correrModulo, hojaFlujoHora, ahtEsperaDiarios, reemplazarMesFlujoHora, actualizarAhtEspera, hojaCdr, CDR_COLUMNAS, CDR_DESCARTADAS, opcionesCdrMobilize, hojaEncuesta, ENCUESTA_DESCARTADAS, hojaNoConectadas, NC_DESCARTADAS, hojaAbandonadas, AB_DESCARTADAS };
