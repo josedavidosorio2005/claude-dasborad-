@@ -380,6 +380,34 @@ function validarConfig(clave, valor) {
   return null;
 }
 
+// Fase 374 (Edwin 19/11): alias de asesores. Mismo normalizado que el tablero (norm de
+// sura-televentas-app.js: minúsculas, sin tildes, espacios -> «_»), así coincide con lo guardado en las
+// bases. Sin cadenas (un destino no puede ser origen de otro alias) ni un nombre apuntando a sí mismo.
+function normAsesor(s) {
+  return String(s == null ? '' : s).trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, '_');
+}
+function normalizarAlias(valor) {
+  if (!esObj(valor)) return { error: 'Alias invalido' };
+  const out = {};
+  for (const [a, b] of Object.entries(valor)) {
+    const x = normAsesor(a), y = normAsesor(b);
+    if (!x || !y || x.length > 200 || y.length > 200) return { error: 'Alias invalido' };
+    if (x === y) return { error: 'Un nombre no puede ser alias de sí mismo' };
+    out[x] = y;
+  }
+  for (const [x, y] of Object.entries(out)) if (Object.prototype.hasOwnProperty.call(out, y)) return { error: '«' + y + '» ya es un alias; usa directamente el nombre final' };
+  if (Object.keys(out).length > 500) return { error: 'Demasiados alias' };
+  return { valor: out };
+}
+// Qué cambió entre dos mapas de alias (para el Historial): «+ a → b», «− c».
+function difAlias(antes, despues) {
+  antes = antes || {}; despues = despues || {};
+  const partes = [];
+  for (const [a, b] of Object.entries(despues)) if (antes[a] !== b) partes.push('+ ' + a + ' → ' + b);
+  for (const a of Object.keys(antes)) if (!(a in despues)) partes.push('− ' + a);
+  return partes;
+}
+
 function leerConfig(db, cliente) {
   const out = {};
   for (const r of db.prepare('SELECT clave, valor FROM sura_config WHERE cliente = ?').all(cliente)) {
@@ -418,4 +446,7 @@ module.exports = {
   validarConfig,
   leerConfig,
   guardarConfig,
+  normAsesor,
+  normalizarAlias,
+  difAlias,
 };
