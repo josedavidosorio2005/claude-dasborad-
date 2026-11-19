@@ -301,6 +301,10 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 
 ## 2. Esperando una respuesta de Edwin
 
+- **Inventario (diseño de Edwin), después de la I6** (19/11/2026): las 6 fases quedaron hechas (1.227.0–1.232.0). Lo único
+  del diseño que no se pasó son **vistas extra del Panel** (gráficas de estado por tipo y por sede); el Panel ya tiene
+  los estados y el rendimiento. Preguntarle a Edwin si las quiere y cuáles, antes de hacerlas.
+
 - **Malla de turnos, fase 2: puntualidad** (pedido de Edwin, 17/11/2026; la fase 1, la malla, está en
   producción desde la 1.204.0). Falta **un ejemplo real del reporte de Login de Wolkvox** de una semana, tal
   como sale (Excel o CSV). Se usa solo en local, fuera del repo, para ver la estructura: si trae una fila por

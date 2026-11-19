@@ -7,9 +7,9 @@ var _ac = { config: null, tab: 'panel', lista: [], sel: null, ambito: 'sistemas'
 // Fase 376 (I1, diseño de Edwin): menú lateral con el ciclo de cada elemento. «sec» = título de sección.
 var AC_MENU = {
   sistemas: [['sec', 'Menú'], ['panel', 'Panel general'], ['sec', 'Ciclo de elementos'], ['registrar', 'Registrar ingreso', '1'], ['libres', 'Libres', '2'], ['asignados', 'Asignados', '3'],
-    ['reparacion', 'En reparación', '4'], ['malos', 'Malos', '5'], ['sec', 'Gestión'], ['elementos', 'Inventario completo'], ['agentes', 'Agentes'], ['admin', 'Equipos administrables'], ['actas', 'Actas'], ['ajustes', 'Ajustes y datos']], // Fase 379: + Actas; Fase 380: + administrables
+    ['reparacion', 'En reparación', '4'], ['malos', 'Malos', '5'], ['sec', 'Gestión'], ['elementos', 'Inventario completo'], ['agentes', 'Agentes'], ['admin', 'Equipos administrables'], ['actas', 'Actas'], ['historial', 'Historial'], ['ajustes', 'Ajustes y datos']], // Fase 379: + Actas; Fase 380: + administrables; Fase 381: + Historial
   inmuebles: [['sec', 'Menú'], ['panel', 'Panel general'], ['sec', 'Ciclo de elementos'], ['registrar', 'Registrar ingreso', '1'], ['libres', 'Libres', '2'],
-    ['reparacion', 'En reparación', '3'], ['malos', 'Malos', '4'], ['sec', 'Gestión'], ['elementos', 'Inventario completo'], ['ajustes', 'Ajustes y datos']],
+    ['reparacion', 'En reparación', '3'], ['malos', 'Malos', '4'], ['sec', 'Gestión'], ['elementos', 'Inventario completo'], ['historial', 'Historial'], ['ajustes', 'Ajustes y datos']], // Fase 381: + Historial
 };
 // Vistas por estado (juntan todos los tipos) y su texto.
 var AC_VISTA_ESTADO = { libres: 'libre', asignados: 'en_uso', reparacion: 'en_reparacion', malos: 'malo' };
@@ -23,6 +23,7 @@ var AC_VISTA_TXT = {
   elementos: ['Inventario completo', 'Todos los elementos, con filtros por tipo, estado, sede, operación, propietario y rendimiento.'],
   agentes: ['Agentes', 'Quién tiene cada elemento: asignar, devolver y cambiar, con actas.'],
   admin: ['Equipos administrables', 'Red e infraestructura: servidores, switches, DVR / NVR, routers y firewalls, access points y UPS. Se registran en «Registrar ingreso»; el código se asigna solo según el tipo.'],
+  historial: ['Historial', 'Todo lo que pasó en el inventario: ingresos, asignaciones, devoluciones, cambios de estado, ediciones e importaciones. Filtra por fechas, acción o código y descárgalo en Excel o PDF.'],
   actas: ['Actas', 'Cada movimiento (entrega, devolución, cambio, envío a reparación, recibo de reparación, elemento malo o baja) crea su acta. Imprímela, hazla firmar y súbela escaneada.'],
   ajustes: ['Ajustes y datos', 'Listas, formularios por tipo y textos del acta.'],
 };
@@ -77,7 +78,7 @@ function activosTab(tab) {
   _ac.tab = tab;
   _acError('');
   var seccion = AC_VISTA_ESTADO[tab] ? 'elementos' : tab; // las vistas por estado usan la lista de elementos
-  ['panel', 'elementos', 'agentes', 'registrar', 'ajustes', 'actas', 'admin'].forEach(function (t) { _acEl('ac-p-' + t).classList.toggle('hidden', t !== seccion); });
+  ['panel', 'elementos', 'agentes', 'registrar', 'ajustes', 'actas', 'admin', 'historial'].forEach(function (t) { _acEl('ac-p-' + t).classList.toggle('hidden', t !== seccion); });
   var txt = AC_VISTA_TXT[tab];
   _acEl('ac-vista-cab').innerHTML = '<h4 class="ac-vista-tit">' + esc(txt[0]) + '</h4><p class="vis-ayuda">' + esc(txt[1]) + '</p>' + (tab === 'panel' || tab === 'registrar' ? activosFlujoHtml(_ac.ambito) : '');
   _acRefrescarMenu();
@@ -89,6 +90,7 @@ function activosTab(tab) {
   if (tab === 'ajustes') _acAjustes();
   if (tab === 'actas') activosActasBuscar(); // Fase 379
   if (tab === 'admin') { _ac.adSubtipo = ''; activosAdminBuscar(); } // Fase 380
+  if (tab === 'historial') activosHistorialBuscar(); // Fase 381
 }
 
 // ── Panel ──
@@ -334,6 +336,7 @@ async function activosAdminBuscar() {
       if (estSel.value && a.estado !== estSel.value) return false;
       return !q || [a.codigo, a.marca, a.modelo, a.serial, a.sede, (a.datos || {}).ip, (a.datos || {}).responsable, (a.datos || {}).ubicacion].join(' ').toLowerCase().indexOf(q) !== -1;
     });
+    _ac.adLista = l; // Fase 381: para Excel/PDF
     var base = todos.filter(function (a) { return !_ac.adSubtipo || (a.datos || {}).subtipo === _ac.adSubtipo; });
     _acEl('ac-ad-kpis').innerHTML = activosAdminKpisHtml(base);
     _acEl('ac-ad-subtipos').innerHTML = activosAdminSubtiposHtml(todos, sub, _ac.adSubtipo || '');
@@ -342,6 +345,125 @@ async function activosAdminBuscar() {
   } catch (e) { c.innerHTML = ''; _acError(e.message); }
 }
 function activosAdminVer(id) { activosTab('elementos'); activosVer(id); }
+// ── Fase 381 (I6, diseño de Edwin): historial general, Excel/PDF de cada vista e importación ──
+var AC_ESTADO_TXT = { libre: 'Libre', en_uso: 'Asignado', en_reparacion: 'En reparación', malo: 'Malo', de_baja: 'De baja' };
+// Columnas y filas (texto plano) de cada vista, con lo que la vista muestra ahora (filtros incluidos).
+function activosFilasExport(vista, lista, config) {
+  var tipoN = function (c) { var t = ((config && config.tipos) || []).find(function (x) { return x.codigo === c; }); return t ? t.nombre : c; };
+  var f = function (x) { return x ? _acFecha(x) : ''; };
+  if (vista === 'admin') return { titulo: 'Equipos administrables', cols: ['Código', 'Tipo', 'Marca', 'Modelo', 'Serial', 'Dirección IP', 'Sede', 'Ubicación', 'Responsable', 'Estado'],
+    filas: lista.map(function (a) { var d = a.datos || {}; return [a.codigo, d.subtipo || '', a.marca || '', a.modelo || '', a.serial || '', d.ip || '', a.sede || '', d.ubicacion || '', d.responsable || '', AC_ESTADO_ADMIN[a.estado] || a.estado]; }) };
+  if (vista === 'actas') return { titulo: 'Actas', cols: ['N.º', 'Tipo', 'Fecha', 'Agente', 'Elementos', 'Motivo', 'Estado'],
+    filas: lista.map(function (a) { return [a.numero, a.tipoNombre, f(a.fecha), a.agente ? a.agente.nombre : '', a.elementos.map(function (e) { return e.tipo + ' ' + e.codigo; }).join(', '), a.motivo || '', a.estado === 'anulada' ? 'Anulada' : a.firmada ? 'Firmada' : a.atrasada ? 'Atrasada' : 'Por firmar']; }) };
+  if (vista === 'historial') return { titulo: 'Historial del inventario', cols: ['Fecha', 'Tipo', 'Código', 'Acción', 'Antes', 'Después', 'Motivo', 'Quién'],
+    filas: lista.map(function (h) { return [f(h.fecha), tipoN(h.tipo), h.codigo, h.accion, AC_ESTADO_TXT[h.estadoAntes] || h.estadoAntes || '', AC_ESTADO_TXT[h.estadoDespues] || h.estadoDespues || '', h.motivo || '', h.quien || '']; }) };
+  return { titulo: 'Inventario', cols: ['Código', 'Tipo', 'Estado', 'Marca', 'Modelo', 'Serial', 'RAM (GB)', 'Sede', 'Operación', 'Propietario / proveedor', 'Agente'],
+    filas: lista.map(function (a) { var d = a.datos || {}; return [a.codigo, tipoN(a.tipo), AC_ESTADO_TXT[a.estado] || a.estado, a.marca || '', a.modelo || '', a.serial || '', typeof d.ram_gb === 'number' ? d.ram_gb : '', a.sede || '', a.operacion || '', a.proveedor || '', a.agente ? a.agente.nombre : '']; }) };
+}
+// Página para imprimir / guardar como PDF (todo escapado, sin scripts).
+function activosReportePrintHtml(t, cuando) {
+  return '<!doctype html><html lang="es"><head><meta charset="utf-8"><title>' + esc(t.titulo) + '</title>' +
+    '<style>@page{size:A4 landscape;margin:12mm}body{font-family:Arial,Helvetica,sans-serif;color:#1a1a1a;font-size:10px}h1{font-size:15px;margin:0 0 2px}p{margin:0 0 10px;color:#555}' +
+    'table{border-collapse:collapse;width:100%}th,td{border:1px solid #bbb;padding:3px 5px;text-align:left;vertical-align:top}th{background:#eef2f4}</style></head><body>' +
+    '<h1>' + esc(t.titulo) + '</h1><p>InConexión · ' + esc(cuando) + ' · ' + t.filas.length + (t.filas.length === 1 ? ' fila' : ' filas') + '</p>' +
+    '<table><thead><tr>' + t.cols.map(function (c) { return '<th>' + esc(c) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+    t.filas.map(function (r) { return '<tr>' + r.map(function (v) { return '<td>' + esc(v === null || v === undefined ? '' : v) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table></body></html>';
+}
+function activosExportar(vista, formato) {
+  var lista = { elementos: _ac.lista, admin: _ac.adLista, actas: _ac.actasLista, historial: _ac.histLista }[vista] || [];
+  if (!lista.length) { showToast('No hay filas para descargar con estos filtros.', 'error'); return; }
+  var t = activosFilasExport(vista, lista, _ac.config);
+  if (vista === 'elementos') t.titulo = (_ac.ambito === 'inmuebles' ? 'Inventario de inmuebles' : 'Inventario de sistemas') + ' · ' + ((AC_VISTA_TXT[_ac.tab] || [''])[0]);
+  var hoy = new Date().toLocaleDateString('es-CO', { timeZone: 'America/Bogota' });
+  if (formato === 'pdf') {
+    var w = window.open('', '_blank');
+    if (!w) { showToast('Permite las ventanas emergentes para descargar el PDF.', 'error'); return; }
+    w.document.open(); w.document.write(activosReportePrintHtml(t, hoy)); w.document.close();
+    setTimeout(function () { try { w.focus(); w.print(); } catch (e) { /* ventana cerrada */ } }, 300);
+    return;
+  }
+  if (typeof XLSX === 'undefined') { showToast('No se pudo cargar el generador de Excel.', 'error'); return; }
+  var ws = XLSX.utils.aoa_to_sheet([t.cols].concat(xlsxFilasSeguras(t.filas)));
+  ws['!cols'] = t.cols.map(function (c) { return { wch: Math.max(10, c.length + 2) }; });
+  var wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, t.titulo.replace(/[\\/?*[\]:]/g, ' ').slice(0, 31));
+  XLSX.writeFile(wb, t.titulo.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '.xlsx');
+}
+// Historial general.
+function activosHistorialHtml(lista, config) {
+  if (!lista.length) return '<p class="vis-vacio">Nada en el historial con estos filtros.</p>';
+  var t = activosFilasExport('historial', lista, config);
+  return '<div class="table-wrap"><table class="vis-tabla"><thead><tr>' + t.cols.map(function (c) { return '<th scope="col">' + esc(c) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+    t.filas.map(function (r, i) {
+      return '<tr><td>' + esc(r[0]) + '</td><td>' + esc(r[1]) + '</td><th scope="row"><button type="button" class="ac-link" onclick="activosAdminVer(' + Number(lista[i].activoId) + ')">' + esc(r[2]) + '</button></th>' +
+        r.slice(3).map(function (v) { return '<td>' + esc(v) + '</td>'; }).join('') + '</tr>';
+    }).join('') + '</tbody></table></div>';
+}
+async function activosHistorialBuscar() {
+  _acError('');
+  var q = ['ambito=' + _ac.ambito];
+  [['desde', 'ac-h-desde'], ['hasta', 'ac-h-hasta'], ['accion', 'ac-h-accion'], ['q', 'ac-h-q']].forEach(function (p) { var v = _acEl(p[1]).value.trim(); if (v) q.push(p[0] + '=' + encodeURIComponent(v)); });
+  var c = _acEl('ac-h-lista');
+  c.innerHTML = '<p class="vis-vacio">Cargando…</p>';
+  try {
+    var r = await apiRequest('GET', '/activos/historial?' + q.join('&'));
+    _ac.histLista = r.historial;
+    var sel = _acEl('ac-h-accion'), v = sel.value;
+    sel.innerHTML = '<option value="">Todas</option>' + r.acciones.map(function (a) { return '<option' + (a === v ? ' selected' : '') + '>' + esc(a) + '</option>'; }).join('');
+    _acEl('ac-h-conteo').textContent = r.historial.length + (r.historial.length === 1 ? ' movimiento' : ' movimientos') + ' con estos filtros' + (r.historial.length >= 2000 ? ' (se muestran los 2.000 más recientes; acota las fechas)' : '');
+    c.innerHTML = activosHistorialHtml(r.historial, _ac.config);
+  } catch (e) { c.innerHTML = ''; _acError(e.message); }
+}
+// Importación: el navegador lee el Excel y manda las filas; el servidor revisa y, al confirmar, guarda.
+function activosImportarColumnas(t) {
+  var fijas = ['Código', 'Marca', 'Modelo', 'Serial', 'Sede', 'Operación', 'Propietario / proveedor', 'Estado', 'Observaciones'];
+  return fijas.concat(((t && t.campos) || []).filter(function (c) { return !c.oculto; }).map(function (c) { return c.l; }));
+}
+function activosImportarPlantilla() {
+  var t = _acTipo(_acEl('ac-imp-tipo').value);
+  if (!t) { showToast('Elige el tipo de elemento.', 'error'); return; }
+  if (typeof XLSX === 'undefined') { showToast('No se pudo cargar el generador de Excel.', 'error'); return; }
+  var ws = XLSX.utils.aoa_to_sheet([activosImportarColumnas(t)]);
+  var wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Elementos');
+  XLSX.writeFile(wb, 'plantilla-' + t.codigo.toLowerCase() + '.xlsx');
+}
+function activosImportarResultadoHtml(r, confirmado) {
+  var errores = r.detalle.filter(function (d) { return !d.ok; });
+  var cab = confirmado ? '<p class="vis-ayuda" role="status">Se importaron ' + Number(r.importadas) + ' elemento(s).' + (errores.length ? ' ' + errores.length + ' fila(s) con error quedaron fuera.' : '') + '</p>'
+    : '<p class="vis-ayuda" role="status">Revisión: <b>' + Number(r.validas) + '</b> fila(s) listas y <b>' + Number(r.errores) + '</b> con error. Columnas reconocidas: ' + esc(r.columnas.join(', ') || 'ninguna') + '.</p>';
+  var tabla = errores.length ? '<div class="table-wrap"><table class="vis-tabla"><thead><tr><th scope="col">Fila</th><th scope="col">Código</th><th scope="col">Error</th></tr></thead><tbody>' +
+    errores.slice(0, 200).map(function (d) { return '<tr><td class="vis-num">' + Number(d.fila) + '</td><td>' + esc(d.codigo) + '</td><td>' + esc(d.error) + '</td></tr>'; }).join('') + '</tbody></table></div>' : '';
+  var boton = !confirmado && r.validas ? '<button type="button" class="btn-primary ac-btn" onclick="activosImportarConfirmar()">Importar ' + Number(r.validas) + ' elemento(s)</button>' : '';
+  return cab + tabla + boton;
+}
+async function activosImportarRevisar(input) {
+  _acError('');
+  var f = input.files && input.files[0], res = _acEl('ac-imp-res');
+  _ac.importar = null;
+  res.innerHTML = '';
+  if (!f) return;
+  if (f.size > 5 * 1024 * 1024) { _acError('El archivo pesa más de 5 MB.'); input.value = ''; return; }
+  try {
+    var wb = XLSX.read(new Uint8Array(await f.arrayBuffer()), { type: 'array' });
+    var filas = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, blankrows: false, defval: null });
+    var b = { tipo: _acEl('ac-imp-tipo').value, filas: filas.slice(0, 2001) };
+    var r = await apiRequest('POST', '/activos/importar', b);
+    _ac.importar = b;
+    res.innerHTML = activosImportarResultadoHtml(r, false);
+  } catch (e) { _acError(e.message); }
+  input.value = '';
+}
+async function activosImportarConfirmar() {
+  if (!_ac.importar) return;
+  try {
+    var r = await apiRequest('POST', '/activos/importar', Object.assign({}, _ac.importar, { confirmar: true }));
+    _ac.importar = null;
+    _acEl('ac-imp-res').innerHTML = activosImportarResultadoHtml(r, true);
+    showToast('Importados: ' + r.importadas, 'ok');
+    _acRefrescarMenu();
+  } catch (e) { _acError(e.message); }
+}
 // Fase 377: desde el Panel, el inventario completo filtrado por un rendimiento.
 function activosVerRendimiento(codigo) {
   ['tipo', 'estado', 'sede', 'operacion', 'proveedor', 'rend', 'q'].forEach(function (k) { var el = _acEl('ac-f-' + k); el.value = ''; el.removeAttribute('data-v'); });
@@ -402,6 +524,8 @@ async function activosRegistrar(ev) {
 function _acAjustes() {
   ['sedes', 'operaciones', 'proveedores', 'motivos'].forEach(function (l) { _acEl('ac-l-' + l).value = (_ac.config.listas[l] || []).join('\n'); });
   _acTipos(); _acTextos(); // Fase 372 (E4)
+  _acEl('ac-imp-tipo').innerHTML = _acOpciones(_ac.config.tipos.filter(function (t) { return t.activo !== false; })); // Fase 381
+  _acEl('ac-imp-res').innerHTML = '';
 }
 // Fase 372: los motivos frecuentes se sugieren en los campos de motivo (datalist); el motivo sigue libre.
 function _acMotivos() {
@@ -863,5 +987,5 @@ async function activosDescargarFirmada(id) {
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { activosMenuHtml: activosMenuHtml, activosFlujoHtml: activosFlujoHtml, AC_MENU: AC_MENU, AC_VISTA_ESTADO: AC_VISTA_ESTADO, activosTiposHtml: activosTiposHtml, activosCampoEditorHtml: activosCampoEditorHtml, activosEditorTipoHtml: activosEditorTipoHtml, activosLeerCampos: activosLeerCampos, activosPanelHtml: activosPanelHtml, activosListaHtml: activosListaHtml, activosConsulta: activosConsulta, activosRendHtml: activosRendHtml, activosGestionHtml: activosGestionHtml, activosAgenteSelectHtml: activosAgenteSelectHtml, activosAgenteBody: activosAgenteBody, activosActasHtml: activosActasHtml, activosActasKpisHtml: activosActasKpisHtml, activosActasAviso: activosActasAviso, activosAdminHtml: activosAdminHtml, activosAdminKpisHtml: activosAdminKpisHtml, activosAdminSubtiposHtml: activosAdminSubtiposHtml, AC_ESTADO_ADMIN: AC_ESTADO_ADMIN, activosCampoHtml: activosCampoHtml, activosAgentesHtml: activosAgentesHtml, activosActaPrintHtml: activosActaPrintHtml };
+  module.exports = { activosMenuHtml: activosMenuHtml, activosFlujoHtml: activosFlujoHtml, AC_MENU: AC_MENU, AC_VISTA_ESTADO: AC_VISTA_ESTADO, activosTiposHtml: activosTiposHtml, activosCampoEditorHtml: activosCampoEditorHtml, activosEditorTipoHtml: activosEditorTipoHtml, activosLeerCampos: activosLeerCampos, activosPanelHtml: activosPanelHtml, activosListaHtml: activosListaHtml, activosConsulta: activosConsulta, activosRendHtml: activosRendHtml, activosGestionHtml: activosGestionHtml, activosAgenteSelectHtml: activosAgenteSelectHtml, activosAgenteBody: activosAgenteBody, activosActasHtml: activosActasHtml, activosActasKpisHtml: activosActasKpisHtml, activosActasAviso: activosActasAviso, activosFilasExport: activosFilasExport, activosReportePrintHtml: activosReportePrintHtml, activosHistorialHtml: activosHistorialHtml, activosImportarColumnas: activosImportarColumnas, activosImportarResultadoHtml: activosImportarResultadoHtml, activosAdminHtml: activosAdminHtml, activosAdminKpisHtml: activosAdminKpisHtml, activosAdminSubtiposHtml: activosAdminSubtiposHtml, AC_ESTADO_ADMIN: AC_ESTADO_ADMIN, activosCampoHtml: activosCampoHtml, activosAgentesHtml: activosAgentesHtml, activosActaPrintHtml: activosActaPrintHtml };
 }

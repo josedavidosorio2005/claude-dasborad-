@@ -7,6 +7,17 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.232.0 — Noviembre 2026
+
+**Inventario, como lo diseñó Edwin (parte 6 de 6): historial, descargas e importación.**
+
+- Nueva sección **«Historial»** (en los dos inventarios): todo lo que pasó (ingresos, asignaciones, devoluciones,
+  cambios de estado, ediciones, importaciones), con filtros por fechas, acción y código.
+- Botones **Excel** y **PDF** en el inventario (cada vista), en Equipos administrables, en Actas y en el Historial:
+  descargan lo que se ve con los filtros puestos.
+- **Importar desde Excel** (en «Ajustes y datos»): se elige el tipo, se descarga la plantilla, se sube el archivo y
+  primero se ve una revisión fila por fila (qué entra y qué tiene error); nada se guarda hasta confirmar.
+
 ## v1.231.0 — Noviembre 2026
 
 **Inventario, como lo diseñó Edwin (parte 5 de 6): equipos administrables.**

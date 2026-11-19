@@ -117,6 +117,26 @@ router.post('/activos/:id/estado', requireActor, wrap((req, res) => {
   log('ACTIVO_ESTADO', r.activo, req, a.estado + ' → ' + r.activo.estado);
   res.json(Object.assign(r, { actas }));
 }));
+// Fase 381 (I6): historial general (todos los elementos del inventario abierto).
+router.get('/activos/historial', requireActor, wrap((req, res) => {
+  if (!permitido(req, res)) return;
+  const q = {};
+  for (const k of ['ambito', 'desde', 'hasta', 'accion', 'q']) if (typeof req.query[k] === 'string' && req.query[k].trim()) q[k] = req.query[k].trim();
+  res.json(A.historialGeneral(db, q));
+}));
+// Fase 381 (I6): importar elementos de un tipo desde Excel (el navegador lee el archivo y manda las filas).
+// Sin «confirmar» solo revisa; con «confirmar» crea los válidos. Historial ACTIVO_IMPORTACION (solo conteos).
+router.post('/activos/importar', requireActor, wrap((req, res) => {
+  if (!permitido(req, res)) return;
+  const b = req.body || {};
+  if (Object.keys(b).some((k) => !['tipo', 'filas', 'confirmar'].includes(k))) return res.status(400).json({ error: 'Datos no válidos' });
+  let r;
+  try { r = A.importar(db, b.tipo, b.filas, b.confirmar === true, actorLabel(req.actor)); }
+  catch (e) { return res.status(400).json({ error: e.message }); }
+  if (r.error) return res.status(400).json({ error: r.error });
+  if (r.importadas) logEvent('ACTIVO_IMPORTACION', { nombre: r.tipo, user: '-', rol: 'activos' }, actorLabel(req.actor), r.importadas + ' importado(s), ' + r.errores + ' con error');
+  res.json(r);
+}));
 router.get('/activos/:id/historial', requireActor, wrap((req, res) => {
   if (!permitido(req, res)) return;
   const a = idValido(req.params.id) ? A.obtener(db, Number(req.params.id)) : null;
