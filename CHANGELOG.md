@@ -7,6 +7,13 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.233.2 — Noviembre 2026
+
+**Réplica de MOBILIZE con la API: se puede probar el reporte de llamadas abandonadas.**
+
+- «Probar» (solo administrador, solo la réplica) ya incluye el reporte «2. Detalle de llamadas abandonadas» y dice
+  cuántas filas trae cada día, para compararlo con el archivo manual. No guarda nada ni cambia el MOBILIZE real.
+
 ## v1.233.1 — Noviembre 2026
 
 **Réplica de MOBILIZE con la API: ya no se pierde la llamada sin tipificación.**
