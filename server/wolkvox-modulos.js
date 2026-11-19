@@ -160,6 +160,25 @@ function hojaCdr(data) {
     return v === undefined || v === null ? '' : v;
   })));
 }
+// Fase A12 (19/11): conteos SIN valores de lo que trae cdr_1, para saber por qué no entran llamadas de
+// salida sin gastar consultas: por tipo de interacción (solo nombres del sistema, [a-z_], hasta 6) y
+// cuántas filas no traen asesor o tipificación (el lector las omite) o traen la skill «-».
+function conteoCdr(data) {
+  const tipos = {};
+  let sinAgente = 0, sinTip = 0, guion = 0;
+  for (const r of data) {
+    const t = String(_v(r || {}, 'type_interaction') || '').trim().toLowerCase();
+    const k = /^[a-z_]{1,24}$/.test(t) ? t : (t ? 'otro' : 'vacio');
+    tipos[k] = (tipos[k] || 0) + 1;
+    if (!String(_v(r || {}, 'agent_name') || '').trim()) sinAgente++;
+    if (!String(_v(r || {}, 'description_cod_act') || '').trim()) sinTip++;
+    if (String(_v(r || {}, 'skill_name') || '').trim() === '-') guion++;
+  }
+  const lista = Object.entries(tipos).sort((a, b) => b[1] - a[1]);
+  const extra = lista.length > 6 ? lista.slice(6).reduce((n, x) => n + x[1], 0) : 0;
+  return 'API ' + data.length + ' filas: ' + lista.slice(0, 6).map(([k, n]) => k + ' ' + n).join(', ') + (extra ? ', otros ' + extra : '') +
+    '; sin asesor ' + sinAgente + ', sin tipificación ' + sinTip + ', skill «-» ' + guion;
+}
 function opcionesCdrMobilize() {
   return { codificacionesExcluidas: T.TIPIFICACION_CDR_EXCLUIR_POR_DEFECTO, marcarUnicasDia: true, conservarSalidaGuion: true };
 }
@@ -179,6 +198,7 @@ async function correrCdr(opts, partes, res) {
       if (r.data.length) campos = wv.resumenSinValores(r.cuerpo).campos;
     }
     if (!data.length) { partes.push(mes + ': Wolkvox no trajo llamadas, sin cambios'); continue; }
+    const conteo = conteoCdr(data); // Fase A12: solo números
     let p = T.tipificacionParseFilas(hojaCdr(data), null, 'LLAMADAS', opcionesCdrMobilize());
     data = null; // los teléfonos y demás datos crudos no se guardan ni se quedan en memoria
     if (p.error) {
@@ -196,7 +216,7 @@ async function correrCdr(opts, partes, res) {
     });
     const unicas = p.unicasDia ? p.unicasDia.unicas : null;
     res.meses.push({ mes, filas: w.insertadas, reemplazadas: w.borradas, excluidas: p.excluidas || 0, unicas, salida: p.salida || 0 });
-    partes.push(mes + ': ' + w.insertadas + ' llamadas (' + (p.salida || 0) + ' de salida' + (unicas !== null ? ', ' + unicas + ' únicas de ingreso' : '') + (p.excluidas ? ', ' + p.excluidas + ' de prueba fuera' : '') + '), reemplazó ' + w.borradas + ', con respaldo');
+    partes.push(mes + ': ' + w.insertadas + ' llamadas (' + (p.salida || 0) + ' de salida' + (unicas !== null ? ', ' + unicas + ' únicas de ingreso' : '') + (p.excluidas ? ', ' + p.excluidas + ' de prueba fuera' : '') + '), reemplazó ' + w.borradas + ', con respaldo · ' + conteo);
     p = null;
   }
 }
@@ -292,4 +312,4 @@ async function correrModulo(nombre, opts) {
   return terminar();
 }
 
-module.exports = { MODULOS, modulosDe, correrModulo, hojaFlujoHora, ahtEsperaDiarios, reemplazarMesFlujoHora, actualizarAhtEspera, hojaCdr, CDR_COLUMNAS, CDR_DESCARTADAS, opcionesCdrMobilize, hojaEncuesta, ENCUESTA_DESCARTADAS };
+module.exports = { conteoCdr, MODULOS, modulosDe, correrModulo, hojaFlujoHora, ahtEsperaDiarios, reemplazarMesFlujoHora, actualizarAhtEspera, hojaCdr, CDR_COLUMNAS, CDR_DESCARTADAS, opcionesCdrMobilize, hojaEncuesta, ENCUESTA_DESCARTADAS };

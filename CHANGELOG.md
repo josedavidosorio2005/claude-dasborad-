@@ -7,6 +7,12 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.223.1 — Noviembre 2026
+
+**Réplica de MOBILIZE (Wolkvox): diagnóstico de la Tipificación.** Cada corrida del CDR anota en el Historial
+cuántas filas trajo Wolkvox por tipo (entrada, salida, otras) y cuántas no traen asesor o tipificación. Solo
+números, sin datos. Sirve para saber por qué no llegan las llamadas de salida sin gastar consultas.
+
 ## v1.223.0 — Noviembre 2026
 
 **Inventario de sistemas: Sistemas ya puede ajustar los formularios.** (Ajustes › «Formularios por tipo»)
