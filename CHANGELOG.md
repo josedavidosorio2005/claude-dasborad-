@@ -7,6 +7,12 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.226.0 — Noviembre 2026
+
+**SURA: «Ventas por día».** En la pestaña Agentes, el botón «Ver ventas por día» abre un recuadro aparte:
+se elige el mes y se ven las ventas de cada asesor día por día (tabla) y un gráfico por día de todos o de una
+asesora, en pólizas o en producción. Usa la fecha de la venta y los mismos filtros de la página.
+
 ## v1.225.0 — Noviembre 2026
 
 **SURA: «Alias de asesores».** Si una asesora aparece con varios nombres en las bases (por ejemplo con y sin

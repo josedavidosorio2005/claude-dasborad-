@@ -270,6 +270,43 @@ X('MK().filter(k=>k<T).forEach', 'MKT().filter(k=>k<T).forEach', 1);
 X('MK().filter(x=>x<k).forEach', 'MKT().filter(x=>x<k).forEach', 1);
 X('const all=MK(),LM=all[all.length-1],last={};', 'const all=MKT(),LM=all[all.length-1],last={};', 1);
 
+// ── Fase 375 (pedido de Edwin, 19/11): «📅 Ventas por día» en Agentes, en un recuadro aparte que se
+// abre con un botón (para no saturar la pantalla): elegir el mes y ver las ventas por día de cada
+// asesor (tabla) y un gráfico de barras por día (todos o una asesora). La fecha es fecha_venta («Fecha
+// evento», decidido con el usuario). Mismos filtros que «Ventas por agente» (campaña y validación). Sin
+// estilos nuevos en la hoja del tablero (fase345): clases que ya existen y estilos en línea.
+M('<div id="c1" style="margin-top:8px"></div></div>', '<div id="c1" style="margin-top:8px"></div></div>\n  <div class="card" id="vpdc"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h2 style="margin:0">📅 Ventas por día</h2><button class="btn" id="vpdb" type="button" aria-expanded="false" aria-controls="vpd">Ver ventas por día</button></div>' +
+  '<div id="vpd" hidden><div class="row fx" style="margin-top:10px"><label>Mes<select id="vpdm"></select></label><label>Asesor<select id="vpda"></select></label><label>Medida<select id="vpdx"><option value="v">Ventas (pólizas)</option><option value="p">Producción</option></select></label></div>' +
+  '<div id="vpdg" style="margin-top:10px"></div><div class="tbl" id="vpdt" style="margin-top:12px"></div></div></div>');
+X('function draw8(){', [
+  '/* ---------- Fase 375: Ventas por día (fecha_venta) ---------- */',
+  'function vpdDatos(k,med){const d=DB[k],n=new Date(+k.slice(0,4),+k.slice(5,7),0).getDate(),A={},tot=new Array(n).fill(0);',
+  '  if(!d||!d.rows)return {n,A,tot};',
+  '  d.rows.filter(r=>!VOFF.has(r[6]||NV)&&cOK(campOf(r))).forEach(r=>{const f=String(r[1]||"");if(!f.startsWith(k))return;const i=+f.slice(8,10)-1;if(!(i>=0&&i<n))return;',
+  '    const a=r[0]||"(sin agente)",v=med==="p"?(+r[3]||0):(+r[2]||0);(A[a]||(A[a]=new Array(n).fill(0)))[i]+=v;tot[i]+=v});',
+  '  return {n,A,tot}}',
+  'function drawVPD(){if($("vpd").hidden)return;const ks=MK().filter(k=>DB[k]&&DB[k].rows);',
+  '  if(!ks.length){$("vpdg").innerHTML=\'<div class="msg">No hay bases de ventas en este año.</div>\';$("vpdt").innerHTML="";return}',
+  '  const sm=$("vpdm"),cur=ks.includes(sm.value)?sm.value:ks[ks.length-1];',
+  '  sm.innerHTML=ks.map(k=>`<option value="${esc(k)}" ${k===cur?"selected":""}>${esc(mname(k)+" "+k.slice(0,4))}</option>`).join("");',
+  '  const med=$("vpdx").value,D=vpdDatos(cur,med),f=med==="p"?(v=>v?money(v):"·"):(v=>v?fmt(v):"·");',
+  '  const ags=Object.keys(D.A).map(a=>({a,v:D.A[a],t:D.A[a].reduce((s,x)=>s+x,0)})).sort((x,y)=>y.t-x.t||pretty(x.a).localeCompare(pretty(y.a)));',
+  '  const sa=$("vpda"),ag=ags.some(x=>x.a===sa.value)?sa.value:"";',
+  '  sa.innerHTML=\'<option value="">Todos los asesores</option>\'+ags.map(x=>`<option value="${esc(x.a)}" ${x.a===ag?"selected":""}>${esc(pretty(x.a))}</option>`).join("");',
+  '  const serie=ag?D.A[ag]:D.tot,mx=Math.max(1,...serie),tot=serie.reduce((s,x)=>s+x,0),lab=(ag?pretty(ag):"Todos los asesores")+" · "+mname(cur);',
+  '  $("vpdg").innerHTML=`<div class="msg" style="margin:0 0 6px">${esc(lab)}: <b>${med==="p"?money(tot):fmt(tot)}</b> ${med==="p"?"de producción":"pólizas"} en el mes</div>`+',
+  '    `<div role="img" aria-label="${esc(lab)}: ${esc(med==="p"?money(tot):fmt(tot))} en el mes, por día" style="display:flex;align-items:flex-end;gap:2px;height:150px;padding:4px 0;border-bottom:1px solid var(--bd)">`+',
+  '    serie.map((v,i)=>`<div title="Día ${i+1}: ${esc(f(v))}" style="flex:1 1 0;min-width:4px;height:${v?Math.max(3,Math.round(v/mx*100)):0}%;background:var(--ac);border-radius:3px 3px 0 0"></div>`).join("")+"</div>"+',
+  '    `<div aria-hidden="true" style="display:flex;gap:2px;font-size:12px;color:var(--mu)">${serie.map((v,i)=>`<span style="flex:1 1 0;min-width:4px;text-align:center">${(i+1)%5===0||i===0?i+1:""}</span>`).join("")}</div>`;',
+  '  const dias=Array.from({length:D.n},(_,i)=>i+1),stk="position:sticky;left:0;background:var(--card);text-align:left;z-index:1";',
+  '  $("vpdt").innerHTML=ags.length?`<table class="tt" style="table-layout:auto"><caption style="text-align:left;font-weight:600;padding:4px 0">${esc(med==="p"?"Producción":"Ventas (pólizas)")} por día · ${esc(mname(cur)+" "+cur.slice(0,4))}</caption><thead><tr><th scope="col" style="${stk}">Asesor</th>${dias.map(d=>`<th scope="col">${d}</th>`).join("")}<th scope="col">Total</th></tr></thead><tbody>`+',
+  '    ags.map(x=>`<tr${x.a===ag?\' style="font-weight:700"\':""}><th scope="row" style="${stk}">${esc(pretty(x.a))}</th>${x.v.map(v=>`<td>${f(v)}</td>`).join("")}<td><b>${f(x.t)}</b></td></tr>`).join("")+',
+  '    `<tr><th scope="row" style="${stk}">Total</th>${D.tot.map(v=>`<td><b>${f(v)}</b></td>`).join("")}<td><b>${f(D.tot.reduce((s,v)=>s+v,0))}</b></td></tr></tbody></table>`:\'<div class="msg">Ninguna venta con estos filtros en el mes.</div>\'}',
+  '$("vpdb").addEventListener("click",()=>{const p=$("vpd"),ab=p.hidden;p.hidden=!ab;$("vpdb").setAttribute("aria-expanded",String(ab));$("vpdb").textContent=ab?"Ocultar ventas por día":"Ver ventas por día";if(ab)drawVPD()});',
+  '["vpdm","vpda","vpdx"].forEach(i=>$(i).addEventListener("change",drawVPD));',
+  'function draw8(){drawVPD(); // Fase 375: el recuadro de ventas por día sigue los filtros de la página',
+].join('\n'), 1);
+
 {
   // sin imprimir contexto (podria traer datos): solo cual quedo
   const m = js.match(/SEED|save\(\)|idb\(|origPut|origDel|load\(\)|document\.body\.classList/i);
