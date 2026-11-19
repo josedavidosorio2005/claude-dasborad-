@@ -290,10 +290,40 @@ async function correrEncuesta(opts, partes, res) {
   }
 }
 
+// ── Fase A15 (19/11): cdr_5 → Llamadas de salida, NO conectadas (el reporte «5. Detalle de las llamadas no
+// conectadas» del Manager que hoy se sube a mano). Coincide con el manual (04/11: 2, 10/11: 7). Solo entran
+// fecha y asesor; NUNCA el teléfono, el destino, el cliente ni el conn_id. Una consulta por mes.
+const LS = require('../public/js/llamadas-salida-logic.js');
+const NC_DESCARTADAS = ['telephone', 'destiny', 'customer_id', 'conn_id', 'campaign_id', 'agent_id', 'type_interaction'];
+function hojaNoConectadas(data) {
+  return [['AGENT_NAME', 'DATE', 'RING_TIME', 'RESULT']].concat(data.map((r) => ['agent_name', 'date', 'ring_time', 'result'].map((k) => {
+    const v = _v(r || {}, k);
+    return v === undefined || v === null ? '' : v;
+  })));
+}
+async function correrNoConectadas(opts, partes, res) {
+  const { cargarLlamadasNoConectadas } = require('./llamadas-salida');
+  for (const { mes, dias } of _auto().plan(opts.ahora)) {
+    res.consultas++;
+    let { data } = await _pedir(opts, 'cdr_5', dias[0], dias[dias.length - 1]);
+    if (!data.length) { partes.push(mes + ': Wolkvox no trajo no conectadas, sin cambios'); continue; }
+    let p = LS.llamadasNoConectadasParseFilas(hojaNoConectadas(data));
+    data = null; // teléfonos y demás datos crudos no se guardan ni se quedan en memoria
+    if (p.error) { res.estado = 'error'; res.error = 'respuesta_invalida'; partes.push(mes + ': respuesta no esperada (' + String(p.error).slice(0, 120) + '), sin cambios'); return; }
+    const fuera = p.filas.filter((f) => String(f[0]).slice(0, 7) !== mes);
+    if (fuera.length) { res.estado = 'error'; res.error = 'respuesta_invalida'; partes.push(mes + ': ' + fuera.length + ' llamadas fuera del mes, sin cambios'); return; }
+    const w = cargarLlamadasNoConectadas(opts.db, { campana: CAMPANA, archivoNombre: 'API Wolkvox (cdr_5)', cargadoPorNombre: QUIEN, filas: p.filas, desde: mes + '-01', hasta: ing.ultimoDiaDelMes(mes) });
+    res.meses.push({ mes, filas: w.insertadas, reemplazadas: w.borradas });
+    partes.push(mes + ': ' + w.insertadas + ' no conectadas (reemplazó ' + w.borradas + ', con respaldo)');
+    p = null;
+  }
+}
+
 const MODULOS = {
   flujo_hora: { api: 'skill_7', descripcion: 'Flujo por hora + AHT y espera', correr: correrFlujoHora },
   cdr: { api: 'cdr_1', descripcion: 'Tipificación, Eficacia, únicas contestadas y conectadas de salida', correr: correrCdr },
   encuesta: { api: 'diagram_4', descripcion: 'Encuesta (HistIVR) sin teléfono ni comentarios', correr: correrEncuesta }, // Fase A11
+  no_conectadas: { api: 'cdr_5', descripcion: 'Llamadas de salida no conectadas (sin teléfono)', correr: correrNoConectadas }, // Fase A15
 };
 function modulosDe(valor) {
   return String(valor == null ? '' : valor).split(',').map((s) => s.trim().toLowerCase()).filter((s) => Object.prototype.hasOwnProperty.call(MODULOS, s));
@@ -338,4 +368,4 @@ async function correrModulo(nombre, opts) {
   return terminar();
 }
 
-module.exports = { conteoCdr, MODULOS, modulosDe, correrModulo, hojaFlujoHora, ahtEsperaDiarios, reemplazarMesFlujoHora, actualizarAhtEspera, hojaCdr, CDR_COLUMNAS, CDR_DESCARTADAS, opcionesCdrMobilize, hojaEncuesta, ENCUESTA_DESCARTADAS };
+module.exports = { conteoCdr, MODULOS, modulosDe, correrModulo, hojaFlujoHora, ahtEsperaDiarios, reemplazarMesFlujoHora, actualizarAhtEspera, hojaCdr, CDR_COLUMNAS, CDR_DESCARTADAS, opcionesCdrMobilize, hojaEncuesta, ENCUESTA_DESCARTADAS, hojaNoConectadas, NC_DESCARTADAS };

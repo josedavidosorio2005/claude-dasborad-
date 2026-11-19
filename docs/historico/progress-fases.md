@@ -21472,3 +21472,10 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
 - **Corrida autorizada (usuario, 19/11, 12:35, «Ejecutar ahora», solo `cdr`, 1 consulta, réplica), ya con el diagnóstico A13:** API 93 filas: outbound_ma 47, inbound 46; **outbound_ma: sin skill 47**, fecha con la misma forma que inbound. Causa confirmada: el lector omitía toda la salida por «falta un dato» (skill vacío); el export manual trae «-».
 - **Cambio:** `server/wolkvox-modulos.js` `hojaCdr`: en filas de salida (`outbound_ma`/`out_pre`) con SKILL_NAME o SKILL_ID vacío pone «-», que el lector ya convierte en «LLAMADAS DE SALIDA» (Fases 168/194). Las de entrada sin skill se siguen omitiendo. Solo la réplica usa este camino.
 - **Pruebas:** `faseA14-cdr-salida-sin-skill` (2).
+
+## Fase A15 — réplica: no conectadas con cdr_5 (v1.233.0, 2026-11-19)
+
+- **Después de A14 (deploy v1.232.2, corrida autorizada de cdr a las 12:5x, 1 consulta):** 92 llamadas, 47 de salida. Comparación SOLO LECTURA por día, total/conectadas de salida, réplica = MOBILIZE manual los 8 días comunes (03–12/11: 3/1, 8/3, 5/4, 7/2, 3/2, 9/5, 2/2, 1/1); 13, 17 y 18/11 solo en la réplica.
+- **Pestaña «Llamadas de salida»:** las conectadas salen del CDR (réplica = manual: 3, 8, 5, 7, 3, 9, 2, 1); las **no conectadas, el total y la tasa de contacto** necesitan la base «5. Detalle de las llamadas no conectadas». Manual: 04/11 = 2 y 10/11 = 7; la prueba de `cdr_5` del 18/11 dio **2 y 7 filas** esos días (en §10.10 se había comparado contra otros números). **`cdr_5` es ese reporte.**
+- **Cambio:** módulo `no_conectadas` (`server/wolkvox-modulos.js`): una consulta `cdr_5` por mes → mismas columnas del Excel (AGENT_NAME, DATE, RING_TIME, RESULT) → `llamadasNoConectadasParseFilas` → `cargarLlamadasNoConectadas` (ahora acepta desde/hasta: reemplaza el mes completo de la réplica, con respaldo). Nunca entran teléfono, destino, cliente ni CONN_ID. Arranca apagado (`WOLKVOX_AUTO_MODULOS`).
+- **Pruebas:** `faseA15-wolkvox-no-conectadas` (3).

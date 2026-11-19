@@ -7,6 +7,15 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.233.0 — Noviembre 2026
+
+**Réplica de MOBILIZE con la API: llamadas de salida no conectadas (listo, apagado).**
+
+- La réplica de prueba ya puede traer de Wolkvox las llamadas de salida **no conectadas** (el reporte «5. Detalle de
+  las llamadas no conectadas» que hoy se sube a mano). Con eso se completan el total, las no conectadas y la tasa
+  de contacto de «Llamadas de salida». Solo se guardan la fecha y el asesor, nunca el teléfono.
+- Queda apagado hasta que se encienda. El MOBILIZE real no cambia.
+
 ## v1.232.2 — Noviembre 2026
 
 **Réplica de MOBILIZE con la API: ya entran las llamadas de salida.**
