@@ -196,13 +196,94 @@ async function activosVer(id) {
   var hist = r.historial.map(function (h) { return '<li><b>' + esc(h.accion) + '</b> · ' + esc(new Date(h.fecha).toLocaleString('es-CO', { timeZone: 'America/Bogota' })) + (h.estadoAntes && h.estadoDespues && h.estadoAntes !== h.estadoDespues ? ' · ' + esc(_acEstadoNombre(h.estadoAntes)) + ' → ' + esc(_acEstadoNombre(h.estadoDespues)) : '') + (h.motivo ? ' · ' + esc(h.motivo) : '') + ' · ' + esc(h.quien) + '</li>'; }).join('');
   _acEl('ac-detalle').innerHTML = '<section class="aurora-card"><div class="aurora-card-title">' + esc(t.nombre) + ' ' + esc(a.codigo) + ' · <span class="vis-pill ' + AC_CLASE_ESTADO[a.estado] + '">' + esc(_acEstadoNombre(a.estado)) + '</span></div>' +
     '<dl class="wv-estado"><dt>Marca</dt><dd>' + esc(a.marca || '—') + '</dd><dt>Modelo</dt><dd>' + esc(a.modelo || '—') + '</dd><dt>Serial</dt><dd>' + esc(a.serial || '—') + '</dd><dt>Sede</dt><dd>' + esc(a.sede || '—') + '</dd><dt>Operación</dt><dd>' + esc(a.operacion || '—') + '</dd><dt>Propietario / proveedor</dt><dd>' + esc(a.proveedor || '—') + '</dd>' + (a.rendimiento ? '<dt>Rendimiento</dt><dd>' + activosRendHtml(a, _ac.config) + '</dd>' : '') + (a.agente ? '<dt>Asignado a</dt><dd>' + esc(a.agente.nombre) + '</dd>' : '') + datos + (a.observaciones ? '<dt>Observaciones</dt><dd>' + esc(a.observaciones) + '</dd>' : '') + '</dl>' +
-    (a.agente ? '<p class="vis-ayuda">Para devolverlo o cambiarlo, ve a «Agentes» y abre a ' + esc(a.agente.nombre) + '.</p>' : '') +
-    (!a.agente && a.estado !== 'de_baja' && opciones.length ? '<form class="ac-estado-form" onsubmit="activosCambiarEstado(event)"><div class="ig"><label for="ac-nuevo-estado">Cambiar estado a</label><select id="ac-nuevo-estado">' + _acOpciones(opciones) + '</select></div>' +
-      '<div class="ig ac-motivo"><label for="ac-motivo">Motivo / diagnóstico</label><input type="text" id="ac-motivo" maxlength="300" list="ac-motivos-lista" placeholder="Ej.: no enciende, pantalla dañada, reparado…"></div><button type="submit" class="btn-primary">Cambiar estado</button></form>' : '') +
+    activosGestionHtml(a, _ac.ambito) + '<div id="ac-gestion"></div>' + // Fase 378 (I3): asignar, reasignar, cambiar y quitar desde el elemento
+    (a.estado !== 'de_baja' && opciones.length ? '<form class="ac-estado-form" onsubmit="activosCambiarEstado(event)"><div class="ig"><label for="ac-nuevo-estado">Cambiar estado a</label><select id="ac-nuevo-estado" onchange="activosEstadoTecnico()">' + _acOpciones(opciones) + '</select></div>' +
+      '<div class="ig ac-motivo"><label for="ac-motivo">Motivo / diagnóstico</label><input type="text" id="ac-motivo" maxlength="300" list="ac-motivos-lista" placeholder="Ej.: no enciende, pantalla dañada, reparado…"></div>' +
+      '<div class="ig" id="ac-tecnico-ig"><label for="ac-tecnico">Técnico o proveedor</label><input type="text" id="ac-tecnico" maxlength="80" placeholder="Ej.: soporte interno"></div>' +
+      (a.agente ? '<p class="vis-ayuda ac-form-titulo">Está asignado a ' + esc(a.agente.nombre) + ': al cambiar el estado se registra la devolución.</p>' : '') + '<button type="submit" class="btn-primary">Cambiar estado</button></form>' : '') +
     '<h4 class="ac-sub">Historial</h4><ul class="ac-hist">' + hist + '</ul><div class="modal-btns"><button type="button" class="btn-cancel" onclick="activosCerrarDetalle()">Volver a la lista</button></div></section>';
   _acEl('ac-detalle').classList.remove('hidden');
   _acEl('ac-lista-zona').classList.add('hidden');
   _acEl('ac-detalle').scrollIntoView({ block: 'start' });
+  if (_acEl('ac-nuevo-estado')) activosEstadoTecnico();
+}
+// ── Fase 378 (I3, diseño de Edwin): gestión desde el elemento ──
+// Libre → «Asignar a un agente»; asignado → Reasignar, Cambiar elemento o Quitar asignación, y «Ver agente».
+// Los inmuebles y los equipos administrables no se asignan.
+function activosGestionHtml(a, ambito) {
+  if (ambito === 'inmuebles' || a.tipo === 'ADMINISTRABLE' || a.estado === 'de_baja') return '';
+  if (a.agente) {
+    return '<div class="ac-gestion-cab"><p class="ac-gestion-txt">Asignado a <b>' + esc(a.agente.nombre) + '</b></p>' +
+      '<button type="button" class="btn-cancel ac-btn" onclick="activosIrAgente(' + Number(a.agente.id) + ')">Ver agente</button></div>' +
+      '<div class="ac-acciones" role="group" aria-label="Asignación">' +
+      [['reasignar', 'Reasignar a otro agente'], ['cambiar', 'Cambiar elemento'], ['quitar', 'Quitar asignación']].map(function (x) {
+        return '<button type="button" class="btn-cancel ac-btn" data-ac-gestion="' + x[0] + '" onclick="activosGestion(\'' + x[0] + '\')">' + esc(x[1]) + '</button>';
+      }).join('') + '</div>';
+  }
+  if (a.estado !== 'libre') return '<p class="vis-ayuda">Para asignarlo, primero márcalo como «Libre».</p>';
+  return '<div class="ac-acciones"><button type="button" class="btn-primary ac-btn" data-ac-gestion="asignar" onclick="activosGestion(\'asignar\')">Asignar a un agente</button></div>';
+}
+// Selector de agente: los activos y «Agente nuevo…» (nombre, cédula y operación).
+function activosAgenteSelectHtml(agentes, excluirId, operaciones) {
+  return '<div class="ig"><label for="ac-g-agente">Agente</label><select id="ac-g-agente" onchange="activosAgenteNuevoToggle()"><option value="">Elige un agente…</option>' +
+    agentes.filter(function (g) { return g.id !== excluirId; }).map(function (g) { return '<option value="' + Number(g.id) + '">' + esc(g.nombre) + (g.documento ? ' · ' + esc(g.documento) : '') + '</option>'; }).join('') +
+    '<option value="__nuevo">➕ Agente nuevo…</option></select></div>' +
+    '<div class="ac-g-nuevo hidden" id="ac-g-nuevo"><div class="ig"><label for="ac-g-nombre">Nombre completo</label><input type="text" id="ac-g-nombre" maxlength="80" autocomplete="off"></div>' +
+    '<div class="ig"><label for="ac-g-doc">Cédula</label><input type="text" id="ac-g-doc" maxlength="20" inputmode="numeric" autocomplete="off"></div>' +
+    '<div class="ig"><label for="ac-g-op">Operación</label><select id="ac-g-op">' + _acOpciones(operaciones || [], null, '—') + '</select></div></div>';
+}
+function activosAgenteNuevoToggle() { _acEl('ac-g-nuevo').classList.toggle('hidden', _acEl('ac-g-agente').value !== '__nuevo'); }
+// Cuerpo de la petición con el agente elegido o el nuevo (exportada para las pruebas).
+function activosAgenteBody(valor, nuevo) {
+  if (valor === '__nuevo') return { agenteNuevo: { nombre: nuevo.nombre, documento: nuevo.documento, operacion: nuevo.operacion } };
+  return Number(valor) ? { agenteId: Number(valor) } : null;
+}
+function activosEstadoTecnico() { var s = _acEl('ac-nuevo-estado'); _acEl('ac-tecnico-ig').classList.toggle('hidden', !s || s.value !== 'en_reparacion'); }
+function activosIrAgente(id) { activosTab('agentes'); activosVerAgente(id); }
+async function activosGestion(modo) {
+  _acError('');
+  var a = _ac.sel, c = _acEl('ac-gestion');
+  document.querySelectorAll('#ac-detalle [data-ac-gestion]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-ac-gestion') === modo)); });
+  var estados = _ac.config.estados.filter(function (e) { return ['libre', 'en_reparacion', 'malo'].indexOf(e.codigo) !== -1; });
+  var html = '', boton = { asignar: 'Asignar', reasignar: 'Reasignar', cambiar: 'Cambiar elemento', quitar: 'Quitar asignación' }[modo];
+  try {
+    if (modo === 'asignar' || modo === 'reasignar') {
+      var ags = (await apiRequest('GET', '/activos/agentes')).agentes || [];
+      html = activosAgenteSelectHtml(ags, a.agente ? a.agente.id : null, _ac.config.listas.operaciones);
+      if (modo === 'reasignar') html += '<div class="ig ac-motivo"><label for="ac-g-motivo">Motivo</label><input type="text" id="ac-g-motivo" maxlength="300" list="ac-motivos-lista" placeholder="Ej.: cambio de puesto"></div>';
+    } else if (modo === 'cambiar') {
+      var libres = await _acLibres(a.tipo);
+      if (!libres.length) { _acError('No hay otro elemento libre de este tipo para el cambio'); c.innerHTML = ''; return; }
+      html = '<div class="ig"><label for="ac-g-nuevoel">Elemento que recibe</label><select id="ac-g-nuevoel">' + _acOpcionesElem(libres) + '</select></div>';
+    }
+    if (modo === 'cambiar' || modo === 'quitar') {
+      html += '<div class="ig"><label for="ac-g-estado">' + esc(a.codigo) + ' queda</label><select id="ac-g-estado">' + _acOpciones(estados) + '</select></div>' +
+        '<div class="ig ac-motivo"><label for="ac-g-motivo">Motivo</label><input type="text" id="ac-g-motivo" maxlength="300" list="ac-motivos-lista" placeholder="Ej.: daño, retiro del agente, vacaciones…"></div>';
+    }
+  } catch (e) { _acError(e.message); return; }
+  c.innerHTML = '<form class="ac-asig-form" onsubmit="activosGestionEnviar(event,\'' + modo + '\')"><h5 class="ac-sub ac-form-titulo">' + esc(boton) + ' · ' + esc(a.codigo) + '</h5>' + html +
+    '<button type="submit" class="btn-primary">' + esc(boton) + '</button><button type="button" class="btn-cancel" onclick="activosGestionCancelar()">Cancelar</button></form>';
+  var f = c.querySelector('select, input'); if (f) f.focus();
+}
+function activosGestionCancelar() { _acEl('ac-gestion').innerHTML = ''; document.querySelectorAll('#ac-detalle [data-ac-gestion]').forEach(function (b) { b.removeAttribute('aria-pressed'); }); }
+async function activosGestionEnviar(ev, modo) {
+  ev.preventDefault();
+  _acError('');
+  var a = _ac.sel, b = {}, ruta = modo === 'quitar' ? 'devolver' : modo;
+  if (modo === 'asignar' || modo === 'reasignar') {
+    var sel = activosAgenteBody(_acEl('ac-g-agente').value, { nombre: (_acEl('ac-g-nombre') || {}).value, documento: (_acEl('ac-g-doc') || {}).value, operacion: (_acEl('ac-g-op') || {}).value });
+    if (!sel) { _acError('Elige un agente o «Agente nuevo…»'); return; }
+    b = sel;
+  }
+  if (modo === 'cambiar') b.nuevoId = Number(_acEl('ac-g-nuevoel').value);
+  if (modo === 'cambiar' || modo === 'quitar') b.estado = _acEl('ac-g-estado').value;
+  if (_acEl('ac-g-motivo')) b.motivo = _acEl('ac-g-motivo').value;
+  try {
+    var r = await apiRequest('POST', '/activos/' + a.id + '/' + ruta, b);
+    showToast({ asignar: 'Elemento asignado', reasignar: 'Elemento reasignado', cambiar: 'Elemento cambiado', quitar: 'Asignación quitada' }[modo] + (r && r.agenteCreado ? ' (agente nuevo creado)' : ''), 'ok');
+    await activosVer(a.id);
+    _acRefrescarMenu();
+  } catch (e) { _acError(e.message); }
 }
 // Fase 377: desde el Panel, el inventario completo filtrado por un rendimiento.
 function activosVerRendimiento(codigo) {
@@ -217,7 +298,7 @@ async function activosCambiarEstado(ev) {
   ev.preventDefault();
   _acError('');
   try {
-    await apiRequest('POST', '/activos/' + _ac.sel.id + '/estado', { estado: _acEl('ac-nuevo-estado').value, motivo: _acEl('ac-motivo').value });
+    await apiRequest('POST', '/activos/' + _ac.sel.id + '/estado', { estado: _acEl('ac-nuevo-estado').value, motivo: _acEl('ac-motivo').value, tecnico: _acEl('ac-tecnico').value });
     showToast('Estado cambiado', 'ok');
     await activosVer(_ac.sel.id);
   } catch (e) { _acError(e.message); }
@@ -638,5 +719,5 @@ async function activosDescargarFirmada(id) {
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { activosMenuHtml: activosMenuHtml, activosFlujoHtml: activosFlujoHtml, AC_MENU: AC_MENU, AC_VISTA_ESTADO: AC_VISTA_ESTADO, activosTiposHtml: activosTiposHtml, activosCampoEditorHtml: activosCampoEditorHtml, activosEditorTipoHtml: activosEditorTipoHtml, activosLeerCampos: activosLeerCampos, activosPanelHtml: activosPanelHtml, activosListaHtml: activosListaHtml, activosConsulta: activosConsulta, activosRendHtml: activosRendHtml, activosCampoHtml: activosCampoHtml, activosAgentesHtml: activosAgentesHtml, activosActaPrintHtml: activosActaPrintHtml };
+  module.exports = { activosMenuHtml: activosMenuHtml, activosFlujoHtml: activosFlujoHtml, AC_MENU: AC_MENU, AC_VISTA_ESTADO: AC_VISTA_ESTADO, activosTiposHtml: activosTiposHtml, activosCampoEditorHtml: activosCampoEditorHtml, activosEditorTipoHtml: activosEditorTipoHtml, activosLeerCampos: activosLeerCampos, activosPanelHtml: activosPanelHtml, activosListaHtml: activosListaHtml, activosConsulta: activosConsulta, activosRendHtml: activosRendHtml, activosGestionHtml: activosGestionHtml, activosAgenteSelectHtml: activosAgenteSelectHtml, activosAgenteBody: activosAgenteBody, activosCampoHtml: activosCampoHtml, activosAgentesHtml: activosAgentesHtml, activosActaPrintHtml: activosActaPrintHtml };
 }

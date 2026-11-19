@@ -233,14 +233,21 @@ function editar(db, a, v, quien) {
 }
 // Cambio de estado: siempre con motivo (Edwin: «cambio de elemento con motivo»). «En uso» lo pone
 // la asignación a un agente (E2), salvo los equipos administrables (en uso = instalado).
-function cambiarEstado(db, a, estado, motivo, quien) {
+function cambiarEstado(db, a, estado, motivo, quien, tecnico) {
   if (!ESTADO_CODIGOS.includes(estado)) return { error: 'Estado no válido' };
   if (estado === a.estado) return { error: 'El elemento ya está en ese estado' };
   if (a.estado === 'de_baja') return { error: 'Un elemento dado de baja no cambia de estado' };
   if (estado === 'en_uso' && a.tipo !== 'ADMINISTRABLE') return { error: '«En uso» se marca al asignarlo a un agente' };
-  if (a.agente) return { error: 'Está asignado a un agente: usa «Devolver» o «Cambiar elemento»' };
-  const m = _txt(motivo, 300);
+  let m = _txt(motivo, 300);
   if (m.length < 3) return { error: 'Escribe el motivo o diagnóstico' };
+  // Fase 378 (I3, diseño de Edwin): al mandarlo a reparación, el técnico o proveedor (opcional) va en el motivo.
+  const tec = estado === 'en_reparacion' ? _txt(tecnico, 80) : '';
+  if (tec) m = (m + ' · Técnico: ' + tec).slice(0, 380);
+  // Fase 378: un elemento asignado también cambia de estado; se registra la devolución del agente.
+  if (a.agente) {
+    db.transaction(() => _cerrar(db, a, estado, m, quien, new Date().toISOString(), 'Devolución por cambio de estado'))();
+    return { activo: obtener(db, a.id), devuelto: true };
+  }
   db.transaction(() => {
     db.prepare('UPDATE activos SET estado = ?, updatedAt = ? WHERE id = ?').run(estado, new Date().toISOString(), a.id);
     _hist(db, a.id, 'Cambio de estado', a.estado, estado, m, quien);
@@ -395,5 +402,36 @@ function cambiarElemento(db, a, nuevoId, estado, motivo, quien) {
   return { anterior: obtener(db, a.id), activo: obtener(db, n.id) };
 }
 
-module.exports = { CAMPOS_I2, agregarCamposI2, RENDIMIENTOS, rendimientoDe, AMBITOS, TIPOS_INMUEBLES, ambitoDe, ESTADOS_AL_SOLTAR, validarAgente, agentes, agente, crearAgente, editarAgente, agenteDetalle, asignar, devolver, cambiarElemento,
+// Fase 378 (I3): reasignar un elemento asignado a otro agente en un solo paso (sigue «En uso»).
+function reasignar(db, a, agenteId, motivo, quien) {
+  if (!a.agente) return { error: 'El elemento no está asignado: usa «Asignar»' };
+  const g = Number.isInteger(agenteId) ? agente(db, agenteId) : null;
+  if (!g || !g.activo) return { error: 'Elige un agente activo' };
+  if (g.id === a.agente.id) return { error: 'Ya está asignado a ese agente' };
+  const m = _txt(motivo, 300);
+  if (m.length < 3) return { error: 'Escribe el motivo' };
+  db.transaction(() => {
+    const ahora = new Date().toISOString();
+    db.prepare('UPDATE activos_asignaciones SET hasta = ?, motivoFin = ? WHERE activoId = ? AND hasta IS NULL').run(ahora, 'Reasignado: ' + m, a.id);
+    db.prepare('INSERT INTO activos_asignaciones (activoId, agenteId, desde, quien) VALUES (?,?,?,?)').run(a.id, g.id, ahora, quien);
+    db.prepare('UPDATE activos SET updatedAt = ? WHERE id = ?').run(ahora, a.id);
+    _hist(db, a.id, 'Reasignación', 'en_uso', 'en_uso', m + ' · de ' + a.agente.nombre + ' a ' + g.nombre, quien);
+  })();
+  return { activo: obtener(db, a.id), agente: g };
+}
+// Fase 378 (I3): el agente que recibe: uno existente (agenteId) o uno nuevo (nombre y documento); si el
+// documento ya existe, se usa ese agente. -> { agente } o { error }
+function agenteParaAsignar(db, b) {
+  if (b && Number.isInteger(b.agenteId)) return { agenteId: b.agenteId };
+  if (!b || !b.agenteNuevo || typeof b.agenteNuevo !== 'object' || Array.isArray(b.agenteNuevo)) return { error: 'Elige un agente activo' };
+  const v = validarAgente(db, b.agenteNuevo, true);
+  if (v.error) return v;
+  if (!v.valores.documento) return { error: 'Escribe la cédula del agente nuevo' };
+  const hay = db.prepare('SELECT id, activo FROM activos_agentes WHERE documento = ?').get(v.valores.documento);
+  if (hay) return hay.activo ? { agenteId: hay.id, existente: true } : { error: 'Ese documento es de un agente inactivo: actívalo en «Agentes»' };
+  const c = crearAgente(db, v.valores);
+  return c.error ? c : { agenteId: c.agente.id, creado: true };
+}
+
+module.exports = { reasignar, agenteParaAsignar, CAMPOS_I2, agregarCamposI2, RENDIMIENTOS, rendimientoDe, AMBITOS, TIPOS_INMUEBLES, ambitoDe, ESTADOS_AL_SOLTAR, validarAgente, agentes, agente, crearAgente, editarAgente, agenteDetalle, asignar, devolver, cambiarElemento,
   ESTADOS, ESTADO_CODIGOS, LISTAS, TIPOS_BASE, puede, crearTablas, tipos, tipo, lista, guardarLista, validar, crear, obtener, editar, cambiarEstado, listar, resumen, historial };

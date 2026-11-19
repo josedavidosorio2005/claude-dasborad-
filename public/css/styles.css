@@ -2689,6 +2689,13 @@ div.ca-bar-fila{cursor:default}
 .ac-chip input{width:20px;height:20px}
 .ac-rend-kpi{cursor:pointer;background:transparent;font:inherit;text-align:left;color:inherit}
 .ac-rend-kpi:hover{border-color:var(--c-border)}
+/* Fase 378 (I3): gestión desde el elemento. */
+.ac-gestion-cab{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:space-between;margin:12px 0 8px}
+.ac-gestion-txt{margin:0;color:var(--c-text)}
+.ac-acciones .btn-cancel[aria-pressed="true"]{border-color:var(--c-border);background:var(--c-border-soft)}
+.ac-g-nuevo{display:flex;flex-wrap:wrap;gap:10px;flex:1 1 100%}
+.ac-g-nuevo .ig{margin-bottom:0;flex:1 1 180px}
+.ac-g-nuevo.hidden{display:none}
 .ac-sub{margin:14px 0 6px;color:var(--c-text-2)}
 .ac-sedes,.ac-hist{margin:0 0 10px 18px}
 .ac-estado-form{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin:12px 0}
@@ -2932,4 +2939,3 @@ html.ver-como-activo body{padding-bottom:84px}
 :root:not([data-theme="dark"]) .gd-grafica{box-shadow:var(--e-sombra-suave)}
 :root:not([data-theme="dark"]) .aurora-kpis{gap:12px}
 :root:not([data-theme="dark"]) .gd-sec > .aurora-card + .aurora-card{margin-top:18px}
-

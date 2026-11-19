@@ -359,7 +359,7 @@ declarar(['POST /inventario/items', 'PUT /inventario/items/:id', 'DELETE /invent
 // Fase 369 (E1): Inventario de sistemas -- ADMIN y SISTEMAS, probado rol por rol en fase369-inventario-sistemas.test.js.
 declarar(['GET /activos/config', 'GET /activos/resumen', 'GET /activos', 'POST /activos', 'PUT /activos/:id', 'POST /activos/:id/estado', 'GET /activos/:id/historial', 'PUT /activos/listas/:lista',
   // Fase 370 (E2): agentes y asignación, también probados rol por rol en fase370-inventario-agentes.test.js.
-  'GET /activos/agentes', 'POST /activos/agentes', 'GET /activos/agentes/:id', 'PUT /activos/agentes/:id', 'POST /activos/:id/asignar', 'POST /activos/:id/devolver', 'POST /activos/:id/cambiar',
+  'GET /activos/agentes', 'POST /activos/agentes', 'GET /activos/agentes/:id', 'PUT /activos/agentes/:id', 'POST /activos/:id/asignar', 'POST /activos/:id/reasignar', 'POST /activos/:id/devolver', 'POST /activos/:id/cambiar',
   // Fase 371 (E3): actas, probadas rol por rol en fase371-inventario-actas.test.js.
   'GET /activos/agentes/:id/actas', 'POST /activos/agentes/:id/actas', 'GET /activos/actas/:id', 'POST /activos/actas/:id/firmada', 'GET /activos/actas/:id/firmada',
   // Fase 372 (E4): formularios y textos, probados rol por rol en fase372-inventario-formularios.test.js.
