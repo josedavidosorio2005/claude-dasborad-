@@ -21491,3 +21491,11 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
 - **«Llamadas de salida conectadas» = 47 sin filtro:** es la réplica del 1 al 18/11; del 1 al 12/11 da 38, igual que el real. En esa pestaña «conectadas» son todas las llamadas de salida del CDR (plantilla de Edwin, Fase 163/191); las 20 «Conectadas» de Tipificación descuentan las tipificadas «Cliente_no_contesta». Las dos pestañas dan lo mismo en el real y en la réplica; la diferencia de criterio entre pestañas queda para Edwin.
 - **«Total / Contestadas / Abandonadas únicas»:** del 1 al 12/11 tampoco salen en el real: con 0 abandonadas en el filtro se muestra una sola tarjeta (Fase 163). Las abandonadas únicas salen del reporte «2. Detalle de llamadas abandonadas» (`skill_2` = 404 en la API).
 - **Pruebas:** `faseA16-cdr-sin-tipificacion` (3); faseA12 ajustada al nuevo texto del conteo.
+
+## Fase A17 — réplica: salida completa con cdr_5 y comparación (solo docs, 2026-11-19)
+
+- **Pedido (usuario, 19/11):** OK a las consultas 1, 2 y 3; `no_conectadas` agregado en SSM; «Ejecutar ahora» de `no_conectadas` (1–18/11, solo la réplica, con respaldo), 10 minutos después `cdr`, y comparar con el real del 1 al 12/11. Las abandonadas del Flujo no se tocan (esperan a Wolkvox). WhatsApp sale de los pendientes de la réplica (MOBILIZE no lo maneja).
+- **Corridas (Brave con la sesión de administrador del usuario, Playwright):** `no_conectadas` 14:34 → ok, 1 consulta, 43 no conectadas, reemplazó 0, con respaldo. `cdr` 14:45 → ok, 1 consulta, 93 llamadas (47 de salida, 37 únicas de ingreso), reemplazó 92, con respaldo; la llamada sin tipificación ya entra (93 de 93). Uso del día 68 de 2.800. MOBILIZE real sin tocar.
+- **Comparación SOLO LECTURA 01–12/11, réplica = real:** total de salida 71, conectadas 38, no conectadas 33, tasa 53,5 %; los 9 días con salida iguales (04/11: 10/8/2); 04/11 Eficacia 1/7 y únicas 5; 01–12/11 Eficacia 10/29 y únicas 25.
+- **Abandonadas únicas:** una sola abandonada en noviembre en la réplica (14/11, 14 h). Propuesta de 3 consultas de `skill_2` en `docs/plan-api-wolkvox.md` §10.14; espera OK.
+- **Sin cambios de código** (no sube la versión).
