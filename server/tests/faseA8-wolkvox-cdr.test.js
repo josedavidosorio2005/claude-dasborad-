@@ -79,7 +79,7 @@ test('corrida: una consulta por mes, reemplaza el mes de la réplica con respald
   assert.ok(db.prepare('SELECT COUNT(*) n FROM cargas_versiones WHERE campana = ?').get(R).n > versiones, 'respaldo');
   assert.equal(db.prepare("SELECT COUNT(*) n FROM tipificaciones WHERE campana = 'MOBILIZE' AND fecha = '2026-11-02'").get().n, 1);
   const h = db.prepare("SELECT detalle FROM historial WHERE accion = 'WOLKVOX_MODULO' ORDER BY id DESC LIMIT 1").get().detalle;
-  assert.match(h, /cdr \(cdr_1\) · 2026-11: 4 llamadas \(1 de salida, 2 únicas de ingreso, 1 de prueba fuera\), reemplazó 1, con respaldo · 1 consultas/);
+  assert.match(h, /cdr \(cdr_1\) · 2026-11: 4 llamadas \(1 de salida, 2 únicas de ingreso, 1 de prueba fuera\), reemplazó 1, con respaldo · API 5 filas: inbound 4, outbound_ma 1; sin asesor 0, sin tipificación 0, skill «-» 1 · 1 consultas/); // + Fase A12 (solo conteos)
   for (const x of [TEL, 'ASESORA INVENTADA', CLIENTE]) assert.ok(!h.includes(x));
 });
 
