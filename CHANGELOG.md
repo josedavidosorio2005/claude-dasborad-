@@ -7,6 +7,14 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.234.0 — Noviembre 2026
+
+**Réplica de MOBILIZE con la API: llamadas abandonadas (listo, apagado).**
+
+- La réplica de prueba ya puede traer sola las llamadas abandonadas de Wolkvox (el reporte «2. Detalle de llamadas
+  abandonadas») para la tarjeta de llamadas únicas. Cuenta cada teléfono una sola vez por día, como el archivo manual,
+  y nunca guarda el teléfono. Queda apagado hasta que el administrador lo encienda. El MOBILIZE real no cambia.
+
 ## v1.233.2 — Noviembre 2026
 
 **Réplica de MOBILIZE con la API: se puede probar el reporte de llamadas abandonadas.**

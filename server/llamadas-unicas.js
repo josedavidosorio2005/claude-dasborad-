@@ -276,10 +276,12 @@ function impactoLlamadasAbandonadas(db, { campana, filas }) {
   return { desde, hasta, filasExistentes: existentes, filasNuevas: filasObj.length };
 }
 
-function cargarLlamadasAbandonadas(db, { campana, archivoNombre, cargadoPorNombre, filas }) {
+// Fase A19: `desde`/`hasta` opcionales (la consulta automática de la réplica reemplaza el mes completo).
+function cargarLlamadasAbandonadas(db, { campana, archivoNombre, cargadoPorNombre, filas, desde: desdeFijo, hasta: hastaFijo }) {
   const ts = nowStr();
   const filasObj = _abandonadasObjetos(filas);
-  const { desde, hasta } = rangoFechas(filasObj);
+  const r = rangoFechas(filasObj);
+  const desde = desdeFijo || r.desde, hasta = hastaFijo || r.hasta;
   const del = db.prepare('DELETE FROM llamadas_abandonadas WHERE campana = ? AND fecha >= ? AND fecha <= ?');
   const insert = db.prepare(
     `INSERT INTO llamadas_abandonadas (campana, fecha, skill, archivoNombre, cargadoPorNombre, createdAt)
