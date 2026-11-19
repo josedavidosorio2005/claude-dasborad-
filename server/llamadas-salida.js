@@ -289,11 +289,13 @@ function impactoLlamadasNoConectadas(db, { campana, filas }) {
     filasUnificadasPorAlias: alias.filasUnificadas, asesoresUnificadosPorAlias: alias.asesoresUnificados };
 }
 
-function cargarLlamadasNoConectadas(db, { campana, archivoNombre, cargadoPorNombre, filas }) {
+// Fase A15: desde/hasta opcionales (la API reemplaza el mes completo de la réplica, como cdr y encuesta).
+function cargarLlamadasNoConectadas(db, { campana, archivoNombre, cargadoPorNombre, filas, desde: desdeFijo, hasta: hastaFijo }) {
   const ts = nowStr();
   let filasObj = _ncObjetos(filas);
   filasObj = aplicarAliasAFilas(db, campana, filasObj, 'agente').filas;
-  const { desde, hasta } = rangoFechas(filasObj);
+  const r = rangoFechas(filasObj);
+  const desde = desdeFijo || r.desde, hasta = hastaFijo || r.hasta;
   const del = db.prepare('DELETE FROM llamadas_no_conectadas WHERE campana = ? AND fecha >= ? AND fecha <= ?');
   const insert = db.prepare(
     `INSERT INTO llamadas_no_conectadas (campana, fecha, agente, archivoNombre, cargadoPorNombre, createdAt)
