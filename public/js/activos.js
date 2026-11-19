@@ -15,6 +15,7 @@ async function activosAbrir() {
   try { _ac.config = await apiRequest('GET', '/activos/config'); }
   catch (e) { showToast('No se pudo abrir el Inventario de sistemas: ' + (e.message || ''), 'error'); return; }
   openModal('activos-overlay');
+  _acMotivos();
   activosTab('panel');
 }
 function activosCerrar() { closeModal('activos-overlay'); }
@@ -97,7 +98,7 @@ async function activosVer(id) {
     '<dl class="wv-estado"><dt>Marca</dt><dd>' + esc(a.marca || '—') + '</dd><dt>Modelo</dt><dd>' + esc(a.modelo || '—') + '</dd><dt>Serial</dt><dd>' + esc(a.serial || '—') + '</dd><dt>Sede</dt><dd>' + esc(a.sede || '—') + '</dd><dt>Operación</dt><dd>' + esc(a.operacion || '—') + '</dd><dt>Proveedor</dt><dd>' + esc(a.proveedor || '—') + '</dd>' + (a.agente ? '<dt>Asignado a</dt><dd>' + esc(a.agente.nombre) + '</dd>' : '') + datos + (a.observaciones ? '<dt>Observaciones</dt><dd>' + esc(a.observaciones) + '</dd>' : '') + '</dl>' +
     (a.agente ? '<p class="vis-ayuda">Para devolverlo o cambiarlo, ve a «Agentes» y abre a ' + esc(a.agente.nombre) + '.</p>' : '') +
     (!a.agente && a.estado !== 'de_baja' && opciones.length ? '<form class="ac-estado-form" onsubmit="activosCambiarEstado(event)"><div class="ig"><label for="ac-nuevo-estado">Cambiar estado a</label><select id="ac-nuevo-estado">' + _acOpciones(opciones) + '</select></div>' +
-      '<div class="ig ac-motivo"><label for="ac-motivo">Motivo / diagnóstico</label><input type="text" id="ac-motivo" maxlength="300" placeholder="Ej.: no enciende, pantalla dañada, reparado…"></div><button type="submit" class="btn-primary">Cambiar estado</button></form>' : '') +
+      '<div class="ig ac-motivo"><label for="ac-motivo">Motivo / diagnóstico</label><input type="text" id="ac-motivo" maxlength="300" list="ac-motivos-lista" placeholder="Ej.: no enciende, pantalla dañada, reparado…"></div><button type="submit" class="btn-primary">Cambiar estado</button></form>' : '') +
     '<h4 class="ac-sub">Historial</h4><ul class="ac-hist">' + hist + '</ul><div class="modal-btns"><button type="button" class="btn-cancel" onclick="activosCerrarDetalle()">Volver a la lista</button></div></section>';
   _acEl('ac-detalle').classList.remove('hidden');
   _acEl('ac-lista-zona').classList.add('hidden');
@@ -131,7 +132,7 @@ function _acFormulario() {
 }
 function activosCambioTipo() {
   var t = _acTipo(_acEl('ac-r-tipo').value);
-  _acEl('ac-r-campos').innerHTML = t ? t.campos.map(activosCampoHtml).join('') : '';
+  _acEl('ac-r-campos').innerHTML = t ? t.campos.filter(function (c) { return !c.oculto; }).map(activosCampoHtml).join('') : ''; // Fase 372: sin los ocultos
 }
 async function activosRegistrar(ev) {
   ev.preventDefault();
@@ -151,7 +152,13 @@ async function activosRegistrar(ev) {
 
 // ── Ajustes: listas ──
 function _acAjustes() {
-  ['sedes', 'operaciones', 'proveedores'].forEach(function (l) { _acEl('ac-l-' + l).value = (_ac.config.listas[l] || []).join('\n'); });
+  ['sedes', 'operaciones', 'proveedores', 'motivos'].forEach(function (l) { _acEl('ac-l-' + l).value = (_ac.config.listas[l] || []).join('\n'); });
+  _acTipos(); _acTextos(); // Fase 372 (E4)
+}
+// Fase 372: los motivos frecuentes se sugieren en los campos de motivo (datalist); el motivo sigue libre.
+function _acMotivos() {
+  var d = _acEl('ac-motivos-lista');
+  if (d) d.innerHTML = ((_ac.config && _ac.config.listas && _ac.config.listas.motivos) || []).map(function (m) { return '<option value="' + esc(m) + '"></option>'; }).join('');
 }
 async function activosGuardarLista(l) {
   _acError('');
@@ -159,7 +166,122 @@ async function activosGuardarLista(l) {
   try {
     var r = await apiRequest('PUT', '/activos/listas/' + l, { valores: valores });
     _ac.config.listas[l] = r.valores;
+    if (l === 'motivos') _acMotivos();
     showToast('Lista guardada', 'ok');
+  } catch (e) { _acError(e.message); }
+}
+
+// ── Ajustes › Formularios por tipo y textos del acta (Fase 372, E4) ──
+var AC_TIPO_CAMPO = { texto: 'Texto', numero: 'Número', lista: 'Lista' };
+function activosTiposHtml(tipos) {
+  return '<div class="table-wrap"><table class="vis-tabla ac-tipos-tabla"><thead><tr><th scope="col">Tipo</th><th scope="col" class="vis-num">Campos</th><th scope="col"><span class="sr-only">Acciones</span></th></tr></thead><tbody>' +
+    tipos.map(function (t) {
+      var visibles = t.campos.filter(function (c) { return !c.oculto; }).length, ocultos = t.campos.length - visibles;
+      return '<tr><th scope="row">' + esc(t.nombre) + (t.activo ? '' : '<span class="vis-pill vis-gris">Desactivado</span>') + '</th><td class="vis-num">' + visibles + (ocultos ? ' (+' + ocultos + ' oculto' + (ocultos > 1 ? 's' : '') + ')' : '') + '</td><td><div class="ac-acciones">' +
+        '<button type="button" class="btn-cancel ac-btn" onclick="activosEditarTipo(\'' + esc(t.codigo) + '\')">Editar</button>' +
+        '<button type="button" class="btn-cancel ac-btn" onclick="activosActivarTipo(\'' + esc(t.codigo) + '\',' + (!t.activo) + ')">' + (t.activo ? 'Desactivar' : 'Activar') + '</button></div></td></tr>';
+    }).join('') + '</tbody></table></div><button type="button" class="btn-primary ac-btn" onclick="activosEditarTipo(null)">Nuevo tipo</button>';
+}
+function _acTipos() {
+  _acEl('ac-tipos').innerHTML = activosTiposHtml(_ac.config.tiposTodos || []);
+  _acEl('ac-tipo-editor').classList.add('hidden');
+  _acEl('ac-tipos').classList.remove('hidden');
+}
+// Una fila del editor. Los campos ya guardados llevan su clave (data-k) y su tipo de dato fijo.
+function activosCampoEditorHtml(c, i) {
+  var nuevo = !c.k, id = 'ac-ce-' + i;
+  var tipo = nuevo ? '<select id="' + id + '-t" data-ce="t" onchange="activosCampoTipo(this)">' + Object.keys(AC_TIPO_CAMPO).map(function (k) { return '<option value="' + k + '"' + (c.t === k ? ' selected' : '') + '>' + AC_TIPO_CAMPO[k] + '</option>'; }).join('') + '</select>'
+    : '<span class="ac-ce-fijo"><span class="vis-pill vis-gris" id="' + id + '-t" data-ce="t" data-t="' + esc(c.t) + '">' + esc(AC_TIPO_CAMPO[c.t] || c.t) + '</span></span>';
+  return '<li class="ac-ce" data-k="' + esc(c.k || '') + '">' +
+    '<div class="ig"><label for="' + id + '-l">Nombre del campo</label><input type="text" id="' + id + '-l" data-ce="l" maxlength="60" value="' + esc(c.l || '') + '"></div>' +
+    '<div class="ig">' + (nuevo ? '<label for="' + id + '-t">Tipo de dato</label>' : '<span class="ac-ce-etq">Tipo de dato</span>') + tipo + '</div>' +
+    '<div class="ig ac-ce-o' + ((c.t || 'texto') === 'lista' ? '' : ' hidden') + '"><label for="' + id + '-o">Opciones (una por línea)</label><textarea id="' + id + '-o" data-ce="o" rows="3">' + esc((c.o || []).join('\n')) + '</textarea></div>' +
+    '<label class="ac-check"><input type="checkbox" data-ce="oculto"' + (c.oculto ? ' checked' : '') + '> Oculto</label>' +
+    '<div class="ac-acciones"><button type="button" class="btn-cancel ac-btn" onclick="activosMoverCampo(this,-1)" aria-label="Subir campo">↑</button><button type="button" class="btn-cancel ac-btn" onclick="activosMoverCampo(this,1)" aria-label="Bajar campo">↓</button>' +
+    (nuevo ? '<button type="button" class="btn-cancel ac-btn" onclick="this.closest(\'.ac-ce\').remove()">Quitar</button>' : '') + '</div></li>';
+}
+function activosEditorTipoHtml(t) {
+  var nuevo = !t;
+  t = t || { nombre: '', plural: '', campos: [] };
+  return '<form class="aurora-card ac-tipo-form" onsubmit="activosGuardarTipo(event)" data-codigo="' + esc(t.codigo || '') + '"><div class="aurora-card-title">' + (nuevo ? 'Nuevo tipo' : 'Editar ' + esc(t.nombre)) + '</div>' +
+    '<div class="ac-filtros"><div class="ig"><label for="ac-te-nombre">Nombre</label><input type="text" id="ac-te-nombre" maxlength="40" value="' + esc(t.nombre) + '"></div>' +
+    '<div class="ig"><label for="ac-te-plural">Plural</label><input type="text" id="ac-te-plural" maxlength="40" value="' + esc(t.plural) + '"></div></div>' +
+    '<p class="vis-ayuda">Además de los campos de siempre (código, marca, modelo, serial, sede, operación, proveedor y observaciones).</p>' +
+    '<ol class="ac-ce-lista" id="ac-te-campos">' + t.campos.map(activosCampoEditorHtml).join('') + '</ol>' +
+    '<button type="button" class="btn-cancel ac-btn" onclick="activosAgregarCampo()">Agregar campo</button>' +
+    '<div class="modal-btns"><button type="submit" class="btn-primary">Guardar</button><button type="button" class="btn-cancel" onclick="_acTipos()">Cancelar</button></div></form>';
+}
+function activosEditarTipo(codigo) {
+  _acError('');
+  var t = codigo ? (_ac.config.tiposTodos || []).find(function (x) { return x.codigo === codigo; }) : null;
+  var ed = _acEl('ac-tipo-editor');
+  ed.innerHTML = activosEditorTipoHtml(t);
+  _acEl('ac-tipos').classList.add('hidden');
+  ed.classList.remove('hidden');
+  _acEl('ac-te-nombre').focus();
+}
+var _acCampoN = 0;
+function activosAgregarCampo() {
+  var l = _acEl('ac-te-campos');
+  l.insertAdjacentHTML('beforeend', activosCampoEditorHtml({ t: 'texto' }, 'n' + (++_acCampoN)));
+  l.lastElementChild.querySelector('[data-ce="l"]').focus();
+}
+function activosCampoTipo(sel) { sel.closest('.ac-ce').querySelector('.ac-ce-o').classList.toggle('hidden', sel.value !== 'lista'); }
+function activosMoverCampo(btn, d) {
+  var li = btn.closest('.ac-ce'), otro = d < 0 ? li.previousElementSibling : li.nextElementSibling;
+  if (!otro) return;
+  if (d < 0) li.parentNode.insertBefore(li, otro); else li.parentNode.insertBefore(otro, li);
+  btn.focus();
+}
+// Lee el editor: los campos guardados van con su clave (el servidor no deja cambiar su tipo de dato).
+function activosLeerCampos(raiz) {
+  return Array.prototype.map.call(raiz.querySelectorAll('.ac-ce'), function (li) {
+    var c = { l: li.querySelector('[data-ce="l"]').value };
+    var t = li.querySelector('[data-ce="t"]');
+    var tipo = t.tagName === 'SELECT' ? t.value : t.getAttribute('data-t');
+    if (li.getAttribute('data-k')) c.k = li.getAttribute('data-k'); else c.t = tipo;
+    if (tipo === 'lista') c.o = li.querySelector('[data-ce="o"]').value.split('\n').map(function (x) { return x.trim(); }).filter(Boolean);
+    if (li.querySelector('[data-ce="oculto"]').checked) c.oculto = true;
+    return c;
+  });
+}
+async function activosGuardarTipo(ev) {
+  ev.preventDefault();
+  _acError('');
+  var form = ev.target, codigo = form.getAttribute('data-codigo');
+  var b = { nombre: _acEl('ac-te-nombre').value, plural: _acEl('ac-te-plural').value, campos: activosLeerCampos(form) };
+  try {
+    await apiRequest(codigo ? 'PUT' : 'POST', '/activos/config/tipos' + (codigo ? '/' + encodeURIComponent(codigo) : ''), b);
+    showToast(codigo ? 'Formulario guardado' : 'Tipo creado', 'ok');
+    await _acRecargarConfig();
+  } catch (e) { _acError(e.message); }
+}
+async function activosActivarTipo(codigo, activo) {
+  _acError('');
+  try {
+    await apiRequest('PUT', '/activos/config/tipos/' + encodeURIComponent(codigo) + '/activo', { activo: activo });
+    showToast(activo ? 'Tipo activado' : 'Tipo desactivado', 'ok');
+    await _acRecargarConfig();
+  } catch (e) { _acError(e.message); }
+}
+async function _acRecargarConfig() {
+  _ac.config = await apiRequest('GET', '/activos/config');
+  var sel = _acEl('ac-r-tipo'); if (sel) sel.innerHTML = ''; // Registrar vuelve a armar la lista de tipos
+  _acTipos();
+}
+function _acTextos() {
+  var t = _ac.config.textos || {}, n = _ac.config.textosNombres || {};
+  _acEl('ac-textos').innerHTML = Object.keys(n).map(function (k) {
+    return '<div class="ig"><label for="ac-tx-' + esc(k) + '">' + esc(n[k]) + '</label><textarea id="ac-tx-' + esc(k) + '" rows="5" maxlength="1500">' + esc(t[k] || '') + '</textarea>' +
+      '<button type="button" class="btn-cancel ac-btn" onclick="activosGuardarTexto(\'' + esc(k) + '\')">Guardar texto</button></div>';
+  }).join('');
+}
+async function activosGuardarTexto(k) {
+  _acError('');
+  try {
+    var r = await apiRequest('PUT', '/activos/config/textos/' + encodeURIComponent(k), { valor: _acEl('ac-tx-' + k).value });
+    _ac.config.textos[k] = r.valor;
+    showToast('Texto guardado', 'ok');
   } catch (e) { _acError(e.message); }
 }
 
@@ -264,7 +386,7 @@ async function activosFormSoltar(id, modo) {
   var estados = _ac.config.estados.filter(function (e) { return ['libre', 'en_reparacion', 'malo'].indexOf(e.codigo) !== -1; });
   _acEl('ac-soltar').innerHTML = '<form class="ac-asig-form" onsubmit="activosSoltar(event,' + Number(id) + ',\'' + (cambiar ? 'cambiar' : 'devolver') + '\')"><h5 class="ac-sub ac-form-titulo">' + (cambiar ? 'Cambiar ' : 'Devolver ') + esc(a.codigo) + '</h5>' + nuevos +
     '<div class="ig"><label for="ac-so-estado">' + esc(a.codigo) + ' queda</label><select id="ac-so-estado">' + _acOpciones(estados) + '</select></div>' +
-    '<div class="ig ac-motivo"><label for="ac-so-motivo">Motivo</label><input type="text" id="ac-so-motivo" maxlength="300" placeholder="Ej.: se dañó el micrófono, retiro del agente…"></div>' +
+    '<div class="ig ac-motivo"><label for="ac-so-motivo">Motivo</label><input type="text" id="ac-so-motivo" maxlength="300" list="ac-motivos-lista" placeholder="Ej.: se dañó el micrófono, retiro del agente…"></div>' +
     '<button type="submit" class="btn-primary">' + (cambiar ? 'Cambiar' : 'Devolver') + '</button><button type="button" class="btn-cancel" onclick="activosCancelarSoltar()">Cancelar</button></form>';
   _acEl('ac-so-motivo').focus();
 }
@@ -298,7 +420,8 @@ function activosActaPrintHtml(acta) {
     return '<tr><td>' + (i + 1) + '</td><td>' + esc(e.tipo) + '</td><td>' + esc(e.codigo) + '</td><td>' + esc([e.marca, e.modelo].filter(Boolean).join(' ')) + '</td><td>' + esc(e.serial || '') + '</td>' +
       (entrega ? '' : '<td>' + esc(e.queda || '') + '</td><td>' + esc(e.motivo || '') + '</td>') + '</tr>';
   }).join('');
-  var texto = entrega
+  // Fase 372: cada acta trae su copia del texto (Ajustes); las anteriores a la Fase 372 usan el de siempre.
+  var texto = acta.texto ? acta.texto : entrega
     ? 'Recibo los elementos de esta acta en buen estado, para uso exclusivo de mis funciones. Me comprometo a cuidarlos y a devolverlos cuando se me pidan o al terminar mi vinculación, y a informar a Sistemas cualquier daño o pérdida.'
     : 'Se reciben de vuelta los elementos de esta acta, en el estado que se indica en cada uno.';
   return '<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Acta de ' + esc(acta.tipoNombre.toLowerCase()) + ' ' + Number(acta.numero) + '</title>' +
@@ -407,5 +530,5 @@ async function activosDescargarFirmada(id) {
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { activosPanelHtml: activosPanelHtml, activosListaHtml: activosListaHtml, activosCampoHtml: activosCampoHtml, activosAgentesHtml: activosAgentesHtml, activosActaPrintHtml: activosActaPrintHtml };
+  module.exports = { activosTiposHtml: activosTiposHtml, activosCampoEditorHtml: activosCampoEditorHtml, activosEditorTipoHtml: activosEditorTipoHtml, activosLeerCampos: activosLeerCampos, activosPanelHtml: activosPanelHtml, activosListaHtml: activosListaHtml, activosCampoHtml: activosCampoHtml, activosAgentesHtml: activosAgentesHtml, activosActaPrintHtml: activosActaPrintHtml };
 }

@@ -19,9 +19,11 @@ const ESTADOS = [
   { codigo: 'de_baja', nombre: 'De baja' },
 ];
 const ESTADO_CODIGOS = ESTADOS.map((e) => e.codigo);
-const LISTAS = { sedes: 'Sedes', operaciones: 'Operaciones', proveedores: 'Proveedores' };
+// Fase 372 (E4): «motivos» = motivos frecuentes de cambio de estado, devolución y cambio (sugerencias; el motivo sigue libre).
+const LISTAS = { sedes: 'Sedes', operaciones: 'Operaciones', proveedores: 'Proveedores', motivos: 'Motivos frecuentes' };
 // Tipos y sus campos propios (además de código, marca, modelo, serial, sede, operación y observaciones).
-// tipo de campo: texto | numero | lista (opciones). En E4 se podrán editar desde la plataforma.
+// tipo de campo: texto | numero | lista (opciones). Desde E4 (Fase 372) se editan en la plataforma
+// (server/activos-formularios.js): un campo nunca se borra, se oculta (`oculto: true`) y lo guardado se conserva.
 const TIPOS_BASE = [
   { codigo: 'TORRE', nombre: 'Torre', plural: 'Torres', campos: [{ k: 'nombre_equipo', l: 'Nombre del equipo', t: 'texto' }, { k: 'procesador', l: 'Procesador', t: 'texto' }, { k: 'ram_gb', l: 'Memoria RAM (GB)', t: 'numero' }, { k: 'disco', l: 'Disco', t: 'texto' }, { k: 'tipo_disco', l: 'Tipo de disco', t: 'lista', o: ['HDD', 'SSD', 'NVMe'] }] },
   { codigo: 'MONITOR', nombre: 'Monitor', plural: 'Monitores', campos: [{ k: 'serial_tag', l: 'Serial tag', t: 'texto' }, { k: 'pulgadas', l: 'Pulgadas', t: 'numero' }] },
@@ -76,11 +78,13 @@ CREATE UNIQUE INDEX IF NOT EXISTS ux_activos_asig_abierta ON activos_asignacione
   TIPOS_BASE.forEach((t, i) => ins.run(t.codigo, t.nombre, t.plural, i + 1, JSON.stringify(t.campos)));
 }
 
-function tipos(db) {
-  return db.prepare('SELECT * FROM activos_tipos WHERE activo = 1 ORDER BY orden').all()
-    .map((t) => ({ codigo: t.codigo, nombre: t.nombre, plural: t.plural, campos: JSON.parse(t.campos || '[]') }));
+// Fase 372 (E4): con { todos: true } también los tipos desactivados (con su marca `activo`).
+function tipos(db, opts) {
+  const todos = !!(opts && opts.todos);
+  return db.prepare('SELECT * FROM activos_tipos ' + (todos ? '' : 'WHERE activo = 1 ') + 'ORDER BY orden, codigo').all()
+    .map((t) => ({ codigo: t.codigo, nombre: t.nombre, plural: t.plural, activo: !!t.activo, campos: JSON.parse(t.campos || '[]') }));
 }
-function tipo(db, codigo) { return tipos(db).find((t) => t.codigo === codigo) || null; }
+function tipo(db, codigo, opts) { return tipos(db, opts).find((t) => t.codigo === codigo) || null; }
 function lista(db, nombre) { return db.prepare('SELECT valor FROM activos_listas WHERE lista = ? ORDER BY orden, valor').all(nombre).map((r) => r.valor); }
 function guardarLista(db, nombre, valores) {
   db.transaction(() => {
@@ -97,7 +101,8 @@ function validar(db, b, { nuevo, tipo: tipoActual }) {
   if (!b || typeof b !== 'object' || Array.isArray(b)) return { error: 'Datos no válidos' };
   const permitidas = ['tipo', 'codigo', 'sede', 'operacion', 'proveedor', 'marca', 'modelo', 'serial', 'datos', 'observaciones', 'estado'];
   if (Object.keys(b).some((k) => !permitidas.includes(k))) return { error: 'Datos no válidos' };
-  const t = tipo(db, nuevo ? b.tipo : tipoActual);
+  // Un elemento de un tipo ya desactivado se sigue pudiendo editar (Fase 372); uno nuevo, no.
+  const t = tipo(db, nuevo ? b.tipo : tipoActual, { todos: !nuevo });
   if (!t) return { error: 'Elige el tipo de elemento' };
   const codigo = _txt(b.codigo, 40);
   if (nuevo && !/^[\p{L}\p{N}][\p{L}\p{N} ._/-]{0,39}$/u.test(codigo)) return { error: 'El código es obligatorio (letras, números, punto, guion o barra; hasta 40)' };
@@ -108,6 +113,7 @@ function validar(db, b, { nuevo, tipo: tipoActual }) {
   const datos = {};
   const d = b.datos && typeof b.datos === 'object' && !Array.isArray(b.datos) ? b.datos : {};
   for (const c of t.campos) {
+    if (c.oculto) continue; // Fase 372: campo oculto -- no se recibe; editar() conserva lo guardado
     const x = d[c.k];
     if (x === undefined || x === null || x === '') continue;
     if (c.t === 'numero') { const n = Number(x); if (!Number.isFinite(n) || n < 0 || n > 1e7) return { error: c.l + ': escribe un número' }; datos[c.k] = n; }
@@ -155,6 +161,9 @@ function crear(db, v, quien) {
 }
 function obtener(db, id) { return _publico(db.prepare(SELECT_ACTIVO + ' WHERE a.id = ?').get(id)); }
 function editar(db, a, v, quien) {
+  // Fase 372 (E4): lo guardado en un campo oculto no se pierde al editar el elemento.
+  const t = tipo(db, a.tipo, { todos: true });
+  for (const c of (t ? t.campos : [])) if (c.oculto && a.datos && a.datos[c.k] !== undefined) v.datos[c.k] = a.datos[c.k];
   db.transaction(() => {
     db.prepare('UPDATE activos SET sede = ?, operacion = ?, proveedor = ?, marca = ?, modelo = ?, serial = ?, datos = ?, observaciones = ?, updatedAt = ? WHERE id = ?')
       .run(v.sede, v.operacion, v.proveedor, v.marca, v.modelo, v.serial, JSON.stringify(v.datos), v.observaciones, new Date().toISOString(), a.id);

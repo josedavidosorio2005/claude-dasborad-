@@ -7,6 +7,19 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.223.0 — Noviembre 2026
+
+**Inventario de sistemas: Sistemas ya puede ajustar los formularios.** (Ajustes › «Formularios por tipo»)
+
+- Cambiar el nombre de un tipo, agregar campos (texto, número o lista con opciones), ordenarlos y ocultarlos.
+  Un campo no se borra: se oculta y lo que ya estaba guardado no se pierde.
+- Crear tipos nuevos (por ejemplo, «Cámara web») y desactivar un tipo que ya no se use (solo si no tiene
+  elementos sin dar de baja).
+- «Motivos frecuentes»: una lista que se sugiere al escribir el motivo de un cambio, una devolución o un
+  cambio de elemento (se puede seguir escribiendo otro).
+- El texto de las actas de entrega y de devolución se puede cambiar. Cada acta guarda el texto que había
+  cuando se creó, así que las actas ya firmadas no cambian.
+
 ## v1.222.1 — Noviembre 2026
 
 **Inventario de sistemas: las actas firmadas ya se pueden guardar.** El servidor ahora lee dónde se guardan (el espacio privado en AWS creado el 18/11).

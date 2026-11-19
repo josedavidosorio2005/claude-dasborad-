@@ -5,6 +5,7 @@ const express = require('express');
 const db = require('../db');
 const { requireActor } = require('../auth');
 const A = require('../activos');
+const F = require('../activos-formularios'); // Fase 372 (E4)
 const { wrap, actorLabel, logEvent } = require('./shared');
 
 const router = express.Router();
@@ -18,7 +19,45 @@ const log = (accion, a, req, detalle) => logEvent(accion, { nombre: a ? a.tipo +
 
 router.get('/activos/config', requireActor, wrap((req, res) => {
   if (!permitido(req, res)) return;
-  res.json({ estados: A.ESTADOS, tipos: A.tipos(db), listas: Object.fromEntries(Object.keys(A.LISTAS).map((k) => [k, A.lista(db, k)])) });
+  res.json({ estados: A.ESTADOS, tipos: A.tipos(db), listas: Object.fromEntries(Object.keys(A.LISTAS).map((k) => [k, A.lista(db, k)])),
+    // Fase 372 (E4): para Ajustes › Formularios (todos los tipos, también los desactivados) y los textos del acta.
+    tiposTodos: A.tipos(db, { todos: true }), textos: F.textos(db), textosNombres: Object.fromEntries(Object.entries(F.TEXTOS).map(([k, t]) => [k, t.nombre])) });
+}));
+
+// ── Fase 372 (E4): formularios editables (tipos y sus campos) y textos del acta. Historial sin datos personales.
+const logTipo = (accion, t, req, detalle) => logEvent(accion, { nombre: t.nombre + ' (' + t.codigo + ')', user: '-', rol: 'activos' }, actorLabel(req.actor), detalle || '');
+const resumenCampos = (t) => t.campos.length + ' campo(s)' + (t.campos.some((c) => c.oculto) ? ', ' + t.campos.filter((c) => c.oculto).length + ' oculto(s)' : '');
+router.post('/activos/config/tipos', requireActor, wrap((req, res) => {
+  if (!permitido(req, res)) return;
+  const r = F.crearTipo(db, req.body);
+  if (r.error) return res.status(r.status || 400).json({ error: r.error });
+  logTipo('ACTIVO_TIPO_CREADO', r.tipo, req, resumenCampos(r.tipo));
+  res.status(201).json(r);
+}));
+router.put('/activos/config/tipos/:codigo', requireActor, wrap((req, res) => {
+  if (!permitido(req, res)) return;
+  const r = F.editarTipo(db, String(req.params.codigo || ''), req.body);
+  if (r.error) return res.status(r.status || 400).json({ error: r.error });
+  logTipo('ACTIVO_TIPO_EDITADO', r.tipo, req, resumenCampos(r.tipo) + (r.antes.nombre !== r.tipo.nombre ? ' · antes: ' + r.antes.nombre : ''));
+  res.json({ tipo: r.tipo });
+}));
+router.put('/activos/config/tipos/:codigo/activo', requireActor, wrap((req, res) => {
+  if (!permitido(req, res)) return;
+  const b = req.body || {};
+  if (Object.keys(b).some((k) => k !== 'activo')) return res.status(400).json({ error: 'Datos no válidos' });
+  const r = F.activarTipo(db, String(req.params.codigo || ''), b.activo);
+  if (r.error) return res.status(r.status || 400).json({ error: r.error });
+  if (!r.sinCambio) logTipo('ACTIVO_TIPO_ACTIVO', r.tipo, req, r.tipo.activo ? 'activado' : 'desactivado');
+  res.json({ tipo: r.tipo });
+}));
+router.put('/activos/config/textos/:clave', requireActor, wrap((req, res) => {
+  if (!permitido(req, res)) return;
+  const b = req.body || {};
+  if (Object.keys(b).some((k) => k !== 'valor')) return res.status(400).json({ error: 'Datos no válidos' });
+  const r = F.guardarTexto(db, String(req.params.clave || ''), b.valor, actorLabel(req.actor));
+  if (r.error) return res.status(r.status || 400).json({ error: r.error });
+  logEvent('ACTIVO_TEXTO', { nombre: F.TEXTOS[r.clave].nombre, user: '-', rol: 'activos' }, actorLabel(req.actor), r.valor.length + ' caracteres');
+  res.json(r);
 }));
 router.get('/activos/resumen', requireActor, wrap((req, res) => {
   if (!permitido(req, res)) return;
