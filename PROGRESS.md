@@ -608,6 +608,7 @@ mismo orden):
 - Fase A14 — réplica: la salida de cdr_1 llega sin skill (47 de 47); se completa con «-» y entra como Llamadas de salida (v1.232.2, 2026-11-19)
 - Fase A15 — réplica: módulo no_conectadas (cdr_5 → Llamadas de salida, no conectadas; solo fecha y asesor), apagado hasta el OK (v1.233.0, 2026-11-19)
 - Fase A16 — réplica: llamada de cdr_1 sin tipificación entra como «Sin tipificación» (Eficacia y únicas 04/11 = real); comparación tarjeta por tarjeta 01–12/11 (v1.233.1, 2026-11-19)
+- Fase A17 — réplica: no_conectadas y cdr ejecutados; salida 01–12/11 = real (71 / 38 / 33 / 53,5 %), Eficacia y únicas del 04/11 = real; WhatsApp no aplica; propuesta skill_2 (solo docs, 2026-11-19)
 - Fase 309 — Revisión de seguridad: el cliente ya no recibe el nombre de los líderes en `GET /metas`; resto en `docs/revision-seguridad-2026-11-09.md` (v1.154.1, 2026-11-10)
 - Fase 308 — Revisión antes de la reunión con clientes y pendientes del supervisor (solo docs, 2026-11-10)
 - Fase 307 — Calidad para que los líderes evalúen: ORLANT conserva su Calidad y suma «Resultado de los monitoreos» al final; Aurora ya lo tenía (se muestra con el primer monitoreo) (v1.154.0, 2026-11-10)

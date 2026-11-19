@@ -476,7 +476,7 @@ Las columnas reales se confirman con «Probar» (abajo).
 | Agentes 5 · Estados por hora y agente | `agent_5` | agent_id, hour, calls, inbound, outbound, internal, ready/inbound/outbound/acw/ring/login/aux_time, aht, occupancy | Portal Asesor por hora |
 | Agentes 7 · Login - Logout | `agent_7` ✔ prod | agent_dni, agent_id, agent_name, date, login, login_time, logout (una fila por sesión) | **Malla: puntualidad** (login vs. inicio del turno, logout vs. fin) |
 | Agentes 8 · Estados hora a hora | `agent_8` | date, hour, agent_id, agent_dni, agent_name + lo de agentes 5 | Adherencia por franja |
-| Chats 1 · Chats | `chat_1` ❌ 404 «Validate dates entered» con el día completo | conn_id, channel (whatsapp…), date, date_close, routing, customer_name/email/phone, agent_id/name, time_on_agent, chat_duration, cod_act, description_cod_act, transfer, skill_id, first_response_time, feeling, user_id, bsuid… | **Mobilize/ORLANT WhatsApp** (hoy HistChat); trae datos personales: se descartan |
+| Chats 1 · Chats | `chat_1` ❌ 404 «Validate dates entered» con el día completo | conn_id, channel (whatsapp…), date, date_close, routing, customer_name/email/phone, agent_id/name, time_on_agent, chat_duration, cod_act, description_cod_act, transfer, skill_id, first_response_time, feeling, user_id, bsuid… | **ORLANT WhatsApp** (hoy HistChat; MOBILIZE no maneja WhatsApp); trae datos personales: se descartan |
 | Chats 13 · Cerrados por canal | `chat_13` | conteo de chats cerrados por canal | Totales de WhatsApp |
 | CDR 1 · Detalle de llamadas | `cdr_1` ✔ prod | agent_id, agent_name, campaign_id, cod_act, cod_act_2, comment, conn_id, cost, customer_id, date, description_cod_act, description_cod_act_2, destiny, hang_up, skill_id, skill_name, telephone, time_min, time_seg, type_interaction | **Tipificación, Eficacia, únicas, salida**; trae teléfonos: se descartan |
 
@@ -502,10 +502,10 @@ MOBILIZE antes de pasar al siguiente.
 | 0 | Flujo (día) | `skill_1` | En marcha |
 | 1 | Flujo por hora + AHT y espera del Flujo | `skill_7` ✔ (mes completo en 1 consulta, 33 filas el 1–17/11) | Hecho (Fase A7), apagado |
 | 2 | Tipificación, Eficacia, únicas contestadas, conectadas de salida | `cdr_1` | Hecho (Fase A8), apagado |
-| 3 | Llamadas de salida: no conectadas | `cdr_5` ✔ (mes completo, 35 filas; columnas agent_id, agent_name, campaign_id, conn_id, customer_id, date, destiny, result, ring_time, telephone, type_interaction) | Columnas confirmadas |
-| 4 | Llamadas únicas: abandonadas | «Skills 2» no está en la API (`skill_2` = 404) | Preguntar a Wolkvox/Edwin |
+| 3 | Llamadas de salida: no conectadas | `cdr_5` ✔ (mes completo, 35 filas; columnas agent_id, agent_name, campaign_id, conn_id, customer_id, date, destiny, result, ring_time, telephone, type_interaction) | Hecho (Fase A15); encendido y comparado (A17): 01–12/11 = real |
+| 4 | Llamadas únicas: abandonadas | Manager «Skills & Servicios › 2. Detalle de llamadas abandonadas»; `skill_2` dio 404 (17/11, sin día ni mensaje anotados) | Hipótesis (A17): el 404 era «sin registros»; propuesta de 3 consultas en 10.14, espera OK |
 | 5 | Encuesta | Desconocido (hoja «HistIVR») | Preguntar |
-| 6 | WhatsApp | `chat_1` | 404 «Validate dates entered» |
+| ~~6~~ | ~~WhatsApp~~ | — | **No aplica (usuario, 19/11):** MOBILIZE no maneja WhatsApp; sale de los pendientes de la réplica. `chat_1` (404 «Validate dates entered») queda solo como dato para otro cliente. |
 
 ### 10.6 Paso 1 hecho: `skill_7` (Fase A7, 18/11/2026)
 
@@ -600,7 +600,7 @@ Solo columnas y número de filas, réplica, desde producción. «mes» = 1–17/
 **Conclusión (12/12 consultas usadas):** Encuesta → `diagram_4` (módulo `encuesta`, Fase A11, v1.222.0; encendido el 18/11, ver 10.11). Abandonadas →
 `skill_9` solo da conteos por skill (sin detalle para únicas abandonadas). Salida → ninguno de
 `cdr_1`, `cdr_4`, `cdr_5` cuadra con el manual; falta el reporte de salida/campaña. WhatsApp →
-`chat_1`/`chat_13` rechazan las fechas: hay que averiguar el formato (soporte de Wolkvox).
+`chat_1`/`chat_13` rechazan las fechas (no aplica a la réplica: MOBILIZE no maneja WhatsApp, usuario 19/11).
 
 ### 10.11 Encuesta con la API: corrida y comparación (18/11/2026, Fase A11)
 
@@ -633,3 +633,10 @@ Solo columnas y número de filas, réplica, desde producción. «mes» = 1–17/
 ### 10.13 Comparación tarjeta por tarjeta (19/11/2026, Fase A16)
 
 Réplica vs MOBILIZE real, 01–12/11: Flujo, Flujo por hora, Tipificación y Encuesta iguales; Eficacia y únicas difieren solo el 04/11 por una llamada que `cdr_1` trae sin tipificación (arreglo v1.233.1: entra como «Sin tipificación»). Faltan las no conectadas (`cdr_5`, módulo `no_conectadas`) y las abandonadas únicas (reporte «2», sin equivalente en la API). Detalle en `docs/historico/progress-fases.md` (Fase A16).
+
+### 10.14 Salida completa en la réplica y abandonadas (19/11/2026, Fase A17)
+
+- **Encendido por el usuario:** `no_conectadas` agregado a `WOLKVOX_AUTO_MODULOS`. «Ejecutar ahora» autorizado (19/11, solo la réplica): `no_conectadas` 14:34 (1 consulta `cdr_5`, 1–18/11: 43 no conectadas, reemplazó 0, con respaldo) y `cdr` 14:45 (1 consulta: 93 llamadas, 47 de salida, 37 únicas de ingreso, reemplazó 92, con respaldo; «sin tipificación 1» ya entra). Uso del día 68 de 2.800.
+- **Comparación SOLO LECTURA, réplica vs MOBILIZE real, 01–12/11 — todo igual:** Llamadas de salida total 71 / conectadas 38 / no conectadas 33 / tasa 53,5 % en los dos; por día (total/conectadas/no conectadas) 03: 3/3/0 · 04: 10/8/2 · 05: 15/5/10 · 06: 17/7/10 · 07: 2/0/2 · 09: 3/3/0 · 10: 16/9/7 · 11: 2/2/0 · 12: 3/1/2. 04/11: Eficacia 1 de 7 y únicas 5 en los dos (la diferencia de A16 quedó resuelta); 01–12/11: Eficacia 10 de 29 (34,5 %) y únicas 25 en los dos. La réplica sigue hasta el 18/11 (90 / 47 / 43).
+- **WhatsApp:** no aplica a la réplica (MOBILIZE no maneja WhatsApp).
+- **Abandonadas únicas:** en el Manager son «Skills & Servicios › 2. Detalle de llamadas abandonadas». La única prueba de `skill_2` (B0, 17/11, desde el PC) no dejó anotado el día ni el mensaje. Un reporte inexistente responde **400** «The api you want to consult does not exist» (`ivr_1`), y Wolkvox también responde **404** cuando no hay registros. En noviembre la réplica tiene **una sola abandonada: 14/11, 14 h** (Flujo por hora). Hipótesis: el 404 de `skill_2` era un día sin abandonadas. Propuesta (máximo 3 consultas, espera OK; antes hay que agregar `skill_2` a la lista cerrada `REPORTES`): (1) `skill_2` el 14/11; (2) si responde 404, `skill_2` con el mes 1–18/11; (3) solo si el mensaje pide otro dato, `skill_2` el 14/11 con el parámetro que indique. Si ninguna sirve: preguntar al soporte de Wolkvox.
