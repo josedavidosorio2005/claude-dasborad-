@@ -7,6 +7,13 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.235.0 — Noviembre 2026
+
+**Réplica de MOBILIZE con la API: se pueden traer meses anteriores.**
+
+- El administrador puede pedirle a Wolkvox un mes ya cerrado completo (hasta 12 meses atrás) para la réplica de
+  prueba, todos los reportes de una vez o uno por uno, siempre con respaldo. El MOBILIZE real no cambia.
+
 ## v1.234.0 — Noviembre 2026
 
 **Réplica de MOBILIZE con la API: llamadas abandonadas (listo, apagado).**

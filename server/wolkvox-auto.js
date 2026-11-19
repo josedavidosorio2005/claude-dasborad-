@@ -75,6 +75,22 @@ function plan(ahora) {
   return out;
 }
 
+// Fase A20 (19/11): un mes pasado COMPLETO, pedido a mano con «Ejecutar ahora» (solo la réplica).
+// Solo meses ya cerrados y como mucho MESES_ATRAS_MAX hacia atrás. Devuelve el plan o null si no vale.
+const MESES_ATRAS_MAX = 12;
+function planMes(mes, ahora) {
+  if (typeof mes !== 'string' || !/^\d{4}-(0[1-9]|1[0-2])$/.test(mes)) return null;
+  const actual = fechaLimitesHoyColombia(ahora).slice(0, 7);
+  if (mes >= actual) return null;
+  let m = actual;
+  for (let i = 0; i < MESES_ATRAS_MAX; i++) { m = _mesAnterior(m); if (m === mes) return [{ mes, dias: _diasDe(mes, Number(ing.ultimoDiaDelMes(mes).slice(8, 10))) }]; }
+  return null;
+}
+// El plan de una corrida: el mes pedido (opts.mes) o el normal (mes en curso hasta ayer).
+function planDe(opts) {
+  return opts && opts.mes ? (planMes(opts.mes, opts.ahora) || []) : plan(opts && opts.ahora);
+}
+
 // ── Conversion de una fila de skill_1 a una fila del Flujo ──
 // Los nombres de campo se buscan sin importar mayusculas, con alternativas (Wolkvox no publica
 // el esquema de skill_1; B0 vio estos nombres en skill_3). Si falta skill, total o contestadas,
@@ -254,7 +270,7 @@ async function correrUnaVez(opts) {
   const cred = opts.credenciales || wv.credenciales(OPERACION, env);
   if (!cred) { res.estado = 'omitida'; partes.push('falta el token o el servidor de Wolkvox'); return terminar(); }
 
-  const meses = plan(ahora);
+  const meses = planDe({ mes: opts.mes, ahora });
   const necesarias = meses.reduce((n, m) => n + m.dias.length, 0);
   if (!necesarias) { res.estado = 'omitida'; return terminar(); }
   const maximo = Math.min(MAX_CONSULTAS_POR_CORRIDA, Number.isInteger(opts.maxConsultas) && opts.maxConsultas > 0 ? opts.maxConsultas : MAX_CONSULTAS_POR_CORRIDA);
@@ -412,8 +428,33 @@ async function ejecutarAhora(opts) {
   try {
     const env = opts.env || process.env;
     let activo = false;
-    if (!opts.modulo || opts.modulo === 'flujo') {
+    if (!opts.modulo || opts.modulo === 'flujo' || opts.modulo === 'todos') {
       try { activo = await (opts.leerInterruptor || leerInterruptor)(env); } catch (e) { return { estado: 'sin_interruptor' }; }
+    }
+    // Fase A20: `mes` (AAAA-MM, un mes pasado completo) cambia el plan; la etiqueta lo dice.
+    const etiqueta = 'Ejecutar ahora' + (opts.mes ? ' (mes ' + opts.mes + ')' : '');
+    const correrFlujo = () => correrUnaVez({
+      db: opts.db, env, ahora: opts.ahora, fetchImpl: opts.fetchImpl, logEvent: opts.logEvent,
+      franja: 'manual ' + new Date().toISOString(), etiqueta, actor: opts.actor, maxConsultas: opts.maxConsultas, mes: opts.mes,
+    });
+    if (opts.modulo === 'todos') {
+      // Fase A20: el Flujo y luego cada módulo encendido, en el orden de MODULOS (flujo_hora completa
+      // el AHT del Flujo, por eso va después). Lo apagado se salta. La primera falla detiene el resto.
+      const M = require('./wolkvox-modulos');
+      let lista;
+      try { lista = M.modulosDe(await (opts.leerValor || leerValor)(env, 'WOLKVOX_AUTO_MODULOS')); } catch (e) { return { estado: 'sin_interruptor' }; }
+      const out = { estado: 'ok', consultas: 0, meses: [], partes: [] };
+      const pasos = [['flujo', activo]].concat(Object.keys(M.MODULOS).map((n) => [n, lista.includes(n)]));
+      for (const [nombre, encendido] of pasos) {
+        if (!encendido) { out.partes.push({ modulo: nombre, estado: 'apagado' }); continue; }
+        const r = nombre === 'flujo' ? await correrFlujo()
+          : await M.correrModulo(nombre, { db: opts.db, env, ahora: opts.ahora, mes: opts.mes, fetchImpl: opts.fetchImpl, logEvent: opts.logEvent, etiqueta, actor: opts.actor });
+        out.consultas += r.consultas || 0;
+        out.partes.push({ modulo: nombre, estado: r.estado, consultas: r.consultas || 0, meses: r.meses, error: r.error || null, detalle: r.detalle });
+        if (r.estado !== 'ok') { out.estado = out.partes.some((p) => p.estado === 'ok') ? 'parcial' : r.estado; out.error = r.error || r.estado; break; }
+      }
+      out.detalle = out.partes.map((p) => p.modulo + ': ' + p.estado).join(' · ');
+      return out;
     }
     if (opts.modulo && opts.modulo !== 'flujo') {
       // Paso 1+ (llenar la réplica): el módulo tiene que estar en WOLKVOX_AUTO_MODULOS.
@@ -421,13 +462,10 @@ async function ejecutarAhora(opts) {
       let lista;
       try { lista = M.modulosDe(await (opts.leerValor || leerValor)(env, 'WOLKVOX_AUTO_MODULOS')); } catch (e) { return { estado: 'sin_interruptor' }; }
       if (!lista.includes(opts.modulo)) return { estado: 'apagada' };
-      return await M.correrModulo(opts.modulo, { db: opts.db, env, ahora: opts.ahora, fetchImpl: opts.fetchImpl, logEvent: opts.logEvent, etiqueta: 'Ejecutar ahora', actor: opts.actor });
+      return await M.correrModulo(opts.modulo, { db: opts.db, env, ahora: opts.ahora, mes: opts.mes, fetchImpl: opts.fetchImpl, logEvent: opts.logEvent, etiqueta, actor: opts.actor });
     }
     if (!activo) return { estado: 'apagada' };
-    return await correrUnaVez({
-      db: opts.db, env, ahora: opts.ahora, fetchImpl: opts.fetchImpl, logEvent: opts.logEvent,
-      franja: 'manual ' + new Date().toISOString(), etiqueta: 'Ejecutar ahora', actor: opts.actor, maxConsultas: opts.maxConsultas,
-    });
+    return await correrFlujo();
   } finally {
     _enCurso = false;
   }
@@ -494,6 +532,6 @@ function estado(db, env) {
 module.exports = {
   CAMPANA, OPERACION, API, HORAS_COLOMBIA, ARCHIVO, QUIEN, ACCION_HISTORIAL, MAX_CONSULTAS_POR_CORRIDA,
   horaColombia, franjaActual, plan, convertirFila, filasDelDia, aPorcentaje, aSegundos, aEntero,
-  asegurarTablas, franjaYaCorrida, ultimaCorrida, leerInterruptor, correrUnaVez, iniciar, estado, ejecutarAhora, correrLogin, planLogin, API_LOGIN,
+  asegurarTablas, franjaYaCorrida, ultimaCorrida, planMes, planDe, MESES_ATRAS_MAX, leerInterruptor, correrUnaVez, iniciar, estado, ejecutarAhora, correrLogin, planLogin, API_LOGIN,
   leerValor, SIN_REGISTROS,
 };

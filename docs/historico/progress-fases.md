@@ -21514,3 +21514,9 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
 - **Pruebas:** `faseA19-wolkvox-abandonadas` (5: hoja sin datos sensibles; corrida con únicas día+teléfono, mes completo, respaldo, nada sensible guardado y MOBILIZE intacto; sin abandonadas válidas/sin filas no cambia; fila de otro mes = error; módulo en la lista). Suite local 3361/3362 (1 saltada a propósito); `npm audit` limpio.
 - **Encender (usuario):** `WOLKVOX_AUTO_MODULOS` = `flujo_hora,cdr,encuesta,no_conectadas,abandonadas`.
 
+## Fase A20 — réplica: meses anteriores con «Ejecutar ahora» (v1.235.0, 2026-11-19)
+
+- **Pedido (usuario, 19/11):** traer julio–octubre de 2026 a la réplica; primero contar consultas y tiempo sin gastar nada y hacer el cambio de código si hace falta.
+- **Cambio:** `server/wolkvox-auto.js` `planMes`/`planDe` (mes cerrado completo, hasta 12 atrás) usados por el Flujo y por todos los módulos; `ejecutarAhora` con `mes` y `modulo: 'todos'`; ruta `/wolkvox/auto/ejecutar` valida `mes` y exige mes para «todos». Ver plan §10.16.
+- **Pruebas:** `faseA20-wolkvox-meses-pasados` (4). Suite local 3365/3366 (1 saltada a propósito); `npm audit` limpio.
+

@@ -118,7 +118,7 @@ function actualizarAhtEspera(db, mes, porDia) {
 }
 
 async function correrFlujoHora(opts, partes, res) {
-  const meses = _auto().plan(opts.ahora);
+  const meses = _auto().planDe(opts);
   for (const { mes, dias } of meses) {
     res.consultas++;
     const { data, cuerpo } = await _pedir(opts, 'skill_7', dias[0], dias[dias.length - 1]);
@@ -221,7 +221,7 @@ function opcionesCdrMobilize() {
 
 async function correrCdr(opts, partes, res) {
   const { cargarTipificaciones } = require('./tipificaciones');
-  const meses = _auto().plan(opts.ahora);
+  const meses = _auto().planDe(opts);
   for (const { mes, dias } of meses) {
     let data = [];
     let campos = [];
@@ -277,7 +277,7 @@ function hojaEncuesta(data) {
 
 async function correrEncuesta(opts, partes, res) {
   const { cargarEncuestas } = require('./encuestas');
-  for (const { mes, dias } of _auto().plan(opts.ahora)) {
+  for (const { mes, dias } of _auto().planDe(opts)) {
     res.consultas++;
     let { data, cuerpo } = await _pedir(opts, 'diagram_4', dias[0], dias[dias.length - 1]);
     if (!data.length) { partes.push(mes + ': Wolkvox no trajo encuestas, sin cambios'); continue; }
@@ -313,7 +313,7 @@ function hojaNoConectadas(data) {
 }
 async function correrNoConectadas(opts, partes, res) {
   const { cargarLlamadasNoConectadas } = require('./llamadas-salida');
-  for (const { mes, dias } of _auto().plan(opts.ahora)) {
+  for (const { mes, dias } of _auto().planDe(opts)) {
     res.consultas++;
     let { data } = await _pedir(opts, 'cdr_5', dias[0], dias[dias.length - 1]);
     if (!data.length) { partes.push(mes + ': Wolkvox no trajo no conectadas, sin cambios'); continue; }
@@ -346,7 +346,7 @@ function hojaAbandonadas(data) {
 }
 async function correrAbandonadas(opts, partes, res) {
   const { cargarLlamadasAbandonadas } = require('./llamadas-unicas');
-  for (const { mes, dias } of _auto().plan(opts.ahora)) {
+  for (const { mes, dias } of _auto().planDe(opts)) {
     res.consultas++;
     let { data } = await _pedir(opts, 'skill_2', dias[0], dias[dias.length - 1]);
     if (!data.length) { partes.push(mes + ': Wolkvox no trajo abandonadas, sin cambios'); continue; }
@@ -403,11 +403,11 @@ async function correrModulo(nombre, opts) {
   if (!esCampanaInterna(db, CAMPANA)) { res.estado = 'omitida'; partes.push('la réplica no existe'); return terminar(); }
   const cred = opts.credenciales || wv.credenciales(OPERACION, env);
   if (!cred) { res.estado = 'omitida'; partes.push('falta el token o el servidor de Wolkvox'); return terminar(); }
-  const meses = A.plan(ahora);
-  if (!meses.length) { res.estado = 'omitida'; return terminar(); }
+  const meses = A.planDe({ mes: opts.mes, ahora });
+  if (!meses.length) { res.estado = 'omitida'; partes.push(opts.mes ? 'mes no válido (' + String(opts.mes).slice(0, 7) + ')' : 'nada que pedir'); return terminar(); }
   if (wv.usoDelDia(db, OPERACION, ahora) + meses.length * (mod.consultasPorMes || 1) > wv.topeDiario(env)) { res.estado = 'omitida'; partes.push('no alcanza el tope del día'); return terminar(); }
   try {
-    await mod.correr({ db, env, ahora, fetchImpl: opts.fetchImpl, cred }, partes, res);
+    await mod.correr({ db, env, ahora, mes: opts.mes, fetchImpl: opts.fetchImpl, cred }, partes, res);
   } catch (e) {
     if (!(e instanceof wv.WolkvoxError)) throw e;
     res.estado = res.meses.length ? 'parcial' : 'error';
