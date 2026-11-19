@@ -18,6 +18,12 @@ const MAX_OPCIONES = 30;
 const TEXTOS = {
   acta_entrega: { nombre: 'Texto del acta de entrega', base: 'Recibo los elementos de esta acta en buen estado, para uso exclusivo de mis funciones. Me comprometo a cuidarlos y a devolverlos cuando se me pidan o al terminar mi vinculación, y a informar a Sistemas cualquier daño o pérdida.' },
   acta_devolucion: { nombre: 'Texto del acta de devolución', base: 'Se reciben de vuelta los elementos de esta acta, en el estado que se indica en cada uno.' },
+  // Fase 379 (I4): actas automáticas.
+  acta_cambio: { nombre: 'Texto del acta de cambio de elemento', base: 'El agente entrega los elementos marcados «devuelve» y recibe los marcados «recibe», en buen estado, con los mismos compromisos del acta de entrega.' },
+  acta_reparacion: { nombre: 'Texto del acta de envío a reparación', base: 'Se entregan para revisión o reparación los elementos de esta acta, con el diagnóstico indicado. Quien los recibe se compromete a devolverlos reparados o con el concepto técnico.' },
+  acta_retorno: { nombre: 'Texto del acta de recibo de reparación', base: 'Sistemas recibe los elementos de esta acta y los deja disponibles para entregar.' },
+  acta_malo: { nombre: 'Texto del acta de elemento malo', base: 'Se reportan en mal estado los elementos de esta acta, con el motivo indicado. No se entregan a ningún agente hasta su revisión.' },
+  acta_baja: { nombre: 'Texto del acta de baja', base: 'Se dan de baja los elementos de esta acta, con el motivo indicado. Salen del inventario disponible.' },
 };
 
 function crearTablas(db) {
@@ -140,6 +146,6 @@ function guardarTexto(db, clave, valor, quien) {
               ON CONFLICT(clave) DO UPDATE SET valor = excluded.valor, updatedAt = excluded.updatedAt, quien = excluded.quien`).run(clave, v, new Date().toISOString(), quien || '');
   return { clave, valor: v };
 }
-function textoActa(db, tipoActa) { return textos(db)[tipoActa === 'entrega' ? 'acta_entrega' : 'acta_devolucion']; }
+function textoActa(db, tipoActa) { const t = textos(db); return t['acta_' + tipoActa] || t.acta_devolucion; } // Fase 379: un texto por tipo
 
 module.exports = { TIPOS_CAMPO, MAX_CAMPOS, TEXTOS, crearTablas, slug, validarTipo, crearTipo, editarTipo, activarTipo, textos, guardarTexto, textoActa };

@@ -2122,6 +2122,17 @@
         <div class="modal-btns"><button type="submit" class="btn-primary">Registrar</button></div>
       </form>
     </section>
+    <section id="ac-p-actas" class="hidden" aria-label="Actas"><!-- Fase 379 (I4): todas las actas, automáticas y manuales -->
+      <div id="ac-actas-kpis"></div>
+      <div class="ac-filtros">
+        <div class="ig"><label for="ac-ac-estado">Estado</label><select id="ac-ac-estado" onchange="activosActasBuscar()"><option value="">Todas</option><option value="pendiente">Por firmar</option><option value="atrasada">Atrasadas</option><option value="firmada">Firmadas</option><option value="anulada">Anuladas</option></select></div>
+        <div class="ig"><label for="ac-ac-tipo">Tipo</label><select id="ac-ac-tipo" onchange="activosActasBuscar()"></select></div>
+        <div class="ig"><label for="ac-ac-q">Buscar</label><input type="search" id="ac-ac-q" maxlength="60" placeholder="Número, agente, código, motivo…" onchange="activosActasBuscar()"></div>
+      </div>
+      <p id="ac-ac-conteo" class="vis-ayuda"></p>
+      <div id="ac-ac-lista" aria-live="polite"></div>
+      <div id="ac-ac-anular"></div>
+    </section>
     <section id="ac-p-ajustes" class="hidden" aria-label="Ajustes">
       <p class="vis-ayuda">Un valor por línea. Se usan en las listas de Registrar y en los filtros.</p>
       <div class="ac-filtros">

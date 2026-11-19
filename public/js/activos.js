@@ -7,7 +7,7 @@ var _ac = { config: null, tab: 'panel', lista: [], sel: null, ambito: 'sistemas'
 // Fase 376 (I1, diseño de Edwin): menú lateral con el ciclo de cada elemento. «sec» = título de sección.
 var AC_MENU = {
   sistemas: [['sec', 'Menú'], ['panel', 'Panel general'], ['sec', 'Ciclo de elementos'], ['registrar', 'Registrar ingreso', '1'], ['libres', 'Libres', '2'], ['asignados', 'Asignados', '3'],
-    ['reparacion', 'En reparación', '4'], ['malos', 'Malos', '5'], ['sec', 'Gestión'], ['elementos', 'Inventario completo'], ['agentes', 'Agentes'], ['ajustes', 'Ajustes y datos']],
+    ['reparacion', 'En reparación', '4'], ['malos', 'Malos', '5'], ['sec', 'Gestión'], ['elementos', 'Inventario completo'], ['agentes', 'Agentes'], ['actas', 'Actas'], ['ajustes', 'Ajustes y datos']], // Fase 379: + Actas
   inmuebles: [['sec', 'Menú'], ['panel', 'Panel general'], ['sec', 'Ciclo de elementos'], ['registrar', 'Registrar ingreso', '1'], ['libres', 'Libres', '2'],
     ['reparacion', 'En reparación', '3'], ['malos', 'Malos', '4'], ['sec', 'Gestión'], ['elementos', 'Inventario completo'], ['ajustes', 'Ajustes y datos']],
 };
@@ -22,6 +22,7 @@ var AC_VISTA_TXT = {
   malos: ['Malos', 'Elementos que no se pueden entregar.'],
   elementos: ['Inventario completo', 'Todos los elementos, con filtros por tipo, estado, sede, operación, propietario y rendimiento.'],
   agentes: ['Agentes', 'Quién tiene cada elemento: asignar, devolver y cambiar, con actas.'],
+  actas: ['Actas', 'Cada movimiento (entrega, devolución, cambio, envío a reparación, recibo de reparación, elemento malo o baja) crea su acta. Imprímela, hazla firmar y súbela escaneada.'],
   ajustes: ['Ajustes y datos', 'Listas, formularios por tipo y textos del acta.'],
 };
 var AC_TITULO = { sistemas: 'Inventario de sistemas', inmuebles: 'Inventario de inmuebles' };
@@ -46,7 +47,7 @@ function activosAbrirInmuebles() { return activosAbrir('inmuebles'); } // Fase 3
 // Menú lateral con los conteos de cada estado (del resumen).
 function activosMenuHtml(ambito, actual, resumen) {
   var pe = (resumen && resumen.porEstado) || {};
-  var n = { libres: pe.libre, asignados: pe.en_uso, reparacion: pe.en_reparacion, malos: pe.malo, elementos: resumen ? resumen.total : null };
+  var n = { libres: pe.libre, asignados: pe.en_uso, reparacion: pe.en_reparacion, malos: pe.malo, elementos: resumen ? resumen.total : null, actas: resumen && resumen.actasPorFirmar !== undefined ? resumen.actasPorFirmar : null };
   return (AC_MENU[ambito] || AC_MENU.sistemas).map(function (x) {
     if (x[0] === 'sec') return '<p class="ac-menu-sec">' + esc(x[1]) + '</p>';
     var c = n[x[0]];
@@ -71,11 +72,11 @@ function activosCerrar() { closeModal('activos-overlay'); }
 
 function activosTab(tab) {
   if (!AC_VISTA_TXT[tab]) tab = 'panel';
-  if (_ac.ambito === 'inmuebles' && (tab === 'agentes' || tab === 'asignados')) tab = 'panel'; // inmuebles no se asignan a agentes
+  if (_ac.ambito === 'inmuebles' && (tab === 'agentes' || tab === 'asignados' || tab === 'actas')) tab = 'panel'; // inmuebles no se asignan a agentes
   _ac.tab = tab;
   _acError('');
   var seccion = AC_VISTA_ESTADO[tab] ? 'elementos' : tab; // las vistas por estado usan la lista de elementos
-  ['panel', 'elementos', 'agentes', 'registrar', 'ajustes'].forEach(function (t) { _acEl('ac-p-' + t).classList.toggle('hidden', t !== seccion); });
+  ['panel', 'elementos', 'agentes', 'registrar', 'ajustes', 'actas'].forEach(function (t) { _acEl('ac-p-' + t).classList.toggle('hidden', t !== seccion); });
   var txt = AC_VISTA_TXT[tab];
   _acEl('ac-vista-cab').innerHTML = '<h4 class="ac-vista-tit">' + esc(txt[0]) + '</h4><p class="vis-ayuda">' + esc(txt[1]) + '</p>' + (tab === 'panel' || tab === 'registrar' ? activosFlujoHtml(_ac.ambito) : '');
   _acRefrescarMenu();
@@ -85,6 +86,7 @@ function activosTab(tab) {
   if (tab === 'agentes') _acAgentes();
   if (tab === 'registrar') _acFormulario();
   if (tab === 'ajustes') _acAjustes();
+  if (tab === 'actas') activosActasBuscar(); // Fase 379
 }
 
 // ── Panel ──
@@ -280,7 +282,7 @@ async function activosGestionEnviar(ev, modo) {
   if (_acEl('ac-g-motivo')) b.motivo = _acEl('ac-g-motivo').value;
   try {
     var r = await apiRequest('POST', '/activos/' + a.id + '/' + ruta, b);
-    showToast({ asignar: 'Elemento asignado', reasignar: 'Elemento reasignado', cambiar: 'Elemento cambiado', quitar: 'Asignación quitada' }[modo] + (r && r.agenteCreado ? ' (agente nuevo creado)' : ''), 'ok');
+    showToast({ asignar: 'Elemento asignado', reasignar: 'Elemento reasignado', cambiar: 'Elemento cambiado', quitar: 'Asignación quitada' }[modo] + (r && r.agenteCreado ? ' (agente nuevo creado)' : '') + activosActasAviso(r && r.actas), 'ok');
     await activosVer(a.id);
     _acRefrescarMenu();
   } catch (e) { _acError(e.message); }
@@ -298,8 +300,8 @@ async function activosCambiarEstado(ev) {
   ev.preventDefault();
   _acError('');
   try {
-    await apiRequest('POST', '/activos/' + _ac.sel.id + '/estado', { estado: _acEl('ac-nuevo-estado').value, motivo: _acEl('ac-motivo').value, tecnico: _acEl('ac-tecnico').value });
-    showToast('Estado cambiado', 'ok');
+    _ac.ultimoEstado = await apiRequest('POST', '/activos/' + _ac.sel.id + '/estado', { estado: _acEl('ac-nuevo-estado').value, motivo: _acEl('ac-motivo').value, tecnico: _acEl('ac-tecnico').value });
+    var rr = _ac.ultimoEstado; showToast('Estado cambiado' + activosActasAviso(rr && rr.actas), 'ok');
     await activosVer(_ac.sel.id);
   } catch (e) { _acError(e.message); }
 }
@@ -601,31 +603,116 @@ async function activosActivarAgente(activo) {
 
 // ── Actas (Fase 371, E3): entrega y devolución. El PDF se arma imprimiendo («Guardar como PDF»);
 // la firmada (escaneada) se sube y se guarda en S3 privado; solo se descarga desde la plataforma. ──
+// Fase 379 (I4): un formato por tipo (título, columnas y quién firma). Sin agente (reparación, malo,
+// baja o recibo de un elemento libre) no va el bloque del agente.
+var AC_ACTA_FIRMAS = {
+  entrega: ['Entrega (Sistemas)', 'Recibe (agente)'], devolucion: ['Devuelve (agente)', 'Recibe (Sistemas)'], cambio: ['Entrega (Sistemas)', 'Recibe (agente)'],
+  reparacion: ['Entrega (Sistemas)', 'Recibe (técnico o proveedor)'], retorno: ['Entrega (técnico o proveedor)', 'Recibe (Sistemas)'],
+  malo: ['Reporta (Sistemas)', 'Visto bueno (coordinación)'], baja: ['Elabora (Sistemas)', 'Aprueba (administración)'],
+};
+var AC_TEXTO_BASE = {
+  entrega: 'Recibo los elementos de esta acta en buen estado, para uso exclusivo de mis funciones. Me comprometo a cuidarlos y a devolverlos cuando se me pidan o al terminar mi vinculación, y a informar a Sistemas cualquier daño o pérdida.',
+  devolucion: 'Se reciben de vuelta los elementos de esta acta, en el estado que se indica en cada uno.',
+};
 function activosActaPrintHtml(acta) {
-  var entrega = acta.tipo === 'entrega';
+  var tipo = acta.tipo;
   var fecha = new Date(acta.fecha).toLocaleString('es-CO', { timeZone: 'America/Bogota' });
-  var g = acta.agente || {};
-  var filas = (acta.elementos || []).map(function (e, i) {
-    return '<tr><td>' + (i + 1) + '</td><td>' + esc(e.tipo) + '</td><td>' + esc(e.codigo) + '</td><td>' + esc([e.marca, e.modelo].filter(Boolean).join(' ')) + '</td><td>' + esc(e.serial || '') + '</td>' +
-      (entrega ? '' : '<td>' + esc(e.queda || '') + '</td><td>' + esc(e.motivo || '') + '</td>') + '</tr>';
+  var g = acta.agente && acta.agente.nombre ? acta.agente : null;
+  var els = acta.elementos || [];
+  var conDir = tipo === 'cambio' && els.some(function (e) { return e.dir; });
+  var conQueda = els.some(function (e) { return e.queda; });
+  var conMotivo = els.some(function (e) { return e.motivo; });
+  var filas = els.map(function (e, i) {
+    return '<tr><td>' + (i + 1) + '</td>' + (conDir ? '<td>' + esc(e.dir === 'recibe' ? 'Recibe' : e.dir === 'devuelve' ? 'Devuelve' : '') + '</td>' : '') + '<td>' + esc(e.tipo) + '</td><td>' + esc(e.codigo) + '</td><td>' + esc([e.marca, e.modelo].filter(Boolean).join(' ')) + '</td><td>' + esc(e.serial || '') + '</td>' +
+      (conQueda ? '<td>' + esc(e.queda || '') + '</td>' : '') + (conMotivo ? '<td>' + esc(e.motivo || '') + '</td>' : '') + '</tr>';
   }).join('');
-  // Fase 372: cada acta trae su copia del texto (Ajustes); las anteriores a la Fase 372 usan el de siempre.
-  var texto = acta.texto ? acta.texto : entrega
-    ? 'Recibo los elementos de esta acta en buen estado, para uso exclusivo de mis funciones. Me comprometo a cuidarlos y a devolverlos cuando se me pidan o al terminar mi vinculación, y a informar a Sistemas cualquier daño o pérdida.'
-    : 'Se reciben de vuelta los elementos de esta acta, en el estado que se indica en cada uno.';
-  return '<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Acta de ' + esc(acta.tipoNombre.toLowerCase()) + ' ' + Number(acta.numero) + '</title>' +
+  // Fase 372: cada acta trae su copia del texto (Ajustes); las anteriores usan el de siempre.
+  var texto = acta.texto ? acta.texto : (AC_TEXTO_BASE[tipo] || AC_TEXTO_BASE.devolucion);
+  var firmas = AC_ACTA_FIRMAS[tipo] || ['Firma de quien entrega', 'Firma de quien recibe'];
+  var titulo = 'Acta de ' + String(acta.tipoNombre || tipo).toLowerCase();
+  return '<!doctype html><html lang="es"><head><meta charset="utf-8"><title>' + esc(titulo) + ' ' + Number(acta.numero) + '</title>' +
     '<style>@page{size:A4;margin:16mm}body{font-family:Arial,Helvetica,sans-serif;color:#1a1a1a;font-size:12px;line-height:1.45}' +
     'h1{font-size:18px;margin:0 0 4px}.sub{color:#555;margin:0 0 16px}dl{display:grid;grid-template-columns:140px 1fr;gap:4px 12px;margin:0 0 16px}dt{font-weight:bold}dd{margin:0}' +
     'table{width:100%;border-collapse:collapse;margin:0 0 16px}th,td{border:1px solid #999;padding:5px 6px;text-align:left;vertical-align:top}th{background:#eee}' +
-    '.firmas{display:grid;grid-template-columns:1fr 1fr;gap:48px;margin-top:56px}.firma{border-top:1px solid #1a1a1a;padding-top:6px}.pie{margin-top:32px;color:#666;font-size:10px}</style></head><body>' +
-    '<h1>Acta de ' + esc(acta.tipoNombre.toLowerCase()) + ' N.º ' + Number(acta.numero) + '</h1>' +
+    '.firmas{display:grid;grid-template-columns:1fr 1fr;gap:48px;margin-top:56px}.firma{border-top:1px solid #1a1a1a;padding-top:6px}.pie{margin-top:32px;color:#666;font-size:10px}.anulada{color:#a00;font-weight:bold}</style></head><body>' +
+    '<h1>' + esc(titulo) + ' N.º ' + Number(acta.numero) + '</h1>' +
     '<p class="sub">Inventario de sistemas · InConexión · ' + esc(fecha) + '</p>' +
-    '<dl><dt>Agente</dt><dd>' + esc(g.nombre || '') + '</dd><dt>Documento</dt><dd>' + esc(g.documento || '') + '</dd><dt>Sede</dt><dd>' + esc(g.sede || '') + '</dd><dt>Operación</dt><dd>' + esc(g.operacion || '') + '</dd></dl>' +
-    '<table><thead><tr><th>#</th><th>Elemento</th><th>Código</th><th>Marca / modelo</th><th>Serial</th>' + (entrega ? '' : '<th>Queda</th><th>Motivo</th>') + '</tr></thead><tbody>' + filas + '</tbody></table>' +
+    (acta.anulada ? '<p class="anulada">ANULADA: ' + esc(acta.anulada.motivo || '') + '</p>' : '') +
+    '<dl>' + (g ? '<dt>Agente</dt><dd>' + esc(g.nombre || '') + '</dd><dt>Documento</dt><dd>' + esc(g.documento || '') + '</dd><dt>Sede</dt><dd>' + esc(g.sede || acta.sede || '') + '</dd><dt>Operación</dt><dd>' + esc(g.operacion || '') + '</dd>' : '<dt>Sede</dt><dd>' + esc(acta.sede || '') + '</dd>') +
+    (acta.motivo ? '<dt>Motivo</dt><dd>' + esc(acta.motivo) + '</dd>' : '') + (acta.tecnico ? '<dt>Técnico o proveedor</dt><dd>' + esc(acta.tecnico) + '</dd>' : '') + '</dl>' +
+    '<table><thead><tr><th>#</th>' + (conDir ? '<th>Movimiento</th>' : '') + '<th>Elemento</th><th>Código</th><th>Marca / modelo</th><th>Serial</th>' + (conQueda ? '<th>Queda</th>' : '') + (conMotivo ? '<th>Motivo</th>' : '') + '</tr></thead><tbody>' + filas + '</tbody></table>' +
     '<p>' + esc(texto) + '</p>' +
-    '<div class="firmas"><div class="firma">Firma de quien entrega<br>Nombre:<br>Documento:</div><div class="firma">Firma de quien recibe<br>Nombre:<br>Documento:</div></div>' +
-    '<p class="pie">Generada por ' + esc(acta.quien || '') + '. Firmada, se escanea en PDF y se sube en la plataforma (Inventario de sistemas → Agentes → Actas).</p>' +
+    '<div class="firmas"><div class="firma">' + esc(firmas[0]) + '<br>Nombre:<br>Documento:</div><div class="firma">' + esc(firmas[1]) + '<br>Nombre:<br>Documento:</div></div>' +
+    '<p class="pie">Generada por ' + esc(acta.quien || '') + (acta.auto ? ' (automática)' : '') + '. Firmada, se escanea en PDF y se sube en la plataforma (Inventario de sistemas → Actas).</p>' +
     '</body></html>';
+}
+
+// ── Fase 379 (I4): vista «Actas» (todas, automáticas y manuales) ──
+function activosActasAviso(actas) {
+  var l = (actas || []).filter(Boolean);
+  if (!l.length) return '';
+  return '. ' + (l.length === 1 ? 'Acta N.º ' + Number(l[0].numero) + ' creada' : 'Actas N.º ' + l.map(function (a) { return Number(a.numero); }).join(' y ') + ' creadas') + ' (en «Actas»)';
+}
+var AC_CLASE_ACTA = { pendiente: 'vis-amarillo', firmada: 'vis-verde', anulada: 'vis-gris' };
+var AC_ESTADO_ACTA = { pendiente: 'Por firmar', firmada: 'Firmada', anulada: 'Anulada' };
+function activosActasKpisHtml(r) {
+  return '<div class="ac-kpis">' + [['pendiente', 'Por firmar', r.pendientes, 'vis-amarillo'], ['atrasada', 'Atrasadas', r.atrasadas, 'vis-rojo'], ['firmada', 'Firmadas', r.firmadas, 'vis-verde'], ['anulada', 'Anuladas', r.anuladas, 'vis-gris']].map(function (k) {
+    return '<button type="button" class="ac-kpi ac-rend-kpi" onclick="activosActasFiltrar(\'' + k[0] + '\')"><b>' + Number(k[2] || 0) + '</b><span class="vis-pill ' + k[3] + '">' + esc(k[1]) + '</span></button>';
+  }).join('') + '</div>';
+}
+function activosActasHtml(lista, firmadasActivas, diasAtraso) {
+  if (!lista.length) return '<p class="vis-vacio">Ninguna acta con estos filtros. Se crean solas al asignar, devolver, cambiar o cambiar de estado un elemento.</p>';
+  return '<div class="table-wrap"><table class="vis-tabla"><thead><tr><th scope="col">N.º</th><th scope="col">Tipo</th><th scope="col">Fecha</th><th scope="col">Agente</th><th scope="col">Elementos</th><th scope="col">Motivo</th><th scope="col">Estado</th><th scope="col"><span class="sr-only">Acciones</span></th></tr></thead><tbody>' +
+    lista.map(function (a) {
+      var acc = '<button type="button" class="btn-cancel ac-btn" onclick="activosActaImprimirLista(' + Number(a.id) + ')">Imprimir / PDF</button>';
+      if (a.firmada) acc += '<button type="button" class="btn-cancel ac-btn" onclick="activosDescargarFirmada(' + Number(a.id) + ')">Ver firmada</button>';
+      if (a.estado === 'pendiente' && firmadasActivas) acc += '<label class="btn-cancel ac-btn ac-subir">Subir firmada<input type="file" accept="application/pdf" class="sr-only" onchange="activosSubirFirmadaLista(' + Number(a.id) + ', this)"></label>';
+      if (a.estado === 'pendiente') acc += '<button type="button" class="btn-cancel ac-btn" onclick="activosActaAnularForm(' + Number(a.id) + ')">Anular</button>';
+      var elems = (a.elementos || []).map(function (e) { return e.tipo + ' ' + e.codigo; }).join(', ');
+      return '<tr><th scope="row">' + Number(a.numero) + '</th><td>' + esc(a.tipoNombre) + (a.auto ? '' : ' <span class="vis-ayuda">(manual)</span>') + '</td><td>' + esc(new Date(a.fecha).toLocaleDateString('es-CO', { timeZone: 'America/Bogota' })) + '</td>' +
+        '<td>' + esc(a.agente ? a.agente.nombre : '—') + '</td><td>' + esc(elems) + '</td><td>' + esc(a.motivo || '') + (a.tecnico ? ' · ' + esc(a.tecnico) : '') + '</td>' +
+        '<td><span class="vis-pill ' + (a.atrasada ? 'vis-rojo' : AC_CLASE_ACTA[a.estado]) + '">' + esc(a.atrasada ? 'Atrasada (' + Number(diasAtraso) + '+ días hábiles)' : AC_ESTADO_ACTA[a.estado]) + '</span></td>' +
+        '<td><div class="ac-acciones">' + acc + '</div></td></tr>';
+    }).join('') + '</tbody></table></div>';
+}
+function activosActasFiltrar(estado) { _acEl('ac-ac-estado').value = estado; activosActasBuscar(); }
+async function activosActasBuscar() {
+  _acError('');
+  var q = [];
+  ['estado', 'tipo'].forEach(function (k) { var v = _acEl('ac-ac-' + k).value; if (v) q.push(k + '=' + encodeURIComponent(v)); });
+  var t = _acEl('ac-ac-q').value.trim(); if (t) q.push('q=' + encodeURIComponent(t));
+  var c = _acEl('ac-ac-lista');
+  c.innerHTML = '<p class="vis-vacio">Cargando…</p>';
+  try {
+    var r = await apiRequest('GET', '/activos/actas' + (q.length ? '?' + q.join('&') : ''));
+    _ac.actasLista = r.actas;
+    var sel = _acEl('ac-ac-tipo'), v = sel.value;
+    sel.innerHTML = '<option value="">Todos</option>' + Object.keys(r.tipos).map(function (k) { return '<option value="' + esc(k) + '"' + (k === v ? ' selected' : '') + '>' + esc(r.tipos[k]) + '</option>'; }).join('');
+    _acEl('ac-actas-kpis').innerHTML = activosActasKpisHtml(r.resumen);
+    _acEl('ac-ac-conteo').textContent = r.actas.length + (r.actas.length === 1 ? ' acta' : ' actas') + ' con estos filtros' + (r.firmadasActivas ? '' : '. Subir la firmada se activa cuando el administrador configure el almacenamiento privado (S3).');
+    c.innerHTML = activosActasHtml(r.actas, r.firmadasActivas, r.diasAtraso);
+  } catch (e) { c.innerHTML = ''; _acError(e.message); }
+}
+function activosActaImprimirLista(id) { var a = (_ac.actasLista || []).find(function (x) { return x.id === id; }); if (a) activosImprimirActa(a); }
+async function activosSubirFirmadaLista(id, input) { await activosSubirFirmada(id, input); activosActasBuscar(); }
+function activosActaAnularForm(id) {
+  var a = (_ac.actasLista || []).find(function (x) { return x.id === id; }); if (!a) return;
+  _acEl('ac-ac-anular').innerHTML = '<form class="ac-asig-form" onsubmit="activosActaAnular(event,' + Number(id) + ')"><h5 class="ac-sub ac-form-titulo">Anular el acta N.º ' + Number(a.numero) + ' (no se borra: queda marcada como anulada)</h5>' +
+    '<div class="ig ac-motivo"><label for="ac-ac-motivo">Motivo</label><input type="text" id="ac-ac-motivo" maxlength="300" placeholder="Ej.: se creó por error"></div>' +
+    '<button type="submit" class="btn-primary">Anular</button><button type="button" class="btn-cancel" onclick="activosActaAnularCancelar()">Cancelar</button></form>';
+  _acEl('ac-ac-motivo').focus();
+}
+function activosActaAnularCancelar() { _acEl('ac-ac-anular').innerHTML = ''; }
+async function activosActaAnular(ev, id) {
+  ev.preventDefault();
+  _acError('');
+  try {
+    await apiRequest('POST', '/activos/actas/' + id + '/anular', { motivo: _acEl('ac-ac-motivo').value });
+    showToast('Acta anulada', 'ok');
+    activosActaAnularCancelar();
+    activosActasBuscar();
+    _acRefrescarMenu();
+  } catch (e) { _acError(e.message); }
 }
 function activosImprimirActa(acta) {
   var w = window.open('', '_blank');
@@ -719,5 +806,5 @@ async function activosDescargarFirmada(id) {
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { activosMenuHtml: activosMenuHtml, activosFlujoHtml: activosFlujoHtml, AC_MENU: AC_MENU, AC_VISTA_ESTADO: AC_VISTA_ESTADO, activosTiposHtml: activosTiposHtml, activosCampoEditorHtml: activosCampoEditorHtml, activosEditorTipoHtml: activosEditorTipoHtml, activosLeerCampos: activosLeerCampos, activosPanelHtml: activosPanelHtml, activosListaHtml: activosListaHtml, activosConsulta: activosConsulta, activosRendHtml: activosRendHtml, activosGestionHtml: activosGestionHtml, activosAgenteSelectHtml: activosAgenteSelectHtml, activosAgenteBody: activosAgenteBody, activosCampoHtml: activosCampoHtml, activosAgentesHtml: activosAgentesHtml, activosActaPrintHtml: activosActaPrintHtml };
+  module.exports = { activosMenuHtml: activosMenuHtml, activosFlujoHtml: activosFlujoHtml, AC_MENU: AC_MENU, AC_VISTA_ESTADO: AC_VISTA_ESTADO, activosTiposHtml: activosTiposHtml, activosCampoEditorHtml: activosCampoEditorHtml, activosEditorTipoHtml: activosEditorTipoHtml, activosLeerCampos: activosLeerCampos, activosPanelHtml: activosPanelHtml, activosListaHtml: activosListaHtml, activosConsulta: activosConsulta, activosRendHtml: activosRendHtml, activosGestionHtml: activosGestionHtml, activosAgenteSelectHtml: activosAgenteSelectHtml, activosAgenteBody: activosAgenteBody, activosActasHtml: activosActasHtml, activosActasKpisHtml: activosActasKpisHtml, activosActasAviso: activosActasAviso, activosCampoHtml: activosCampoHtml, activosAgentesHtml: activosAgentesHtml, activosActaPrintHtml: activosActaPrintHtml };
 }
