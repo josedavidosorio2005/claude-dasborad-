@@ -49,7 +49,7 @@ function mallaPintarSemanasMes(mes) {
     c.appendChild(b);
   });
 }
-function mallaIrHoy() { _ml.semana = _ml.actual; mallaCargar(); }
+// Fase 373 (Edwin 19/11): sin botón «Esta semana»; solo las flechas y el selector de mes.
 
 async function mallaCargar() {
   _ml.campana = _mlEl('ml-campana').value || _ml.campana;
@@ -72,11 +72,11 @@ async function mallaCargar() {
 
 // Quién está en otro grupo de la misma semana (para avisar en la lista de asesoras).
 function _mlGrupoDe(asesorId, menos) {
-  var g = (_ml.datos.grupos || []).find(function (x) { return x.id !== menos && x.asesoras.some(function (a) { return a.id === asesorId; }); });
+  var g = ((_ml.datos && _ml.datos.grupos) || []).find(function (x) { return x.id !== menos && x.asesoras.some(function (a) { return a.id === asesorId; }); });
   return g ? g.nombre : null;
 }
 
-function mallaGrupoHtml(g, puedeEditar, asesoras, idx) {
+function mallaGrupoHtml(g, puedeEditar, asesoras, idx, datos) { // datos: la semana (por defecto _ml.datos)
   var dis = puedeEditar ? '' : ' disabled';
   var pre = 'ml-g' + idx;
   var filas = MALLA_DIAS.map(function (d) {
@@ -93,22 +93,26 @@ function mallaGrupoHtml(g, puedeEditar, asesoras, idx) {
     return '<label class="ml-asesora"><input type="checkbox" value="' + a.id + '"' + (marcadas[a.id] ? ' checked' : '') + dis + '> ' + esc(a.nombre) +
       (otro && !marcadas[a.id] ? ' <span class="ml-otro">(en ' + esc(otro) + ')</span>' : '') + '</label>';
   }).join('') : '<p class="vis-vacio">No hay asesoras activas en esta campaña.</p>';
-  return '<section class="aurora-card ml-grupo" data-idx="' + idx + '" data-id="' + (g.id || '') + '" aria-labelledby="' + pre + '-tit">' +
-    '<div class="ig"><label for="' + pre + '-nombre" id="' + pre + '-tit">Grupo</label><input type="text" id="' + pre + '-nombre" maxlength="' + MALLA_NOMBRE_MAX + '" value="' + esc(g.nombre || '') + '"' + dis + '></div>' +
+  var color = g.color || ((idx % 8) + 1); // Fase 373: cada grupo con su color (serie 1 a 8)
+  return '<section class="aurora-card ml-grupo ml-color-' + color + '" data-idx="' + idx + '" data-id="' + (g.id || '') + '" aria-labelledby="' + pre + '-tit">' +
+    '<div class="ig"><label for="' + pre + '-nombre" id="' + pre + '-tit"><span class="ml-punto" aria-hidden="true"></span>Grupo</label><input type="text" id="' + pre + '-nombre" maxlength="' + MALLA_NOMBRE_MAX + '" value="' + esc(g.nombre || '') + '"' + dis + '></div>' +
     '<div class="table-wrap"><table class="ml-tabla"><thead><tr><th scope="col">Día</th><th scope="col"><span class="ml-dia-largo">Trabaja</span><span class="ml-dia-corto" aria-hidden="true">Trab.</span></th><th scope="col">Entrada</th><th scope="col">Salida</th></tr></thead><tbody>' + filas + '</tbody></table></div>' +
     '<fieldset class="ml-asesoras"><legend>Asesoras (' + (g.asesoras || []).length + ')</legend>' + lista + '</fieldset>' +
     (puedeEditar ? '<div class="modal-btns"><button type="button" class="btn-cancel ml-borrar" onclick="mallaBorrarGrupo(' + idx + ')">' + (g.id ? 'Eliminar grupo' : 'Descartar') + '</button>' +
       '<button type="button" class="btn-primary" onclick="mallaGuardarGrupo(' + idx + ')">Guardar grupo</button></div>' : '') +
+    (g.id && (g.asesoras || []).length ? mallaCasosHtml(g, idx, puedeEditar, datos) : '') +
     '</section>';
 }
 
 function _mlPintar() {
   var d = _ml.datos;
+  _mlEl('ml-novedades').classList.add('hidden');
   if (!d.grupos.length) {
     _mlEl('ml-grupos').innerHTML = '<p class="vis-vacio">Esta semana no tiene malla todavía.' + (d.puedeEditar ? ' Crea un grupo o copia otra semana.' : '') + '</p>';
     return;
   }
   _mlEl('ml-grupos').innerHTML = d.grupos.map(function (g, i) { return mallaGrupoHtml(g, d.puedeEditar, d.asesoras, i); }).join('');
+  _mlNovedadesSemana();
 }
 
 function mallaNuevoGrupo() {
@@ -174,19 +178,131 @@ async function mallaCopiar(reemplazar) {
 }
 function mallaCancelarCopia() { var c = _mlEl('ml-confirmar'); if (c) c.classList.add('hidden'); }
 
+// ── Fase 373 (Edwin 19/11): novedades por asesora y horario especial de una asesora ──
+function _mlDiaTexto(fecha) {
+  if (!fecha) return 'Toda la semana';
+  var d = MALLA_DIAS.find(function (x) { return mallaFechaDelDia(mallaLunesDe(fecha), x.n) === fecha; });
+  return (d ? d.largo + ' ' : '') + fecha.slice(8, 10) + '/' + fecha.slice(5, 7);
+}
+function _mlFechaHora(iso) { try { return new Date(iso).toLocaleString('es-CO', { timeZone: 'America/Bogota', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }); } catch (e) { return ''; } }
+// Por asesora del grupo: sus horarios especiales y novedades de la semana, con los botones para agregar.
+function mallaCasosHtml(g, idx, puedeEditar, datos) {
+  var d = datos || _ml.datos || {};
+  var filas = (g.asesoras || []).map(function (a) {
+    var aj = (d.ajustes || []).filter(function (x) { return x.asesorId === a.id; });
+    var nv = (d.novedades || []).filter(function (x) { return x.asesorId === a.id && !x.quitada; });
+    var chips = aj.map(function (x) {
+      return '<li class="ml-chip">' + esc(_mlDiaTexto(x.fecha)) + ': ' + esc(mallaTurnoTexto(x.turno)) +
+        (puedeEditar ? ' <button type="button" class="ml-chip-x" onclick="mallaQuitarAjuste(' + Number(x.id) + ')" aria-label="Quitar el horario especial del ' + esc(_mlDiaTexto(x.fecha)) + ' de ' + esc(a.nombre) + '">×</button>' : '') + '</li>';
+    }).concat(nv.map(function (x) {
+      return '<li class="ml-chip ml-chip-nov">' + esc(_mlDiaTexto(x.fecha)) + ': ' + esc(x.texto) +
+        (puedeEditar ? ' <button type="button" class="ml-chip-x" onclick="mallaQuitarNovedad(' + Number(x.id) + ')" aria-label="Quitar la novedad de ' + esc(a.nombre) + '">×</button>' : '') + '</li>';
+    })).join('');
+    return '<li class="ml-caso"><div class="ml-caso-cab"><strong>' + esc(a.nombre) + '</strong>' +
+      (puedeEditar ? '<span class="ml-caso-btns"><button type="button" class="btn-cancel ml-btn" onclick="mallaFormCaso(' + idx + ',' + Number(a.id) + ',\'novedad\')">Novedad</button>' +
+        '<button type="button" class="btn-cancel ml-btn" onclick="mallaFormCaso(' + idx + ',' + Number(a.id) + ',\'horario\')">Horario especial</button></span>' : '') + '</div>' +
+      (chips ? '<ul class="ml-chips">' + chips + '</ul>' : '') + '<div class="ml-caso-form" id="ml-g' + idx + '-caso-' + Number(a.id) + '"></div></li>';
+  }).join('');
+  return '<details class="ml-casos"' + (d.ajustes && d.ajustes.length || d.novedades && d.novedades.length ? ' open' : '') + '><summary>Novedades y horarios especiales</summary><ul class="ml-casos-lista">' + filas + '</ul></details>';
+}
+function mallaFormCaso(idx, asesorId, tipo) {
+  document.querySelectorAll('.ml-caso-form').forEach(function (c) { c.innerHTML = ''; });
+  var c = _mlEl('ml-g' + idx + '-caso-' + asesorId);
+  if (!c) return;
+  var pre = 'ml-cf-' + idx + '-' + asesorId;
+  if (tipo === 'novedad') {
+    c.innerHTML = '<form class="ml-form-caso" onsubmit="mallaGuardarNovedad(event,' + asesorId + ')"><div class="ig"><label for="' + pre + '-dia">Día</label><select id="' + pre + '-dia"><option value="">Toda la semana</option>' +
+      MALLA_DIAS.map(function (d) { var f = mallaFechaDelDia(_ml.semana, d.n); return '<option value="' + f + '">' + d.largo + ' ' + f.slice(8, 10) + '/' + f.slice(5, 7) + '</option>'; }).join('') + '</select></div>' +
+      '<div class="ig ml-form-texto"><label for="' + pre + '-txt">Novedad</label><input type="text" id="' + pre + '-txt" maxlength="300" placeholder="Ej.: cita médica, entra a las 9:00 el jueves"></div>' +
+      '<div class="modal-btns"><button type="submit" class="btn-primary">Guardar novedad</button><button type="button" class="btn-cancel" onclick="this.closest(\'.ml-caso-form\').innerHTML=\'\'">Cancelar</button></div></form>';
+  } else {
+    c.innerHTML = '<form class="ml-form-caso" onsubmit="mallaGuardarAjuste(event,' + asesorId + ')"><fieldset class="ml-dias"><legend>Días</legend>' +
+      MALLA_DIAS.map(function (d) { var f = mallaFechaDelDia(_ml.semana, d.n); return '<label class="ml-asesora"><input type="checkbox" value="' + d.n + '"> ' + d.corto + ' ' + f.slice(8, 10) + '/' + f.slice(5, 7) + '</label>'; }).join('') + '</fieldset>' +
+      '<label class="ml-asesora"><input type="checkbox" id="' + pre + '-desc" onchange="mallaDescansoCaso(this)"> Descanso</label>' +
+      '<div class="ig"><label for="' + pre + '-e">Entrada</label><input type="time" id="' + pre + '-e" value="09:00"></div>' +
+      '<div class="ig"><label for="' + pre + '-s">Salida</label><input type="time" id="' + pre + '-s" value="18:00"></div>' +
+      '<div class="modal-btns"><button type="submit" class="btn-primary">Guardar horario especial</button><button type="button" class="btn-cancel" onclick="this.closest(\'.ml-caso-form\').innerHTML=\'\'">Cancelar</button></div></form>';
+  }
+  var primero = c.querySelector('select, input'); if (primero) primero.focus();
+}
+function mallaDescansoCaso(chk) {
+  chk.closest('form').querySelectorAll('input[type=time]').forEach(function (i) { i.disabled = chk.checked; });
+}
+async function mallaGuardarNovedad(ev, asesorId) {
+  ev.preventDefault();
+  _mlError(''); _mlNota('');
+  var f = ev.target, dia = f.querySelector('select').value, texto = f.querySelector('input[type=text]').value;
+  try {
+    await apiRequest('POST', '/malla/novedades', { campana: _ml.campana, semana: _ml.semana, asesorId: asesorId, fecha: dia || null, texto: texto });
+    showToast('Novedad guardada', 'ok');
+    await mallaCargar();
+  } catch (e) { _mlError(e.message || 'No se pudo guardar la novedad'); }
+}
+async function mallaGuardarAjuste(ev, asesorId) {
+  ev.preventDefault();
+  _mlError(''); _mlNota('');
+  var f = ev.target;
+  var dias = Array.prototype.map.call(f.querySelectorAll('.ml-dias input:checked'), function (x) { return Number(x.value); });
+  if (!dias.length) { _mlError('Elige uno o más días'); return; }
+  var desc = f.querySelector('input[id$="-desc"]').checked;
+  var b = { campana: _ml.campana, semana: _ml.semana, asesorId: asesorId, dias: dias, descanso: desc };
+  if (!desc) { b.entrada = f.querySelector('input[id$="-e"]').value; b.salida = f.querySelector('input[id$="-s"]').value; }
+  try {
+    await apiRequest('PUT', '/malla/ajustes', b);
+    showToast('Horario especial guardado', 'ok');
+    await mallaCargar();
+  } catch (e) { _mlError(e.message || 'No se pudo guardar el horario especial'); }
+}
+async function mallaQuitarAjuste(id) {
+  if (!window.confirm('¿Quitar este horario especial? Ese día vuelve al horario de su grupo.')) return;
+  try { await apiRequest('DELETE', '/malla/ajustes/' + id); showToast('Horario especial quitado', 'ok'); await mallaCargar(); }
+  catch (e) { _mlError(e.message || 'No se pudo quitar'); }
+}
+async function mallaQuitarNovedad(id) {
+  if (!window.confirm('¿Quitar esta novedad? La asesora deja de verla; queda en el historial de la semana.')) return;
+  try { await apiRequest('DELETE', '/malla/novedades/' + id); showToast('Novedad quitada', 'ok'); await mallaCargar(); }
+  catch (e) { _mlError(e.message || 'No se pudo quitar'); }
+}
+// Historial de «Novedades de la semana»: todas, también las quitadas (tachadas), con quién y cuándo.
+function mallaNovedadesSemanaHtml(lista) {
+  var h = '<h4 class="aurora-card-title" id="ml-novedades-tit">Novedades de la semana</h4>';
+  if (!lista || !lista.length) return h + '<p class="vis-vacio">Sin novedades esta semana.</p>';
+  return h + '<ul class="ml-hist-nov">' + lista.map(function (n) {
+    return '<li' + (n.quitada ? ' class="ml-nov-quitada"' : '') + '><strong>' + esc(n.asesorNombre || '') + '</strong> · ' + esc(_mlDiaTexto(n.fecha)) + ': ' +
+      (n.quitada ? '<s>' + esc(n.texto) + '</s>' : esc(n.texto)) +
+      '<span class="ml-nov-meta">' + esc(n.creadoPor || '') + ' · ' + esc(_mlFechaHora(n.createdAt)) + (n.quitada ? ' · quitada por ' + esc(n.quitada.por) + ' · ' + esc(_mlFechaHora(n.quitada.en)) : '') + '</span></li>';
+  }).join('') + '</ul>';
+}
+function _mlNovedadesSemana() {
+  var c = _mlEl('ml-novedades');
+  if (!c || !_ml.datos) return;
+  c.innerHTML = mallaNovedadesSemanaHtml(_ml.datos.novedades);
+  c.classList.remove('hidden');
+}
+// «Mi malla»: las novedades de la asesora en esa semana.
+function mallaMisNovedadesHtml(lista) {
+  if (!lista || !lista.length) return '';
+  return '<div class="ml-mis-nov"><h5 class="ml-mis-nov-tit">Novedades de la semana</h5><ul>' + lista.map(function (n) {
+    return '<li><strong>' + esc(_mlDiaTexto(n.fecha)) + ':</strong> ' + esc(n.texto) + '</li>';
+  }).join('') + '</ul></div>';
+}
+
 // ── Portal Asesor: «Mi malla» ──
 function mallaMiaHtml(r) {
   if (!r || !r.semanas || !r.semanas.length) return '<p class="vis-vacio">No tienes malla asignada.</p>';
   return r.semanas.map(function (s, i) {
     var titulo = (i === 0 ? 'Esta semana' : 'Semana siguiente') + ' · ' + mallaSemanaTexto(s.semana).replace(/^Semana /, '');
-    if (!s.turno) return '<section class="aurora-card"><div class="aurora-card-title">' + esc(titulo) + '</div><p class="vis-vacio">Todavía no tienes turno asignado.</p></section>';
+    var nov = mallaMisNovedadesHtml(s.novedades); // Fase 373
+    if (!s.turno) return '<section class="aurora-card"><div class="aurora-card-title">' + esc(titulo) + '</div><p class="vis-vacio">Todavía no tienes turno asignado.</p>' + nov + '</section>';
+    var esp = s.turno.especiales || [];
     var filas = MALLA_DIAS.map(function (d) {
       var t = s.turno.horario[d.n] || s.turno.horario[String(d.n)] || null;
       var f = mallaFechaDelDia(s.semana, d.n);
-      return '<tr data-fecha="' + esc(f) + '"' + (t ? '' : ' class="ml-descanso"') + '><th scope="row">' + d.largo + ' ' + esc(f.slice(8, 10) + '/' + f.slice(5, 7)) + '</th><td>' + esc(mallaTurnoTexto(t)) + '</td><td class="ml-punt-celda"></td></tr>'; // Fase 368: celda de puntualidad
+      var especial = esp.indexOf(d.n) !== -1 ? ' <span class="vis-pill vis-amarillo ml-especial">Horario especial</span>' : '';
+      return '<tr data-fecha="' + esc(f) + '"' + (t ? '' : ' class="ml-descanso"') + '><th scope="row">' + d.largo + ' ' + esc(f.slice(8, 10) + '/' + f.slice(5, 7)) + '</th><td>' + esc(mallaTurnoTexto(t)) + especial + '</td><td class="ml-punt-celda"></td></tr>'; // Fase 368: celda de puntualidad
     }).join('');
-    return '<section class="aurora-card"><div class="aurora-card-title">' + esc(titulo) + '</div><p class="ml-nota">Grupo: <strong>' + esc(s.turno.grupo) + '</strong></p>' +
-      '<div class="table-wrap"><table class="ml-tabla ml-tabla-mia"><thead><tr><th scope="col">Día</th><th scope="col">Horario</th><th scope="col"><span class="sr-only">Puntualidad</span></th></tr></thead><tbody>' + filas + '</tbody></table></div></section>';
+    return '<section class="aurora-card ml-mia ml-color-' + (s.turno.color || 1) + '"><div class="aurora-card-title">' + esc(titulo) + '</div><p class="ml-nota"><span class="ml-punto" aria-hidden="true"></span>Grupo: <strong>' + esc(s.turno.grupo) + '</strong></p>' +
+      '<div class="table-wrap"><table class="ml-tabla ml-tabla-mia"><thead><tr><th scope="col">Día</th><th scope="col">Horario</th><th scope="col"><span class="sr-only">Puntualidad</span></th></tr></thead><tbody>' + filas + '</tbody></table></div>' + nov + '</section>';
   }).join('');
 }
 async function mallaMiaRender() {
@@ -199,5 +315,5 @@ async function mallaMiaRender() {
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { mallaMiaHtml: mallaMiaHtml, mallaGrupoHtml: mallaGrupoHtml };
+  module.exports = { mallaMiaHtml: mallaMiaHtml, mallaGrupoHtml: mallaGrupoHtml, mallaCasosHtml: mallaCasosHtml, mallaNovedadesSemanaHtml: mallaNovedadesSemanaHtml, mallaMisNovedadesHtml: mallaMisNovedadesHtml };
 }

@@ -772,6 +772,7 @@ require('./sura-televentas').crearTablas(db);
 require('./activos').crearTablas(db);
 require('./activos-actas').crearTablas(db); // Fase 371 (E3): actas
 require('./activos-formularios').crearTablas(db); // Fase 372 (E4): textos del acta editables
+require('./malla-extra').crearTablas(db); // Fase 373: novedades y horario especial en la malla
 {
   const vencidas = require('./cargas-versiones').purgar(db);
   if (vencidas && !config.isTest) console.log('[db] cargas_versiones: ' + vencidas + ' version(es) vencida(s) borrada(s).');
