@@ -5403,6 +5403,18 @@ runOnceMigration('fase376_inventario_listas_v1', () => {
   }
 });
 
+// Fase 377 (Inventario I2, diseño de Edwin): campos nuevos en los tipos ya guardados (velocidad,
+// tipo de disco del portátil, precio y renta mensual) y los propietarios del diseño. Solo agrega lo
+// que falta: nunca quita un campo ni un valor, ni toca lo que Sistemas ocultó o renombró.
+runOnceMigration('fase377_inventario_campos_v1', () => {
+  require('./activos').agregarCamposI2(db);
+  const clave = (s) => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, '');
+  const hay = db.prepare("SELECT valor FROM activos_listas WHERE lista = 'proveedores'").all().map((r) => clave(r.valor));
+  let orden = db.prepare("SELECT COALESCE(MAX(orden), -1) n FROM activos_listas WHERE lista = 'proveedores'").get().n + 1;
+  const ins = db.prepare("INSERT OR IGNORE INTO activos_listas (lista, valor, orden) VALUES ('proveedores', ?, ?)");
+  for (const v of ['InConexión', 'Alcom']) if (!hay.includes(clave(v))) ins.run(v, orden++);
+});
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {

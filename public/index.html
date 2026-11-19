@@ -2071,7 +2071,15 @@
           <div class="ig" id="ac-f-estado-ig"><label for="ac-f-estado">Estado</label><select id="ac-f-estado" onchange="activosBuscar()"></select></div>
           <div class="ig"><label for="ac-f-sede">Sede</label><select id="ac-f-sede" onchange="activosBuscar()"></select></div>
           <div class="ig"><label for="ac-f-operacion">Operación</label><select id="ac-f-operacion" onchange="activosBuscar()"></select></div>
+          <div class="ig"><label for="ac-f-proveedor">Propietario / proveedor</label><select id="ac-f-proveedor" onchange="activosBuscar()"></select></div>
+          <div class="ig" id="ac-f-rend-ig"><label for="ac-f-rend">Rendimiento (RAM)</label><select id="ac-f-rend" onchange="activosBuscar()"></select></div>
           <div class="ig"><label for="ac-f-q">Buscar</label><input type="search" id="ac-f-q" maxlength="60" placeholder="Código, marca, modelo, serial…" onchange="activosBuscar()"></div>
+        </div>
+        <div class="ac-chips">
+          <label class="ac-chip"><input type="checkbox" id="ac-f-pend" onchange="activosBuscar()"> Con datos pendientes</label>
+          <label class="ac-chip"><input type="checkbox" id="ac-f-dup" onchange="activosBuscar()"> Seriales repetidos</label>
+          <button type="button" class="btn-cancel ac-btn" onclick="activosLimpiarFiltros()">Limpiar filtros</button>
+          <span id="ac-conteo" class="vis-ayuda"></span>
         </div>
         <div id="ac-lista" aria-live="polite"></div>
       </div>
@@ -2106,7 +2114,7 @@
           <div class="ig"><label for="ac-r-serial">Serial</label><input type="text" id="ac-r-serial" maxlength="80"></div>
           <div class="ig"><label for="ac-r-sede">Sede</label><select id="ac-r-sede"></select></div>
           <div class="ig"><label for="ac-r-operacion">Operación</label><select id="ac-r-operacion"></select></div>
-          <div class="ig"><label for="ac-r-proveedor">Proveedor</label><select id="ac-r-proveedor"></select></div>
+          <div class="ig"><label for="ac-r-proveedor">Propietario / proveedor</label><select id="ac-r-proveedor"></select></div>
         </div>
         <div class="ac-filtros" id="ac-r-campos"></div>
         <div class="ig"><label for="ac-r-obs">Observaciones</label><textarea id="ac-r-obs" rows="2" maxlength="500"></textarea></div>
