@@ -7,6 +7,13 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.232.2 — Noviembre 2026
+
+**Réplica de MOBILIZE con la API: ya entran las llamadas de salida.**
+
+- Wolkvox manda las llamadas de salida sin skill, y la plataforma las descartaba. Ahora entran como «Llamadas de
+  salida», igual que cuando se sube el archivo a mano. Solo en la réplica de prueba; el MOBILIZE real no cambia.
+
 ## v1.232.1 — Noviembre 2026
 
 **Réplica de MOBILIZE con la API: por qué no entran las llamadas de salida.**
