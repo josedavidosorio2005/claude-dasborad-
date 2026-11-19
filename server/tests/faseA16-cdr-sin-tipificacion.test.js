@@ -9,7 +9,7 @@ const T = require('../../public/js/tipificacion-logic.js');
 
 const fila = (extra) => ({ agent_name: 'ASESORA INVENTADA', description_cod_act: 'VENTA INVENTADA', skill_name: 'SKILL INVENTADA', skill_id: '7', telephone: '3000000016', type_interaction: 'inbound', date: '2026-11-04 10:11:12', time_min: 1, time_seg: 60, cod_act: '1', hang_up: 'agent', ...extra });
 
-test('entrada sin tipificación → se carga como «-» (Sin tipificación)', () => {
+test('entrada sin tipificación → se carga (desde A22 como «Otros_motivos», igual que el real)', () => {
   const p = T.tipificacionParseFilas(M.hojaCdr([
     fila(),
     fila({ description_cod_act: '', telephone: '3000000017', date: '2026-11-04 11:00:00' }),
@@ -17,8 +17,7 @@ test('entrada sin tipificación → se carga como «-» (Sin tipificación)', ()
   ]), null, 'LLAMADAS', M.opcionesCdrMobilize());
   assert.equal(p.error, undefined, JSON.stringify(p.avisos));
   assert.equal(p.filas.length, 3);
-  assert.deepEqual(p.filas.map((f) => f.tipificacion), ['VENTA INVENTADA', '-', '-']);
-  assert.equal(T.tipificacionEtiqueta('-'), 'Sin tipificación');
+  assert.deepEqual(p.filas.map((f) => f.tipificacion), ['VENTA INVENTADA', 'Otros_motivos', 'Otros_motivos']);
 });
 
 test('una tipificación que sí viene no se toca', () => {

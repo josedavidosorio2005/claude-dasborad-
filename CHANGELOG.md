@@ -7,6 +7,14 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.235.1 — Noviembre 2026
+
+**Réplica de MOBILIZE con la API: Tipificación igual al MOBILIZE real.**
+
+- Las llamadas que Wolkvox manda sin tipificación o como «TIMEOUTACW» ahora cuentan como «Otros_motivos», igual
+  que en el MOBILIZE real. La Eficacia y las llamadas únicas no cambian.
+- Un mes sin llamadas abandonadas ya no sale como error en la réplica: queda en 0.
+
 ## v1.235.0 — Noviembre 2026
 
 **Réplica de MOBILIZE con la API: se pueden traer meses anteriores.**

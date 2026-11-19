@@ -31,6 +31,9 @@ function _v(fila, clave) {
 }
 
 // Una consulta de un tramo (dentro de un mes). Devuelve la lista `data` o lanza WolkvoxError.
+// Fase A22 (19/11, OK del usuario): skill_2 responde 404 en un mes SIN abandonadas (septiembre: 0 en el
+// Flujo) con un mensaje que SIN_REGISTROS no reconoce. Para skill_2, todo 404 = «sin registros».
+const _404_ES_VACIO = ['skill_2'];
 async function _pedir(opts, api, desde, hasta) {
   let cuerpo;
   try {
@@ -39,7 +42,7 @@ async function _pedir(opts, api, desde, hasta) {
       dateIni: wv.fechaWolkvox(desde, '00:00:00'), dateEnd: wv.fechaWolkvox(hasta, '23:59:59'),
     })).cuerpo;
   } catch (e) {
-    if (e instanceof wv.WolkvoxError && e.httpStatus === 404 && _auto().SIN_REGISTROS.test(e.wolkvoxMsg || '')) return { data: [], cuerpo: { data: [] } };
+    if (e instanceof wv.WolkvoxError && e.httpStatus === 404 && (_404_ES_VACIO.includes(api) || _auto().SIN_REGISTROS.test(e.wolkvoxMsg || ''))) return { data: [], cuerpo: { data: [] } };
     throw e;
   }
   let data = cuerpo && cuerpo.data;
@@ -161,6 +164,11 @@ const _SALIDA = ['outbound_ma', 'out_pre'];
 // Fase A16 (19/11): una llamada puede llegar SIN tipificación (corrida del 19/11: 1 de 93, entrada del 04/11
 // que el manual trae como «Otros_motivos»). El lector la omitía y faltaba en Eficacia y únicas. Se completa
 // con «-», el marcador del export manual que la plataforma muestra como «Sin tipificación».
+// Fase A22 (19/11, OK del usuario): comparación jul–oct con el MOBILIZE real: el real cuenta como
+// «Otros_motivos» lo que la API trae SIN tipificación y lo que trae como TIMEOUTACW (el asesor no tipificó
+// a tiempo). Se agrupan igual (antes, A16, «-»). Eficacia y únicas no cambian (no es un código positivo).
+const TIPIFICACION_OTROS = 'Otros_motivos';
+const _COMO_OTROS = ['timeoutacw'];
 const _vacio = (v) => v === undefined || v === null || String(v).trim() === '';
 function hojaCdr(data) {
   return [CDR_COLUMNAS.map((c) => c[1])].concat(data.map((r) => {
@@ -168,7 +176,7 @@ function hojaCdr(data) {
     return CDR_COLUMNAS.map(([api]) => {
       const v = _v(r || {}, api);
       if (salida && (api === 'skill_name' || api === 'skill_id') && _vacio(v)) return '-';
-      if (api === 'description_cod_act' && _vacio(v)) return '-';
+      if (api === 'description_cod_act' && (_vacio(v) || _COMO_OTROS.includes(String(v).trim().toLowerCase()))) return TIPIFICACION_OTROS;
       return v === undefined || v === null ? '' : v;
     });
   }));

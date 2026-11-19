@@ -674,3 +674,7 @@ Réplica vs MOBILIZE real, 01–12/11: Flujo, Flujo por hora, Tipificación y En
 - **Octubre:** 1 llamada de salida de más en la réplica (91 vs 90 conectadas; total 205 vs 204). Por revisar por día.
 - **Septiembre, abandonadas:** `skill_2` respondió **HTTP 404** (el mensaje no quedó en el detalle); septiembre tiene 0 abandonadas en el Flujo, así que es casi seguro el «sin registros» de `skill_2` con un texto que `SIN_REGISTROS` no reconoce. El mes no cambió (réplica 0 = real 0). Propuesta: guardar el `msg` del 404 en el detalle y reconocer ese texto.
 
+### 10.18 Arreglos tras la comparación jul–oct (19/11/2026, Fase A22)
+
+- **Arreglos (OK del usuario, v1.235.1):** (1) `hojaCdr`: tipificación vacía y `TIMEOUTACW` → «Otros_motivos» (antes «-», A16). (2) `_pedir`: todo 404 de `skill_2` = sin registros (mes sin abandonadas, sin error); en los demás reportes, solo si el mensaje dice «sin registros».
+- **Octubre, 1 salida de más (91 vs 90):** solo lectura, día por día: **26/10**, réplica 5/3/2 contra real 4/2/2. Es una llamada de salida **sin tipificación** de un asesor que no aparece en la salida del real (en la réplica, 1 conectada; en el real, 0). El export manual de ese día no la trae; la API sí. Sin cambio de código: hay que preguntarle a Edwin si es una llamada de prueba. Aparte: un asesor sale con otro nombre en la réplica (35 conectadas en los dos lados, nombre distinto) porque los alias de MOBILIZE no se aplican a la réplica; no cambia ningún total.

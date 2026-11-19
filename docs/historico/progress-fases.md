@@ -21542,3 +21542,10 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
 - **Septiembre, abandonadas:** `skill_2` respondió **HTTP 404** (el mensaje no quedó en el detalle); septiembre tiene 0 abandonadas en el Flujo, así que es casi seguro el «sin registros» de `skill_2` con un texto que `SIN_REGISTROS` no reconoce. El mes no cambió (réplica 0 = real 0). Propuesta: guardar el `msg` del 404 en el detalle y reconocer ese texto.
 - **SURA (solo lectura):** el cálculo de `server/puntualidad.js` es el que confirmó Edwin: primer ingreso del día de «Horarios» (archivo HistAgent) contra la entrada del turno de Malla (o el horario especial del día), tolerancia cero. En producción: Horarios de noviembre cargados hasta el 17/11; 25 agentes vistos (19 enlazados, 4 con sugerencia por nombre exacto, que el cálculo enlaza solo); 23 asesoras SURA activas; **ninguna semana de noviembre tiene malla todavía** (por eso la puntualidad da 0). «Fecha de venta» = «Fecha evento» (confirmado por Edwin).
 
+## Fase A22 — réplica: Tipificación como el real y 404 de skill_2 (v1.235.1, 2026-11-19)
+
+- **Pedido (usuario, 19/11):** los 3 arreglos de la Fase A21.
+- **Arreglos (OK del usuario, v1.235.1):** (1) `hojaCdr`: tipificación vacía y `TIMEOUTACW` → «Otros_motivos» (antes «-», A16). (2) `_pedir`: todo 404 de `skill_2` = sin registros (mes sin abandonadas, sin error); en los demás reportes, solo si el mensaje dice «sin registros».
+- **Octubre, 1 salida de más (91 vs 90):** solo lectura, día por día: **26/10**, réplica 5/3/2 contra real 4/2/2. Es una llamada de salida **sin tipificación** de un asesor que no aparece en la salida del real (en la réplica, 1 conectada; en el real, 0). El export manual de ese día no la trae; la API sí. Sin cambio de código: hay que preguntarle a Edwin si es una llamada de prueba. Aparte: un asesor sale con otro nombre en la réplica (35 conectadas en los dos lados, nombre distinto) porque los alias de MOBILIZE no se aplican a la réplica; no cambia ningún total.
+- **Pruebas:** `faseA22-tipificacion-otros-404` (3); `faseA16` ajustada (ahora «Otros_motivos»). Suite local 3368/3369 (1 saltada a propósito); `npm audit` limpio.
+
