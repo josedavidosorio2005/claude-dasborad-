@@ -7,6 +7,17 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.230.0 — Noviembre 2026
+
+**Inventario, como lo diseñó Edwin (parte 4 de 6): actas automáticas.**
+
+- Cada movimiento crea su acta solo: entrega, devolución, cambio de elemento, envío a reparación (con el técnico),
+  recibo de reparación, elemento malo y baja. Al hacerlo, la plataforma avisa el número del acta.
+- Nueva sección **«Actas»** en el menú: cuántas faltan por firmar, cuáles están **atrasadas** (3 o más días hábiles sin
+  firmar), firmadas y anuladas; filtros por estado, tipo y búsqueda; imprimir, subir la firmada y **anular** (un acta
+  nunca se borra: queda marcada como anulada, con el motivo).
+- Cada tipo de acta tiene su texto (editable en Ajustes) y sus firmas.
+
 ## v1.229.0 — Noviembre 2026
 
 **Inventario, como lo diseñó Edwin (parte 3 de 6): todo desde el elemento.**

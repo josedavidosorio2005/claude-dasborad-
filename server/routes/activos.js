@@ -62,7 +62,9 @@ router.put('/activos/config/textos/:clave', requireActor, wrap((req, res) => {
 }));
 router.get('/activos/resumen', requireActor, wrap((req, res) => {
   if (!permitido(req, res)) return;
-  res.json(A.resumen(db, req.query.ambito));
+  const r = A.resumen(db, req.query.ambito);
+  if (A.ambitoDe(req.query.ambito) === 'sistemas') r.actasPorFirmar = ACT.resumen(db).pendientes; // Fase 379: conteo del menú
+  res.json(r);
 }));
 router.get('/activos', requireActor, wrap((req, res) => {
   if (!permitido(req, res)) return;
@@ -98,10 +100,18 @@ router.post('/activos/:id/estado', requireActor, wrap((req, res) => {
   const a = idValido(req.params.id) ? A.obtener(db, Number(req.params.id)) : null;
   if (!a) return res.status(404).json({ error: 'Elemento no encontrado' });
   const b = req.body || {};
-  const r = A.cambiarEstado(db, a, b.estado, b.motivo, actorLabel(req.actor), b.tecnico); // Fase 378: + técnico; también si está asignado
+  let r; const actas = [];
+  db.transaction(() => {
+    r = A.cambiarEstado(db, a, b.estado, b.motivo, actorLabel(req.actor), b.tecnico); // Fase 378: + técnico; también si está asignado
+    if (r.error) return;
+    // Fase 379 (I4): acta automática del cambio (reparación, malo, baja, recibo de reparación o devolución).
+    const tipo = ACT.tipoPorEstado(a.estado, r.activo.estado);
+    if (tipo && ACT.llevaActa(db, a)) actas.push(ACT.auto(db, { tipo, agente: a.agente ? A.agente(db, a.agente.id) : null, items: [{ a, dir: a.agente ? 'devuelve' : '', queda: r.activo.estado }],
+      motivo: b.motivo, tecnico: r.activo.estado === 'en_reparacion' ? b.tecnico : '', quien: actorLabel(req.actor) }));
+  })();
   if (r.error) return res.status(400).json({ error: r.error });
   log('ACTIVO_ESTADO', r.activo, req, a.estado + ' → ' + r.activo.estado);
-  res.json(r);
+  res.json(Object.assign(r, { actas }));
 }));
 router.get('/activos/:id/historial', requireActor, wrap((req, res) => {
   if (!permitido(req, res)) return;
@@ -169,51 +179,65 @@ router.post('/activos/:id/asignar', requireActor, wrap((req, res) => {
   const a = activoPorId(req, res); if (!a) return;
   // Fase 378 (I3): también a un agente nuevo (nombre y cédula) desde el detalle del elemento; si la
   // asignación falla, el agente nuevo no queda creado.
-  let r, g;
+  let r, g; const actas = [];
   try {
     db.transaction(() => {
       g = A.agenteParaAsignar(db, req.body || {});
       if (g.error) throw Object.assign(new Error(g.error), { esperado: true });
       r = A.asignar(db, a, g.agenteId, actorLabel(req.actor));
       if (r.error) throw Object.assign(new Error(r.error), { esperado: true });
+      if (ACT.llevaActa(db, a)) actas.push(ACT.auto(db, { tipo: 'entrega', agente: r.agente, items: [{ a: r.activo, dir: 'recibe' }], quien: actorLabel(req.actor) })); // Fase 379
     })();
   } catch (e) { if (e.esperado) return res.status(e.message.startsWith('Ya hay') ? 409 : 400).json({ error: e.message }); throw e; }
   log('ACTIVO_ASIGNACION', r.activo, req, 'a agente #' + r.agente.id + (g.creado ? ' (nuevo)' : ''));
-  res.json({ activo: r.activo, agente: r.agente, agenteCreado: !!g.creado });
+  res.json({ activo: r.activo, agente: r.agente, agenteCreado: !!g.creado, actas });
 }));
 router.post('/activos/:id/reasignar', requireActor, wrap((req, res) => { // Fase 378 (I3)
   if (!permitido(req, res)) return;
   const a = activoPorId(req, res); if (!a) return;
   const b = req.body || {};
-  let r, g;
+  let r, g; const actas = [];
   try {
     db.transaction(() => {
       g = A.agenteParaAsignar(db, b);
       if (g.error) throw Object.assign(new Error(g.error), { esperado: true });
       r = A.reasignar(db, a, g.agenteId, b.motivo, actorLabel(req.actor));
       if (r.error) throw Object.assign(new Error(r.error), { esperado: true });
+      if (ACT.llevaActa(db, a)) { // Fase 379: devolución del anterior y entrega al nuevo
+        actas.push(ACT.auto(db, { tipo: 'devolucion', agente: A.agente(db, a.agente.id), items: [{ a, dir: 'devuelve' }], motivo: 'Reasignado: ' + b.motivo, quien: actorLabel(req.actor) }));
+        actas.push(ACT.auto(db, { tipo: 'entrega', agente: r.agente, items: [{ a: r.activo, dir: 'recibe' }], motivo: b.motivo, quien: actorLabel(req.actor) }));
+      }
     })();
   } catch (e) { if (e.esperado) return res.status(400).json({ error: e.message }); throw e; }
   log('ACTIVO_REASIGNACION', r.activo, req, 'a agente #' + r.agente.id + (g.creado ? ' (nuevo)' : ''));
-  res.json({ activo: r.activo, agente: r.agente, agenteCreado: !!g.creado });
+  res.json({ activo: r.activo, agente: r.agente, agenteCreado: !!g.creado, actas });
 }));
 router.post('/activos/:id/devolver', requireActor, wrap((req, res) => {
   if (!permitido(req, res)) return;
   const a = activoPorId(req, res); if (!a) return;
   const b = req.body || {};
-  const r = A.devolver(db, a, b.estado, b.motivo, actorLabel(req.actor));
+  let r; const actas = [];
+  db.transaction(() => {
+    r = A.devolver(db, a, b.estado, b.motivo, actorLabel(req.actor));
+    if (!r.error && ACT.llevaActa(db, a)) actas.push(ACT.auto(db, { tipo: 'devolucion', agente: A.agente(db, a.agente.id), items: [{ a, dir: 'devuelve', queda: r.activo.estado }], motivo: b.motivo, quien: actorLabel(req.actor) })); // Fase 379
+  })();
   if (r.error) return res.status(400).json({ error: r.error });
   log('ACTIVO_DEVOLUCION', r.activo, req, 'queda ' + r.activo.estado);
-  res.json(r);
+  res.json(Object.assign(r, { actas }));
 }));
 router.post('/activos/:id/cambiar', requireActor, wrap((req, res) => {
   if (!permitido(req, res)) return;
   const a = activoPorId(req, res); if (!a) return;
   const b = req.body || {};
-  const r = A.cambiarElemento(db, a, b.nuevoId, b.estado, b.motivo, actorLabel(req.actor));
+  let r; const actas = [];
+  db.transaction(() => {
+    r = A.cambiarElemento(db, a, b.nuevoId, b.estado, b.motivo, actorLabel(req.actor));
+    if (!r.error && ACT.llevaActa(db, a)) actas.push(ACT.auto(db, { tipo: 'cambio', agente: A.agente(db, a.agente.id), // Fase 379
+      items: [{ a, dir: 'devuelve', queda: r.anterior.estado }, { a: r.activo, dir: 'recibe' }], motivo: b.motivo, quien: actorLabel(req.actor) }));
+  })();
   if (r.error) return res.status(400).json({ error: r.error });
   log('ACTIVO_CAMBIO', r.anterior, req, 'por ' + r.activo.codigo + '; queda ' + r.anterior.estado);
-  res.json(r);
+  res.json(Object.assign(r, { actas }));
 }));
 
 // ── Fase 371 (E3): actas de entrega y devolución; la firmada va a S3 privado (apagado sin ACTAS_S3_BUCKET).
@@ -233,6 +257,21 @@ router.post('/activos/agentes/:id/actas', requireActor, wrap((req, res) => {
   logAg('ACTIVO_ACTA', g, req, 'acta ' + r.acta.numero + ' (' + r.acta.tipo + ', ' + r.acta.elementos.length + ' elemento(s))');
   res.status(201).json(r);
 }));
+// Fase 379 (I4): todas las actas con filtros y su resumen; anular (nunca borrar).
+router.get('/activos/actas', requireActor, wrap((req, res) => {
+  if (!permitido(req, res)) return;
+  const q = {};
+  for (const k of ['estado', 'tipo', 'q']) if (typeof req.query[k] === 'string' && req.query[k].trim()) q[k] = req.query[k].trim();
+  res.json({ actas: ACT.listar(db, q), resumen: ACT.resumen(db), tipos: ACT.TIPOS_TODOS, diasAtraso: ACT.DIAS_ATRASO, firmadasActivas: !!ACT.bucket() });
+}));
+router.post('/activos/actas/:id/anular', requireActor, wrap((req, res) => {
+  if (!permitido(req, res)) return;
+  const a = actaPorId(req, res); if (!a) return;
+  const r = ACT.anular(db, a, (req.body || {}).motivo, actorLabel(req.actor));
+  if (r.error) return res.status(400).json({ error: r.error });
+  logEvent('ACTIVO_ACTA_ANULADA', { nombre: 'acta ' + a.numero, user: '-', rol: 'activos' }, actorLabel(req.actor), a.tipo);
+  res.json(r);
+}));
 function actaPorId(req, res) {
   const a = idValido(req.params.id) ? ACT.obtener(db, Number(req.params.id)) : null;
   if (!a) res.status(404).json({ error: 'Acta no encontrada' });
@@ -246,6 +285,7 @@ router.get('/activos/actas/:id', requireActor, wrap((req, res) => {
 router.post('/activos/actas/:id/firmada', requireActor, wrap(async (req, res) => {
   if (!permitido(req, res)) return;
   const a = actaPorId(req, res); if (!a) return;
+  if (a.anulada) return res.status(400).json({ error: 'El acta está anulada' }); // Fase 379
   if (!ACT.bucket()) return res.status(503).json({ error: 'Falta configurar dónde se guardan las actas firmadas (S3). Pídeselo al administrador.' });
   const p = ACT.leerPdf((req.body || {}).pdf);
   if (p.error) return res.status(400).json({ error: p.error });

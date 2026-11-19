@@ -107,7 +107,7 @@ test('interfaz: el acta para imprimir escapa los textos y lleva las firmas', () 
       agente: { nombre: '<b>Agente</b>', documento: '123', sede: '', operacion: '' }, elementos: [{ tipo: 'Diadema', codigo: 'D-1', marca: '', modelo: '', serial: '' }] });
     assert.ok(html.includes('&lt;b&gt;Agente&lt;/b&gt;') && !html.includes('<b>Agente'));
     assert.match(html, /Acta de entrega N\.º 7/);
-    assert.match(html, /Firma de quien recibe/);
+    assert.match(html, /Recibe \(agente\)/); // Fase 379: firmas por tipo de acta
     assert.ok(!/<script/i.test(html), 'sin scripts en la ventana de impresión');
   } finally { delete global.esc; }
 });
