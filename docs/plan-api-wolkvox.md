@@ -654,3 +654,23 @@ Réplica vs MOBILIZE real, 01–12/11: Flujo, Flujo por hora, Tipificación y En
 - **Cambio (v1.235.0):** «Ejecutar ahora» acepta `mes` (AAAA-MM, un mes ya cerrado, hasta 12 atrás → el mes completo) y `modulo: 'todos'` (exige `mes`): el Flujo (`skill_1`, un día por consulta) y después cada módulo encendido en el orden de `MODULOS` (flujo_hora completa el AHT del Flujo, por eso va después); lo apagado se salta; la primera falla detiene el resto. Misma espera de 10 minutos entre corridas, mismo candado, tope, respaldo y validación de mes. Historial con la etiqueta «Ejecutar ahora (mes AAAA-MM)».
 - **Costo por mes:** Flujo = días del mes (jul 31, ago 31, sep 30, oct 31) + 1 por módulo (flujo_hora, cdr, encuesta, no_conectadas, abandonadas = 5). Total 4 meses: **123 + 20 = 143 consultas** (tope 2.800/día). Con «todos»: 4 corridas × 10 min ≈ 35–40 minutos.
 
+### 10.17 Julio–octubre en la réplica: corridas y comparación (19/11/2026, Fase A21)
+
+- **Autorizado por el usuario (19/11):** «Ejecutar ahora» `modulo: 'todos'` para 2026-07, 08, 09 y 10, mes por mes, solo la réplica, con respaldo (Brave con la sesión de administrador del usuario). Consultas: julio 36, agosto 36, septiembre 35, octubre 36 = **143**; uso del día 213 de 2.800. Julio, agosto y octubre: ok. Septiembre: parcial (todo bien salvo `abandonadas`, ver abajo).
+- **Comparación SOLO LECTURA con el MOBILIZE real (totales por pestaña y mes; «=» = igual):**
+
+| Pestaña (réplica / real) | Julio | Agosto | Septiembre | Octubre |
+|---|---|---|---|---|
+| Flujo ingresadas/contestadas/abandonadas | 26/18/8 / sin datos | 67/64/3 = | 104/104/0 = | 131/129/2 = |
+| Flujo por hora | 26/18/8 / sin datos | 67/64/3 = | 104/104/0 = | 131/129/2 = |
+| Tipificación (llamadas, total) | — / sin datos | 81 = 81 | 170 = 170 | **205 / 204** |
+| Eficacia (positivas de contestadas) | 0 de 5 / sin datos | 24 de 53 = | 55 de 103 = | 51 de 114 = |
+| Llamadas únicas (contestadas + abandonadas) | 2+4 / sin datos | 48+2 = | 87+0 = | 83+2 = |
+| Salida total/conectadas/no conectadas | 5/2/3 / sin datos | 81/28/53 = | 157/67/90 = | **167/91/76 / 166/90/76** |
+| Encuesta (total) | 2 / sin datos | 21 = | 45 = | 113 = |
+
+- **Julio:** el MOBILIZE real no tiene julio (nada que comparar).
+- **Tipificación por tipo** (los totales cuadran): lo que la API trae sin tipificación (`-`, «Sin tipificación», Fase A16) y `TIMEOUTACW` en el real aparecen como **Otros_motivos**: ago 34+2 = 36; sep 22+5+1 = 28; oct 37+4 (+1) ≈ 42. Las demás diferencias son solo del agrupado «Otras (N tipificaciones)» del top 10. Propuesta (espera OK): en `hojaCdr`, tipificación vacía y `TIMEOUTACW` → «Otros_motivos» (cambia lo decidido en A16; Eficacia y únicas no cambian).
+- **Octubre:** 1 llamada de salida de más en la réplica (91 vs 90 conectadas; total 205 vs 204). Por revisar por día.
+- **Septiembre, abandonadas:** `skill_2` respondió **HTTP 404** (el mensaje no quedó en el detalle); septiembre tiene 0 abandonadas en el Flujo, así que es casi seguro el «sin registros» de `skill_2` con un texto que `SIN_REGISTROS` no reconoce. El mes no cambió (réplica 0 = real 0). Propuesta: guardar el `msg` del 404 en el detalle y reconocer ese texto.
+
