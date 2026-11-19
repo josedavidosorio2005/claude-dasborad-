@@ -21466,3 +21466,9 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
 - **Lectura:** `cdr_1` SÍ trae la salida; las 47 filas `outbound_ma` se pierden en el lector (`tipificacionParseFilas`), no en la consulta. Como ninguna trae skill «-» (el manual la marca así), la hipótesis es que llegan con el skill vacío y el lector las omite como «falta un dato» (o con otra forma de fecha).
 - **Cambio:** `server/wolkvox-modulos.js` `formaCdr`: la línea del módulo cdr agrega, para inbound y salida, cuántas filas llegan sin skill y la forma de la fecha (dígitos → 9, letras → a; nunca el valor). Sin consultas extra: lo trae la próxima corrida programada.
 - **Pruebas:** `faseA13-cdr-salida-diagnostico` (2); `faseA12` y `faseA8` ajustadas.
+
+## Fase A14 — réplica: la salida de cdr_1 entra (v1.232.2, 2026-11-19)
+
+- **Corrida autorizada (usuario, 19/11, 12:35, «Ejecutar ahora», solo `cdr`, 1 consulta, réplica), ya con el diagnóstico A13:** API 93 filas: outbound_ma 47, inbound 46; **outbound_ma: sin skill 47**, fecha con la misma forma que inbound. Causa confirmada: el lector omitía toda la salida por «falta un dato» (skill vacío); el export manual trae «-».
+- **Cambio:** `server/wolkvox-modulos.js` `hojaCdr`: en filas de salida (`outbound_ma`/`out_pre`) con SKILL_NAME o SKILL_ID vacío pone «-», que el lector ya convierte en «LLAMADAS DE SALIDA» (Fases 168/194). Las de entrada sin skill se siguen omitiendo. Solo la réplica usa este camino.
+- **Pruebas:** `faseA14-cdr-salida-sin-skill` (2).
