@@ -467,5 +467,79 @@ function agenteParaAsignar(db, b) {
   return c.error ? c : { agenteId: c.agente.id, creado: true };
 }
 
-module.exports = { ADMIN_SUBTIPOS_I5, ADMIN_CODIGO_BASE, agregarCamposI5, siguienteCodigoAdmin, ipRepetida, reasignar, agenteParaAsignar, CAMPOS_I2, agregarCamposI2, RENDIMIENTOS, rendimientoDe, AMBITOS, TIPOS_INMUEBLES, ambitoDe, ESTADOS_AL_SOLTAR, validarAgente, agentes, agente, crearAgente, editarAgente, agenteDetalle, asignar, devolver, cambiarElemento,
+// ── Fase 381 (I6, diseño de Edwin): historial general e importación ──
+// Historial de todos los elementos del inventario abierto, con filtros (desde/hasta AAAA-MM-DD, acción, texto).
+function historialGeneral(db, q) {
+  const where = ['a.tipo IN (SELECT codigo FROM activos_tipos WHERE ambito = ?)'], p = [ambitoDe(q.ambito)];
+  if (q.desde && /^\d{4}-\d{2}-\d{2}$/.test(q.desde)) { where.push('h.fecha >= ?'); p.push(q.desde); }
+  if (q.hasta && /^\d{4}-\d{2}-\d{2}$/.test(q.hasta)) { where.push('h.fecha < ?'); p.push(q.hasta + 'T99'); }
+  if (q.accion) { where.push('h.accion = ?'); p.push(String(q.accion).slice(0, 60)); }
+  if (q.q) { const t = '%' + String(q.q).slice(0, 60).replace(/[%_]/g, '') + '%'; where.push('(a.codigo LIKE ? OR h.motivo LIKE ? OR h.quien LIKE ?)'); p.push(t, t, t); }
+  const filas = db.prepare('SELECT h.id, h.fecha, h.accion, h.estadoAntes, h.estadoDespues, h.motivo, h.quien, a.id AS activoId, a.tipo, a.codigo FROM activos_historial h JOIN activos a ON a.id = h.activoId WHERE ' +
+    where.join(' AND ') + ' ORDER BY h.ts DESC, h.id DESC LIMIT 2000').all(...p);
+  const acciones = db.prepare('SELECT DISTINCT accion FROM activos_historial ORDER BY accion').all().map((r) => r.accion);
+  return { historial: filas, acciones };
+}
+// Encabezado del Excel → campo. Acepta las columnas fijas y las etiquetas o claves de los campos del tipo.
+const _norm = (s) => String(s == null ? '' : s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+const COLUMNAS_FIJAS = { codigo: ['codigo', 'código', 'etiqueta'], marca: ['marca'], modelo: ['modelo'], serial: ['serial', 'serie'], sede: ['sede'], operacion: ['operacion', 'operación', 'departamento operacion', 'departamento / operación'],
+  proveedor: ['propietario', 'proveedor', 'propietario proveedor', 'propietario / proveedor', 'propiedad'], observaciones: ['observaciones', 'observacion', 'adicionales'], estado: ['estado'] };
+function mapaColumnas(t, encabezados) {
+  const m = {};
+  const alias = Object.entries(COLUMNAS_FIJAS).flatMap(([k, l]) => l.map((x) => [_norm(x), { k }]));
+  for (const c of t.campos) if (!c.oculto) { alias.push([_norm(c.l), { k: c.k, dato: true }]); alias.push([_norm(c.k), { k: c.k, dato: true }]); }
+  const a = new Map(alias);
+  encabezados.forEach((h, i) => { const x = a.get(_norm(h)); if (x && !Object.values(m).some((y) => y.k === x.k)) m[i] = x; });
+  return m;
+}
+const ESTADO_TEXTO = { libre: 'libre', disponible: 'libre', 'en reparacion': 'en_reparacion', reparacion: 'en_reparacion', malo: 'malo', 'fuera de servicio': 'malo' };
+// filas = matriz (primera fila = encabezados). Sin confirmar: solo revisa. Confirmar: crea los válidos en una transacción.
+function importar(db, tipoCodigo, filas, confirmar, quien) {
+  const t = tipo(db, tipoCodigo);
+  if (!t) return { error: 'Elige el tipo de elemento' };
+  if (!Array.isArray(filas) || filas.length < 2 || filas.length > 2001 || !filas.every(Array.isArray)) return { error: 'El archivo debe traer encabezados y entre 1 y 2.000 filas' };
+  const m = mapaColumnas(t, filas[0]);
+  if (!Object.values(m).some((x) => x.k === 'codigo') && t.codigo !== 'ADMINISTRABLE') return { error: 'Falta la columna «Código»' };
+  const NOMBRE_FIJA = { codigo: 'Código', marca: 'Marca', modelo: 'Modelo', serial: 'Serial', sede: 'Sede', operacion: 'Operación', proveedor: 'Propietario / proveedor', observaciones: 'Observaciones', estado: 'Estado' };
+  const reconocidas = Object.values(m).map((x) => (x.dato ? (t.campos.find((c) => c.k === x.k) || {}).l || x.k : NOMBRE_FIJA[x.k]));
+  const resultado = [], codigos = new Set();
+  filas.slice(1).forEach((fila, i) => {
+    if (!fila.some((v) => v !== null && v !== undefined && String(v).trim() !== '')) return;
+    const b = { tipo: t.codigo, datos: {} };
+    for (const [idx, x] of Object.entries(m)) {
+      let v = fila[idx];
+      if (v === null || v === undefined || String(v).trim() === '') continue;
+      if (x.dato) { const c = t.campos.find((z) => z.k === x.k); b.datos[x.k] = c && c.t === 'numero' ? Number(String(v).replace(/[^\d.,-]/g, '').replace(/\.(?=\d{3}(\D|$))/g, '').replace(',', '.')) : String(v).trim(); }
+      else if (x.k === 'estado') { const e = ESTADO_TEXTO[_norm(v)]; if (e) b.estado = e; else b.estado = '?' + String(v).slice(0, 30); }
+      else b[x.k] = String(v).trim();
+    }
+    if (typeof b.estado === 'string' && b.estado.startsWith('?')) { resultado.push({ fila: i + 2, error: 'Estado «' + b.estado.slice(1) + '»: usa Libre, En reparación o Malo' }); return; }
+    const v = validar(db, b, { nuevo: true });
+    if (v.error) { resultado.push({ fila: i + 2, codigo: b.codigo || '', error: v.error }); return; }
+    // Administrable sin código: el automático se calcula al guardar (no se comparan entre sí).
+    if (t.codigo === 'ADMINISTRABLE' && !b.codigo) { v.valores.codigo = ''; resultado.push({ fila: i + 2, codigo: '(automático)', ok: true, valores: v.valores }); return; }
+    const k = v.valores.codigo;
+    if (codigos.has(k)) { resultado.push({ fila: i + 2, codigo: k, error: 'Código repetido en el archivo' }); return; }
+    if (db.prepare('SELECT 1 FROM activos WHERE tipo = ? AND codigo = ?').get(t.codigo, k)) { resultado.push({ fila: i + 2, codigo: k, error: 'Ya existe en el inventario' }); return; }
+    codigos.add(k);
+    resultado.push({ fila: i + 2, codigo: k, ok: true, valores: v.valores });
+  });
+  const validas = resultado.filter((r) => r.ok);
+  const resumen = { tipo: t.codigo, columnas: reconocidas, validas: validas.length, errores: resultado.filter((r) => !r.ok).length,
+    detalle: resultado.map((r) => (r.ok ? { fila: r.fila, codigo: r.codigo, ok: true } : { fila: r.fila, codigo: r.codigo || '', error: r.error })).slice(0, 500) };
+  if (!confirmar) return resumen;
+  if (!validas.length) return { error: 'No hay filas válidas para importar' };
+  db.transaction(() => {
+    for (const r of validas) {
+      // El código automático de los administrables se calcula de nuevo dentro de la transacción.
+      if (t.codigo === 'ADMINISTRABLE' && !r.valores.codigo) r.valores.codigo = siguienteCodigoAdmin(db, r.valores.datos.subtipo);
+      const c = crear(db, r.valores, quien);
+      if (c.error) throw new Error('Fila ' + r.fila + ': ' + c.error);
+      db.prepare("UPDATE activos_historial SET accion = 'Ingreso (importado)' WHERE activoId = ? AND accion = 'Ingreso'").run(c.activo.id);
+    }
+  })();
+  return Object.assign(resumen, { importadas: validas.length });
+}
+
+module.exports = { historialGeneral, mapaColumnas, importar, ADMIN_SUBTIPOS_I5, ADMIN_CODIGO_BASE, agregarCamposI5, siguienteCodigoAdmin, ipRepetida, reasignar, agenteParaAsignar, CAMPOS_I2, agregarCamposI2, RENDIMIENTOS, rendimientoDe, AMBITOS, TIPOS_INMUEBLES, ambitoDe, ESTADOS_AL_SOLTAR, validarAgente, agentes, agente, crearAgente, editarAgente, agenteDetalle, asignar, devolver, cambiarElemento,
   ESTADOS, ESTADO_CODIGOS, LISTAS, TIPOS_BASE, puede, crearTablas, tipos, tipo, lista, guardarLista, validar, crear, obtener, editar, cambiarEstado, listar, resumen, historial };

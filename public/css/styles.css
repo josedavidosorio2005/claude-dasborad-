@@ -2699,6 +2699,10 @@ div.ca-bar-fila{cursor:default}
 /* Fase 380 (I5): equipos administrables. */
 #ac-ad-subtipos{margin:0 0 12px}
 .ac-ip{font-family:ui-monospace,Consolas,monospace;white-space:nowrap}
+/* Fase 381 (I6): descargas, historial e importación. */
+.ac-export{display:inline-flex;gap:8px;margin-left:auto}
+.ac-import{border:1px solid var(--c-border);border-radius:12px;padding:12px 14px;margin:0 0 16px}
+.ac-link{background:none;border:0;padding:0;font:inherit;color:inherit;text-decoration:underline;cursor:pointer;min-height:24px}
 .ac-sub{margin:14px 0 6px;color:var(--c-text-2)}
 .ac-sedes,.ac-hist{margin:0 0 10px 18px}
 .ac-estado-form{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin:12px 0}

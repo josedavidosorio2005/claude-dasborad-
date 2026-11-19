@@ -2080,6 +2080,7 @@
           <label class="ac-chip"><input type="checkbox" id="ac-f-dup" onchange="activosBuscar()"> Seriales repetidos</label>
           <button type="button" class="btn-cancel ac-btn" onclick="activosLimpiarFiltros()">Limpiar filtros</button>
           <span id="ac-conteo" class="vis-ayuda"></span>
+          <div class="ac-export" role="group" aria-label="Descargar"><button type="button" class="btn-cancel ac-btn" onclick="activosExportar('elementos', 'xlsx')">Excel</button><button type="button" class="btn-cancel ac-btn" onclick="activosExportar('elementos', 'pdf')">PDF</button></div>
         </div>
         <div id="ac-lista" aria-live="polite"></div>
       </div>
@@ -2130,7 +2131,7 @@
         <div class="ig"><label for="ac-ad-estado">Estado</label><select id="ac-ad-estado" onchange="activosAdminBuscar()"></select></div>
         <div class="ig"><label for="ac-ad-q">Buscar</label><input type="search" id="ac-ad-q" maxlength="60" placeholder="Código, marca, modelo, serial, IP, responsable…" onchange="activosAdminBuscar()"></div>
       </div>
-      <p id="ac-ad-conteo" class="vis-ayuda"></p>
+      <div class="ac-chips"><p id="ac-ad-conteo" class="vis-ayuda"></p><div class="ac-export" role="group" aria-label="Descargar"><button type="button" class="btn-cancel ac-btn" onclick="activosExportar('admin', 'xlsx')">Excel</button><button type="button" class="btn-cancel ac-btn" onclick="activosExportar('admin', 'pdf')">PDF</button></div></div>
       <div id="ac-ad-lista" aria-live="polite"></div>
     </section>
     <section id="ac-p-actas" class="hidden" aria-label="Actas"><!-- Fase 379 (I4): todas las actas, automáticas y manuales -->
@@ -2140,11 +2141,31 @@
         <div class="ig"><label for="ac-ac-tipo">Tipo</label><select id="ac-ac-tipo" onchange="activosActasBuscar()"></select></div>
         <div class="ig"><label for="ac-ac-q">Buscar</label><input type="search" id="ac-ac-q" maxlength="60" placeholder="Número, agente, código, motivo…" onchange="activosActasBuscar()"></div>
       </div>
-      <p id="ac-ac-conteo" class="vis-ayuda"></p>
+      <div class="ac-chips"><p id="ac-ac-conteo" class="vis-ayuda"></p><div class="ac-export" role="group" aria-label="Descargar"><button type="button" class="btn-cancel ac-btn" onclick="activosExportar('actas', 'xlsx')">Excel</button><button type="button" class="btn-cancel ac-btn" onclick="activosExportar('actas', 'pdf')">PDF</button></div></div>
       <div id="ac-ac-lista" aria-live="polite"></div>
       <div id="ac-ac-anular"></div>
     </section>
+    <section id="ac-p-historial" class="hidden" aria-label="Historial"><!-- Fase 381 (I6) -->
+      <div class="ac-filtros">
+        <div class="ig"><label for="ac-h-desde">Desde</label><input type="date" id="ac-h-desde" onchange="activosHistorialBuscar()"></div>
+        <div class="ig"><label for="ac-h-hasta">Hasta</label><input type="date" id="ac-h-hasta" onchange="activosHistorialBuscar()"></div>
+        <div class="ig"><label for="ac-h-accion">Acción</label><select id="ac-h-accion" onchange="activosHistorialBuscar()"><option value="">Todas</option></select></div>
+        <div class="ig"><label for="ac-h-q">Buscar</label><input type="search" id="ac-h-q" maxlength="60" placeholder="Código, motivo, quién…" onchange="activosHistorialBuscar()"></div>
+      </div>
+      <div class="ac-chips"><p id="ac-h-conteo" class="vis-ayuda"></p><div class="ac-export" role="group" aria-label="Descargar"><button type="button" class="btn-cancel ac-btn" onclick="activosExportar('historial', 'xlsx')">Excel</button><button type="button" class="btn-cancel ac-btn" onclick="activosExportar('historial', 'pdf')">PDF</button></div></div>
+      <div id="ac-h-lista" aria-live="polite"></div>
+    </section>
     <section id="ac-p-ajustes" class="hidden" aria-label="Ajustes">
+      <div class="ac-import"><!-- Fase 381 (I6): importar desde Excel con vista previa -->
+        <h5 class="ac-sub">Importar elementos desde Excel</h5>
+        <p class="vis-ayuda" id="ac-imp-ayuda">Elige el tipo, descarga la plantilla, llénala y súbela. Primero verás una revisión fila por fila; nada se guarda hasta que confirmes. Columnas: Código, Marca, Modelo, Serial, Sede, Operación, Propietario / proveedor, Estado (Libre, En reparación o Malo), Observaciones y los campos del tipo.</p>
+        <div class="ac-filtros">
+          <div class="ig"><label for="ac-imp-tipo">Tipo de elemento</label><select id="ac-imp-tipo"></select></div>
+          <div class="ig"><label for="ac-imp-file">Archivo (.xlsx)</label><input type="file" id="ac-imp-file" accept=".xlsx,.xls" aria-describedby="ac-imp-ayuda" onchange="activosImportarRevisar(this)"></div>
+          <div class="ig"><span class="vis-ayuda">&nbsp;</span><button type="button" class="btn-cancel ac-btn" onclick="activosImportarPlantilla()">Descargar plantilla</button></div>
+        </div>
+        <div id="ac-imp-res" aria-live="polite"></div>
+      </div>
       <p class="vis-ayuda">Un valor por línea. Se usan en las listas de Registrar y en los filtros.</p>
       <div class="ac-filtros">
         <div class="ig"><label for="ac-l-sedes">Sedes</label><textarea id="ac-l-sedes" rows="6"></textarea><button type="button" class="btn-cancel ac-btn" onclick="activosGuardarLista('sedes')">Guardar sedes</button></div>
