@@ -7,6 +7,16 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.236.0 — Noviembre 2026
+
+**MOBILIZE real con la API de Wolkvox: listo, pero APAGADO.**
+
+- La plataforma ya sabe traer sola los reportes de Wolkvox al MOBILIZE real (Flujo, Flujo por hora, Tipificación,
+  Encuesta, llamadas no conectadas y abandonadas), pero **solo desde diciembre de 2026** y solo cuando el
+  administrador lo encienda. Hoy está apagado: nada cambia en el MOBILIZE real.
+- Noviembre y los meses anteriores nunca se tocan. Cada cambio guarda un respaldo que se puede deshacer en el Centro
+  de cargas.
+
 ## v1.235.1 — Noviembre 2026
 
 **Réplica de MOBILIZE con la API: Tipificación igual al MOBILIZE real.**

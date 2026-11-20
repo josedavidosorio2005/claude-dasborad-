@@ -15,8 +15,8 @@
 const wv = require('./wolkvox');
 const ing = require('./wolkvox-ingesta');
 const { respaldarAntesDeCambiar } = require('./cargas-versiones');
-const { esCampanaInterna } = require('./clientes-registro');
 const FH = require('../public/js/flujo-hora-logic.js');
+const D = require('./wolkvox-destinos'); // Fase A24: réplica o MOBILIZE real (lista cerrada)
 
 const CAMPANA = ing.CAMPANA_INGESTA;
 const OPERACION = 'MOBILIZE';
@@ -89,7 +89,14 @@ function ahtEsperaDiarios(data) {
   return out;
 }
 
-function reemplazarMesFlujoHora(db, mes, filas) {
+// Fase A24: `campana` (por defecto la réplica) solo de la lista cerrada de wolkvox-destinos.js.
+function _campanaPermitida(campana) {
+  const c = campana === undefined ? CAMPANA : campana;
+  if (!D.CAMPANAS_PERMITIDAS.includes(c)) throw new Error('Campaña no permitida para Wolkvox');
+  return c;
+}
+function reemplazarMesFlujoHora(db, mes, filas, campana) {
+  const CAMPANA = _campanaPermitida(campana);
   const desde = mes + '-01', hasta = ing.ultimoDiaDelMes(mes);
   let borradas = 0;
   db.transaction(() => {
@@ -105,7 +112,8 @@ function reemplazarMesFlujoHora(db, mes, filas) {
 
 // Pone AHT y espera en las filas del Flujo diario de la réplica que ya existen (las escribe skill_1).
 // Con respaldo del mes antes de cambiar. -> cuántas filas se actualizaron.
-function actualizarAhtEspera(db, mes, porDia) {
+function actualizarAhtEspera(db, mes, porDia, campana) {
+  const CAMPANA = _campanaPermitida(campana);
   const desde = mes + '-01', hasta = ing.ultimoDiaDelMes(mes);
   let n = 0;
   db.transaction(() => {
@@ -136,8 +144,8 @@ async function correrFlujoHora(opts, partes, res) {
     if (fuera.length) { res.estado = 'error'; res.error = 'respuesta_invalida'; partes.push(mes + ': ' + fuera.length + ' filas fuera del rango pedido, sin cambios'); return; }
     const conLlamadas = p.filas.filter((f) => f[3] || f[4] || f[5]);
     if (!conLlamadas.length) { partes.push(mes + ': sin llamadas, sin cambios'); continue; }
-    const reemplazadas = reemplazarMesFlujoHora(opts.db, mes, conLlamadas);
-    const ahtN = actualizarAhtEspera(opts.db, mes, ahtEsperaDiarios(data));
+    const reemplazadas = reemplazarMesFlujoHora(opts.db, mes, conLlamadas, opts.campana);
+    const ahtN = actualizarAhtEspera(opts.db, mes, ahtEsperaDiarios(data), opts.campana);
     res.meses.push({ mes, filas: conLlamadas.length, sinLlamadas: p.filas.length - conLlamadas.length, reemplazadas, ahtEspera: ahtN });
     partes.push(mes + ': ' + conLlamadas.length + ' filas día-hora-skill (' + (p.filas.length - conLlamadas.length) + ' en cero fuera), reemplazó ' + reemplazadas + ', AHT/espera en ' + ahtN + ' filas del Flujo, con respaldo');
   }
@@ -255,7 +263,7 @@ async function correrCdr(opts, partes, res) {
     if (fuera.length) { res.estado = 'error'; res.error = 'respuesta_invalida'; partes.push(mes + ': ' + fuera.length + ' llamadas fuera del mes, sin cambios'); return; }
     if (!filas.length) { partes.push(mes + ': ninguna llamada válida, sin cambios'); continue; }
     const w = cargarTipificaciones(opts.db, {
-      campana: CAMPANA, canal: 'LLAMADAS', archivoNombre: 'API Wolkvox (cdr_1)', cargadoPorNombre: QUIEN, filas,
+      campana: opts.campana, canal: 'LLAMADAS', archivoNombre: 'API Wolkvox (cdr_1)', cargadoPorNombre: QUIEN, filas,
       desde: mes + '-01', hasta: ing.ultimoDiaDelMes(mes),
     });
     const unicas = p.unicasDia ? p.unicasDia.unicas : null;
@@ -301,7 +309,7 @@ async function correrEncuesta(opts, partes, res) {
     const fuera = filas.filter((f) => String(f[0]).slice(0, 7) !== mes);
     if (fuera.length) { res.estado = 'error'; res.error = 'respuesta_invalida'; partes.push(mes + ': ' + fuera.length + ' encuestas fuera del mes, sin cambios'); return; }
     if (!filas.length) { partes.push(mes + ': ninguna encuesta válida, sin cambios'); continue; }
-    const w = cargarEncuestas(opts.db, { campana: CAMPANA, archivoNombre: 'API Wolkvox (diagram_4)', cargadoPorNombre: QUIEN, filas, desde: mes + '-01', hasta: ing.ultimoDiaDelMes(mes) });
+    const w = cargarEncuestas(opts.db, { campana: opts.campana, archivoNombre: 'API Wolkvox (diagram_4)', cargadoPorNombre: QUIEN, filas, desde: mes + '-01', hasta: ing.ultimoDiaDelMes(mes) });
     res.meses.push({ mes, filas: w.insertadas, reemplazadas: w.borradas });
     partes.push(mes + ': ' + w.insertadas + ' encuestas (' + (p.avisos.length ? p.avisos.length + ' avisos, ' : '') + 'reemplazó ' + w.borradas + ', con respaldo)');
     p = null;
@@ -330,7 +338,7 @@ async function correrNoConectadas(opts, partes, res) {
     if (p.error) { res.estado = 'error'; res.error = 'respuesta_invalida'; partes.push(mes + ': respuesta no esperada (' + String(p.error).slice(0, 120) + '), sin cambios'); return; }
     const fuera = p.filas.filter((f) => String(f[0]).slice(0, 7) !== mes);
     if (fuera.length) { res.estado = 'error'; res.error = 'respuesta_invalida'; partes.push(mes + ': ' + fuera.length + ' llamadas fuera del mes, sin cambios'); return; }
-    const w = cargarLlamadasNoConectadas(opts.db, { campana: CAMPANA, archivoNombre: 'API Wolkvox (cdr_5)', cargadoPorNombre: QUIEN, filas: p.filas, desde: mes + '-01', hasta: ing.ultimoDiaDelMes(mes) });
+    const w = cargarLlamadasNoConectadas(opts.db, { campana: opts.campana, archivoNombre: 'API Wolkvox (cdr_5)', cargadoPorNombre: QUIEN, filas: p.filas, desde: mes + '-01', hasta: ing.ultimoDiaDelMes(mes) });
     res.meses.push({ mes, filas: w.insertadas, reemplazadas: w.borradas });
     partes.push(mes + ': ' + w.insertadas + ' no conectadas (reemplazó ' + w.borradas + ', con respaldo)');
     p = null;
@@ -368,7 +376,7 @@ async function correrAbandonadas(opts, partes, res) {
     }
     const fuera = p.filas.filter((f) => String(f[0]).slice(0, 7) !== mes);
     if (fuera.length) { res.estado = 'error'; res.error = 'respuesta_invalida'; partes.push(mes + ': ' + fuera.length + ' llamadas fuera del mes, sin cambios'); return; }
-    const w = cargarLlamadasAbandonadas(opts.db, { campana: CAMPANA, archivoNombre: 'API Wolkvox (skill_2)', cargadoPorNombre: QUIEN, filas: p.filas, desde: mes + '-01', hasta: ing.ultimoDiaDelMes(mes) });
+    const w = cargarLlamadasAbandonadas(opts.db, { campana: opts.campana, archivoNombre: 'API Wolkvox (skill_2)', cargadoPorNombre: QUIEN, filas: p.filas, desde: mes + '-01', hasta: ing.ultimoDiaDelMes(mes) });
     res.meses.push({ mes, filas: w.insertadas, reemplazadas: w.borradas, repetidas: p.duplicadosQuitados });
     partes.push(mes + ': ' + llegaron + ' filas → ' + w.insertadas + ' abandonadas únicas (' + p.duplicadosQuitados + ' repetidas día+teléfono, ' + p.avisos.length + ' avisos; reemplazó ' + w.borradas + ', con respaldo)');
     p = null;
@@ -391,6 +399,8 @@ function modulosDe(valor) {
 async function correrModulo(nombre, opts) {
   const mod = MODULOS[nombre];
   const { db } = opts;
+  const dest = D.destino(opts.destino); // Fase A24: lanza si no es de la lista cerrada
+  const CAMPANA = dest.campana;
   const env = opts.env || process.env;
   const ahora = opts.ahora || new Date();
   const A = _auto();
@@ -408,14 +418,14 @@ async function correrModulo(nombre, opts) {
     res.detalle = detalle;
     return res;
   };
-  if (!esCampanaInterna(db, CAMPANA)) { res.estado = 'omitida'; partes.push('la réplica no existe'); return terminar(); }
+  if (!D.campanaLista(db, dest)) { res.estado = 'omitida'; partes.push(dest.clave === 'replica' ? 'la réplica no existe' : 'la campaña no existe o es interna'); return terminar(); }
   const cred = opts.credenciales || wv.credenciales(OPERACION, env);
   if (!cred) { res.estado = 'omitida'; partes.push('falta el token o el servidor de Wolkvox'); return terminar(); }
-  const meses = A.planDe({ mes: opts.mes, ahora });
+  const meses = A.planDe({ mes: opts.mes, ahora, destino: dest });
   if (!meses.length) { res.estado = 'omitida'; partes.push(opts.mes ? 'mes no válido (' + String(opts.mes).slice(0, 7) + ')' : 'nada que pedir'); return terminar(); }
   if (wv.usoDelDia(db, OPERACION, ahora) + meses.length * (mod.consultasPorMes || 1) > wv.topeDiario(env)) { res.estado = 'omitida'; partes.push('no alcanza el tope del día'); return terminar(); }
   try {
-    await mod.correr({ db, env, ahora, mes: opts.mes, fetchImpl: opts.fetchImpl, cred }, partes, res);
+    await mod.correr({ db, env, ahora, mes: opts.mes, fetchImpl: opts.fetchImpl, cred, destino: dest, campana: CAMPANA }, partes, res);
   } catch (e) {
     if (!(e instanceof wv.WolkvoxError)) throw e;
     res.estado = res.meses.length ? 'parcial' : 'error';

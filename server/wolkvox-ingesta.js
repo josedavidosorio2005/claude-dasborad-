@@ -22,7 +22,8 @@ const { esCampanaInterna } = require('./clientes-registro');
 const RUTA_INGESTA = '/api/wolkvox/agente/flujo';
 const MAX_FILAS = 5000;
 
-const CAMPANA_INGESTA = 'MOBILIZE PRUEBAS API';
+const { CAMPANA_REPLICA, CAMPANAS_PERMITIDAS } = require('./wolkvox-destinos');
+const CAMPANA_INGESTA = CAMPANA_REPLICA; // 'MOBILIZE PRUEBAS API'
 const REPORTES_INGESTA = ['flujo'];
 
 function huellaConfigurada(env) {
@@ -56,16 +57,20 @@ function ultimoDiaDelMes(mes) {
 // `conservar` lista campos que la API no trae (AHT y espera): para cada dia y skill, si la fila
 // nueva no lo trae, se copia el valor que ya estaba (el del archivo manual) en vez de dejarlo vacio.
 const CONSERVABLES = ['ahtSegundos', 'waitTimeSegundos'];
-function reemplazarMesFlujo(db, { mes, filas, cargadoPorNombre, archivoNombre, conservar }) {
+// Fase A24 (20/11): `campana` (por defecto la réplica) solo puede ser una de la lista cerrada de
+// wolkvox-destinos.js; el agente B1 nunca la pasa (sigue solo la réplica).
+function reemplazarMesFlujo(db, { mes, filas, cargadoPorNombre, archivoNombre, conservar, campana }) {
+  const campanaDestino = campana === undefined ? CAMPANA_INGESTA : campana;
+  if (!CAMPANAS_PERMITIDAS.includes(campanaDestino)) throw new Error('Campaña no permitida para Wolkvox');
   const desde = mes + '-01', hasta = ultimoDiaDelMes(mes);
   let borradasMes = 0, resultado, conservados = 0;
   db.transaction(() => {
     // Respaldo del mes completo ANTES de borrar (Deshacer 30 dias del Centro de cargas).
-    respaldarAntesDeCambiar(db, 'calidad_nivel_servicio_diario', { campana: CAMPANA_INGESTA, desde, hasta, guardadoPorNombre: cargadoPorNombre });
+    respaldarAntesDeCambiar(db, 'calidad_nivel_servicio_diario', { campana: campanaDestino, desde, hasta, guardadoPorNombre: cargadoPorNombre });
     const campos = Array.isArray(conservar) ? conservar.filter((c) => CONSERVABLES.includes(c)) : [];
     if (campos.length) {
       const previas = new Map();
-      for (const r of db.prepare('SELECT fecha, skillName, ahtSegundos, waitTimeSegundos FROM calidad_nivel_servicio_diario WHERE campana = ? AND fecha BETWEEN ? AND ?').all(CAMPANA_INGESTA, desde, hasta)) {
+      for (const r of db.prepare('SELECT fecha, skillName, ahtSegundos, waitTimeSegundos FROM calidad_nivel_servicio_diario WHERE campana = ? AND fecha BETWEEN ? AND ?').all(campanaDestino, desde, hasta)) {
         previas.set(r.fecha + '|' + r.skillName, r);
       }
       filas = filas.map((f) => {
@@ -77,8 +82,8 @@ function reemplazarMesFlujo(db, { mes, filas, cargadoPorNombre, archivoNombre, c
       });
     }
     // Lo que no venga en este envío (otra skill, otro día del mes) también sale: el mes queda igual a lo enviado.
-    borradasMes = db.prepare('DELETE FROM calidad_nivel_servicio_diario WHERE campana = ? AND fecha BETWEEN ? AND ?').run(CAMPANA_INGESTA, desde, hasta).changes;
-    resultado = cargarNivelServicioDiario(db, { campana: CAMPANA_INGESTA, sede: null, archivoNombre: archivoNombre || 'API Wolkvox (agente)', cargadoPorNombre, filas });
+    borradasMes = db.prepare('DELETE FROM calidad_nivel_servicio_diario WHERE campana = ? AND fecha BETWEEN ? AND ?').run(campanaDestino, desde, hasta).changes;
+    resultado = cargarNivelServicioDiario(db, { campana: campanaDestino, sede: null, archivoNombre: archivoNombre || 'API Wolkvox (agente)', cargadoPorNombre, filas });
   })();
   return { mes, filas: filas.length, skills: new Set(filas.map((f) => f.skillName)).size, reemplazadas: borradasMes, insertadas: resultado.diario.insertadas, conservados };
 }
