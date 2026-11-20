@@ -54,3 +54,9 @@ test('la plataforma: overlay, scripts y tarjeta «Gestión STA» después de Cal
   assert.equal(staVeTarjeta({ rol: 'ASESOR', asesorCampana: 'MOBILIZE', perms: {} }, false), false);
   assert.equal(staVeTarjeta({ rol: 'CLIENTES_DASH', perms: { cliente_ORLANT: true } }, false), false, 'el cliente nunca ve la tarjeta');
 });
+
+test('portal del asesor: «Gestión STA» oculto salvo para el ASESOR de ORLANT', () => {
+  const i = leer('public/index.html');
+  assert.match(i, /<li id="asesor-menu-sta-li" class="hidden"><a id="asesor-menu-sta" role="button" tabindex="0" onclick="openOrlantSta\(\)">/);
+  assert.match(leer('public/js/session.js'), /asesor-menu-sta-li[\s\S]*staVeTarjeta\(currentUser,false\)[\s\S]*showAsesorSection\('calidad'\);/);
+});

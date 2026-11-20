@@ -195,6 +195,9 @@ function enterAsesorPage(){
   // Fase 95 (tema C): aviso de monitoreo(s) nuevo(s) de calidad, solo para
   // el rol ASESOR (quien tiene "Mis Resultados"). No para admin ni Calidad.
   if(typeof calCargarAlertaNuevos === 'function') calCargarAlertaNuevos();
+  // Fase STA: «Gestión STA» en el portal del asesor, solo si es ASESOR de ORLANT (el servidor lo revisa).
+  var sta=document.getElementById('asesor-menu-sta-li');
+  if(sta) sta.classList.toggle('hidden', !(typeof staVeTarjeta==='function' && staVeTarjeta(currentUser,false)));
   showAsesorSection('calidad');
 }
 
