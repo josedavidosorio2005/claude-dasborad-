@@ -24,6 +24,7 @@ const wv = require('./wolkvox');
 const ing = require('./wolkvox-ingesta');
 const { esCampanaInterna } = require('./clientes-registro');
 const { fechaLimitesHoyColombia } = require('./fecha-limites');
+const D = require('./wolkvox-destinos'); // Fase A24: réplica o MOBILIZE real (lista cerrada)
 
 const CAMPANA = ing.CAMPANA_INGESTA; // 'MOBILIZE PRUEBAS API'
 const OPERACION = 'MOBILIZE';
@@ -87,8 +88,10 @@ function planMes(mes, ahora) {
   return null;
 }
 // El plan de una corrida: el mes pedido (opts.mes) o el normal (mes en curso hasta ayer).
+// Fase A24: recortado al corte del destino (el MOBILIZE real: solo desde 2026-12).
 function planDe(opts) {
-  return opts && opts.mes ? (planMes(opts.mes, opts.ahora) || []) : plan(opts && opts.ahora);
+  const base = opts && opts.mes ? (planMes(opts.mes, opts.ahora) || []) : plan(opts && opts.ahora);
+  return D.recortarPlan(opts && opts.destino, base);
 }
 
 // ── Conversion de una fila de skill_1 a una fila del Flujo ──
@@ -247,6 +250,8 @@ function _logHistorial(logEvent, detalle, actor) {
 // Devuelve { estado, consultas, meses: [{ mes, estado, ... }], error? }.
 async function correrUnaVez(opts) {
   const { db } = opts;
+  const dest = D.destino(opts.destino); // Fase A24: lanza si no es de la lista cerrada
+  const CAMPANA = dest.campana;
   const env = opts.env || process.env;
   const ahora = opts.ahora || new Date();
   const franja = opts.franja || 'manual ' + new Date().toISOString();
@@ -266,11 +271,11 @@ async function correrUnaVez(opts) {
     return res;
   };
 
-  if (!esCampanaInterna(db, CAMPANA)) { res.estado = 'omitida'; partes.push('la réplica no existe'); return terminar(); }
+  if (!D.campanaLista(db, dest)) { res.estado = 'omitida'; partes.push(dest.clave === 'replica' ? 'la réplica no existe' : 'la campaña no existe o es interna'); return terminar(); }
   const cred = opts.credenciales || wv.credenciales(OPERACION, env);
   if (!cred) { res.estado = 'omitida'; partes.push('falta el token o el servidor de Wolkvox'); return terminar(); }
 
-  const meses = planDe({ mes: opts.mes, ahora });
+  const meses = planDe({ mes: opts.mes, ahora, destino: dest });
   const necesarias = meses.reduce((n, m) => n + m.dias.length, 0);
   if (!necesarias) { res.estado = 'omitida'; return terminar(); }
   const maximo = Math.min(MAX_CONSULTAS_POR_CORRIDA, Number.isInteger(opts.maxConsultas) && opts.maxConsultas > 0 ? opts.maxConsultas : MAX_CONSULTAS_POR_CORRIDA);
@@ -315,17 +320,25 @@ async function correrUnaVez(opts) {
         (e.campos ? ' campos: ' + e.campos.join(',').slice(0, 300) : '') + ', mes sin cambios, sin reintento');
       return terminar();
     }
+    // Fase A24: en el real solo entran las skills que el mapeo ya tiene a nombre de MOBILIZE (sin tocarlo).
+    let sinMapeo = 0;
+    if (dest.clave === 'real') {
+      const mapeadas = D.skillsMapeadas(db, CAMPANA);
+      const antes = filas.length;
+      for (let i = filas.length - 1; i >= 0; i--) if (!mapeadas.has(filas[i].skillName)) filas.splice(i, 1);
+      sinMapeo = antes - filas.length;
+    }
     const v = ing.validarCuerpo({ reporte: 'flujo', mes, filas });
     if (v.error) {
       res.meses.push({ mes, estado: filas.length ? 'invalido' : 'sin_filas' });
-      partes.push(mes + ': ' + (filas.length ? 'no pasó la validación (' + v.error + ')' : 'Wolkvox no trajo filas con llamadas' + (sinLlamadas ? ' (' + sinLlamadas + ' en cero)' : '')) + ', mes sin cambios');
+      partes.push(mes + ': ' + (filas.length ? 'no pasó la validación (' + v.error + ')' : 'Wolkvox no trajo filas con llamadas' + (sinLlamadas ? ' (' + sinLlamadas + ' en cero)' : '') + (sinMapeo ? ' de skills mapeadas (' + sinMapeo + ' filas de skills sin mapear fuera)' : '')) + ', mes sin cambios');
       if (filas.length) res.estado = 'error';
       continue;
     }
-    const w = ing.reemplazarMesFlujo(db, { mes, filas: v.filas, cargadoPorNombre: QUIEN, archivoNombre: ARCHIVO, conservar: CONSERVAR });
+    const w = ing.reemplazarMesFlujo(db, { mes, filas: v.filas, cargadoPorNombre: QUIEN, archivoNombre: ARCHIVO, conservar: CONSERVAR, campana: CAMPANA });
     res.meses.push({ mes, estado: 'ok', dias: dias.length, sinLlamadas, filas: w.filas, skills: w.skills, reemplazadas: w.reemplazadas, conservados: w.conservados });
     partes.push(mes + ': ' + dias.length + ' días, ' + w.filas + ' filas, ' + w.skills + ' skills, reemplazó ' + w.reemplazadas +
-      (w.conservados ? ', ' + w.conservados + ' AHT/espera del archivo' : '') + (omitidas ? ', ' + omitidas + ' filas de total omitidas' : '') + (sinLlamadas ? ', ' + sinLlamadas + ' filas sin llamadas descartadas' : '') + ', con respaldo');
+      (w.conservados ? ', ' + w.conservados + ' AHT/espera del archivo' : '') + (omitidas ? ', ' + omitidas + ' filas de total omitidas' : '') + (sinLlamadas ? ', ' + sinLlamadas + ' filas sin llamadas descartadas' : '') + (sinMapeo ? ', ' + sinMapeo + ' filas de skills sin mapear fuera' : '') + ', con respaldo');
   }
   return terminar();
 }
@@ -505,6 +518,8 @@ function iniciar(db, deps) {
       let mods = [];
       try { mods = M.modulosDe(await (deps.leerValor || leerValor)(env, 'WOLKVOX_AUTO_MODULOS')); } catch (e) { mods = []; }
       for (const m of mods) await M.correrModulo(m, { db, env, ahora, franja, fetchImpl: deps.fetchImpl, logEvent: deps.logEvent });
+      // Fase A24: el MOBILIZE real, con su propio interruptor (después de la réplica).
+      await correrReal({ db, env, ahora, franja, deps, leer });
       return r;
     } catch (e) {
       console.error('[wolkvox-auto] error inesperado en la corrida (' + (e && e.name ? String(e.name).slice(0, 60) : 'error') + ')');
@@ -518,6 +533,28 @@ function iniciar(db, deps) {
   return { detener: () => clearInterval(t), tick };
 }
 
+// ── Fase A24 (20/11/2026): el MOBILIZE real ──
+// Solo desde el programador (nunca «Ejecutar ahora»). Antes del corte (2026-12) no hay nada que pedir:
+// no lee SSM ni deja rastro. Después: SOLO si WOLKVOX_REAL_ACTIVO es exactamente «1» (leído fresco);
+// sin el parámetro, con otro valor o si SSM falla, no corre ni deja rastro. Primero el Flujo y después
+// los módulos de WOLKVOX_REAL_MODULOS, en el orden de MODULOS (flujo_hora completa el AHT del Flujo).
+async function correrReal({ db, env, ahora, franja, deps, leer }) {
+  const real = D.DESTINOS.real;
+  if (!planDe({ ahora, destino: real }).length) return null;
+  let activo = false;
+  try { activo = (await leer(env, real.interruptor)) === true; } catch (e) { activo = false; }
+  if (!activo) return null;
+  const fr = franja + real.sufijoFranja;
+  const r = await correrUnaVez({ db, env, ahora, franja: fr, destino: real, fetchImpl: deps.fetchImpl, logEvent: deps.logEvent });
+  const M = require('./wolkvox-modulos');
+  let mods = [];
+  try { mods = M.modulosDe(await (deps.leerValor || leerValor)(env, real.modulos)); } catch (e) { mods = []; }
+  for (const m of Object.keys(M.MODULOS).filter((n) => mods.includes(n))) {
+    await M.correrModulo(m, { db, env, ahora, franja: fr, destino: real, fetchImpl: deps.fetchImpl, logEvent: deps.logEvent });
+  }
+  return r;
+}
+
 // Para /wolkvox/estado (solo admin): horarios, interruptor al arrancar y la ultima corrida.
 function estado(db, env) {
   env = env || process.env;
@@ -526,6 +563,7 @@ function estado(db, env) {
     reporte: API,
     activoAlArrancar: _activo(env.WOLKVOX_AUTO_ACTIVO),
     ultimaCorrida: ultimaCorrida(db),
+    real: { campana: D.CAMPANA_REAL, desdeMes: D.DESDE_MES_REAL, interruptor: D.DESTINOS.real.interruptor, activoAlArrancar: _activo(env.WOLKVOX_REAL_ACTIVO) }, // Fase A24
   };
 }
 
@@ -533,5 +571,5 @@ module.exports = {
   CAMPANA, OPERACION, API, HORAS_COLOMBIA, ARCHIVO, QUIEN, ACCION_HISTORIAL, MAX_CONSULTAS_POR_CORRIDA,
   horaColombia, franjaActual, plan, convertirFila, filasDelDia, aPorcentaje, aSegundos, aEntero,
   asegurarTablas, franjaYaCorrida, ultimaCorrida, planMes, planDe, MESES_ATRAS_MAX, leerInterruptor, correrUnaVez, iniciar, estado, ejecutarAhora, correrLogin, planLogin, API_LOGIN,
-  leerValor, SIN_REGISTROS,
+  leerValor, SIN_REGISTROS, correrReal,
 };

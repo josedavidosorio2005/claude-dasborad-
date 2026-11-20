@@ -137,6 +137,21 @@ asumir en qué quedó una fase anterior.
   `cdr_1` los datos sensibles (teléfonos, datos del cliente,
   comentarios) se descartan en memoria antes de guardar. Calidad queda
   fuera. Cada módulo arranca apagado y se enciende con OK del usuario.
+- **Excepción escrita (usuario, 20/11/2026, Wolkvox al MOBILIZE real,
+  Fase A24, `docs/plan-api-wolkvox.md` §10.19–10.20):** la consulta
+  automática puede pedir y REEMPLAZAR en el **MOBILIZE real**, **desde
+  diciembre de 2026**, los reportes de la réplica: Flujo (`skill_1`),
+  Flujo por hora (`skill_7`), Tipificación/Eficacia/únicas/salida
+  (`cdr_1`), Encuesta (`diagram_4`), No conectadas (`cdr_5`) y
+  Abandonadas (`skill_2`). Mismos límites que la réplica: respaldo antes
+  de reemplazar, todo o nada por mes, sin reintentos, tope de 2.800
+  consultas al día y los datos sensibles de `cdr_1` descartados en
+  memoria. No toca meses anteriores a diciembre, ni Calidad, ni otro
+  cliente; solo desde el programador («Ejecutar ahora» sigue siendo solo
+  de la réplica). Arranca APAGADA: solo corre con `WOLKVOX_REAL_ACTIVO=1`
+  y los módulos en `WOLKVOX_REAL_MODULOS` (SSM). Crear esos parámetros
+  necesita OK explícito del usuario. Ampliar a otro reporte o cliente =
+  autorización nueva por escrito.
 - Nada de pruebas agresivas contra producción (sin límite de tasa, sin
   volumen alto, sin tocar datos que no sean los explícitamente
   autorizados). No destapar pestañas ocultas a mano, no tocar datos de

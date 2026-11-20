@@ -21563,3 +21563,10 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
 - **Solo lectura en producción (Brave con la sesión de administrador del usuario, autorizado):** las franjas de las 00:05 y 7:00 del 20/11 de la réplica terminaron bien (Flujo y 5 módulos `ok`, 24 consultas cada una). SURA: sin malla de noviembre (0 días calificados); Horarios hasta el 17/11.
 - **Plan** en `docs/plan-api-wolkvox.md` §10.19: 6 módulos; en paralelo hasta el 3/12 y cambio desde diciembre; alias de MOBILIZE; la llamada del 26/10 la decide Edwin; interruptor propio `WOLKVOX_REAL_ACTIVO` y `WOLKVOX_REAL_MODULOS` (sin crear); respaldo y forma de deshacer; criterios de comparación; texto propuesto para la autorización escrita.
 - **Nada cambió en producción:** ni el MOBILIZE real, ni SSM, ni la réplica. Brave cerrado y scripts borrados.
+
+## Fase A24 — MOBILIZE real con la API: código listo y apagado (v1.236.0, 2026-11-20)
+
+- **Pedido y autorización (usuario, 20/11):** agregar a `CLAUDE.md` la autorización de §10.19 (fecha 20/11/2026) y el código para el MOBILIZE real: campaña destino de una lista cerrada (réplica y MOBILIZE), corte desde 2026-12, interruptor `WOLKVOX_REAL_ACTIVO` apagado y pruebas de que, apagado o sin el parámetro, nunca escribe en el MOBILIZE real. Sin crear parámetros en SSM y sin abrir Brave.
+- **Cambio:** `server/wolkvox-destinos.js` (lista cerrada, corte, campaña lista, skills mapeadas); `wolkvox-auto.js` (plan recortado por destino, Flujo con la campaña del destino, `correrReal` en el programador); `wolkvox-modulos.js` (cada módulo escribe en la campaña del destino); `wolkvox-ingesta.js` (`reemplazarMesFlujo` con campaña de la lista cerrada; el agente B1 sigue solo la réplica). Detalle en `docs/plan-api-wolkvox.md` §10.20.
+- **Pruebas:** 6 nuevas (`faseA24-wolkvox-mobilize-real`) y las de Wolkvox de antes sin cambios.
+- **Producción:** el código llega apagado (no existe `WOLKVOX_REAL_ACTIVO`); el MOBILIZE real no cambia.
