@@ -21612,3 +21612,17 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
 - **Cambio de plan escrito del usuario (20/11):** adelantar el corte del MOBILIZE real de 2026-12 a 2026-11 para que la API llene noviembre completo; octubre y anteriores nunca se tocan. Autorizó además abrir Brave con su sesión de administrador después del deploy, una sola corrida del real para noviembre (o esperar la franja si «Ejecutar ahora» no lo permite) y comparar noviembre del real contra la réplica.
 - **Cambio:** `DESDE_MES_REAL = '2026-11'`; `CLAUDE.md` (autorización «desde noviembre de 2026»); pruebas de `faseA24-wolkvox-mobilize-real` ajustadas al corte nuevo. Detalle en `docs/plan-api-wolkvox.md` §10.25.
 - **«Ejecutar ahora»** sigue siendo solo de la réplica: la primera corrida real es la franja del 21/11 00:05.
+
+## Fase A30 — Hueco de julio de 2026 del MOBILIZE real con la API (v1.238.0, 2026-11-20)
+
+- **Sondeo autorizado (20/11, solo lectura):** 16 consultas por «Probar» (`skill_7` y `cdr_1`, nov/2025–jun/2026): las 16 respondieron 404 «Validate dates entered» (Wolkvox rechaza esas fechas). No hay nada que llenar antes de julio.
+- **Autorización escrita del usuario (20/11/2026)**, en `CLAUDE.md`: llenar a mano, una vez por pestaña, solo julio de 2026 del real (Flujo, Flujo por hora, Tipificación, Abandonadas) y solo pestañas vacías.
+- **Código (PR #893, v1.238.0):** lista cerrada `HUECOS_REAL`, `rellenarHuecoReal`, `POST /api/wolkvox/real/hueco` (solo admin). Pruebas `faseA30-wolkvox-hueco-real` (7) + matriz de acceso; suite 3387 pasan, 1 saltada, 0 fallas; `npm audit` limpio; CI verde; merge con `--match-head-commit`; deploy OK (`/api/health` 1.238.0).
+- **Corrida en producción (20/11, 15:30 Colombia, una sola llamada, sesión de administrador en Brave):** antes, julio del real vacío en las 6 pestañas y 0 respaldos. Resultado `ok`, 34 consultas (uso del día 94 → 128 de 2.800):
+  - Flujo: 7 filas / 4 días (31 consultas, 2 skills, 117 filas sin llamadas descartadas);
+  - Flujo por hora: 11 filas / 4 días; AHT/espera completados en las 7 filas del Flujo (vino entero de la API);
+  - Tipificación: 2 llamadas (de salida); 16 filas de la cuenta de pruebas fuera;
+  - Abandonadas: 4 únicas / 4 días (8 filas, 4 repetidas día+teléfono);
+  - Encuesta y No conectadas: no se tocaron (fuera de la lista; siguen en 0, igual que la réplica).
+- **Verificación:** julio del real = julio de la réplica en las 6 pestañas (mismas filas por día y misma huella de contenido sin columnas de origen). Agosto, septiembre, octubre y noviembre del real **idénticos** antes y después (huella sha256 de todas las filas, 24 pestaña-mes). Julio del real con 1 respaldo (el mes estaba vacío: no hay nada que restaurar). Historial: 4 líneas «Hueco del real (mes 2026-07)», solo conteos.
+- **Queda:** cada pestaña de julio ya tiene su marca y no vuelve a correr. El programador sigue igual (corte 2026-11).
