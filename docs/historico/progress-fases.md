@@ -21570,3 +21570,9 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
 - **Cambio:** `server/wolkvox-destinos.js` (lista cerrada, corte, campaña lista, skills mapeadas); `wolkvox-auto.js` (plan recortado por destino, Flujo con la campaña del destino, `correrReal` en el programador); `wolkvox-modulos.js` (cada módulo escribe en la campaña del destino); `wolkvox-ingesta.js` (`reemplazarMesFlujo` con campaña de la lista cerrada; el agente B1 sigue solo la réplica). Detalle en `docs/plan-api-wolkvox.md` §10.20.
 - **Pruebas:** 6 nuevas (`faseA24-wolkvox-mobilize-real`) y las de Wolkvox de antes sin cambios.
 - **Producción:** el código llega apagado (no existe `WOLKVOX_REAL_ACTIVO`); el MOBILIZE real no cambia.
+
+## Fase A25 — Comparación réplica / MOBILIZE real del 20/11 (solo docs, 2026-11-20)
+
+- **Solo lectura en producción** (Brave con la sesión de administrador del usuario, autorizado): franjas de las 00:05 y 7:00 del 20/11 de la réplica `ok`; del 1 al 12/11 la réplica es igual al MOBILIZE real en todas las pestañas, también día por día, salvo AHT ±1 s y espera 1 contra 0 s en 5 días (redondeo). El real tiene noviembre solo hasta el 12/11.
+- **Encendido:** 1 skill con llamadas en noviembre, mapeada a MOBILIZE; MOBILIZE sin alias y 2/2/1 nombres de asesor (Tipificación/Salida/Encuesta) que la API trae y el real no. Detalle en `docs/plan-api-wolkvox.md` §10.21.
+- **Nada cambió en producción** ni en SSM. Brave cerrado y scripts borrados.
