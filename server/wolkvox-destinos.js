@@ -51,4 +51,32 @@ function skillsMapeadas(db, campana) {
   return new Set(db.prepare("SELECT skillName FROM trafico_skill_mapeo WHERE campana = ? AND (sede IS NULL OR sede = '')").all(campana).map((r) => r.skillName));
 }
 
-module.exports = { DESTINOS, CAMPANAS_PERMITIDAS, CAMPANA_REPLICA, CAMPANA_REAL, DESDE_MES_REAL, destino, recortarPlan, campanaLista, skillsMapeadas };
+// ── Fase A30 (20/11/2026): HUECOS del MOBILIZE real ──
+// Autorización escrita del usuario (20/11/2026, CLAUDE.md): un administrador puede llenar a mano, UNA
+// vez por pestaña, SOLO estos meses y pestañas del real, y SOLO si la pestaña no tiene ninguna fila en
+// ese mes (se revisa antes de consultar y otra vez justo antes de escribir). LISTA CERRADA: ampliarla
+// es una autorización nueva por escrito. Nov/2025–jun/2026: Wolkvox los rechaza («Validate dates entered»).
+const HUECOS_REAL = Object.freeze({ '2026-07': Object.freeze(['flujo', 'flujo_hora', 'cdr', 'abandonadas']) });
+// Pestaña -> tabla (y filtro) donde se mira si el real ya tiene datos de ese mes.
+const TABLA_HUECO = Object.freeze({
+  flujo: { tabla: 'calidad_nivel_servicio_diario', extra: '' },
+  flujo_hora: { tabla: 'flujo_hora', extra: '' },
+  cdr: { tabla: 'tipificaciones', extra: " AND canal = 'LLAMADAS'" },
+  abandonadas: { tabla: 'llamadas_abandonadas', extra: '' },
+});
+function huecoPermitido(mes, modulo) {
+  return typeof mes === 'string' && Object.prototype.hasOwnProperty.call(HUECOS_REAL, mes) && HUECOS_REAL[mes].includes(modulo);
+}
+// Filas que el MOBILIZE real YA tiene en esa pestaña y mes (0 = hueco). Lanza si no es de la lista.
+function filasEnHueco(db, mes, modulo) {
+  if (!huecoPermitido(mes, modulo)) throw new Error('Hueco no permitido');
+  const t = TABLA_HUECO[modulo];
+  const hasta = mes + '-31';
+  return db.prepare('SELECT COUNT(*) n FROM ' + t.tabla + ' WHERE campana = ? AND substr(fecha, 1, 10) BETWEEN ? AND ?' + t.extra).get(CAMPANA_REAL, mes + '-01', hasta).n;
+}
+// ¿El Flujo del real en ese mes tiene alguna fila que NO vino de la consulta automática? (carga manual)
+function flujoConCargaManual(db, mes, archivoApi) {
+  return db.prepare("SELECT COUNT(*) n FROM calidad_nivel_servicio_diario WHERE campana = ? AND substr(fecha, 1, 7) = ? AND COALESCE(archivoNombre, '') <> ?").get(CAMPANA_REAL, mes, archivoApi).n > 0;
+}
+
+module.exports = { DESTINOS, CAMPANAS_PERMITIDAS, CAMPANA_REPLICA, CAMPANA_REAL, DESDE_MES_REAL, destino, recortarPlan, campanaLista, skillsMapeadas, HUECOS_REAL, huecoPermitido, filasEnHueco, flujoConCargaManual };

@@ -7,6 +7,16 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.238.0 — Noviembre 2026
+
+**Julio de 2026 del MOBILIZE real se puede llenar con la API (una sola vez).**
+
+- El administrador puede llenar julio de 2026 del MOBILIZE real con los datos de Wolkvox, solo en
+  Flujo, Flujo por hora, Tipificación y Abandonadas, que hoy están vacíos.
+- Solo se llena una pestaña si está vacía: nunca cambia una carga hecha a mano. Guarda respaldo antes
+  y deja fuera la cuenta de pruebas de Wolkvox.
+- Agosto, septiembre, octubre y noviembre no cambian. Antes de julio Wolkvox no entrega datos.
+
 ## v1.237.1 — Noviembre 2026
 
 **MOBILIZE con la API desde noviembre (antes, desde diciembre).**

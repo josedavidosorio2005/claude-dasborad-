@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.237.1` (ver `server/package.json`, expuesta en
+- **Versión**: `1.238.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -622,6 +622,7 @@ mismo orden):
 - Fase 383 — Inventario: opción A de las actas de prueba hecha (Panel cuadra) y retiro del Inventario anterior, que no tenía datos (410, tablas intactas) (v1.237.0, 2026-11-20)
 - Fase A28 — MOBILIZE real encendido en SSM por el usuario (WOLKVOX_REAL_ACTIVO=1 y 5 módulos); nada antes del 2/12 00:05, que pide solo el 1/12; noviembre intacto (solo docs, 2026-11-20)
 - Fase A29 — MOBILIZE real con la API desde noviembre (corte 2026-11; octubre y anteriores intactos); primera franja 21/11 00:05 (v1.237.1, 2026-11-20)
+- Fase A30 — Hueco de julio de 2026 del MOBILIZE real con la API (lista cerrada, solo pestañas vacías, una vez); nov/2025–jun/2026 Wolkvox los rechaza (v1.238.0, 2026-11-20)
 - Fase 309 — Revisión de seguridad: el cliente ya no recibe el nombre de los líderes en `GET /metas`; resto en `docs/revision-seguridad-2026-11-09.md` (v1.154.1, 2026-11-10)
 - Fase 308 — Revisión antes de la reunión con clientes y pendientes del supervisor (solo docs, 2026-11-10)
 - Fase 307 — Calidad para que los líderes evalúen: ORLANT conserva su Calidad y suma «Resultado de los monitoreos» al final; Aurora ya lo tenía (se muestra con el primer monitoreo) (v1.154.0, 2026-11-10)

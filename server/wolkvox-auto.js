@@ -90,6 +90,12 @@ function planMes(mes, ahora) {
 // El plan de una corrida: el mes pedido (opts.mes) o el normal (mes en curso hasta ayer).
 // Fase A24: recortado al corte del destino (el MOBILIZE real: solo desde 2026-11, Fase A29).
 function planDe(opts) {
+  // Fase A30: hueco del real (lista cerrada HUECOS_REAL): el mes pedido completo, solo para el real y
+  // solo si (mes, pestaña) está en la lista. No pasa por el corte de 2026-11 (es un mes anterior).
+  if (opts && opts.huecoReal) {
+    if (D.destino(opts.destino).clave !== 'real' || !D.huecoPermitido(opts.mes, opts.huecoReal)) return [];
+    return planMes(opts.mes, opts.ahora) || [];
+  }
   const base = opts && opts.mes ? (planMes(opts.mes, opts.ahora) || []) : plan(opts && opts.ahora);
   return D.recortarPlan(opts && opts.destino, base);
 }
@@ -275,7 +281,7 @@ async function correrUnaVez(opts) {
   const cred = opts.credenciales || wv.credenciales(OPERACION, env);
   if (!cred) { res.estado = 'omitida'; partes.push('falta el token o el servidor de Wolkvox'); return terminar(); }
 
-  const meses = planDe({ mes: opts.mes, ahora, destino: dest });
+  const meses = planDe({ mes: opts.mes, ahora, destino: dest, huecoReal: opts.huecoReal });
   const necesarias = meses.reduce((n, m) => n + m.dias.length, 0);
   if (!necesarias) { res.estado = 'omitida'; return terminar(); }
   const maximo = Math.min(MAX_CONSULTAS_POR_CORRIDA, Number.isInteger(opts.maxConsultas) && opts.maxConsultas > 0 ? opts.maxConsultas : MAX_CONSULTAS_POR_CORRIDA);
@@ -334,6 +340,12 @@ async function correrUnaVez(opts) {
       partes.push(mes + ': ' + (filas.length ? 'no pasó la validación (' + v.error + ')' : 'Wolkvox no trajo filas con llamadas' + (sinLlamadas ? ' (' + sinLlamadas + ' en cero)' : '') + (sinMapeo ? ' de skills mapeadas (' + sinMapeo + ' filas de skills sin mapear fuera)' : '')) + ', mes sin cambios');
       if (filas.length) res.estado = 'error';
       continue;
+    }
+    // Fase A30: en un hueco, se vuelve a mirar JUSTO antes de escribir (sin await de por medio): si
+    // alguien cargó algo en el mes mientras se consultaba, no se toca.
+    if (opts.huecoReal) {
+      const ya = D.filasEnHueco(db, mes, 'flujo');
+      if (ya) { res.meses.push({ mes, estado: 'con_datos' }); partes.push(mes + ': ya tiene ' + ya + ' filas (carga), no se toca'); continue; }
     }
     const w = ing.reemplazarMesFlujo(db, { mes, filas: v.filas, cargadoPorNombre: QUIEN, archivoNombre: ARCHIVO, conservar: CONSERVAR, campana: CAMPANA });
     res.meses.push({ mes, estado: 'ok', dias: dias.length, sinLlamadas, filas: w.filas, skills: w.skills, reemplazadas: w.reemplazadas, conservados: w.conservados });
@@ -555,6 +567,52 @@ async function correrReal({ db, env, ahora, franja, deps, leer }) {
   return r;
 }
 
+// ── Fase A30 (20/11/2026): llenar a mano un HUECO del MOBILIZE real ──
+// Autorización escrita del usuario (20/11/2026, CLAUDE.md). Solo (mes, pestaña) de D.HUECOS_REAL; solo
+// si la pestaña del real no tiene ninguna fila en ese mes (antes de consultar y justo antes de escribir);
+// una sola vez por pestaña (franja «hueco real AAAA-MM <pestaña>»); exige WOLKVOX_REAL_ACTIVO=1 leído
+// fresco; mismo candado que el programador y «Ejecutar ahora». Orden: Flujo y después los módulos en el
+// orden de MODULOS (flujo_hora completa el AHT solo si el Flujo del mes vino entero de la API). La primera
+// falla detiene el resto. Respaldo, cuenta de pruebas fuera y skills mapeadas: los de siempre.
+async function rellenarHuecoReal(opts) {
+  if (_enCurso) return { estado: 'ocupada' };
+  _enCurso = true;
+  try {
+    const { db, mes } = opts;
+    const env = opts.env || process.env;
+    const real = D.DESTINOS.real;
+    const lista = Object.prototype.hasOwnProperty.call(D.HUECOS_REAL, mes) ? D.HUECOS_REAL[mes] : null;
+    if (!lista) return { estado: 'no_permitido' };
+    let activo = false;
+    try { activo = (await (opts.leerInterruptor || leerInterruptor)(env, real.interruptor)) === true; } catch (e) { return { estado: 'sin_interruptor' }; }
+    if (!activo) return { estado: 'apagada' };
+    const M = require('./wolkvox-modulos');
+    const orden = ['flujo'].concat(Object.keys(M.MODULOS)).filter((n) => lista.includes(n));
+    const etiqueta = 'Hueco del real (mes ' + mes + ')';
+    const franja = 'hueco real ' + mes;
+    const out = { estado: 'ok', consultas: 0, partes: [] };
+    for (const nombre of orden) {
+      const ya = D.filasEnHueco(db, mes, nombre);
+      if (ya) {
+        out.partes.push({ modulo: nombre, estado: 'con_datos', consultas: 0, filas: ya });
+        _logHistorial(opts.logEvent, etiqueta + ' · ' + real.campana + ' · ' + nombre + ' · ya tiene ' + ya + ' filas, no se toca · 0 consultas', opts.actor);
+        continue;
+      }
+      const base = { db, env, ahora: opts.ahora, mes, fetchImpl: opts.fetchImpl, logEvent: opts.logEvent, etiqueta, actor: opts.actor, destino: real, huecoReal: nombre };
+      const r = nombre === 'flujo'
+        ? await correrUnaVez(Object.assign({ franja: franja + ' flujo' }, base))
+        : await M.correrModulo(nombre, Object.assign({ franja }, base));
+      out.consultas += r.consultas || 0;
+      out.partes.push({ modulo: nombre, estado: r.estado, consultas: r.consultas || 0, meses: r.meses, error: r.error || null, detalle: r.detalle });
+      if (r.estado !== 'ok' && r.estado !== 'ya_corrida') { out.estado = out.partes.some((p) => p.estado === 'ok') ? 'parcial' : r.estado; out.error = r.error || r.estado; break; }
+    }
+    out.detalle = out.partes.map((p) => p.modulo + ': ' + p.estado).join(' · ');
+    return out;
+  } finally {
+    _enCurso = false;
+  }
+}
+
 // Para /wolkvox/estado (solo admin): horarios, interruptor al arrancar y la ultima corrida.
 function estado(db, env) {
   env = env || process.env;
@@ -571,5 +629,5 @@ module.exports = {
   CAMPANA, OPERACION, API, HORAS_COLOMBIA, ARCHIVO, QUIEN, ACCION_HISTORIAL, MAX_CONSULTAS_POR_CORRIDA,
   horaColombia, franjaActual, plan, convertirFila, filasDelDia, aPorcentaje, aSegundos, aEntero,
   asegurarTablas, franjaYaCorrida, ultimaCorrida, planMes, planDe, MESES_ATRAS_MAX, leerInterruptor, correrUnaVez, iniciar, estado, ejecutarAhora, correrLogin, planLogin, API_LOGIN,
-  leerValor, SIN_REGISTROS, correrReal,
+  leerValor, SIN_REGISTROS, correrReal, rellenarHuecoReal,
 };
