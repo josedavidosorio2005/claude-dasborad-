@@ -1046,6 +1046,25 @@
   </div>
 </div>
 
+<!-- ══ GESTIÓN STA (ORLANT, Fase STA): HTML de Edwin en un Shadow DOM (orlant-sta.js) ══ -->
+<div role="dialog" aria-modal="true" aria-labelledby="sta-title" id="sta-overlay">
+  <div id="sta-modal">
+    <div class="aurora-header">
+      <div>
+        <h2 id="sta-title">Gestión STA</h2>
+        <div class="aurora-sub" id="sta-sub"></div>
+      </div>
+      <div class="gd-header-derecha">
+        <div class="gd-header-acciones" style="display:flex;align-items:center;gap:8px">
+          <button class="aurora-close" id="sta-cerrar-btn" type="button" onclick="closeOrlantSta()">X Cerrar</button>
+        </div>
+      </div>
+    </div>
+    <div id="sta-host"></div>
+    <span class="sr-only" tabindex="0">Fin de Gestión STA</span>
+  </div>
+</div>
+
 <!-- ══ TELEVENTAS (SURA, Fase 215): tablero propio, su contenido vive en un Shadow DOM (sura-televentas.js) ══ -->
 <div role="dialog" aria-modal="true" aria-labelledby="stv-title" id="stv-overlay">
   <div id="stv-modal">
@@ -2424,6 +2443,8 @@
 <script src="js/sura-televentas-paleta-logic.js"></script>
 <script src="js/sura-televentas-todos.js"></script>
 <script src="js/sura-televentas.js"></script>
+<script src="js/orlant-sta-app.js"></script>
+<script src="js/orlant-sta.js"></script>
 <script src="js/sura-alias.js"></script>
 <script src="js/aviso-pendiente-logic.js"></script>
 <script src="js/trafico.js"></script>

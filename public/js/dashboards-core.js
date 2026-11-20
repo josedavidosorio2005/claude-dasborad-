@@ -47,6 +47,13 @@ function renderDashGrid(){
   var antes = extra.filter(function(t){ return t.key!=='cargar' && t.key!=='tickets'; }).map(tarjetaEntrada).join('');
   var despues = extra.filter(function(t){ return t.key==='cargar' || t.key==='tickets'; }).map(tarjetaEntrada).join('');
   grid.innerHTML = antes + grid.innerHTML + despues;
+  // Fase STA: «Gestión STA» de ORLANT, después de Calidad (supervisor de ORLANT, ADMIN, GERENCIA;
+  // el servidor revisa cada ruta). El cliente de ORLANT nunca la ve (ve las gráficas en su Dashboard).
+  if (typeof staVeTarjeta === 'function' && staVeTarjeta(currentUser, isFullAdmin())) {
+    var staHtml = tarjetaEntrada({ key: 'sta', label: 'Gestión STA', sub: 'ORLANT: base STA, asignación y gestión', icon: 'i-phone', accion: 'openOrlantSta' });
+    var cal = grid.querySelector('[onclick="onDashBtn(\'Calidad\')"]');
+    if (cal) cal.insertAdjacentHTML('afterend', staHtml); else grid.insertAdjacentHTML('afterbegin', staHtml);
+  }
   // Sin ningun modulo (ni tarjetas de entrada) -> mensaje claro, sin tarjetas.
   var vacio=document.getElementById('dash-grid-vacio');
   var sinNada = modulos.length===0 && extra.length===0;
