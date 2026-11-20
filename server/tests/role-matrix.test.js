@@ -23,8 +23,6 @@ test('matriz de roles: cada rol accede solo a lo suyo', async (t) => {
   const admin = await tokenFor('admin', MASTER_PASSWORD);
 
   // Datos mínimos para que haya algo que leer
-  await request(app).post('/api/inventario/items').set(auth(admin))
-    .send({ nombre: 'Item RM', categoria: 'Equipos', cantidad: 5, unidad: 'un', estado: 'Disponible', costoUnitario: 1000 });
   await request(app).post('/api/gerencia/kpis').set(auth(admin))
     .send({ periodo: '2026-08', nombre: 'KPI RM', categoria: 'Operaciones', valor: 90, unidad: '%', meta: 85 });
 
@@ -34,7 +32,7 @@ test('matriz de roles: cada rol accede solo a lo suyo', async (t) => {
   await t.test('ADMIN ve todo', async () => {
     assert.equal(await G(admin, '/api/users'), 200);
     assert.equal(await G(admin, '/api/dashboards/config'), 200);
-    assert.equal(await G(admin, '/api/dashboard/INVENTARIO'), 200);
+    assert.equal(await G(admin, '/api/dashboard/INVENTARIO'), 404); // Fase 383: el Inventario anterior se retiró
     assert.equal(await G(admin, '/api/dashboard/GERENCIA'), 200);
     assert.equal(await G(admin, '/api/dashboard/ORLANT'), 200);
     assert.equal(await G(admin, '/api/monitoreos?campana=ORLANT'), 200);
@@ -46,19 +44,19 @@ test('matriz de roles: cada rol accede solo a lo suyo', async (t) => {
     const tok = await tokenFor('crodriguez', SEED.crodriguez);
     assert.equal(await G(tok, '/api/monitoreos?campana=ORLANT'), 200);
     assert.equal(await G(tok, '/api/calidad/plantillas'), 200);
-    assert.equal(await G(tok, '/api/dashboard/INVENTARIO'), 403);
+    assert.equal(await G(tok, '/api/dashboard/INVENTARIO'), 404);
     assert.equal(await G(tok, '/api/dashboard/GERENCIA'), 403);
     assert.equal(await G(tok, '/api/dashboards/config'), 403); // solo admin
-    assert.equal(await G(tok, '/api/inventario/items'), 403);
+    assert.equal(await G(tok, '/api/inventario/items'), 410);
   });
 
   // ── INVENTARIO (mlopez) ──
   // Fase 369: el Inventario anterior queda solo para ADMIN; el rol INVENTARIO ya no lo ve (ni el de Sistemas).
   await t.test('INVENTARIO: el Inventario anterior ya no (Fase 369), el resto tampoco', async () => {
     const tok = await tokenFor('mlopez', SEED.mlopez);
-    assert.equal(await G(tok, '/api/inventario/items'), 403);
-    assert.equal(await G(tok, '/api/inventario/resumen'), 403);
-    assert.equal(await G(tok, '/api/dashboard/INVENTARIO'), 403);
+    assert.equal(await G(tok, '/api/inventario/items'), 410);
+    assert.equal(await G(tok, '/api/inventario/resumen'), 410);
+    assert.equal(await G(tok, '/api/dashboard/INVENTARIO'), 404);
     assert.equal(await G(tok, '/api/dashboard/GERENCIA'), 403);
     assert.equal(await G(tok, '/api/gerencia/kpis'), 403);
     assert.equal(await G(tok, '/api/dashboard/ORLANT'), 403);
@@ -70,8 +68,8 @@ test('matriz de roles: cada rol accede solo a lo suyo', async (t) => {
     assert.equal(await G(tok, '/api/gerencia/kpis?periodo=2026-08'), 200);
     assert.equal(await G(tok, '/api/dashboard/GERENCIA'), 200);
     assert.equal(await G(tok, '/api/monitoreos?campana=ORLANT'), 200);
-    assert.equal(await G(tok, '/api/dashboard/INVENTARIO'), 403);
-    assert.equal(await G(tok, '/api/inventario/items'), 403);
+    assert.equal(await G(tok, '/api/dashboard/INVENTARIO'), 404);
+    assert.equal(await G(tok, '/api/inventario/items'), 410);
     // Gerencia es SOLO LECTURA (feedback Edwin 2.2): no crea/edita/borra/carga KPIs.
     const w = await request(app).post('/api/gerencia/kpis').set(auth(tok))
       .send({ periodo: '2026-08', nombre: 'W RM', categoria: 'Operaciones', valor: 1, unidad: '%', meta: 1 });
@@ -90,7 +88,7 @@ test('matriz de roles: cada rol accede solo a lo suyo', async (t) => {
     // no toca otros modulos
     assert.equal(await G(tok, '/api/dashboard/GERENCIA'), 403);
     assert.equal(await G(tok, '/api/gerencia/kpis'), 403);
-    assert.equal(await G(tok, '/api/inventario/items'), 403);
+    assert.equal(await G(tok, '/api/inventario/items'), 410);
     assert.equal(await G(tok, '/api/dashboard/ORLANT'), 403);
     // no puede administrar usuarios
     const crear = await request(app).post('/api/users').set(auth(tok))
@@ -104,9 +102,9 @@ test('matriz de roles: cada rol accede solo a lo suyo', async (t) => {
     assert.equal(await G(tok, '/api/dashboard/ORLANT'), 200);
     assert.equal(await G(tok, '/api/dashboard/MOBILIZE'), 200);
     assert.equal(await G(tok, '/api/dashboards/config'), 403);
-    assert.equal(await G(tok, '/api/dashboard/INVENTARIO'), 403);
+    assert.equal(await G(tok, '/api/dashboard/INVENTARIO'), 404);
     assert.equal(await G(tok, '/api/dashboard/GERENCIA'), 403);
-    assert.equal(await G(tok, '/api/inventario/items'), 403);
+    assert.equal(await G(tok, '/api/inventario/items'), 410);
   });
 
   // ── AUX_ADMIN (lrios): ve usuarios pero NO administra ──
@@ -139,7 +137,7 @@ test('matriz de roles: cada rol accede solo a lo suyo', async (t) => {
     const tok = await crearUsuario(admin, 'ASESOR', {});
     assert.equal(await G(tok, '/api/monitoreos/mios'), 200);
     assert.equal(await G(tok, '/api/monitoreos?campana=ORLANT'), 403);
-    assert.equal(await G(tok, '/api/inventario/items'), 403);
+    assert.equal(await G(tok, '/api/inventario/items'), 410);
     assert.equal(await G(tok, '/api/dashboards/config'), 403);
   });
 

@@ -7,6 +7,15 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.237.0 — Noviembre 2026
+
+**Se retira el Inventario anterior; queda solo el Inventario de sistemas.**
+
+- Edwin aprobó pasarse al Inventario nuevo. El Inventario anterior (stock y movimientos) ya no aparece en la
+  pantalla de inicio, en el menú de Administración ni en Permisos, y su tablero se quitó.
+- No tenía datos: nada se pierde. Sus tablas se quedan guardadas, sin borrar.
+- El «Inventario de sistemas» y el «Inventario de inmuebles» siguen igual.
+
 ## v1.236.2 — Noviembre 2026
 
 **Réplica de MOBILIZE con la API: la cuenta de pruebas se reconoce por su número de Wolkvox.**

@@ -151,8 +151,6 @@ function enterAdminPanel(){
   // la pantalla de un usuario con el modulo Calidad; Edwin no la encontraba).
   var calLi=document.getElementById('menu-calidad-li');
   if(calLi) calLi.classList.toggle('hidden', !(isMaster||isAdminRole||(currentUser&&currentUser.perms&&currentUser.perms.Calidad)));
-  var invLi=document.getElementById('menu-inventario-li');
-  if(invLi) invLi.classList.toggle('hidden', !(isMaster||isAdminRole)); // Fase 369: el Inventario anterior, solo ADMIN
   var gerLi=document.getElementById('menu-gerencia-li');
   if(gerLi) gerLi.classList.toggle('hidden', !(isMaster||isAdminRole||(currentUser&&currentUser.perms&&currentUser.perms.Gerencia)));
   var ghLi=document.getElementById('menu-gestionhumana-li');

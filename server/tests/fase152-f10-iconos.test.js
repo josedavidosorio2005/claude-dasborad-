@@ -44,7 +44,7 @@ test('todo icono que se usa existe en el sprite y va con aria-hidden', () => {
 
 test('menu y botones ya no usan los emojis reemplazados', () => {
   const MENU = { 'menu-users': 'users', 'menu-perms': 'lock', 'menu-hist': 'history', 'menu-metas': 'target', 'menu-umbrales': 'gauge',
-    'menu-reportesrole': 'trending-up', 'menu-cargas': 'upload', 'menu-dashboards': 'layout-dashboard', 'menu-inventario': 'package',
+    'menu-reportesrole': 'trending-up', 'menu-cargas': 'upload', 'menu-dashboards': 'layout-dashboard', // Fase 383: sin 'menu-inventario' (retirado)
     'menu-gerencia': 'chart-column', 'menu-gestionhumana': 'contact', 'asesor-menu-calidad': 'trophy',
     'supervisor-menu-dashboards': 'layout-dashboard', 'supervisor-menu-calidad': 'circle-check' };
   for (const [id, icono] of Object.entries(MENU)) {

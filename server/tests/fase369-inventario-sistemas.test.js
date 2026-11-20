@@ -85,13 +85,13 @@ test('cambio de estado con motivo, historial; «en uso» solo por asignación (s
   assert.deepEqual([e.body.activo.marca, e.body.activo.datos.ip, e.body.activo.estado], ['MarcaY', '192.168.1.11', 'en_uso']);
 });
 
-test('el Inventario anterior queda solo para ADMIN', async () => {
-  assert.equal((await request(app).get('/api/inventario/items').set(H(tk.inv))).status, 403);
-  assert.equal((await request(app).get('/api/inventario/items').set(H(tk.admin))).status, 200);
+// Fase 383: el Inventario anterior se retiró del todo (410 también para ADMIN; sin tarjeta para nadie).
+test('el Inventario anterior está retirado', async () => {
+  assert.equal((await request(app).get('/api/inventario/items').set(H(tk.inv))).status, 410);
+  assert.equal((await request(app).get('/api/inventario/items').set(H(tk.admin))).status, 410);
+  const constantes = require('fs').readFileSync(require('path').join(__dirname, '..', '..', 'public', 'js', 'constants.js'), 'utf8');
+  assert.ok(!/key:'Inventario'/.test(constantes), 'sin la tarjeta «Inventario» en DASH_MODULES');
   const L = require('../../public/js/dashboards-logic.js');
-  const mods = [{ key: 'Inventario' }, { key: 'Calidad' }];
-  assert.deepEqual(L.dashModulosVisibles(mods, { perms: { Inventario: true, Calidad: true } }, false).map((m) => m.key), ['Calidad']);
-  assert.deepEqual(L.dashModulosVisibles(mods, null, true).map((m) => m.key), ['Inventario', 'Calidad']);
   assert.ok(L.dashTarjetasEntrada('SISTEMAS', false, false).some((t) => t.key === 'activos'));
   assert.ok(L.dashTarjetasEntrada('ADMIN', true, false).some((t) => t.key === 'activos'));
   assert.ok(!L.dashTarjetasEntrada('SUPERVISOR', false, false).some((t) => t.key === 'activos'));

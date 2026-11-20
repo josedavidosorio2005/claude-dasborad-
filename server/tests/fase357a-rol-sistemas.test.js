@@ -32,7 +32,7 @@ test('SISTEMAS es un rol válido y el administrador lo asigna', async () => {
 test('SISTEMAS no ve ningún módulo ni datos de clientes', async () => {
   for (const ruta of ['/api/historial', '/api/gerencia/kpis', '/api/dashboard/ORLANT', '/api/monitoreos?campana=ORLANT', '/api/inventario', '/api/tickets/contador']) {
     const r = await request(app).get(ruta).set(H(sis));
-    assert.ok([403, 404].includes(r.status), ruta + ' → ' + r.status);
+    assert.ok([403, 404].concat(ruta === '/api/inventario' ? [410] : []).includes(r.status), ruta + ' → ' + r.status); // Fase 383: Inventario anterior retirado (410)
   }
   const cli = (await request(app).get('/api/dashboard/clientes').set(H(sis))).body;
   assert.equal(Array.isArray(cli) ? cli.length : (cli.clientes || []).length, 0);

@@ -41,7 +41,7 @@ function calidadCampanasRegistro() {
 // Se muestra atenuado con etiqueta "Próximamente" en vez de abrir una pantalla vacía.
 var DASH_MODULES = [
   {key:'Calidad',      label:'Calidad',           icon:'<svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-circle-check"></use></svg>', sub:'Control de Calidad',     cls:'mod-calidad'},
-  {key:'Inventario',   label:'Inventario',         icon:'<svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-package"></use></svg>',sub:'Gestion de Stock',        cls:'mod-inventario'},
+  // Fase 383: el módulo «Inventario» (anterior) se retiró; lo reemplaza el «Inventario de sistemas».
   {key:'Gerencia',     label:'Gerencia',           icon:'<svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-chart-column"></use></svg>',sub:'Indicadores Ejecutivos',  cls:'mod-gerencia'},
   {key:'GestionHumana',label:'Gestión Humana',     icon:'<svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-contact"></use></svg>',sub:'Personal por Campaña',     cls:'mod-gerencia'},
   {key:'ClientesDash', label:'Dashboard Clientes', icon:'<svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-layout-dashboard"></use></svg>',sub:'Seguimiento de Clientes', cls:'mod-clientes'}
