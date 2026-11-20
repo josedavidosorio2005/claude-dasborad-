@@ -21583,3 +21583,9 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
 - **Cambio:** `quitarCuentasPrueba` en `cdr_1`, `cdr_5` y `diagram_4` (por `agent_id` o huella sha256 del nombre normalizado), Historial con el `agent_id` visto, mes vaciado con respaldo si solo trae la cuenta de pruebas. 5 pruebas nuevas.
 - **Solo lectura (Brave con la sesión de administrador del usuario):** detalle y cifras en `docs/plan-api-wolkvox.md` §10.22. Con el arreglo, octubre queda igual al real en Tipificación (204) y salida (90; 26/10 4/2/2); Encuesta de octubre queda 1 por debajo porque el archivo manual trae esa encuesta. «Sin asesor» no cuenta en ningún total. Las dos asesoras tienen exactamente las mismas llamadas día por día (mismas llamadas, otro nombre). SURA, semana del 16/11: 8 puntual, 7 tarde, 3 sin ingreso.
 - **Producción:** nada escrito por este trabajo; el cambio actúa en las próximas corridas de la réplica (el real sigue apagado).
+
+## Fase A27 — Julio y octubre sin la cuenta de pruebas; agent_id 12319 (v1.236.2, 2026-11-20)
+
+- **Autorizado por el usuario (20/11):** «Ejecutar ahora» en la réplica para 2026-07 y 2026-10, solo `cdr`, `no_conectadas` y `encuesta`, con respaldo (Brave con la sesión de administrador del usuario). 6 corridas `ok`, 6 consultas.
+- **Resultado:** octubre igual al MOBILIZE real en Tipificación (204), salida (90 + 76), llamadas únicas (85) y Eficacia (51 de 114); Encuesta 112 contra 113 (el archivo manual trae la encuesta de la cuenta de pruebas del 26/10). Julio sin la cuenta de pruebas (no conectadas y Encuesta vaciadas con respaldo). Detalle en `docs/plan-api-wolkvox.md` §10.23.
+- **Cambio:** `PRUEBA_IDS = ['12319']` (el id que anotó el Historial); la huella queda como respaldo. 1 prueba nueva.
