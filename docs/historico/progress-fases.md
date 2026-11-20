@@ -21576,3 +21576,10 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
 - **Solo lectura en producción** (Brave con la sesión de administrador del usuario, autorizado): franjas de las 00:05 y 7:00 del 20/11 de la réplica `ok`; del 1 al 12/11 la réplica es igual al MOBILIZE real en todas las pestañas, también día por día, salvo AHT ±1 s y espera 1 contra 0 s en 5 días (redondeo). El real tiene noviembre solo hasta el 12/11.
 - **Encendido:** 1 skill con llamadas en noviembre, mapeada a MOBILIZE; MOBILIZE sin alias y 2/2/1 nombres de asesor (Tipificación/Salida/Encuesta) que la API trae y el real no. Detalle en `docs/plan-api-wolkvox.md` §10.21.
 - **Nada cambió en producción** ni en SSM. Brave cerrado y scripts borrados.
+
+## Fase A26 — Cuenta de pruebas de Wolkvox fuera de la API (v1.236.1, 2026-11-20)
+
+- **Pedido de Edwin (vía el usuario, 20/11):** excluir la cuenta de pruebas de Wolkvox de todas las pestañas de la réplica y del MOBILIZE real por API, sin nombres en el repo; revisar que la llamada del 26/10 y «Sin asesor» cuadren; contar por día las llamadas de dos asesoras con nombres distintos en la réplica y en el real (no crear alias); puntualidad de SURA solo en semanas con turnos.
+- **Cambio:** `quitarCuentasPrueba` en `cdr_1`, `cdr_5` y `diagram_4` (por `agent_id` o huella sha256 del nombre normalizado), Historial con el `agent_id` visto, mes vaciado con respaldo si solo trae la cuenta de pruebas. 5 pruebas nuevas.
+- **Solo lectura (Brave con la sesión de administrador del usuario):** detalle y cifras en `docs/plan-api-wolkvox.md` §10.22. Con el arreglo, octubre queda igual al real en Tipificación (204) y salida (90; 26/10 4/2/2); Encuesta de octubre queda 1 por debajo porque el archivo manual trae esa encuesta. «Sin asesor» no cuenta en ningún total. Las dos asesoras tienen exactamente las mismas llamadas día por día (mismas llamadas, otro nombre). SURA, semana del 16/11: 8 puntual, 7 tarde, 3 sin ingreso.
+- **Producción:** nada escrito por este trabajo; el cambio actúa en las próximas corridas de la réplica (el real sigue apagado).
