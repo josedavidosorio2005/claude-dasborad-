@@ -86,6 +86,17 @@ function _soloPrueba(opts, partes, res, tabla, mes, pr) {
 
 function _auto() { return require('./wolkvox-auto'); } // carga perezosa (wolkvox-auto también nos carga)
 
+// Fase A30: en un hueco del real, se vuelve a mirar JUSTO antes de escribir (sin await de por medio). Si
+// la pestaña ya tiene filas en el mes (alguien cargó algo mientras se consultaba), no se toca.
+function _huecoOcupado(opts, mes, partes, res) {
+  if (!opts.huecoReal) return false;
+  const ya = D.filasEnHueco(opts.db, mes, opts.huecoReal);
+  if (!ya) return false;
+  res.meses.push({ mes, estado: 'con_datos' });
+  partes.push(mes + ': ya tiene ' + ya + ' filas (carga), no se toca');
+  return true;
+}
+
 // Valor de una fila sin importar mayúsculas.
 function _v(fila, clave) {
   for (const k of Object.keys(fila)) if (k.toLowerCase() === clave) return fila[k];
@@ -206,8 +217,11 @@ async function correrFlujoHora(opts, partes, res) {
     if (fuera.length) { res.estado = 'error'; res.error = 'respuesta_invalida'; partes.push(mes + ': ' + fuera.length + ' filas fuera del rango pedido, sin cambios'); return; }
     const conLlamadas = p.filas.filter((f) => f[3] || f[4] || f[5]);
     if (!conLlamadas.length) { partes.push(mes + ': sin llamadas, sin cambios'); continue; }
+    if (_huecoOcupado(opts, mes, partes, res)) continue;
     const reemplazadas = reemplazarMesFlujoHora(opts.db, mes, conLlamadas, opts.campana);
-    const ahtN = actualizarAhtEspera(opts.db, mes, ahtEsperaDiarios(data), opts.campana);
+    // Fase A30: en un hueco, el AHT/espera del Flujo solo se completa si TODO el Flujo del mes vino de la
+    // API (nunca se toca un Flujo cargado a mano).
+    const ahtN = opts.huecoReal && D.flujoConCargaManual(opts.db, mes, _auto().ARCHIVO) ? 0 : actualizarAhtEspera(opts.db, mes, ahtEsperaDiarios(data), opts.campana);
     res.meses.push({ mes, filas: conLlamadas.length, sinLlamadas: p.filas.length - conLlamadas.length, reemplazadas, ahtEspera: ahtN });
     partes.push(mes + ': ' + conLlamadas.length + ' filas día-hora-skill (' + (p.filas.length - conLlamadas.length) + ' en cero fuera), reemplazó ' + reemplazadas + ', AHT/espera en ' + ahtN + ' filas del Flujo, con respaldo');
   }
@@ -314,7 +328,7 @@ async function correrCdr(opts, partes, res) {
     if (!data.length) { partes.push(mes + ': Wolkvox no trajo llamadas, sin cambios'); continue; }
     const prC = quitarCuentasPrueba(data); // Fase A26
     data = prC.data;
-    if (!data.length) { _soloPrueba(opts, partes, res, 'tipificaciones', mes, prC); continue; }
+    if (!data.length) { if (opts.huecoReal) { partes.push(mes + ': solo filas de la cuenta de prueba' + _textoPrueba(prC) + ', sin cambios'); continue; } _soloPrueba(opts, partes, res, 'tipificaciones', mes, prC); continue; }
     const conteo = conteoCdr(data); // Fase A12: solo números
     let p = T.tipificacionParseFilas(hojaCdr(data), null, 'LLAMADAS', opcionesCdrMobilize());
     data = null; // los teléfonos y demás datos crudos no se guardan ni se quedan en memoria
@@ -327,6 +341,7 @@ async function correrCdr(opts, partes, res) {
     const fuera = filas.filter((f) => String(f[1]).slice(0, 7) !== mes);
     if (fuera.length) { res.estado = 'error'; res.error = 'respuesta_invalida'; partes.push(mes + ': ' + fuera.length + ' llamadas fuera del mes, sin cambios'); return; }
     if (!filas.length) { partes.push(mes + ': ninguna llamada válida, sin cambios'); continue; }
+    if (_huecoOcupado(opts, mes, partes, res)) continue;
     const w = cargarTipificaciones(opts.db, {
       campana: opts.campana, canal: 'LLAMADAS', archivoNombre: 'API Wolkvox (cdr_1)', cargadoPorNombre: QUIEN, filas,
       desde: mes + '-01', hasta: ing.ultimoDiaDelMes(mes),
@@ -447,6 +462,7 @@ async function correrAbandonadas(opts, partes, res) {
     }
     const fuera = p.filas.filter((f) => String(f[0]).slice(0, 7) !== mes);
     if (fuera.length) { res.estado = 'error'; res.error = 'respuesta_invalida'; partes.push(mes + ': ' + fuera.length + ' llamadas fuera del mes, sin cambios'); return; }
+    if (_huecoOcupado(opts, mes, partes, res)) continue;
     const w = cargarLlamadasAbandonadas(opts.db, { campana: opts.campana, archivoNombre: 'API Wolkvox (skill_2)', cargadoPorNombre: QUIEN, filas: p.filas, desde: mes + '-01', hasta: ing.ultimoDiaDelMes(mes) });
     res.meses.push({ mes, filas: w.insertadas, reemplazadas: w.borradas, repetidas: p.duplicadosQuitados });
     partes.push(mes + ': ' + llegaron + ' filas → ' + w.insertadas + ' abandonadas únicas (' + p.duplicadosQuitados + ' repetidas día+teléfono, ' + p.avisos.length + ' avisos; reemplazó ' + w.borradas + ', con respaldo)');
@@ -492,11 +508,11 @@ async function correrModulo(nombre, opts) {
   if (!D.campanaLista(db, dest)) { res.estado = 'omitida'; partes.push(dest.clave === 'replica' ? 'la réplica no existe' : 'la campaña no existe o es interna'); return terminar(); }
   const cred = opts.credenciales || wv.credenciales(OPERACION, env);
   if (!cred) { res.estado = 'omitida'; partes.push('falta el token o el servidor de Wolkvox'); return terminar(); }
-  const meses = A.planDe({ mes: opts.mes, ahora, destino: dest });
+  const meses = A.planDe({ mes: opts.mes, ahora, destino: dest, huecoReal: opts.huecoReal });
   if (!meses.length) { res.estado = 'omitida'; partes.push(opts.mes ? 'mes no válido (' + String(opts.mes).slice(0, 7) + ')' : 'nada que pedir'); return terminar(); }
   if (wv.usoDelDia(db, OPERACION, ahora) + meses.length * (mod.consultasPorMes || 1) > wv.topeDiario(env)) { res.estado = 'omitida'; partes.push('no alcanza el tope del día'); return terminar(); }
   try {
-    await mod.correr({ db, env, ahora, mes: opts.mes, fetchImpl: opts.fetchImpl, cred, destino: dest, campana: CAMPANA }, partes, res);
+    await mod.correr({ db, env, ahora, mes: opts.mes, fetchImpl: opts.fetchImpl, cred, destino: dest, campana: CAMPANA, huecoReal: opts.huecoReal }, partes, res);
   } catch (e) {
     if (!(e instanceof wv.WolkvoxError)) throw e;
     res.estado = res.meses.length ? 'parcial' : 'error';

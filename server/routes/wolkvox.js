@@ -158,5 +158,33 @@ router.post(
   })
 );
 
+// Fase A30 (20/11/2026): llenar a mano un HUECO del MOBILIZE real (lista cerrada HUECOS_REAL de
+// wolkvox-destinos.js; autorización escrita del usuario en CLAUDE.md). Solo el administrador; exige
+// WOLKVOX_REAL_ACTIVO=1 (leído fresco); una vez cada 10 min; cada pestaña una sola vez y solo si está
+// vacía en el real. Responde solo conteos y códigos.
+router.post(
+  '/wolkvox/real/hueco',
+  requireActor,
+  wrap(async (req, res) => {
+    if (!isFullAdmin(req.actor)) return res.status(403).json({ error: 'Solo el administrador' });
+    const b = req.body || {};
+    const D = require('../wolkvox-destinos');
+    if (typeof b.mes !== 'string' || !Object.prototype.hasOwnProperty.call(D.HUECOS_REAL, b.mes)) return res.status(400).json({ error: 'Ese mes no está en la lista de huecos autorizados', codigo: 'parametro' });
+    const clave = 'real-hueco';
+    const espera = (_ultimaEjecucion.get(clave) || 0) + ESPERA_ENTRE_EJECUCIONES_MS - Date.now();
+    if (espera > 0) return res.status(429).json({ error: 'Espera ' + Math.ceil(espera / 60000) + ' min antes de volver a ejecutar', codigo: 'espera' });
+    _ultimaEjecucion.set(clave, Date.now());
+    const r = await require('../wolkvox-auto').rellenarHuecoReal({
+      db, logEvent, actor: actorLabel(req.actor), mes: b.mes,
+      fetchImpl: req.app.locals.wolkvoxFetch, leerInterruptor: req.app.locals.wolkvoxInterruptor,
+    });
+    if (r.estado === 'apagada') return res.status(409).json({ ok: false, codigo: 'apagada', error: 'El MOBILIZE real está apagado (WOLKVOX_REAL_ACTIVO no es 1 en SSM)' });
+    if (r.estado === 'ocupada') return res.status(409).json({ ok: false, codigo: 'ocupada', error: 'Ya hay una corrida en curso' });
+    if (r.estado === 'sin_interruptor') return res.status(503).json({ ok: false, codigo: 'sin_interruptor', error: 'No se pudo leer el interruptor en SSM; no se consultó' });
+    if (r.estado === 'no_permitido') return res.status(400).json({ ok: false, codigo: 'parametro', error: 'Ese mes no está en la lista de huecos autorizados' });
+    res.json({ ok: r.estado === 'ok', estado: r.estado, error: r.error || null, consultas: r.consultas, partes: r.partes, mes: b.mes, detalle: r.detalle, usoHoy: wv.usoDelDia(db, 'MOBILIZE'), tope: wv.topeDiario() });
+  })
+);
+
 module.exports = router;
 module.exports._reiniciarEspera = () => { _ultimaPrueba.clear(); _ultimoDiagnostico.clear(); _ultimaEjecucion.clear(); }; // solo pruebas

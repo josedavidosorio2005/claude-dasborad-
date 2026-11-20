@@ -154,6 +154,22 @@ asumir en qué quedó una fase anterior.
   y los módulos en `WOLKVOX_REAL_MODULOS` (SSM). Crear esos parámetros
   necesita OK explícito del usuario. Ampliar a otro reporte o cliente =
   autorización nueva por escrito.
+- **Excepción escrita (usuario, 20/11/2026, hueco de julio de 2026 del
+  MOBILIZE real con la API, Fase A30):** un administrador puede lanzar a
+  mano (`POST /api/wolkvox/real/hueco`), una sola vez por pestaña, la
+  consulta de Wolkvox para llenar en el **MOBILIZE real** SOLO **julio de
+  2026** en Flujo (`skill_1`), Flujo por hora (`skill_7`), Tipificación
+  (`cdr_1`) y Abandonadas (`skill_2`) (lista cerrada `HUECOS_REAL` en
+  `server/wolkvox-destinos.js`), y SOLO si esa pestaña no tiene ninguna
+  fila en julio (se revisa antes de consultar y al escribir). Nunca
+  reemplaza ni modifica una carga manual, tampoco el AHT ni la espera de un
+  Flujo manual. Respaldo antes de escribir, cuenta de pruebas fuera, datos
+  sensibles de `cdr_1` descartados en memoria, solo skills mapeadas a
+  MOBILIZE, sin reintentos, dentro del tope de 2.800 consultas al día;
+  exige `WOLKVOX_REAL_ACTIVO=1`. Noviembre de 2025 a junio de 2026 no se
+  piden: Wolkvox los rechaza («Validate dates entered», sondeo del
+  20/11/2026). Otro mes, pestaña o cliente = autorización nueva por
+  escrito.
 - Nada de pruebas agresivas contra producción (sin límite de tasa, sin
   volumen alto, sin tocar datos que no sean los explícitamente
   autorizados). No destapar pestañas ocultas a mano, no tocar datos de
