@@ -21557,3 +21557,9 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
 - **Solo lectura (Brave con la sesión de administrador del usuario):** cada nombre coincidió con exactamente 1 usuario ASESOR de SURA, activo: **ids 85, 96, 97, 88 y 91**. Ligado: monitoreos de SURA 2, 3, 3, 2 y 1 (por id y por nombre, iguales); enlace de Horarios 1 cada una; ninguna en Malla (no hay malla de noviembre); presentes en las bases de ventas de varios meses (por nombre, dentro de los datos del tablero).
 - **Cambio en producción:** las 5 suspendidas (no pueden iniciar sesión; salen de Calificar, Malla y Horarios). Asesoras SURA activas: 23 → 18. Nada borrado; se reactivan con el mismo botón.
 - **Antes / después (solo lectura):** monitoreos de SURA 96 = 96 (lista completa con la misma huella); resumen de Calidad igual; bases del tablero de Ventas (tipo, mes, registros) y configuración iguales; datos de ventas por mes del mismo tamaño; menciones de cada asesora en ventas iguales. **Nada cambió en Calidad ni en Ventas.**
+
+## Fase A23 — Plan para pasar Wolkvox al MOBILIZE real (solo docs, 2026-11-20)
+
+- **Solo lectura en producción (Brave con la sesión de administrador del usuario, autorizado):** las franjas de las 00:05 y 7:00 del 20/11 de la réplica terminaron bien (Flujo y 5 módulos `ok`, 24 consultas cada una). SURA: sin malla de noviembre (0 días calificados); Horarios hasta el 17/11.
+- **Plan** en `docs/plan-api-wolkvox.md` §10.19: 6 módulos; en paralelo hasta el 3/12 y cambio desde diciembre; alias de MOBILIZE; la llamada del 26/10 la decide Edwin; interruptor propio `WOLKVOX_REAL_ACTIVO` y `WOLKVOX_REAL_MODULOS` (sin crear); respaldo y forma de deshacer; criterios de comparación; texto propuesto para la autorización escrita.
+- **Nada cambió en producción:** ni el MOBILIZE real, ni SSM, ni la réplica. Brave cerrado y scripts borrados.
