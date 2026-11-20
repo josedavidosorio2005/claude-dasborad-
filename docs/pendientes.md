@@ -30,11 +30,13 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
     - 0 errores de consola y sin desborde lateral.
   - **Fase 372 (v1.223.0):** Inventario de sistemas E4, formularios editables por Sistemas.
 - **Pendiente, del usuario:**
-  - **Actas de prueba, opción A:** el usuario la hace a mano. Pasos:
+  - **Actas de prueba, opción A: HECHA (Fase 383, 20/11, OK del usuario).** Pasos que se siguieron:
     1. devolver el elemento #1 (motivo «Prueba 371b», queda «Malo»);
     2. darlo de baja;
     3. desactivar el agente #1.
-    El acta #1 y su PDF se quedan. Al 19/11 a mediodía todavía no estaba hecho.
+    El acta #1 y su PDF se quedan. **20/11 (Fase 383, OK del usuario):** los 3 pasos hechos; las actas
+    automáticas que crearon (2, devolución; 3, baja) se anularon con motivo «Prueba 371b». Panel: 1 de baja, 0 agentes
+    activos, 0 por firmar.
   - **SURA no tiene malla de turnos.** Sin turnos, la puntualidad no da a tiempo ni tarde: las asesoras salen en
     «con ingreso sin turno» (158 días-asesora del 26/10 al 22/11) y «Mi malla» dice «Todavía no tienes turno
     asignado». Hay que armar la malla de SURA (supervisor o administrador) o que Edwin diga los turnos.
@@ -47,8 +49,9 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 - **Detalle visual menor, sin arreglar:** la franja de «Ver como» mide 178 px de alto a 375 px (el texto ocupa
   5 líneas). No tapa el botón «Cerrar» de las ventanas.
 - **Inventario de sistemas:** E1–E4 hechos (Fases 369–372); las actas firmadas en S3 funcionan desde el 18/11.
-  **Falta:** que Sistemas valide el inventario nuevo y, con OK del usuario, retirar el Inventario anterior (hoy
-  solo lo ve ADMIN).
+  **El Inventario anterior se retiró** (Fase 383, 20/11; Edwin aprobó; no tenía datos): 410 en `/inventario/*`,
+  sin tarjeta, menú ni tablero; las tablas se quedan. Opcional: quitar el rol INVENTARIO (sin usuarios) y el código
+  de la ventana anterior.
 - **Malla fase 2 (puntualidad, Fase 363):**
   - **réplica por la API:** sigue apagada (`WOLKVOX_LOGIN_ACTIVO`) hasta el OK del usuario;
   - **SURA por archivo:** ya funciona (ver arriba).

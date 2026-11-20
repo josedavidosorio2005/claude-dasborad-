@@ -26,7 +26,6 @@ function dashModulosVisibles(modulos, currentUser, esFullAdmin) {
   return (modulos || []).filter(function (m) {
     if (m.soon) return true;
     if (esFullAdmin) return true;
-    if (m.key === 'Inventario') return false; // Fase 369: el Inventario anterior queda solo para ADMIN
     return !!(currentUser && currentUser.perms && currentUser.perms[m.key] === true);
   });
 }

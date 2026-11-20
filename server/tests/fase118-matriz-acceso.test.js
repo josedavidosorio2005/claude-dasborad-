@@ -354,8 +354,8 @@ declarar(['POST /admin/ver-como/:id'], 'admin');
 declarar(['POST /admin/ver-como/fin'], 'skip');
 
 // Inventario / Gerencia / Gestion Humana (modulos internos globales, sin campana)
-declarar(['GET /inventario/items', 'GET /inventario/resumen', 'GET /inventario/movimientos'], 'admin'); // Fase 369: el Inventario anterior, solo ADMIN
-declarar(['POST /inventario/items', 'PUT /inventario/items/:id', 'DELETE /inventario/items/:id', 'POST /inventario/movimientos', 'POST /inventario/carga-items', 'POST /inventario/carga-movimientos'], 'admin'); // Fase 369
+// Fase 383: el Inventario anterior (/inventario/*) se retiró: ya no tiene rutas (un middleware responde 410
+// a todos), probado en inventario-gerencia.test.js y abajo.
 // Fase 369 (E1): Inventario de sistemas -- ADMIN y SISTEMAS, probado rol por rol en fase369-inventario-sistemas.test.js.
 declarar(['GET /activos/config', 'GET /activos/resumen', 'GET /activos', 'POST /activos', 'PUT /activos/:id', 'POST /activos/:id/estado', 'GET /activos/:id/historial', 'PUT /activos/listas/:lista',
   // Fase 370 (E2): agentes y asignación, también probados rol por rol en fase370-inventario-agentes.test.js.
@@ -619,13 +619,11 @@ test('Fase 118 2A: PUT/DELETE /monitoreos/:id solo REPORTES con acceso a la camp
 // ══════════════════════════════════════════════════════════════════
 // 5) Modulos internos: Inventario / Gerencia / Gestion Humana (escritura)
 // ══════════════════════════════════════════════════════════════════
-test('Fase 118 2A: POST /inventario/items solo ADMIN (Fase 369: el Inventario anterior queda solo para el administrador)', async () => {
+test('Fase 118 2A: /inventario/* retirado (Fase 383): 410 para todos los roles, nadie escribe', async () => {
   const body = { nombre: 'Item matriz 118', cantidad: 1 };
   for (const rol of TODOS_LOS_ROLES) {
     const res = await request(app).post('/api/inventario/items').set(auth(rol)).send(body);
-    const deberiaPasar = rol === 'ADMIN';
-    if (deberiaPasar) assert.notEqual(res.status, 403, `${rol}: ${JSON.stringify(res.body)}`);
-    else assert.equal(res.status, 403, `${rol} deberia dar 403, vino ${res.status}`);
+    assert.equal(res.status, 410, `${rol} deberia dar 410, vino ${res.status}`);
   }
 });
 

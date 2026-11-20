@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.236.2` (ver `server/package.json`, expuesta en
+- **Versión**: `1.237.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -619,6 +619,7 @@ mismo orden):
 - Fase A25 — comparación réplica / MOBILIZE real del 20/11: 01–12/11 igual en todas las pestañas (AHT ±1 s); el real solo hasta el 12/11; MOBILIZE sin alias (solo docs, 2026-11-20)
 - Fase A26 — cuenta de pruebas de Wolkvox fuera de Tipificación, salida y Encuesta por API (réplica y real); las dos asesoras con nombres distintos tienen las mismas llamadas; SURA semana 16/11: 8/7/3 (v1.236.1, 2026-11-20)
 - Fase A27 — réplica: julio y octubre reejecutados sin la cuenta de pruebas (octubre = real salvo 1 encuesta del archivo manual); agent_id de la cuenta en PRUEBA_IDS (v1.236.2, 2026-11-20)
+- Fase 383 — Inventario: opción A de las actas de prueba hecha (Panel cuadra) y retiro del Inventario anterior, que no tenía datos (410, tablas intactas) (v1.237.0, 2026-11-20)
 - Fase 309 — Revisión de seguridad: el cliente ya no recibe el nombre de los líderes en `GET /metas`; resto en `docs/revision-seguridad-2026-11-09.md` (v1.154.1, 2026-11-10)
 - Fase 308 — Revisión antes de la reunión con clientes y pendientes del supervisor (solo docs, 2026-11-10)
 - Fase 307 — Calidad para que los líderes evalúen: ORLANT conserva su Calidad y suma «Resultado de los monitoreos» al final; Aurora ya lo tenía (se muestra con el primer monitoreo) (v1.154.0, 2026-11-10)
