@@ -713,3 +713,25 @@ Réplica vs MOBILIZE real, 01–12/11: Flujo, Flujo por hora, Tipificación y En
 - **Registro:** franjas `AAAA-MM-DD HH real` (y `… real <módulo>`) en `wolkvox_auto_corridas`; Historial `WOLKVOX_AUTO` / `WOLKVOX_MODULO` con el prefijo «MOBILIZE ·», solo conteos. `/wolkvox/estado` suma `auto.real` (campaña, corte, nombre del interruptor y si estaba en 1 al arrancar).
 - **Pruebas** (`faseA24-wolkvox-mobilize-real`, 6): lista cerrada; corte; sin parámetro, con «0», «true», «si», vacío, «11», «on», con SSM caído o con solo el interruptor de la réplica encendido → cero consultas y cero cambios en el MOBILIZE real (Flujo, Flujo por hora, Tipificación, Encuesta, salida, abandonadas, corridas, respaldos e Historial); con «1» antes de diciembre → nada; «Ejecutar ahora» con `destino: 'real'` escribe en la réplica; con «1» en diciembre → solo skills mapeadas, módulos en orden, respaldo al reemplazar y noviembre intacto.
 - **Para encender (cada paso con OK del usuario):** (1) terminar la comparación del 20/11 al 3/12 (§10.19); (2) revisar el mapeo de skills y los alias de MOBILIZE; (3) crear `/inconexion/prod/WOLKVOX_REAL_MODULOS` y después `/inconexion/prod/WOLKVOX_REAL_ACTIVO` = `1`; (4) revisar el Historial de la primera franja y comparar con los archivos que Edwin siga exportando.
+
+### 10.21 Comparación réplica / MOBILIZE real del 20/11/2026 (Fase A25, solo lectura)
+
+**Corridas:** las franjas de las 00:05 y 7:00 del 20/11 de la réplica terminaron bien (Flujo y los 5 módulos `ok`). Del MOBILIZE real no hay corridas: el código (v1.236.0) está apagado y `WOLKVOX_REAL_*` no existen en SSM.
+
+**Réplica contra MOBILIZE real, 01–12/11 (mes completo y día por día, solo lectura con la sesión de administrador del usuario):**
+
+| Pestaña | Resultado |
+|---|---|
+| Flujo (ingresadas/contestadas/abandonadas) | Igual: 29/29/0, también por día |
+| Flujo: nivel de servicio, ASA, ATA | Iguales en los días y skills comunes |
+| Flujo: AHT y espera | 5 días con AHT ±1 s y espera 1 contra 0 s (redondeo del promedio ponderado por hora de `skill_7` contra el archivo manual) |
+| Flujo por hora | Igual (25 filas día-hora) |
+| Tipificación (totales y por tipo) | Igual, también por día |
+| Salida (tarjetas y no conectadas) | Igual, también por día |
+| Llamadas únicas y Eficacia | Igual, también por día |
+| Encuesta | Igual, también por día |
+
+- **Cobertura:** el MOBILIZE real tiene noviembre solo hasta el **12/11** en todas las pestañas (en Encuesta, del 13 al 19/11 el total es 0). La réplica sigue hasta el 19/11: 54/53/1 en el mes (25 llamadas de ingreso más). Esos días se comparan cuando el supervisor los suba.
+- **Preparación del encendido:**
+  - **Skills:** 1 skill con llamadas en noviembre (réplica) y está mapeada a MOBILIZE; 0 sin mapear. MOBILIZE tiene 2 skills mapeadas, ninguna con sede. El filtro de §10.20 no dejaría nada fuera.
+  - **Alias:** MOBILIZE tiene 0 alias. Nombres de asesor (todos los meses cargados) que la API trae y el real no: Tipificación 2, Salida 2, Encuesta 1; ninguno tiene alias. Antes de encender, el usuario decide y crea los alias en la pantalla de alias de MOBILIZE (los nombres no se anotan en el repo).
