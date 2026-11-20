@@ -22,6 +22,66 @@ const CAMPANA = ing.CAMPANA_INGESTA;
 const OPERACION = 'MOBILIZE';
 const QUIEN = 'Consulta automática Wolkvox';
 
+// ── Fase A26 (20/11/2026, pedido de Edwin): cuentas de PRUEBA de Wolkvox ──
+// Fuera de todas las pestañas que traen asesor (Tipificación + Eficacia + únicas + salida conectada
+// por cdr_1, no conectadas por cdr_5 y Encuesta por diagram_4), en la réplica y en el MOBILIZE real.
+// Flujo, Flujo por hora y Abandonadas vienen por skill, sin asesor: no se pueden separar.
+// Sin nombres en el repo: la cuenta se reconoce por su agent_id de Wolkvox (PRUEBA_IDS, cuando se
+// conozca) o por la huella sha256 de su nombre normalizado (mayúsculas, sin tildes, espacios simples;
+// el mismo criterio de los alias). Cada corrida anota en el Historial los agent_id que vio en esas
+// filas (solo el id), para poder pasar a PRUEBA_IDS.
+const crypto = require('crypto');
+const { aliasNorm } = require('./alias-asesores');
+const PRUEBA_HUELLAS = ['69301a2cd94b184d5f9b12040fe61126d6cbbdb9ae094ea454e355fa7861370e'];
+const PRUEBA_IDS = [];
+let _pruebaHuellas = PRUEBA_HUELLAS, _pruebaIds = PRUEBA_IDS;
+const _huella = (nombre) => crypto.createHash('sha256').update(aliasNorm(nombre), 'utf8').digest('hex');
+function esCuentaPrueba(fila) {
+  if (!fila || typeof fila !== 'object') return false;
+  const id = _v(fila, 'agent_id');
+  if (id !== undefined && id !== null && _pruebaIds.includes(String(id).trim())) return true;
+  const nombre = _v(fila, 'agent_name');
+  return !!(nombre && String(nombre).trim() && _pruebaHuellas.includes(_huella(nombre)));
+}
+// -> { data (sin las filas de prueba), quitadas, ids (agent_id vistos en esas filas, solo [A-Za-z0-9_.-]) }
+function quitarCuentasPrueba(data) {
+  const out = [];
+  const ids = new Set();
+  let quitadas = 0;
+  for (const r of data) {
+    if (!esCuentaPrueba(r)) { out.push(r); continue; }
+    quitadas++;
+    const id = String(_v(r, 'agent_id') == null ? '' : _v(r, 'agent_id')).trim();
+    if (/^[A-Za-z0-9_.-]{1,40}$/.test(id)) ids.add(id);
+  }
+  return { data: out, quitadas, ids: [...ids].sort() };
+}
+const _textoPrueba = (pr) => (pr.quitadas ? ', ' + pr.quitadas + ' de la cuenta de prueba fuera' + (pr.ids.length ? ' (agent_id ' + pr.ids.slice(0, 5).join(', ') + ')' : '') : '');
+// Un mes en el que Wolkvox solo trajo filas de la cuenta de prueba: se vacía (con respaldo) para que
+// no queden las de antes. Los escritores de la carga no aceptan una lista vacía.
+const _VACIAR = {
+  tipificaciones: { filtro: { canal: 'LLAMADAS' }, extra: " AND canal = 'LLAMADAS'" },
+  encuestas: { filtro: null, extra: '' },
+  llamadas_no_conectadas: { filtro: null, extra: '' },
+};
+function vaciarMes(db, tabla, campana, mes) {
+  const cfg = _VACIAR[tabla];
+  if (!cfg) throw new Error('Tabla no permitida');
+  const c = _campanaPermitida(campana);
+  const desde = mes + '-01', hasta = ing.ultimoDiaDelMes(mes);
+  let n = 0;
+  db.transaction(() => {
+    respaldarAntesDeCambiar(db, tabla, Object.assign({ campana: c, desde, hasta, guardadoPorNombre: QUIEN }, cfg.filtro ? { filtro: cfg.filtro } : {}));
+    n = db.prepare('DELETE FROM ' + tabla + ' WHERE campana = ? AND fecha >= ? AND fecha <= ?' + cfg.extra).run(c, desde, hasta).changes;
+  })();
+  return n;
+}
+function _soloPrueba(opts, partes, res, tabla, mes, pr) {
+  const n = vaciarMes(opts.db, tabla, opts.campana, mes);
+  res.meses.push({ mes, filas: 0, reemplazadas: n, prueba: pr.quitadas });
+  partes.push(mes + ': solo filas de la cuenta de prueba' + _textoPrueba(pr) + ', mes vaciado (borró ' + n + '), con respaldo');
+}
+
 function _auto() { return require('./wolkvox-auto'); } // carga perezosa (wolkvox-auto también nos carga)
 
 // Valor de una fila sin importar mayúsculas.
@@ -250,6 +310,9 @@ async function correrCdr(opts, partes, res) {
       if (r.data.length) campos = wv.resumenSinValores(r.cuerpo).campos;
     }
     if (!data.length) { partes.push(mes + ': Wolkvox no trajo llamadas, sin cambios'); continue; }
+    const prC = quitarCuentasPrueba(data); // Fase A26
+    data = prC.data;
+    if (!data.length) { _soloPrueba(opts, partes, res, 'tipificaciones', mes, prC); continue; }
     const conteo = conteoCdr(data); // Fase A12: solo números
     let p = T.tipificacionParseFilas(hojaCdr(data), null, 'LLAMADAS', opcionesCdrMobilize());
     data = null; // los teléfonos y demás datos crudos no se guardan ni se quedan en memoria
@@ -267,8 +330,8 @@ async function correrCdr(opts, partes, res) {
       desde: mes + '-01', hasta: ing.ultimoDiaDelMes(mes),
     });
     const unicas = p.unicasDia ? p.unicasDia.unicas : null;
-    res.meses.push({ mes, filas: w.insertadas, reemplazadas: w.borradas, excluidas: p.excluidas || 0, unicas, salida: p.salida || 0 });
-    partes.push(mes + ': ' + w.insertadas + ' llamadas (' + (p.salida || 0) + ' de salida' + (unicas !== null ? ', ' + unicas + ' únicas de ingreso' : '') + (p.excluidas ? ', ' + p.excluidas + ' de prueba fuera' : '') + '), reemplazó ' + w.borradas + ', con respaldo · ' + conteo);
+    res.meses.push({ mes, filas: w.insertadas, reemplazadas: w.borradas, excluidas: p.excluidas || 0, unicas, salida: p.salida || 0, prueba: prC.quitadas });
+    partes.push(mes + ': ' + w.insertadas + ' llamadas (' + (p.salida || 0) + ' de salida' + (unicas !== null ? ', ' + unicas + ' únicas de ingreso' : '') + (p.excluidas ? ', ' + p.excluidas + ' de prueba fuera' : '') + _textoPrueba(prC) + '), reemplazó ' + w.borradas + ', con respaldo · ' + conteo);
     p = null;
   }
 }
@@ -297,6 +360,9 @@ async function correrEncuesta(opts, partes, res) {
     res.consultas++;
     let { data, cuerpo } = await _pedir(opts, 'diagram_4', dias[0], dias[dias.length - 1]);
     if (!data.length) { partes.push(mes + ': Wolkvox no trajo encuestas, sin cambios'); continue; }
+    const prE = quitarCuentasPrueba(data); // Fase A26
+    data = prE.data;
+    if (!data.length) { cuerpo = null; _soloPrueba(opts, partes, res, 'encuestas', mes, prE); continue; }
     const campos = wv.resumenSinValores(cuerpo).campos;
     let p = EN.encuestaParseFilas(hojaEncuesta(data));
     data = null; cuerpo = null; // lo crudo (teléfonos, comentarios) no se queda en memoria
@@ -310,8 +376,8 @@ async function correrEncuesta(opts, partes, res) {
     if (fuera.length) { res.estado = 'error'; res.error = 'respuesta_invalida'; partes.push(mes + ': ' + fuera.length + ' encuestas fuera del mes, sin cambios'); return; }
     if (!filas.length) { partes.push(mes + ': ninguna encuesta válida, sin cambios'); continue; }
     const w = cargarEncuestas(opts.db, { campana: opts.campana, archivoNombre: 'API Wolkvox (diagram_4)', cargadoPorNombre: QUIEN, filas, desde: mes + '-01', hasta: ing.ultimoDiaDelMes(mes) });
-    res.meses.push({ mes, filas: w.insertadas, reemplazadas: w.borradas });
-    partes.push(mes + ': ' + w.insertadas + ' encuestas (' + (p.avisos.length ? p.avisos.length + ' avisos, ' : '') + 'reemplazó ' + w.borradas + ', con respaldo)');
+    res.meses.push({ mes, filas: w.insertadas, reemplazadas: w.borradas, prueba: prE.quitadas });
+    partes.push(mes + ': ' + w.insertadas + ' encuestas (' + (p.avisos.length ? p.avisos.length + ' avisos, ' : '') + 'reemplazó ' + w.borradas + _textoPrueba(prE) + ', con respaldo)');
     p = null;
   }
 }
@@ -333,14 +399,17 @@ async function correrNoConectadas(opts, partes, res) {
     res.consultas++;
     let { data } = await _pedir(opts, 'cdr_5', dias[0], dias[dias.length - 1]);
     if (!data.length) { partes.push(mes + ': Wolkvox no trajo no conectadas, sin cambios'); continue; }
+    const prN = quitarCuentasPrueba(data); // Fase A26
+    data = prN.data;
+    if (!data.length) { _soloPrueba(opts, partes, res, 'llamadas_no_conectadas', mes, prN); continue; }
     let p = LS.llamadasNoConectadasParseFilas(hojaNoConectadas(data));
     data = null; // teléfonos y demás datos crudos no se guardan ni se quedan en memoria
     if (p.error) { res.estado = 'error'; res.error = 'respuesta_invalida'; partes.push(mes + ': respuesta no esperada (' + String(p.error).slice(0, 120) + '), sin cambios'); return; }
     const fuera = p.filas.filter((f) => String(f[0]).slice(0, 7) !== mes);
     if (fuera.length) { res.estado = 'error'; res.error = 'respuesta_invalida'; partes.push(mes + ': ' + fuera.length + ' llamadas fuera del mes, sin cambios'); return; }
     const w = cargarLlamadasNoConectadas(opts.db, { campana: opts.campana, archivoNombre: 'API Wolkvox (cdr_5)', cargadoPorNombre: QUIEN, filas: p.filas, desde: mes + '-01', hasta: ing.ultimoDiaDelMes(mes) });
-    res.meses.push({ mes, filas: w.insertadas, reemplazadas: w.borradas });
-    partes.push(mes + ': ' + w.insertadas + ' no conectadas (reemplazó ' + w.borradas + ', con respaldo)');
+    res.meses.push({ mes, filas: w.insertadas, reemplazadas: w.borradas, prueba: prN.quitadas });
+    partes.push(mes + ': ' + w.insertadas + ' no conectadas (reemplazó ' + w.borradas + _textoPrueba(prN) + ', con respaldo)');
     p = null;
   }
 }
@@ -435,4 +504,9 @@ async function correrModulo(nombre, opts) {
   return terminar();
 }
 
-module.exports = { conteoCdr, MODULOS, modulosDe, correrModulo, hojaFlujoHora, ahtEsperaDiarios, reemplazarMesFlujoHora, actualizarAhtEspera, hojaCdr, CDR_COLUMNAS, CDR_DESCARTADAS, opcionesCdrMobilize, hojaEncuesta, ENCUESTA_DESCARTADAS, hojaNoConectadas, NC_DESCARTADAS, hojaAbandonadas, AB_DESCARTADAS };
+module.exports = {
+  // Fase A26: cuentas de prueba (las listas solo se cambian en pruebas)
+  esCuentaPrueba, quitarCuentasPrueba, vaciarMes, PRUEBA_HUELLAS, PRUEBA_IDS,
+  _configurarPruebaParaPruebas: (huellas, ids) => { _pruebaHuellas = huellas || PRUEBA_HUELLAS; _pruebaIds = ids || PRUEBA_IDS; },
+  _huellaParaPruebas: _huella,
+  conteoCdr, MODULOS, modulosDe, correrModulo, hojaFlujoHora, ahtEsperaDiarios, reemplazarMesFlujoHora, actualizarAhtEspera, hojaCdr, CDR_COLUMNAS, CDR_DESCARTADAS, opcionesCdrMobilize, hojaEncuesta, ENCUESTA_DESCARTADAS, hojaNoConectadas, NC_DESCARTADAS, hojaAbandonadas, AB_DESCARTADAS };

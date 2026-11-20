@@ -7,6 +7,14 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.236.1 — Noviembre 2026
+
+**Réplica de MOBILIZE con la API: la cuenta de pruebas de Wolkvox ya no cuenta.**
+
+- Las llamadas y encuestas de la cuenta de pruebas de Wolkvox (pedido de Edwin) se quitan de Tipificación,
+  Eficacia, llamadas únicas, llamadas de salida y Encuesta, en la réplica y en el MOBILIZE real cuando se encienda.
+- El Flujo, el Flujo por hora y las abandonadas no cambian: Wolkvox los entrega por skill, sin asesor.
+
 ## v1.236.0 — Noviembre 2026
 
 **MOBILIZE real con la API de Wolkvox: listo, pero APAGADO.**
