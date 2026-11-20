@@ -33,7 +33,9 @@ const QUIEN = 'Consulta automática Wolkvox';
 const crypto = require('crypto');
 const { aliasNorm } = require('./alias-asesores');
 const PRUEBA_HUELLAS = ['69301a2cd94b184d5f9b12040fe61126d6cbbdb9ae094ea454e355fa7861370e'];
-const PRUEBA_IDS = [];
+// Fase A27 (20/11): agent_id de la cuenta de pruebas, visto en la corrida de octubre (Historial). La
+// huella se queda como respaldo por si Wolkvox la recrea con otro id.
+const PRUEBA_IDS = ['12319'];
 let _pruebaHuellas = PRUEBA_HUELLAS, _pruebaIds = PRUEBA_IDS;
 const _huella = (nombre) => crypto.createHash('sha256').update(aliasNorm(nombre), 'utf8').digest('hex');
 function esCuentaPrueba(fila) {

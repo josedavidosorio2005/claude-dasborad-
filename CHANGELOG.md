@@ -7,6 +7,13 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.236.2 — Noviembre 2026
+
+**Réplica de MOBILIZE con la API: la cuenta de pruebas se reconoce por su número de Wolkvox.**
+
+- La cuenta de pruebas de Wolkvox se reconoce ahora por su número de agente, aunque cambie de nombre. Nada más
+  cambia en lo que se ve.
+
 ## v1.236.1 — Noviembre 2026
 
 **Réplica de MOBILIZE con la API: la cuenta de pruebas de Wolkvox ya no cuenta.**
