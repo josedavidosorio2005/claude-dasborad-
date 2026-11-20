@@ -1,5 +1,6 @@
 // faseA24-wolkvox-mobilize-real.test.js — Fase A24 (20/11/2026): la consulta automática puede
-// escribir en el MOBILIZE real SOLO desde 2026-12, SOLO desde el programador y SOLO con
+// escribir en el MOBILIZE real SOLO desde 2026-11 (Fase A29, 20/11/2026: antes 2026-12; octubre y
+// anteriores nunca se tocan), SOLO desde el programador y SOLO con
 // WOLKVOX_REAL_ACTIVO exactamente «1». Con el interruptor apagado, sin el parámetro, con otro valor
 // o con SSM caído: ni una consulta ni una escritura en el MOBILIZE real. Campaña destino de una
 // lista cerrada (réplica y MOBILIZE). Wolkvox FALSO y datos INVENTADOS.
@@ -44,8 +45,10 @@ function huellaReal() {
     ' historial:' + n("SELECT COUNT(*) n FROM historial WHERE accion LIKE 'WOLKVOX_%' AND detalle LIKE 'MOBILIZE ·%'");
 }
 auto.asegurarTablas(db);
-// Un día de noviembre ya cargado a mano en el MOBILIZE real: nunca se toca.
-cargarNivelServicioDiario(db, { campana: REAL, sede: null, archivoNombre: 'manual inventado A24', cargadoPorNombre: 'Prueba A24', filas: [{ fecha: '2026-11-10', skillName: SKILL_MAPEADA, totalLlamadas: 5, contestadas: 5 }] });
+// Fase A29: un día de OCTUBRE cargado a mano en el MOBILIZE real (antes del corte: nunca se toca) y uno
+// de NOVIEMBRE cargado a mano (desde el corte: la API lo reemplaza, con respaldo).
+cargarNivelServicioDiario(db, { campana: REAL, sede: null, archivoNombre: 'manual inventado A29 oct', cargadoPorNombre: 'Prueba A29', filas: [{ fecha: '2026-10-10', skillName: SKILL_MAPEADA, totalLlamadas: 5, contestadas: 5 }] });
+cargarNivelServicioDiario(db, { campana: REAL, sede: null, archivoNombre: 'manual inventado A29 nov', cargadoPorNombre: 'Prueba A29', filas: [{ fecha: '2026-11-10', skillName: SKILL_MAPEADA, totalLlamadas: 7, contestadas: 7 }] });
 const ts = new Date().toISOString();
 db.prepare('INSERT INTO trafico_skill_mapeo (skillName, campana, sede, createdAt, updatedAt) VALUES (?, ?, NULL, ?, ?)').run(SKILL_MAPEADA, REAL, ts, ts);
 
@@ -67,14 +70,21 @@ test('lista cerrada: solo la réplica y el MOBILIZE real', () => {
   assert.equal(D.campanaLista(db, 'replica'), true);
 });
 
-test('corte: el real nunca pide meses anteriores a 2026-12; la réplica no cambia', () => {
+test('corte (Fase A29): el real nunca pide meses anteriores a 2026-11; la réplica no cambia', () => {
   const at = (iso) => new Date(iso);
-  assert.deepEqual(auto.planDe({ ahora: at('2026-11-25T12:00:00Z'), destino: 'real' }), []);
-  assert.deepEqual(auto.planDe({ ahora: at('2026-12-01T12:00:00Z'), destino: 'real' }), [], 'el 1/12 noviembre queda fuera');
-  assert.deepEqual(auto.planDe({ ahora: at('2026-12-03T12:00:00Z'), destino: 'real' }).map((m) => [m.mes, m.dias.length]), [['2026-12', 2]]);
-  assert.deepEqual(auto.planDe({ ahora: at('2027-01-02T12:00:00Z'), destino: 'real' }).map((m) => [m.mes, m.dias.length]), [['2026-12', 31], ['2027-01', 1]]);
-  assert.deepEqual(auto.planDe({ ahora: at('2026-12-03T12:00:00Z'), mes: '2026-11', destino: 'real' }), [], 'ni pedido a mano');
-  assert.deepEqual(auto.planDe({ ahora: at('2026-12-03T12:00:00Z') }).map((m) => m.mes), ['2026-11', '2026-12'], 'la réplica sí');
+  assert.equal(D.DESDE_MES_REAL, '2026-11');
+  assert.deepEqual(auto.planDe({ ahora: at('2026-10-25T12:00:00Z'), destino: 'real' }), []);
+  assert.deepEqual(auto.planDe({ ahora: at('2026-11-01T12:00:00Z'), destino: 'real' }), [], 'el 1/11 octubre queda fuera');
+  assert.deepEqual(auto.planDe({ ahora: at('2026-11-03T12:00:00Z'), destino: 'real' }).map((m) => [m.mes, m.dias.length]), [['2026-11', 2]], 'el 3/11 octubre queda fuera');
+  // 21/11 00:05 Colombia (05:05 UTC): noviembre del 1 al 20, la primera franja tras el cambio.
+  assert.deepEqual(auto.planDe({ ahora: at('2026-11-21T05:05:00Z'), destino: 'real' }).map((m) => [m.mes, m.dias.length]), [['2026-11', 20]]);
+  assert.deepEqual(auto.planDe({ ahora: at('2026-12-02T12:00:00Z'), destino: 'real' }).map((m) => [m.mes, m.dias.length]), [['2026-11', 30], ['2026-12', 1]], 'en diciembre, los días 1 a 3 cierra noviembre');
+  assert.deepEqual(auto.planDe({ ahora: at('2026-12-04T12:00:00Z'), destino: 'real' }).map((m) => [m.mes, m.dias.length]), [['2026-12', 3]]);
+  assert.deepEqual(auto.planDe({ ahora: at('2026-12-03T12:00:00Z'), mes: '2026-10', destino: 'real' }), [], 'octubre ni pedido a mano');
+  assert.deepEqual(auto.planDe({ ahora: at('2026-11-03T12:00:00Z') }).map((m) => m.mes), ['2026-10', '2026-11'], 'la réplica sí');
+  for (let t = Date.UTC(2026, 9, 1); t <= Date.UTC(2027, 1, 28); t += 3600 * 1000) {
+    for (const m of auto.planDe({ ahora: new Date(t), destino: 'real' })) assert.ok(m.mes >= '2026-11', 'nunca antes de noviembre: ' + m.mes);
+  }
 });
 
 test('programador: sin WOLKVOX_REAL_ACTIVO, con otro valor o con SSM caído, nunca consulta ni escribe en el MOBILIZE real', async () => {
@@ -98,11 +108,11 @@ test('programador: sin WOLKVOX_REAL_ACTIVO, con otro valor o con SSM caído, nun
   assert.equal(n("SELECT COUNT(*) n FROM wolkvox_auto_corridas WHERE franja LIKE '% real%'"), 0);
 });
 
-test('programador: con WOLKVOX_REAL_ACTIVO=1 antes de diciembre no hace nada (ni lee SSM)', async () => {
+test('programador: con WOLKVOX_REAL_ACTIVO=1 antes del corte (el 1/11) no hace nada (ni lee SSM)', async () => {
   const antes = huellaReal();
   const falso = crearFalso();
   const leidos = [];
-  await tick(new Date('2026-11-25T12:05:00Z'), { env: ENV_BASE, fetchImpl: falso.fetch, leerInterruptor: async (e, nombre) => { leidos.push(nombre); return nombre === 'WOLKVOX_REAL_ACTIVO'; }, leerValor: async (e, nombre) => (nombre === 'WOLKVOX_REAL_MODULOS' ? 'cdr' : '') });
+  await tick(new Date('2026-11-01T12:05:00Z'), { env: ENV_BASE, fetchImpl: falso.fetch, leerInterruptor: async (e, nombre) => { leidos.push(nombre); return nombre === 'WOLKVOX_REAL_ACTIVO'; }, leerValor: async (e, nombre) => (nombre === 'WOLKVOX_REAL_MODULOS' ? 'cdr' : '') });
   assert.equal(falso.urls.length, 0);
   assert.ok(!leidos.includes('WOLKVOX_REAL_ACTIVO'));
   assert.equal(huellaReal(), antes);
@@ -117,29 +127,34 @@ test('«Ejecutar ahora» nunca escribe en el MOBILIZE real, aunque se le pida', 
   assert.equal(huellaReal(), antes);
 });
 
-test('programador: con WOLKVOX_REAL_ACTIVO=1 desde diciembre escribe solo skills mapeadas, con respaldo, y no toca noviembre', async () => {
+test('programador (Fase A29): con WOLKVOX_REAL_ACTIVO=1 desde noviembre escribe solo skills mapeadas, respalda el noviembre manual y no toca octubre', async () => {
   const { logEvent } = require('../routes/shared');
   const falso = crearFalso();
-  const noviembre = () => db.prepare("SELECT fecha, skillName, totalLlamadas FROM calidad_nivel_servicio_diario WHERE campana = ? AND fecha LIKE '2026-11%'").all(REAL);
-  const nov0 = JSON.stringify(noviembre());
-  // 05/12 07:05 Colombia: pide del 1 al 4 de diciembre. La réplica apagada; el real con cdr y encuesta.
-  await tick(new Date('2026-12-05T12:05:00Z'), { env: Object.assign({}, ENV_BASE, { WOLKVOX_REAL_ACTIVO: '1', WOLKVOX_REAL_MODULOS: 'encuesta,cdr,nada' }), fetchImpl: falso.fetch, logEvent });
+  const octubre = () => db.prepare("SELECT fecha, skillName, totalLlamadas FROM calidad_nivel_servicio_diario WHERE campana = ? AND fecha LIKE '2026-10%'").all(REAL);
+  const oct0 = JSON.stringify(octubre());
+  assert.equal(JSON.parse(oct0).length, 1);
+  // Noviembre ya tenía un día cargado a mano: el primer reemplazo lo respalda.
+  assert.equal(n("SELECT COUNT(*) n FROM cargas_versiones WHERE campana = ? AND mes = '2026-11'", REAL), 0);
+  // 05/11 07:05 Colombia: pide del 1 al 4 de noviembre. La réplica apagada; el real con cdr y encuesta.
+  await tick(new Date('2026-11-05T12:05:00Z'), { env: Object.assign({}, ENV_BASE, { WOLKVOX_REAL_ACTIVO: '1', WOLKVOX_REAL_MODULOS: 'encuesta,cdr,nada' }), fetchImpl: falso.fetch, logEvent });
   const apis = falso.urls.map((u) => new URL(u).searchParams.get('api'));
   assert.deepEqual(apis, ['skill_1', 'skill_1', 'skill_1', 'skill_1', 'cdr_1', 'diagram_4'], 'Flujo y después los módulos en el orden de MODULOS');
-  const dic = db.prepare("SELECT fecha, skillName, totalLlamadas, contestadas FROM calidad_nivel_servicio_diario WHERE campana = ? AND fecha LIKE '2026-12%' ORDER BY fecha").all(REAL);
-  assert.equal(dic.length, 4);
-  assert.ok(dic.every((f) => f.skillName === SKILL_MAPEADA && f.totalLlamadas === 9 && f.contestadas === 8));
+  const nov = db.prepare("SELECT fecha, skillName, totalLlamadas, contestadas FROM calidad_nivel_servicio_diario WHERE campana = ? AND fecha LIKE '2026-11%' ORDER BY fecha").all(REAL);
+  assert.equal(nov.length, 4, 'noviembre completo reemplazado: el día manual (10/11) ya no está');
+  assert.ok(nov.every((f) => f.skillName === SKILL_MAPEADA && f.totalLlamadas === 9 && f.contestadas === 8));
+  assert.ok(n("SELECT COUNT(*) n FROM cargas_versiones WHERE campana = ? AND mes = '2026-11'", REAL) >= 1, 'respaldo del noviembre manual antes de reemplazar');
   assert.equal(n("SELECT COUNT(*) n FROM trafico_skill_mapeo WHERE skillName = ?", SKILL_SIN_MAPEO), 0, 'el mapeo no se toca');
-  assert.equal(JSON.stringify(noviembre()), nov0, 'noviembre del real intacto');
-  // Segunda franja (06/12): ya hay diciembre en el real, así que se respalda antes de reemplazar.
-  assert.equal(n("SELECT COUNT(*) n FROM cargas_versiones WHERE campana = ? AND mes = '2026-12'", REAL), 0);
-  await tick(new Date('2026-12-06T12:05:00Z'), { env: Object.assign({}, ENV_BASE, { WOLKVOX_REAL_ACTIVO: '1' }), fetchImpl: falso.fetch, logEvent });
-  assert.ok(n("SELECT COUNT(*) n FROM cargas_versiones WHERE campana = ? AND mes = '2026-12'", REAL) >= 1, 'respaldo antes de reemplazar');
-  assert.equal(n("SELECT COUNT(*) n FROM calidad_nivel_servicio_diario WHERE campana = ? AND fecha LIKE '2026-12%'", REAL), 5);
-  assert.equal(JSON.stringify(noviembre()), nov0, 'noviembre sigue intacto');
-  const h = db.prepare("SELECT detalle FROM historial WHERE accion = 'WOLKVOX_AUTO' AND detalle LIKE 'MOBILIZE · skill_1 · 2026-12: 4 días%'").get();
+  assert.equal(JSON.stringify(octubre()), oct0, 'octubre del real intacto');
+  // Segunda franja (06/11): se respalda otra vez antes de reemplazar.
+  const resp1 = n("SELECT COUNT(*) n FROM cargas_versiones WHERE campana = ? AND mes = '2026-11'", REAL);
+  await tick(new Date('2026-11-06T12:05:00Z'), { env: Object.assign({}, ENV_BASE, { WOLKVOX_REAL_ACTIVO: '1' }), fetchImpl: falso.fetch, logEvent });
+  assert.ok(n("SELECT COUNT(*) n FROM cargas_versiones WHERE campana = ? AND mes = '2026-11'", REAL) > resp1, 'respaldo antes de reemplazar');
+  assert.equal(n("SELECT COUNT(*) n FROM calidad_nivel_servicio_diario WHERE campana = ? AND fecha LIKE '2026-11%'", REAL), 5);
+  assert.equal(JSON.stringify(octubre()), oct0, 'octubre sigue intacto');
+  assert.equal(n("SELECT COUNT(*) n FROM wolkvox_auto_corridas WHERE franja LIKE '2026-10%'"), 0);
+  const h = db.prepare("SELECT detalle FROM historial WHERE accion = 'WOLKVOX_AUTO' AND detalle LIKE 'MOBILIZE · skill_1 · 2026-11: 4 días%'").get();
   assert.ok(h && h.detalle.includes('4 filas de skills sin mapear fuera'), h && h.detalle);
-  assert.equal(n("SELECT COUNT(*) n FROM wolkvox_auto_corridas WHERE franja = '2026-12-05 07 real'"), 1);
-  assert.equal(n("SELECT COUNT(*) n FROM wolkvox_auto_corridas WHERE franja IN ('2026-12-05 07 real cdr', '2026-12-05 07 real encuesta')"), 2);
-  assert.equal(n("SELECT COUNT(*) n FROM wolkvox_auto_corridas WHERE franja = '2026-12-05 07'"), 0, 'la réplica apagada no corrió');
+  assert.equal(n("SELECT COUNT(*) n FROM wolkvox_auto_corridas WHERE franja = '2026-11-05 07 real'"), 1);
+  assert.equal(n("SELECT COUNT(*) n FROM wolkvox_auto_corridas WHERE franja IN ('2026-11-05 07 real cdr', '2026-11-05 07 real encuesta')"), 2);
+  assert.equal(n("SELECT COUNT(*) n FROM wolkvox_auto_corridas WHERE franja = '2026-11-05 07'"), 0, 'la réplica apagada no corrió');
 });

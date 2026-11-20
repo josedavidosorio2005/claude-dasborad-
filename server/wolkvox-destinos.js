@@ -5,15 +5,16 @@
 //  - replica: «MOBILIZE PRUEBAS API» (autorización del 18/11). Interruptores WOLKVOX_AUTO_ACTIVO y
 //    WOLKVOX_AUTO_MODULOS. Sin corte de fecha. También la usa «Ejecutar ahora».
 //  - real: el MOBILIZE real (autorización escrita del usuario, 20/11/2026, ver CLAUDE.md y
-//    docs/plan-api-wolkvox.md §10.19). Solo desde DICIEMBRE de 2026 (nunca toca noviembre ni meses
-//    anteriores) y solo desde el programador: «Ejecutar ahora» nunca escribe aquí. Interruptor propio
+//    docs/plan-api-wolkvox.md §10.19). Solo desde NOVIEMBRE de 2026 (Fase A29: el usuario adelantó el
+//    corte de diciembre a noviembre el 20/11; nunca toca octubre ni meses anteriores) y solo desde el
+//    programador: «Ejecutar ahora» nunca escribe aquí. Interruptor propio
 //    WOLKVOX_REAL_ACTIVO=1 (SSM, leído fresco antes de cada franja) y lista de módulos propia
 //    WOLKVOX_REAL_MODULOS. Sin el parámetro, o con otro valor que «1», no corre ni deja rastro.
 'use strict';
 
 const CAMPANA_REPLICA = 'MOBILIZE PRUEBAS API';
 const CAMPANA_REAL = 'MOBILIZE';
-const DESDE_MES_REAL = '2026-12';
+const DESDE_MES_REAL = '2026-11'; // Fase A29 (20/11/2026): antes '2026-12'
 
 const DESTINOS = Object.freeze({
   replica: Object.freeze({ clave: 'replica', campana: CAMPANA_REPLICA, interruptor: 'WOLKVOX_AUTO_ACTIVO', modulos: 'WOLKVOX_AUTO_MODULOS', desdeMes: null, sufijoFranja: '' }),
@@ -29,7 +30,7 @@ function destino(d) {
   throw new Error('Destino de Wolkvox no permitido');
 }
 
-// Quita del plan los meses anteriores al corte del destino (el real: antes de 2026-12).
+// Quita del plan los meses anteriores al corte del destino (el real: antes de 2026-11).
 function recortarPlan(dest, meses) {
   const d = destino(dest);
   return d.desdeMes ? meses.filter((m) => m.mes >= d.desdeMes) : meses;
