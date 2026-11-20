@@ -47,6 +47,9 @@ css = `/* orlant-sta-app.css — Fase STA. Estilos de «Gestión STA» (HTML de 
 ${css.trim()}
 /* Fase STA: dentro de la plataforma no hay pantalla de inicio (la vista la decide el servidor) */
 #inicio{display:none!important}
+/* Fase STA: en el celular las pestañas se desplazan de lado en vez de ensanchar la página */
+.tabs{overflow-x:auto;scrollbar-width:thin}
+.tabs button{flex:0 0 auto;white-space:nowrap}
 .sta-cargando{padding:40px 16px;text-align:center;color:var(--muted)}
 `;
 
@@ -117,6 +120,7 @@ L("document.addEventListener('mousemove',e=>{", "ROOT.addEventListener('mousemov
 }
 
 // 3) Navegación: sin pantalla de inicio ni «elegir agente»; la vista la da el servidor.
+L("function mostrar(id){ ['inicio','vAgente','vSupervisor'].forEach(", "function mostrar(id){ ['vAgente','vSupervisor'].forEach(");
 L("function salir(){ agenteActual=null; mostrar('inicio'); document.title=TITULO; }", 'function salir(){ CERRAR(); }');
 funcion('irAgente', 'async function iniciar(){ await cargarEstado(); if(VISTA===\'supervisor\'){ mostrar(\'vSupervisor\'); tabSup(\'base\'); } else { mostrar(\'vAgente\'); abrirPanelAgente(); } }');
 funcion('irSupervisor', '');

@@ -93,7 +93,7 @@ const pedirTexto=(titulo,valor='',o={})=>dialogo({titulo,input:valor,...o});
    Navegación
 ===================================================================== */
 let agenteActual = null; const TITULO=document.title;
-function mostrar(id){ ['inicio','vAgente','vSupervisor'].forEach(x=>$(x).classList.toggle('hidden',x!==id)); }
+function mostrar(id){ ['vAgente','vSupervisor'].forEach(x=>$(x).classList.toggle('hidden',x!==id)); }
 function salir(){ CERRAR(); }
 async function iniciar(){ await cargarEstado(); if(VISTA==='supervisor'){ mostrar('vSupervisor'); tabSup('base'); } else { mostrar('vAgente'); abrirPanelAgente(); } }
 

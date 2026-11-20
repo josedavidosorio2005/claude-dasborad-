@@ -179,4 +179,7 @@ svg.ch .eje{stroke:#c9d3d9;stroke-width:1}
 .tipi-row{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:8px;margin-bottom:6px}
 /* Fase STA: dentro de la plataforma no hay pantalla de inicio (la vista la decide el servidor) */
 #inicio{display:none!important}
+/* Fase STA: en el celular las pestañas se desplazan de lado en vez de ensanchar la página */
+.tabs{overflow-x:auto;scrollbar-width:thin}
+.tabs button{flex:0 0 auto;white-space:nowrap}
 .sta-cargando{padding:40px 16px;text-align:center;color:var(--muted)}
