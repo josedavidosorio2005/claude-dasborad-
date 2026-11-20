@@ -154,6 +154,11 @@ function declarar(rutas, tipo, extra) {
 }
 
 declarar(['GET /health', 'POST /auth/login'], 'skip');
+// Fase STA (20/11/2026): «Gestión STA» de ORLANT (gestor = supervisor de ORLANT, ADMIN o GERENCIA; asesor
+// de ORLANT solo lo suyo; cliente de ORLANT solo /resumen). Probado rol por rol en faseSTA-orlant-gestion-sta.test.js.
+declarar(['GET /orlant/sta/estado', 'GET /orlant/sta/resumen', 'POST /orlant/sta/cargas', 'GET /orlant/sta/cargas', 'GET /orlant/sta/cargas/:id/archivo',
+  'DELETE /orlant/sta/cargas/:id', 'POST /orlant/sta/asignar', 'POST /orlant/sta/devolver', 'POST /orlant/sta/pasar', 'PUT /orlant/sta/config/tipis',
+  'POST /orlant/sta/casos/:numero/codificar', 'POST /orlant/sta/casos/:numero/rellamada'], 'skip');
 // Plan B de Wolkvox (B1): agente de la oficina, sin sesion; se protege con su propia clave
 // (X-Agente-Clave, huella en SSM) -- cubierto en faseB1-wolkvox-ingesta.test.js.
 declarar(['POST /api/wolkvox/agente/flujo'], 'skip');
@@ -185,9 +190,11 @@ declarar(['GET /wolkvox/estado', 'POST /wolkvox/probar', 'POST /wolkvox/diagnost
 // Fase 356: «Sugerencias / Tickets». Crear, listar y ver: cualquier autenticado, auto-scoped por
 // autor (ajeno: 404). Contador y estado: ADMIN o REPORTES; borrar: solo ADMIN. Esas tres (y que
 // un ajeno no vea ni conteste) se prueban rol por rol en fase356-tickets.test.js.
-declarar(['GET /tickets/campanas', 'GET /tickets', 'GET /tickets/:id', 'POST /tickets', 'POST /tickets/:id/respuestas'], 'open');
+// Fase STA (20/11/2026): ya no son 'open': el cliente de ORLANT no usa Tickets (403). Probado en
+// fase356-tickets.test.js (cualquier otro rol con sesión) y faseSTA-orlant-gestion-sta.test.js (el 403).
+declarar(['GET /tickets/campanas', 'GET /tickets', 'GET /tickets/:id', 'POST /tickets', 'POST /tickets/:id/respuestas'], 'skip');
 declarar(['GET /tickets/contador', 'PUT /tickets/:id/estado', 'DELETE /tickets/:id'], 'skip');
-declarar(['GET /tickets/tipos'], 'open'); // Fase 364: tipos activos (cualquiera con sesión)
+declarar(['GET /tickets/tipos'], 'skip'); // Fase STA: antes 'open' (ver arriba) // Fase 364: tipos activos (cualquiera con sesión)
 declarar(['POST /tickets/tipos', 'PUT /tickets/tipos/:codigo'], 'admin'); // Fase 364: solo ADMIN edita los tipos
 // Fase 358: «Malla de turnos». /malla/campanas y /malla/mia son auto-scoped (cualquier autenticado
 // recibe solo lo suyo); el resto exige supervisor de la campaña o ADMIN (leer: también REPORTES),

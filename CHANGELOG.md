@@ -7,6 +7,17 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.239.0 — Noviembre 2026
+
+**«Gestión STA» de ORLANT: primera parte (el servidor; las pantallas llegan en la siguiente versión).**
+
+- La plataforma ya guarda la base STA, las asignaciones y las gestiones en el servidor (no en el
+  navegador), con las mismas reglas del archivo de Edwin: el número de autorización no se repite y, si
+  cambió el estado, se actualiza.
+- El supervisor de ORLANT y los administrativos manejan la base y las asignaciones; cada asesora de
+  ORLANT ve solo sus casos; el cliente de ORLANT verá solo las gráficas.
+- El cliente de ORLANT ya no ve «Sugerencias / Tickets».
+
 ## v1.238.0 — Noviembre 2026
 
 **Julio de 2026 del MOBILIZE real se puede llenar con la API (una sola vez).**

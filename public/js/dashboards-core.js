@@ -31,7 +31,10 @@ function renderDashGrid(){
   // Antes «Cargar Datos» no salía para el administrador (él cargaba desde su panel).
   var puedeCargar = typeof canLoadAnyModule==='function' && canLoadAnyModule();
   var rolActual = currentUser ? currentUser.rol : 'ADMIN';
-  var extra = dashTarjetasEntrada(rolActual, isFullAdmin(), puedeCargar);
+  // Fase STA: el cliente de ORLANT (CLIENTES_DASH) sin Tickets; el servidor también lo niega.
+  var pu = (currentUser && currentUser.perms) || {};
+  var sinTickets = rolActual==='CLIENTES_DASH' && (pu.campana_ORLANT===true || pu.cliente_ORLANT===true);
+  var extra = dashTarjetasEntrada(rolActual, isFullAdmin(), puedeCargar, sinTickets);
   var tarjetaEntrada = function(t){
     var esTk = t.key==='tickets'; // Fase 364: la tarjeta lleva el contador de tickets nuevos
     return '<div class="dash-btn mod-clientes dash-entrada-'+t.key+(esTk?' tk-menu-btn':'')+'" role="button" tabindex="0" data-entrada="'+t.key+'"'+(esTk?' aria-haspopup="dialog"':'')+' onclick="'+t.accion+'()">'+

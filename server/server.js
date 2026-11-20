@@ -157,6 +157,7 @@ function createApp() {
     '/api/calidad/llamadas-abandonadas/carga', '/api/calidad/llamadas-abandonadas/carga/impacto', // Fase 191
     '/api/calidad/llamadas-no-conectadas/carga', '/api/calidad/llamadas-no-conectadas/carga/impacto', // Fase 194
     '/api/calidad/whatsapp-tiempos/carga', '/api/calidad/whatsapp-tiempos/carga/impacto',
+    '/api/orlant/sta/cargas', // Fase STA: base de Gestión STA (filas leídas + Excel original)
   ];
   const jsonLimiteNormal = express.json({ limit: '2mb' });
   const jsonLimiteMayor = express.json({ limit: '8mb' });
@@ -372,6 +373,7 @@ function createApp() {
   api.use(require('./routes/salida'));
   api.use(require('./routes/total-trafico')); // Fase 219
   api.use(require('./routes/sura-televentas')); // Fase 215
+  api.use(require('./routes/orlant-sta')); // Fase STA: «Gestión STA» de ORLANT
   api.use(require('./routes/dashboards'));
   api.use(require('./routes/centro-cargas')); // Fase 153: Centro de cargas
   api.use(require('./routes/inventario'));

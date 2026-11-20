@@ -88,7 +88,7 @@ function dashClientesLibres(clientesList, construidos, registro, editando) {
 // de los módulos por permiso, tarjetas de entrada: «Administración» (ADMIN, y el Auxiliar Admin
 // que ya entraba al panel), «Mi portal» (SUPERVISOR) y «Cargar Datos» (quien puede cargar).
 // Puro: se prueba en Node.
-function dashTarjetasEntrada(rol, esFullAdmin, puedeCargar) {
+function dashTarjetasEntrada(rol, esFullAdmin, puedeCargar, sinTickets) {
   var t = [];
   if (esFullAdmin || rol === 'AUX_ADMIN') t.push({ key: 'admin', label: 'Administración', sub: 'Usuarios, permisos, historial y configuración', icon: 'i-lock', accion: 'enterAdminPanel' });
   if (rol === 'SUPERVISOR' && !esFullAdmin) t.push({ key: 'portal', label: 'Mi portal', sub: 'Tus clientes, cargas y metas de Calidad', icon: 'i-users', accion: 'enterSupervisorPage' });
@@ -100,7 +100,8 @@ function dashTarjetasEntrada(rol, esFullAdmin, puedeCargar) {
   // Fase 376 (I1, Edwin 19/11): «Inventario de inmuebles» (sillas, mesas, papeleras), mismo motor, por ahora vacío.
   if (esFullAdmin || rol === 'SISTEMAS') t.push({ key: 'inmuebles', label: 'Inventario de inmuebles', sub: 'Sillas, mesas, papeleras', icon: 'i-armchair', accion: 'activosAbrirInmuebles' });
   // Fase 364 (pedido de Edwin 18/11, B2): «Sugerencias / Tickets» como tarjeta propia (antes en la barra superior).
-  t.push({ key: 'tickets', label: 'Sugerencias / Tickets', sub: 'Reporta un problema, una pregunta o una idea', icon: 'i-message-circle', accion: 'ticketsAbrir' });
+  // Fase STA (usuario, 20/11/2026): el cliente de ORLANT no ve Tickets (sinTickets).
+  if (!sinTickets) t.push({ key: 'tickets', label: 'Sugerencias / Tickets', sub: 'Reporta un problema, una pregunta o una idea', icon: 'i-message-circle', accion: 'ticketsAbrir' });
   return t;
 }
 
