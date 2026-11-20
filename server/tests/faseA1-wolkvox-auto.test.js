@@ -226,7 +226,9 @@ test('programador: apagado no consulta ni deja rastro; encendido corre una vez p
   let ahora = new Date('2026-11-19T12:05:00Z'); // 19/11 07:05 Colombia
   let encendido = false;
   const falso = crearFalso(diaNormal);
-  const p = auto.iniciar(db, { env: ENV, reloj: () => ahora, leerInterruptor: async (e, n) => (n === 'WOLKVOX_LOGIN_ACTIVO' ? false : encendido), fetchImpl: falso.fetch, cadaMs: 3600 * 1000 });
+  // Solo el interruptor de la réplica (Fase A29: desde que el real llena noviembre, un falso que
+  // encendiera cualquier nombre también encendería WOLKVOX_REAL_ACTIVO y contaría sus consultas).
+  const p = auto.iniciar(db, { env: ENV, reloj: () => ahora, leerInterruptor: async (e, n) => (n === undefined || n === 'WOLKVOX_AUTO_ACTIVO' ? encendido : false), fetchImpl: falso.fetch, cadaMs: 3600 * 1000 });
   try {
     const n0 = filasCorridas();
     assert.equal(await p.tick(), null);

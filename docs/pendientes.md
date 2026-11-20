@@ -45,9 +45,9 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
        detalle de abandonadas y Chats 1 con su rango de fechas);
     2. después se proponen las consultas de prueba con un número exacto, y se espera su OK.
   - **MOBILIZE real por la API:** autorizado (20/11) y **encendido en SSM** por el usuario el 20/11
-    (`WOLKVOX_REAL_ACTIVO=1`, 5 módulos). Actúa desde el **2/12 00:05** (pide el 1/12); noviembre no se toca.
-    **Falta:** revisar la primera corrida del 2/12; el supervisor no sube archivos manuales de diciembre a
-    MOBILIZE; alias de MOBILIZE (2/2/1 nombres) por decidir. Ver `docs/plan-api-wolkvox.md` §10.24.
+    (`WOLKVOX_REAL_ACTIVO=1`, 5 módulos). **Desde la Fase A29 (v1.237.1) llena noviembre**: primera franja
+    21/11 00:05 (del 1 al 20/11); octubre y anteriores no se tocan. **Falta:** revisar las corridas del 21/11;
+    el supervisor no sube archivos manuales de noviembre ni diciembre a MOBILIZE; alias de MOBILIZE (2/2/1 nombres) por decidir. Ver `docs/plan-api-wolkvox.md` §10.24.
   - **Pregunta para Edwin:** si quiere ver el nivel de servicio a 10 s y a 30 s (ya se guarda).
 - **Detalle visual menor, sin arreglar:** la franja de «Ver como» mide 178 px de alto a 375 px (el texto ocupa
   5 líneas). No tapa el botón «Cerrar» de las ventanas.
@@ -62,7 +62,7 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 - **Esperando a Edwin:** Malla fases 2 (puntualidad) y 3 (Portal Asesor ampliado) — ver el bloque 2.
 - **Plan B de Wolkvox (agente en la oficina):** B1 hecho (v1.206.0, endpoint apagado). Decidido (18/11): `skill_1` día a día.
 - **Réplica completa con la API (pedido del 18/11):** Flujo, Flujo por hora, Tipificación de ingreso, Eficacia y únicas contestadas ya salen de la API (7/8 o mejor contra el manual). Encuesta con `diagram_4` encendida el 18/11 (8/8 días iguales). **Falta:** salida (ningún reporte probado cuadra: preguntar a Wolkvox el de llamadas de salida/campaña); abandonadas con detalle (`skill_9` solo da conteos); WhatsApp (`chat_1` rechaza el formato de fechas). Detalle en `docs/plan-api-wolkvox.md` §10.9–10.10.
-- **Plan A de Wolkvox (consulta automática desde el servidor):** **ENCENDIDA** desde el 18/11 (`WOLKVOX_AUTO_ACTIVO=1`, solo la réplica). Primera corrida (18/11) y comparación con el Flujo manual: SKILL SAC 8/8 días iguales; `flujo_hora` tras la corrida de las 13:00: 25/25 celdas día-hora iguales, espera 8/8, AHT 7/8 (un día 3 s). Comparado otra vez el 19/11 tras la corrida de las 7:00 (mismo resultado, ver arriba). **MOBILIZE real:** autorizado y encendido el 20/11; primera corrida el 2/12 00:05 (§10.24). **Falta:** preguntar a Edwin si quiere ver el nivel de servicio a 10 s y 30 s (ya se guarda). Detalle en `docs/plan-api-wolkvox.md`, sección 10.
+- **Plan A de Wolkvox (consulta automática desde el servidor):** **ENCENDIDA** desde el 18/11 (`WOLKVOX_AUTO_ACTIVO=1`, solo la réplica). Primera corrida (18/11) y comparación con el Flujo manual: SKILL SAC 8/8 días iguales; `flujo_hora` tras la corrida de las 13:00: 25/25 celdas día-hora iguales, espera 8/8, AHT 7/8 (un día 3 s). Comparado otra vez el 19/11 tras la corrida de las 7:00 (mismo resultado, ver arriba). **MOBILIZE real:** autorizado y encendido el 20/11; desde noviembre (Fase A29, §10.25), primera franja el 21/11 00:05. **Falta:** preguntar a Edwin si quiere ver el nivel de servicio a 10 s y 30 s (ya se guarda). Detalle en `docs/plan-api-wolkvox.md`, sección 10.
 
 ## 1. Esperando una decisión tuya
 

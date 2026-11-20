@@ -7,6 +7,15 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.237.1 — Noviembre 2026
+
+**MOBILIZE con la API desde noviembre (antes, desde diciembre).**
+
+- La consulta automática de Wolkvox llena el MOBILIZE real desde noviembre de 2026 (Flujo, Flujo por hora,
+  Tipificación, Eficacia, llamadas únicas, salida, Encuesta y abandonadas), tres veces al día.
+- Antes de reemplazar noviembre guarda un respaldo (se puede deshacer en el Centro de cargas).
+- Octubre y los meses anteriores no cambian. El supervisor ya no necesita subir los archivos de noviembre.
+
 ## v1.237.0 — Noviembre 2026
 
 **Se retira el Inventario anterior; queda solo el Inventario de sistemas.**

@@ -88,7 +88,7 @@ function planMes(mes, ahora) {
   return null;
 }
 // El plan de una corrida: el mes pedido (opts.mes) o el normal (mes en curso hasta ayer).
-// Fase A24: recortado al corte del destino (el MOBILIZE real: solo desde 2026-12).
+// Fase A24: recortado al corte del destino (el MOBILIZE real: solo desde 2026-11, Fase A29).
 function planDe(opts) {
   const base = opts && opts.mes ? (planMes(opts.mes, opts.ahora) || []) : plan(opts && opts.ahora);
   return D.recortarPlan(opts && opts.destino, base);
@@ -534,7 +534,7 @@ function iniciar(db, deps) {
 }
 
 // ── Fase A24 (20/11/2026): el MOBILIZE real ──
-// Solo desde el programador (nunca «Ejecutar ahora»). Antes del corte (2026-12) no hay nada que pedir:
+// Solo desde el programador (nunca «Ejecutar ahora»). Antes del corte (2026-11, Fase A29) no hay nada que pedir:
 // no lee SSM ni deja rastro. Después: SOLO si WOLKVOX_REAL_ACTIVO es exactamente «1» (leído fresco);
 // sin el parámetro, con otro valor o si SSM falla, no corre ni deja rastro. Primero el Flujo y después
 // los módulos de WOLKVOX_REAL_MODULOS, en el orden de MODULOS (flujo_hora completa el AHT del Flujo).
