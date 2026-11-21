@@ -2942,6 +2942,58 @@ html.ver-como-activo body{padding-bottom:84px}
 .sta-res-nota{margin:0;padding:0 18px 10px;font-size:var(--fs-note);color:var(--c-text-2);line-height:1.5;}
 .sta-res-cab .aurora-kpis{border-bottom:0;}
 @media(max-width:480px){.sta-res-cab .aurora-kpi{min-width:calc(50% - 5px);}}
+/* ══ Fase N1: tablero nuevo de ORLANT (orlant-tablero.js) ══ */
+#ot-overlay{display:none;position:fixed;inset:0;z-index:var(--z-panel);background:var(--c-bg);}
+#ot-overlay.show{display:block;}
+#ot-modal{height:100dvh;overflow-y:auto;background:var(--c-bg);}
+#ot-modal .aurora-header{position:sticky;top:0;z-index:var(--z-sticky-header);border-radius:0;gap:12px;flex-wrap:wrap;}
+.ot-acciones{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.ot-layout{display:grid;grid-template-columns:220px minmax(0,1fr);gap:20px;padding:20px;max-width:1400px;margin:0 auto;}
+.ot-nav ul{list-style:none;margin:0;padding:8px;background:var(--c-surface);border:1px solid var(--c-border);border-radius:var(--r-md);position:sticky;top:96px;}
+.ot-nav-btn{display:flex;align-items:center;gap:10px;width:100%;min-height:44px;padding:8px 12px;border:0;border-radius:8px;background:none;color:var(--c-text);font:inherit;text-align:left;cursor:pointer;}
+.ot-nav-btn:hover{background:var(--c-hover-bg);}
+.ot-nav-btn.on{background:var(--c-hover-bg);color:var(--c-text);font-weight:700;box-shadow:inset 4px 0 0 var(--c-primary-mid);}
+.ot-nav-btn .icono{width:18px;height:18px;flex:none;}
+.ot-main{min-width:0;}
+.ot-h2{margin:0 0 12px;font-size:var(--fs-h2);color:var(--c-text);}
+.ot-h3{margin:18px 0 8px;font-size:var(--fs-body-lg);color:var(--c-text);}
+.ot-filtros{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;margin-bottom:12px;}
+.ot-campo{display:flex;flex-direction:column;gap:4px;font-size:var(--fs-small);color:var(--c-text-2);}
+.ot-campo select,.ot-campo input{min-height:44px;padding:6px 10px;border:1px solid var(--c-border-control);border-radius:8px;background:var(--c-surface);color:var(--c-text);font:inherit;}
+.ot-lineas,.ot-canales{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;}
+.ot-seg{min-height:44px;padding:6px 14px;border:1px solid var(--c-border-control);border-radius:999px;background:var(--c-surface);color:var(--c-text);font:inherit;cursor:pointer;}
+.ot-seg.on{background:var(--c-hover-bg);border-color:var(--c-primary-mid);border-width:2px;color:var(--c-text);font-weight:700;}
+.ot-kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;}
+.ot-kpi{background:var(--c-surface);border:1px solid var(--c-border);border-left:4px solid var(--c-primary-mid);border-radius:var(--r-md);padding:14px 16px;}
+.ot-kpi-valor{font-size:var(--fs-kpi);font-weight:700;color:var(--c-text);line-height:1.2;}
+.ot-kpi-label{margin-top:4px;color:var(--c-text);font-size:var(--fs-body);}
+.ot-kpi-nota{margin-top:2px;color:var(--c-text-muted);font-size:var(--fs-small);}
+.ot-aviso{grid-column:1/-1;margin:8px 0;color:var(--c-text-muted);font-size:var(--fs-small);}
+.ot-vermas{margin-top:14px;min-height:44px;padding:8px 16px;border:1px solid var(--c-primary-mid);border-radius:8px;background:none;color:var(--c-text-link);font:inherit;font-weight:600;cursor:pointer;}
+.ot-tabla-wrap{overflow-x:auto;background:var(--c-surface);border:1px solid var(--c-border);border-radius:var(--r-md);}
+.ot-tabla{width:100%;border-collapse:collapse;font-size:var(--fs-body);color:var(--c-text);}
+.ot-tabla th,.ot-tabla td{padding:8px 12px;border-bottom:1px solid var(--c-border-soft);text-align:right;white-space:nowrap;}
+.ot-tabla th:first-child{text-align:left;}
+.ot-tabla thead th{color:var(--c-text-2);font-weight:600;}
+.ot-nav-btn:focus-visible,.ot-seg:focus-visible,.ot-vermas:focus-visible{outline:3px solid var(--c-focus);outline-offset:2px;}
+@media(max-width:800px){
+  .ot-layout{grid-template-columns:minmax(0,1fr);padding:12px 16px;gap:12px;}
+  .ot-campo{flex:1 1 140px;min-width:0;}
+  .ot-campo select,.ot-campo input{width:100%;box-sizing:border-box;}
+  .ot-nav{min-width:0;}
+  .ot-nav ul{display:flex;overflow-x:auto;gap:4px;position:static;}
+  .ot-nav li{flex:none;}
+  .ot-nav-btn{white-space:nowrap;}
+  .ot-kpis{grid-template-columns:repeat(2,minmax(0,1fr));}
+}
+@media print{
+  body.ot-imprimiendo > *:not(#ot-overlay){display:none !important;}
+  body.ot-imprimiendo #ot-overlay{position:static;display:block;}
+  body.ot-imprimiendo #ot-modal{height:auto;overflow:visible;}
+  body.ot-imprimiendo .ot-acciones,body.ot-imprimiendo .ot-nav,body.ot-imprimiendo .ot-filtros select,body.ot-imprimiendo .ot-vermas{display:none !important;}
+  body.ot-imprimiendo .ot-layout{grid-template-columns:1fr;}
+}
+
 /* Fase 348 (E): TEMA CLARO — las tarjetas y bloques se confundian con el fondo (gris muy claro contra
    blanco). Sombra suave en dos capas + un aro de 1px casi invisible que marca el borde, y un poco
    mas de aire entre tarjetas. Solo en claro (el oscuro no cambia) y sin colores nuevos: las sombras
