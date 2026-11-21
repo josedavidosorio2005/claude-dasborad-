@@ -2348,6 +2348,11 @@ div.ca-bar-fila{cursor:default}
    (css/sura-televentas-app.css). Sin transform ni backdrop-filter en los
    contenedores: el modal y los tooltips del tablero usan position:fixed. */
 #stv-overlay{display:none;position:fixed;inset:0;z-index:var(--z-panel);background:var(--c-bg);}
+/* Fase STA: «Gestión STA» de ORLANT (mismo armazón que Televentas) */
+#sta-overlay{display:none;position:fixed;inset:0;z-index:var(--z-panel);background:var(--c-bg);}
+#sta-overlay.show{display:block;}
+#sta-modal{height:100dvh;overflow-y:auto;background:var(--c-bg);}
+#sta-modal .aurora-header{position:sticky;top:0;z-index:var(--z-sticky-header);border-radius:0;gap:12px;}
 #stv-overlay.show{display:block;}
 #stv-modal{height:100dvh;overflow-y:auto;background:var(--c-bg);}
 #stv-modal .aurora-header{position:sticky;top:0;z-index:var(--z-sticky-header);border-radius:0;gap:12px;}
@@ -2933,6 +2938,10 @@ html.ver-como-activo body{padding-bottom:84px}
   .enl-accion .btn-primary{flex:1 1 100%}
 }
 
+/* Fase STA: «Gestión de la base STA» en el Dashboard de ORLANT (orlant-sta-dashboard.js) */
+.sta-res-nota{margin:0;padding:0 18px 10px;font-size:var(--fs-note);color:var(--c-text-2);line-height:1.5;}
+.sta-res-cab .aurora-kpis{border-bottom:0;}
+@media(max-width:480px){.sta-res-cab .aurora-kpi{min-width:calc(50% - 5px);}}
 /* Fase 348 (E): TEMA CLARO — las tarjetas y bloques se confundian con el fondo (gris muy claro contra
    blanco). Sombra suave en dos capas + un aro de 1px casi invisible que marca el borde, y un poco
    mas de aire entre tarjetas. Solo en claro (el oscuro no cambia) y sin colores nuevos: las sombras

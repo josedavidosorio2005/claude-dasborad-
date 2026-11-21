@@ -34,7 +34,7 @@ test('351: las tres graficas por ancho usan gdAnchoSinMenu (con respaldo si no e
   assert.ok(li.includes("var ancho = (wrap && (typeof gdAnchoSinMenu === 'function' ? gdAnchoSinMenu(wrap) : wrap.clientWidth))"));
   assert.ok(li.includes("(elFlujo && (typeof gdAnchoSinMenu === 'function' ? gdAnchoSinMenu(elFlujo) : elFlujo.clientWidth))"));
   // Ninguna otra grafica del tablero mide el ancho de su contenedor (las demas usan la ventana).
-  const otros = fs.readdirSync(path.join(__dirname, '..', '..', 'public', 'js')).filter((f) => f.endsWith('.js') && !/^(tipificacion|lineas-internas|gd-menu-lateral|row-actions|sura-televentas.*)\.js$/.test(f));
+  const otros = fs.readdirSync(path.join(__dirname, '..', '..', 'public', 'js')).filter((f) => f.endsWith('.js') && !/^(tipificacion|lineas-internas|gd-menu-lateral|row-actions|sura-televentas.*|orlant-sta-app)\.js$/.test(f));
   for (const f of otros) assert.doesNotMatch(PUB('js/' + f), /\.clientWidth\b/, f + ' mide el ancho de un contenedor: revisar si cambia con el menu');
 });
 

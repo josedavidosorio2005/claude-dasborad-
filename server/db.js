@@ -5419,6 +5419,27 @@ runOnceMigration('fase377_inventario_campos_v1', () => {
 // administrables. Solo agrega (nunca quita opciones ni campos, ni toca lo que Sistemas ocultó o renombró).
 runOnceMigration('fase380_inventario_administrables_v1', () => { require('./activos').agregarCamposI5(db); });
 
+// Fase STA (parte 2, usuario 21/11/2026): las gráficas de «Gestión STA» dentro del Dashboard de
+// ORLANT (para el cliente, que no ve la tarjeta). Pestaña nueva «Gestión de la base STA» con un
+// solo panel sta_resumen_panel (lee /api/orlant/sta/resumen: solo agregados), después de la
+// pestaña vieja «Gestión STA» (sta_categorias, que queda tal cual; sin ella no se toca nada). Oculta: el tablero la destapa
+// en memoria cuando la base STA tiene casos. Idempotente; no toca otro cliente ni otra pestaña.
+function agregarStaGestionOrlant() {
+  const row = db.prepare("SELECT layout FROM dashboards_config WHERE cliente = 'ORLANT'").get();
+  if (!row) return;
+  let layout;
+  try { layout = JSON.parse(row.layout); } catch (e) { return; }
+  const tabs = layout && layout.tabs;
+  if (!Array.isArray(tabs) || tabs.some((t) => t && t.key === 'sta_gestion')) return;
+  const tab = { key: 'sta_gestion', label: 'Gestión de la base STA', oculta: true, panels: [{ tipo: 'sta_resumen_panel', campana: 'ORLANT', titulo: 'Gestión de la base STA' }] };
+  const iSta = tabs.findIndex((t) => t && t.key === 'sta');
+  if (iSta === -1) return; // un layout sin la pestaña vieja «Gestión STA» no es el de ORLANT de siempre: no se toca
+  tabs.splice(iSta + 1, 0, tab);
+  db.prepare("UPDATE dashboards_config SET layout = ?, updatedAt = ? WHERE cliente = 'ORLANT'").run(JSON.stringify(layout), new Date().toISOString());
+  if (!config.isTest) console.log('[db] Migracion faseSTA_orlant_gestion_base_v1 aplicada.');
+}
+runOnceMigration('faseSTA_orlant_gestion_base_v1', agregarStaGestionOrlant);
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {
@@ -5517,3 +5538,4 @@ module.exports.crearReplicaMobilizeApi = crearReplicaMobilizeApi; // Fase W1
 module.exports.REPLICA_API = REPLICA_API;
 module.exports.crearSedesHospitalLaMaria = crearSedesHospitalLaMaria; // Fase 354: prueba de idempotencia
 module.exports.prenderDatosAnterioresHlm = prenderDatosAnterioresHlm; // Fase 354b
+module.exports.agregarStaGestionOrlant = agregarStaGestionOrlant; // Fase STA: prueba de idempotencia

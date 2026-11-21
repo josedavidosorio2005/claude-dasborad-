@@ -10,6 +10,9 @@ const { wrap, actorLabel, logEvent } = require('./shared');
 
 const router = express.Router();
 router.use('/tickets', (req, res, next) => { res.set('Cache-Control', 'no-store'); next(); });
+// Fase STA (usuario, 20/11/2026): el CLIENTE de ORLANT (CLIENTES_DASH) no usa Tickets (solo el
+// permiso: los tickets que existan no se borran).
+router.use('/tickets', requireActor, (req, res, next) => (T.clienteSinTickets(req.actor) ? res.status(403).json({ error: 'Tickets no está disponible para esta cuenta' }) : next()));
 
 const ahoraIso = () => new Date().toISOString();
 const idValido = (v) => /^[1-9]\d{0,9}$/.test(String(v));

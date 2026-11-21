@@ -31,7 +31,10 @@ function renderDashGrid(){
   // Antes «Cargar Datos» no salía para el administrador (él cargaba desde su panel).
   var puedeCargar = typeof canLoadAnyModule==='function' && canLoadAnyModule();
   var rolActual = currentUser ? currentUser.rol : 'ADMIN';
-  var extra = dashTarjetasEntrada(rolActual, isFullAdmin(), puedeCargar);
+  // Fase STA: el cliente de ORLANT (CLIENTES_DASH) sin Tickets; el servidor también lo niega.
+  var pu = (currentUser && currentUser.perms) || {};
+  var sinTickets = rolActual==='CLIENTES_DASH' && (pu.campana_ORLANT===true || pu.cliente_ORLANT===true);
+  var extra = dashTarjetasEntrada(rolActual, isFullAdmin(), puedeCargar, sinTickets);
   var tarjetaEntrada = function(t){
     var esTk = t.key==='tickets'; // Fase 364: la tarjeta lleva el contador de tickets nuevos
     return '<div class="dash-btn mod-clientes dash-entrada-'+t.key+(esTk?' tk-menu-btn':'')+'" role="button" tabindex="0" data-entrada="'+t.key+'"'+(esTk?' aria-haspopup="dialog"':'')+' onclick="'+t.accion+'()">'+
@@ -44,6 +47,13 @@ function renderDashGrid(){
   var antes = extra.filter(function(t){ return t.key!=='cargar' && t.key!=='tickets'; }).map(tarjetaEntrada).join('');
   var despues = extra.filter(function(t){ return t.key==='cargar' || t.key==='tickets'; }).map(tarjetaEntrada).join('');
   grid.innerHTML = antes + grid.innerHTML + despues;
+  // Fase STA: «Gestión STA» de ORLANT, después de Calidad (supervisor de ORLANT, ADMIN, GERENCIA;
+  // el servidor revisa cada ruta). El cliente de ORLANT nunca la ve (ve las gráficas en su Dashboard).
+  if (typeof staVeTarjeta === 'function' && staVeTarjeta(currentUser, isFullAdmin())) {
+    var staHtml = tarjetaEntrada({ key: 'sta', label: 'Gestión STA', sub: 'ORLANT: base STA, asignación y gestión', icon: 'i-phone', accion: 'openOrlantSta' });
+    var cal = grid.querySelector('[onclick="onDashBtn(\'Calidad\')"]');
+    if (cal) cal.insertAdjacentHTML('afterend', staHtml); else grid.insertAdjacentHTML('afterbegin', staHtml);
+  }
   // Sin ningun modulo (ni tarjetas de entrada) -> mensaje claro, sin tarjetas.
   var vacio=document.getElementById('dash-grid-vacio');
   var sinNada = modulos.length===0 && extra.length===0;

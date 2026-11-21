@@ -164,7 +164,14 @@ function respuestaPublica(r, actor) {
   return { id: r.id, texto: r.texto, autorNombre: r.autorNombre, autorRol: r.autorRol, createdAt: r.createdAt, esMia: esAutor(actor, r) };
 }
 
+// Fase STA (usuario, 20/11/2026): el cliente de ORLANT (CLIENTES_DASH con acceso a ORLANT) sin Tickets.
+function clienteSinTickets(actor) {
+  if (!actor || actor.rol !== 'CLIENTES_DASH' || !actor.perms) return false;
+  return actor.perms.campana_ORLANT === true || actor.perms.cliente_ORLANT === true;
+}
+
 module.exports = {
+  clienteSinTickets,
   GENERAL, ETIQUETA_GENERAL,
   esGestor, puedeBorrar, esAutor, puedeVer, campanasDe, campanaPermitida,
   TIPOS_BASE, tipos, tipoActivo, nombreTipoValido, crearTipo, editarTipo, // Fase 364

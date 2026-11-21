@@ -50,5 +50,5 @@ test('cableado: entrada por dashPantallaDeEntrada, «Inicio» en el panel y en e
   const i = leer('index.html');
   assert.match(i, /id="menu-inicio" role="button" tabindex="0" onclick="enterUserDashboard\(\)"/);
   assert.match(i, /id="supervisor-menu-inicio" role="button" tabindex="0" onclick="enterUserDashboard\(\)"/);
-  assert.match(leer('js/dashboards-core.js'), /dashTarjetasEntrada\(rolActual, isFullAdmin\(\), puedeCargar\)/);
+  assert.match(leer('js/dashboards-core.js'), /dashTarjetasEntrada\(rolActual, isFullAdmin\(\), puedeCargar, sinTickets\)/); // Fase STA: + sinTickets
 });

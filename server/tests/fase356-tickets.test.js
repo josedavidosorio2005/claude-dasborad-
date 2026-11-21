@@ -1,4 +1,6 @@
 // fase356-tickets.test.js — Fase 356: «Sugerencias / Tickets». Datos SINTETICOS.
+// Fase STA (20/11/2026): ORLANT y MOBILIZE intercambiados en este archivo: el cliente de ORLANT ya
+// no usa Tickets (pedido del usuario; lo prueba faseSTA-orlant-gestion-sta). Mismo sentido de cada prueba.
 //  - cualquier usuario con sesión crea (tipo, campaña suya o «General», 1 a 2.000 caracteres);
 //  - cada quien ve solo los suyos (ajeno: 404); ADMIN y REPORTES ven todos;
 //  - estado: solo ADMIN y REPORTES; responder: ellos y el autor en el suyo;
@@ -21,11 +23,11 @@ before(async () => {
   tk.master = await tokenFor('admin', MASTER_PASSWORD);
   tk.admin = await crear('f356_admin', 'ADMIN', {});
   tk.rep = await crear('f356_rep', 'REPORTES', {});
-  tk.cliO = await crear('f356_cli_o', 'CLIENTES_DASH', { ClientesDash: true, cliente_ORLANT: true });
-  tk.cliM = await crear('f356_cli_m', 'CLIENTES_DASH', { ClientesDash: true, cliente_MOBILIZE: true });
-  tk.sup = await crear('f356_sup', 'SUPERVISOR', { supervisa_ORLANT: true });
-  tk.cal = await crear('f356_cal', 'CALIDAD', { campana_ORLANT: true });
-  tk.ase = await crear('f356_ase', 'ASESOR', {}, { asesorCampana: 'ORLANT' });
+  tk.cliO = await crear('f356_cli_o', 'CLIENTES_DASH', { ClientesDash: true, cliente_MOBILIZE: true });
+  tk.cliM = await crear('f356_cli_m', 'CLIENTES_DASH', { ClientesDash: true, 'cliente_CLINICA AURORA': true }); // Fase STA: otro cliente (el de ORLANT ya no usa Tickets)
+  tk.sup = await crear('f356_sup', 'SUPERVISOR', { supervisa_MOBILIZE: true });
+  tk.cal = await crear('f356_cal', 'CALIDAD', { campana_MOBILIZE: true });
+  tk.ase = await crear('f356_ase', 'ASESOR', {}, { asesorCampana: 'MOBILIZE' });
 });
 
 const nuevo = (t, body) => request(app).post('/api/tickets').set(H(t)).send(body);
@@ -39,11 +41,11 @@ test('crear: cualquier rol con sesión; campaña suya o General; sin sesión 401
   }
   assert.equal((await request(app).post('/api/tickets').send({ tipo: 'SUGERENCIA', campana: 'GENERAL', descripcion: 'x' })).status, 401);
   // Campañas: la propia sí, la ajena no.
-  assert.equal((await nuevo(tk.cliO, { tipo: 'PROBLEMA', campana: 'ORLANT', descripcion: 'No carga' })).status, 201);
-  const ajena = await nuevo(tk.cliO, { tipo: 'PROBLEMA', campana: 'MOBILIZE', descripcion: 'No carga' });
+  assert.equal((await nuevo(tk.cliO, { tipo: 'PROBLEMA', campana: 'MOBILIZE', descripcion: 'No carga' })).status, 201);
+  const ajena = await nuevo(tk.cliO, { tipo: 'PROBLEMA', campana: 'ORLANT', descripcion: 'No carga' });
   assert.equal(ajena.status, 400);
-  assert.equal((await nuevo(tk.ase, { tipo: 'PREGUNTA', campana: 'ORLANT', descripcion: '¿Cómo veo mi nota?' })).status, 201);
-  assert.equal((await nuevo(tk.sup, { tipo: 'PROBLEMA', campana: 'ORLANT', descripcion: 'Falta un dato' })).status, 201);
+  assert.equal((await nuevo(tk.ase, { tipo: 'PREGUNTA', campana: 'MOBILIZE', descripcion: '¿Cómo veo mi nota?' })).status, 201);
+  assert.equal((await nuevo(tk.sup, { tipo: 'PROBLEMA', campana: 'MOBILIZE', descripcion: 'Falta un dato' })).status, 201);
   assert.equal((await nuevo(tk.cliO, { tipo: 'PROBLEMA', campana: 'NO EXISTE', descripcion: 'x' })).status, 400);
 });
 
@@ -52,7 +54,7 @@ test('lista de campañas: General primero y solo las suyas', async () => {
   assert.equal(r.status, 200);
   assert.deepEqual(r.body.campanas[0], { valor: 'GENERAL', etiqueta: 'General (plataforma)' });
   const v = r.body.campanas.map((c) => c.valor);
-  assert.ok(v.includes('ORLANT') && !v.includes('MOBILIZE'));
+  assert.ok(v.includes('MOBILIZE') && !v.includes('ORLANT'));
   assert.equal(r.body.gestor, false);
   assert.equal(r.body.puedeBorrar, false);
   const rep = (await request(app).get('/api/tickets/campanas').set(H(tk.rep))).body;
@@ -75,7 +77,7 @@ test('validación: tipo, campaña y descripción de 1 a 2.000 caracteres; campos
 });
 
 test('ver: cada quien solo los suyos (ajeno 404); ADMIN y REPORTES todos', async () => {
-  const deO = (await nuevo(tk.cliO, { tipo: 'PROBLEMA', campana: 'ORLANT', descripcion: 'Privado de cliO' })).body.ticket;
+  const deO = (await nuevo(tk.cliO, { tipo: 'PROBLEMA', campana: 'MOBILIZE', descripcion: 'Privado de cliO' })).body.ticket;
   const listaM = (await request(app).get('/api/tickets').set(H(tk.cliM))).body.tickets;
   assert.ok(listaM.length > 0 && listaM.every((t) => t.esMio));
   assert.ok(!listaM.some((t) => t.id === deO.id));
@@ -96,8 +98,8 @@ test('ver: cada quien solo los suyos (ajeno 404); ADMIN y REPORTES todos', async
   assert.equal(uno.autorUser, undefined);
   assert.equal(uno.autorNombre, 'Persona f356_cli_o');
   // Filtros del gestor.
-  const filtrados = (await request(app).get('/api/tickets?alcance=todos&tipo=PROBLEMA&campana=ORLANT&estado=NUEVO').set(H(tk.rep))).body.tickets;
-  assert.ok(filtrados.length > 0 && filtrados.every((t) => t.tipo === 'PROBLEMA' && t.campana === 'ORLANT' && t.estado === 'NUEVO'));
+  const filtrados = (await request(app).get('/api/tickets?alcance=todos&tipo=PROBLEMA&campana=MOBILIZE&estado=NUEVO').set(H(tk.rep))).body.tickets;
+  assert.ok(filtrados.length > 0 && filtrados.every((t) => t.tipo === 'PROBLEMA' && t.campana === 'MOBILIZE' && t.estado === 'NUEVO'));
   assert.equal((await request(app).get('/api/tickets/abc').set(H(tk.admin))).status, 404);
   assert.equal((await request(app).get('/api/tickets/999999').set(H(tk.admin))).status, 404);
 });
@@ -120,7 +122,7 @@ test('estado: solo ADMIN y REPORTES; el autor no edita ni cancela', async () => 
 });
 
 test('hilo: el gestor y el autor contestan; nadie más', async () => {
-  const t = (await nuevo(tk.cliO, { tipo: 'PROBLEMA', campana: 'ORLANT', descripcion: 'Gráfica vacía' })).body.ticket;
+  const t = (await nuevo(tk.cliO, { tipo: 'PROBLEMA', campana: 'MOBILIZE', descripcion: 'Gráfica vacía' })).body.ticket;
   const url = '/api/tickets/' + t.id + '/respuestas';
   assert.equal((await request(app).post(url).set(H(tk.rep)).send({ texto: 'Lo revisamos' })).status, 201);
   assert.equal((await request(app).post(url).set(H(tk.cliO)).send({ texto: 'Gracias' })).status, 201);
@@ -143,7 +145,7 @@ test('contador de «Nuevo»: solo ADMIN y REPORTES', async () => {
 });
 
 test('borrar: solo ADMIN, definitivo (con respuestas) y el Historial sin la descripción', async () => {
-  const t = (await nuevo(tk.cliO, { tipo: 'SUGERENCIA', campana: 'ORLANT', descripcion: 'TEXTO-SECRETO-356' })).body.ticket;
+  const t = (await nuevo(tk.cliO, { tipo: 'SUGERENCIA', campana: 'MOBILIZE', descripcion: 'TEXTO-SECRETO-356' })).body.ticket;
   await request(app).post('/api/tickets/' + t.id + '/respuestas').set(H(tk.rep)).send({ texto: 'RESPUESTA-SECRETA-356' });
   for (const k of ['cliO', 'rep']) assert.equal((await request(app).delete('/api/tickets/' + t.id).set(H(tk[k]))).status, 403, k);
   assert.equal((await request(app).delete('/api/tickets/' + t.id).set(H(tk.cliM))).status, 404);
@@ -153,7 +155,7 @@ test('borrar: solo ADMIN, definitivo (con respuestas) y el Historial sin la desc
   assert.equal((await request(app).get('/api/tickets/' + t.id).set(H(tk.admin))).status, 404);
   const h = db.prepare("SELECT * FROM historial WHERE accion = 'TICKET_BORRADO' ORDER BY id DESC").get();
   assert.ok(h, 'falta el registro en Historial');
-  assert.match(h.detalle, new RegExp('ticket #' + t.id + ' \\(Sugerencia, ORLANT\\) borrado'));
+  assert.match(h.detalle, new RegExp('ticket #' + t.id + ' \\(Sugerencia, MOBILIZE\\) borrado'));
   assert.match(h.actor, /f356_admin/);
   const todo = JSON.stringify(db.prepare('SELECT * FROM historial').all());
   assert.ok(!todo.includes('TEXTO-SECRETO-356') && !todo.includes('RESPUESTA-SECRETA-356'));
