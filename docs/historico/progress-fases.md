@@ -21708,4 +21708,10 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - Verificado con Playwright y Brave: ningún texto bajo 4,5:1 en claro ni en oscuro, a 1440 y 768 px, en las 8 pestañas.
 - **Pruebas:** nueva `faseSTA-orlant-sta-tema` (3): sin fondos blancos ni colores fijos de Edwin en el CSS y en el JS; cada variable tiene su valor en oscuro; contraste AA calculado en claro y con los tokens de oscuro. La guardiana del generador sigue reproduciendo lo publicado.
 - **Guion para la prueba del lunes:** `docs/orlant/sta/guia-prueba-edwin.md` (supervisor, asesora y cliente, paso a paso, sin datos reales; avisa que en producción la base es real y que se usen pocos casos).
+- **Producción (21/11, v1.240.0; PR #900 mergeado con `--match-head-commit`, deploy OK a la primera):** revisión **solo lectura** de «Gestión STA» con la sesión de administrador del usuario en Brave (10:27–10:28), vista de supervisor.
+  - **Qué se revisó:** las 5 pestañas en claro y en oscuro, a 1440 y 768 px: 20 combinaciones.
+  - **Resultado:** ningún texto bajo 4,5:1 y sin scroll horizontal de la página. Consola sin errores. Base real intacta: 1.322 casos sin asignar, 0 gestionados.
+  - **Cómo se garantizó la solo lectura:** el tema se cambió con el atributo de la página, no con el botón, que guarda la preferencia, y al final se dejó como estaba. El script registró **0 peticiones de escritura**; no se asignó ni se cambió ningún caso.
+  - **No revisado en producción:** las vistas de asesora y cliente (sin su sesión). Se probaron en local y quedan para la prueba con Edwin (`docs/orlant/sta/guia-prueba-edwin.md`).
+  - Las capturas, que tenían nombres de asesoras, se borraron.
 
