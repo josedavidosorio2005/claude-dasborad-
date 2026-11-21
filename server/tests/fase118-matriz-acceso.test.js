@@ -165,6 +165,8 @@ declarar(['POST /api/wolkvox/agente/flujo'], 'skip');
 declarar(['PUT /auth/password', 'POST /auth/logout', 'GET /seed-demo/estado', 'GET /guia-uso'], 'open');
 declarar(['GET /users'], 'open'); // ver routes/usuarios.js: perms/lastLogin se redactan adentro, no 403
 declarar(['GET /historial', 'GET /seguridad/alertas'], 'admin');
+// Fase N1 (21/11/2026): tablero nuevo de ORLANT, en prueba, solo el administrador completo.
+declarar(['GET /orlant/tablero'], 'admin');
 
 declarar(['POST /users'], 'permiso:crearUsuarios');
 declarar(['PUT /users/:id'], 'permiso:editarUsuarios');

@@ -1,0 +1,231 @@
+// orlant-tablero.js — Fase N1 (docs/orlant/nuevo-dashboard/plan.md): tablero nuevo de ORLANT,
+// aparte del dashboard actual. Menú vertical (Tráfico inbound, Tráfico outbound, Back office,
+// Asesores), línea General / 3P / Total, fechas y granularidad, vista gerencial con «Ver más
+// indicadores», Excel, PDF y pantalla completa. Datos: /api/orlant/tablero (solo ADMIN; lo que
+// ya se carga a mano). Mientras se valida, solo lo ve el administrador.
+'use strict';
+
+var OT_SECCIONES = [
+  { key: 'inbound', label: 'Tráfico inbound', icon: 'i-phone' },
+  { key: 'outbound', label: 'Tráfico outbound', icon: 'i-upload' },
+  { key: 'backoffice', label: 'Back office', icon: 'i-file-text' },
+  { key: 'asesores', label: 'Asesores', icon: 'i-users' },
+];
+var OT_LINEAS = [{ key: 'total', label: 'Total' }, { key: 'general', label: 'Línea General' }, { key: '3p', label: '3P' }];
+var OT_CANALES = [{ key: 'llamadas', label: 'Llamadas' }, { key: 'whatsapp', label: 'WhatsApp' }, { key: 'citas', label: 'Citas' }];
+var _ot = { seccion: 'inbound', linea: 'total', canal: 'llamadas', desde: '', hasta: '', gran: 'mes', atajo: 'todo', verMas: false, datos: null, abierto: false };
+
+function _otEsc(s) { return String(s === null || s === undefined ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function otNum(n) { return n === null || n === undefined ? '—' : Math.round(n).toLocaleString('es-CO'); }
+function otPct(v) { return v === null || v === undefined ? '—' : (Math.round(v * 1000) / 10).toLocaleString('es-CO', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' %'; }
+function otSeg(v) { return v === null || v === undefined ? '—' : Math.round(v) + ' s'; }
+
+// Fechas de cada atajo (hoy = fecha local del navegador).
+function otRangoAtajo(atajo, hoy) {
+  var d = hoy ? new Date(hoy + 'T12:00:00') : new Date();
+  var iso = function (x) { return x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0'); };
+  var y = d.getFullYear(), m = d.getMonth();
+  if (atajo === 'hoy') return { desde: iso(d), hasta: iso(d) };
+  if (atajo === 'ayer') { var a = new Date(d); a.setDate(d.getDate() - 1); return { desde: iso(a), hasta: iso(a) }; }
+  if (atajo === 'semana') { var l = new Date(d); l.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return { desde: iso(l), hasta: iso(d) }; }
+  if (atajo === 'mes') return { desde: iso(new Date(y, m, 1)), hasta: iso(d) };
+  if (atajo === 'mes_anterior') return { desde: iso(new Date(y, m - 1, 1)), hasta: iso(new Date(y, m, 0)) };
+  if (atajo === 'tres_meses') return { desde: iso(new Date(y, m - 2, 1)), hasta: iso(d) };
+  return { desde: '', hasta: '' };
+}
+
+// Salida y citas sí traen línea; la entrada (llamadas y WhatsApp) todavía no (fase N2).
+function otOutboundLinea(t, linea) {
+  if (!t) return { llamadas: 0, whatsapp: 0 };
+  if (linea === 'general') return { llamadas: t.llamadasGeneral, whatsapp: t.wppGeneral };
+  if (linea === '3p') return { llamadas: t.llamadas3p, whatsapp: t.wpp3p };
+  return { llamadas: t.llamadasGeneral + t.llamadas3p + t.llamadasSinAsignar, whatsapp: t.wppGeneral + t.wpp3p + t.wppSinAsignar };
+}
+function otCitasLinea(o, linea) { return !o ? 0 : linea === 'general' ? o.general : linea === '3p' ? o.p3 : o.total; }
+function otEntradaTieneLinea(linea) { return linea === 'total'; }
+
+function otPeriodoLbl(p, gran) {
+  if (gran === 'mes') { var M = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']; return M[Number(p.slice(5, 7)) - 1] + ' ' + p.slice(0, 4); }
+  var f = p.slice(8, 10) + '/' + p.slice(5, 7) + '/' + p.slice(0, 4);
+  return gran === 'semana' ? 'Semana del ' + f : f;
+}
+
+function _otKpi(valor, label, nota) {
+  return '<div class="ot-kpi"><div class="ot-kpi-valor">' + valor + '</div><div class="ot-kpi-label">' + _otEsc(label) + '</div>' + (nota ? '<div class="ot-kpi-nota">' + _otEsc(nota) + '</div>' : '') + '</div>';
+}
+function _otTabla(cab, filas) {
+  return '<div class="ot-tabla-wrap"><table class="ot-tabla"><thead><tr>' + cab.map(function (c) { return '<th scope="col">' + _otEsc(c) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+    (filas.length ? filas.map(function (f) { return '<tr>' + f.map(function (c, i) { return i ? '<td>' + c + '</td>' : '<th scope="row">' + _otEsc(c) + '</th>'; }).join('') + '</tr>'; }).join('') : '<tr><td colspan="' + cab.length + '">Sin datos en este rango.</td></tr>') +
+    '</tbody></table></div>';
+}
+function _otAviso(t) { return '<p class="ot-aviso">' + _otEsc(t) + '</p>'; }
+
+// { kpis: html, detalle: html } de la vista actual.
+function otContenido(d, s) {
+  var g = s.gran, sinLinea = !otEntradaTieneLinea(s.linea);
+  var avisoLinea = 'La entrada todavía no se separa por línea: falta saber qué skills y colas son 3P (fase N2). Elige «Total» para ver las cifras.';
+  if (s.seccion === 'inbound' && s.canal === 'llamadas') {
+    var L = d.llamadas.total;
+    if (sinLinea) return { kpis: _otAviso(avisoLinea), detalle: '' };
+    return {
+      kpis: _otKpi(otNum(L.recibidas), 'Llamadas recibidas') + _otKpi(otNum(L.contestadas), 'Contestadas') + _otKpi(otPct(L.nivelAtencion), 'Nivel de atención', 'contestadas ÷ recibidas') +
+        _otKpi(otPct(L.nivelServicio20s), 'Nivel de servicio a 20 s') + _otKpi(otPct(L.abandono), 'Abandono'),
+      detalle: '<h3 class="ot-h3">Por período</h3>' + _otTabla(['Período', 'Recibidas', 'Contestadas', 'Nivel de atención', 'NS 20 s', 'Abandono'],
+        d.llamadas.serie.map(function (x) { return [otPeriodoLbl(x.periodo, g), otNum(x.recibidas), otNum(x.contestadas), otPct(x.nivelAtencion), otPct(x.nivelServicio20s), otPct(x.abandono)]; })) +
+        '<h3 class="ot-h3">Participación por skill</h3>' + _otTabla(['Skill', 'Recibidas', 'Contestadas', 'Participación'],
+        d.llamadas.porSkill.map(function (x) { return [x.skill, otNum(x.recibidas), otNum(x.contestadas), otPct(x.participacion)]; })) +
+        _otAviso('TMO, ASA y tipificación llegan en la fase N2 (con la API de Wolkvox).'),
+    };
+  }
+  if (s.seccion === 'inbound' && s.canal === 'whatsapp') {
+    var W = d.whatsapp.total;
+    if (sinLinea) return { kpis: _otAviso(avisoLinea), detalle: '' };
+    return {
+      kpis: _otKpi(otNum(W.recibidos), 'WhatsApp recibidos') + _otKpi(otNum(W.contestados), 'Atendidos') + _otKpi(otPct(W.pct0a3), 'Atendidos en 0–3 min', W.conTiempo ? 'de ' + otNum(W.conTiempo) + ' con tiempo' : 'sin tiempos cargados') +
+        _otKpi(otPct(W.abandono), 'Abandono') + _otKpi(otSeg(W.asaSegundos), 'ASA', 'espera promedio'),
+      detalle: '<h3 class="ot-h3">Tiempo hasta contestar</h3>' + _otTabla(['Rango', 'Conversaciones', '%'], [
+        ['0–3 min', otNum(W.rango0a3), otPct(W.conTiempo ? W.rango0a3 / W.conTiempo : null)],
+        ['3–5 min', otNum(W.rango3a5), otPct(W.conTiempo ? W.rango3a5 / W.conTiempo : null)],
+        ['Más de 5 min', otNum(W.rangoMas5), otPct(W.conTiempo ? W.rangoMas5 / W.conTiempo : null)]]) +
+        '<h3 class="ot-h3">Por período</h3>' + _otTabla(['Período', 'Recibidos', 'Atendidos', 'Abandono', '0–3 min'],
+        d.whatsapp.serie.map(function (x) { return [otPeriodoLbl(x.periodo, g), otNum(x.recibidos), otNum(x.contestados), otPct(x.abandono), otPct(x.pct0a3)]; })) +
+        _otAviso('El TMO de WhatsApp llega con la API (fase N3).'),
+    };
+  }
+  if (s.seccion === 'inbound' && s.canal === 'citas') {
+    return {
+      kpis: _otKpi(otNum(otCitasLinea(d.citas.total, s.linea)), 'Citas asignadas', 'Agendamiento, por fecha de solicitud') +
+        (s.linea === 'total' ? _otKpi(otNum(d.citas.total.general), 'Línea General') + _otKpi(otNum(d.citas.total.p3), '3P') : ''),
+      detalle: '<h3 class="ot-h3">Por período</h3>' + _otTabla(['Período', 'Citas', 'Línea General', '3P'],
+        d.citas.serie.map(function (x) { return [otPeriodoLbl(x.periodo, g), otNum(otCitasLinea(x, s.linea)), otNum(x.general), otNum(x.p3)]; })) +
+        _otAviso('Las citas por canal (llamada, WhatsApp, salida) esperan la definición de Edwin (fase N4).'),
+    };
+  }
+  if (s.seccion === 'outbound') {
+    var O = otOutboundLinea(d.outbound.total, s.linea);
+    return {
+      kpis: _otKpi(otNum(O.llamadas + O.whatsapp), 'Salida realizada', 'llamadas + WhatsApp') + _otKpi(otNum(O.llamadas), 'Llamadas de salida') + _otKpi(otNum(O.whatsapp), 'WhatsApp de salida'),
+      detalle: '<h3 class="ot-h3">Por mes</h3>' + _otTabla(['Mes', 'Llamadas', 'WhatsApp', 'Total'],
+        d.outbound.meses.map(function (m) { var x = otOutboundLinea(m, s.linea); return [otPeriodoLbl(m.mes, 'mes'), otNum(x.llamadas), otNum(x.whatsapp), otNum(x.llamadas + x.whatsapp)]; })) +
+        _otAviso('La salida se carga por mes: la granularidad por día o semana llega con la API. Contactabilidad, intentos por registro y citas de salida: fase N7.'),
+    };
+  }
+  if (s.seccion === 'backoffice') return { kpis: _otAviso('Back office: falta definir con Edwin qué se mide y de qué archivo sale (fase N10).'), detalle: '' };
+  return { kpis: _otAviso('Asesores (ocupación, horas logueadas, Talk / ACW, por intervalo): llegan con la API de Wolkvox de ORLANT (fase N8).'), detalle: '' };
+}
+
+function _otBotones(lista, actual, attr, rol) {
+  return lista.map(function (x) {
+    var on = x.key === actual;
+    return '<button type="button" class="ot-seg' + (on ? ' on' : '') + '" ' + attr + '="' + x.key + '"' + (rol === 'tab' ? ' role="tab" aria-selected="' + on + '"' : ' aria-pressed="' + on + '"') + '>' + _otEsc(x.label) + '</button>';
+  }).join('');
+}
+
+function otRender() {
+  var host = document.getElementById('ot-host');
+  if (!host) return;
+  var s = _ot, d = s.datos;
+  var nav = '<nav class="ot-nav" aria-label="Secciones del tablero"><ul>' + OT_SECCIONES.map(function (x) {
+    return '<li><button type="button" class="ot-nav-btn' + (x.key === s.seccion ? ' on' : '') + '" data-ot-seccion="' + x.key + '"' + (x.key === s.seccion ? ' aria-current="page"' : '') + '>' +
+      '<svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#' + x.icon + '"></use></svg><span>' + _otEsc(x.label) + '</span></button></li>';
+  }).join('') + '</ul></nav>';
+  var atajos = [['todo', 'Todo'], ['hoy', 'Hoy'], ['ayer', 'Ayer'], ['semana', 'Esta semana'], ['mes', 'Este mes'], ['mes_anterior', 'Mes anterior'], ['tres_meses', 'Últimos 3 meses'], ['otro', 'Otras fechas']];
+  var filtros = '<div class="ot-filtros" role="group" aria-label="Filtros">' +
+    '<label class="ot-campo"><span>Período</span><select id="ot-atajo">' + atajos.map(function (a) { return '<option value="' + a[0] + '"' + (a[0] === s.atajo ? ' selected' : '') + '>' + a[1] + '</option>'; }).join('') + '</select></label>' +
+    '<label class="ot-campo"><span>Desde</span><input type="date" id="ot-desde" value="' + _otEsc(s.desde) + '"></label>' +
+    '<label class="ot-campo"><span>Hasta</span><input type="date" id="ot-hasta" value="' + _otEsc(s.hasta) + '"></label>' +
+    '<label class="ot-campo"><span>Ver por</span><select id="ot-gran">' + [['dia', 'Día'], ['semana', 'Semana'], ['mes', 'Mes']].map(function (a) { return '<option value="' + a[0] + '"' + (a[0] === s.gran ? ' selected' : '') + '>' + a[1] + '</option>'; }).join('') + '</select></label>' +
+    '</div>';
+  var lineas = '<div class="ot-lineas" role="tablist" aria-label="Línea">' + _otBotones(OT_LINEAS, s.linea, 'data-ot-linea', 'tab') + '</div>';
+  var canales = s.seccion === 'inbound' ? '<div class="ot-canales" role="group" aria-label="Canal">' + _otBotones(OT_CANALES, s.canal, 'data-ot-canal') + '</div>' : '';
+  var cuerpo;
+  if (!d) cuerpo = '<p class="ot-aviso" aria-live="polite">Cargando…</p>';
+  else {
+    var c = otContenido(d, s);
+    cuerpo = '<div class="ot-kpis">' + c.kpis + '</div>' +
+      (c.detalle ? '<button type="button" class="ot-vermas" id="ot-vermas" aria-expanded="' + s.verMas + '" aria-controls="ot-detalle">' + (s.verMas ? 'Ver menos indicadores' : 'Ver más indicadores') + '</button>' +
+        '<div id="ot-detalle" class="ot-detalle"' + (s.verMas ? '' : ' hidden') + '>' + c.detalle + '</div>' : '');
+  }
+  var titulo = (OT_SECCIONES.filter(function (x) { return x.key === s.seccion; })[0] || {}).label;
+  host.innerHTML = '<div class="ot-layout">' + nav + '<section class="ot-main" aria-labelledby="ot-h2"><h2 class="ot-h2" id="ot-h2">' + _otEsc(titulo) + '</h2>' + filtros + lineas + canales + '<div class="ot-cuerpo" aria-live="polite">' + cuerpo + '</div></section></div>';
+}
+
+async function otCargar() {
+  _ot.datos = null; otRender();
+  var q = '?gran=' + encodeURIComponent(_ot.gran) + (_ot.desde ? '&desde=' + encodeURIComponent(_ot.desde) : '') + (_ot.hasta ? '&hasta=' + encodeURIComponent(_ot.hasta) : '');
+  try { _ot.datos = await apiRequest('GET', '/orlant/tablero' + q); }
+  catch (e) { _ot.datos = null; if (typeof showToast === 'function') showToast('No se pudo cargar el tablero: ' + e.message); }
+  otRender();
+}
+
+function _otEventos(host) {
+  host.addEventListener('click', function (ev) {
+    var b = ev.target.closest('button'); if (!b) return;
+    if (b.dataset.otSeccion) { _ot.seccion = b.dataset.otSeccion; otRender(); }
+    else if (b.dataset.otLinea) { _ot.linea = b.dataset.otLinea; otRender(); }
+    else if (b.dataset.otCanal) { _ot.canal = b.dataset.otCanal; otRender(); }
+    else if (b.id === 'ot-vermas') { _ot.verMas = !_ot.verMas; try { localStorage.setItem('ot-vermas', _ot.verMas ? '1' : '0'); } catch (e) {} otRender(); }
+  });
+  host.addEventListener('change', function (ev) {
+    var t = ev.target;
+    if (t.id === 'ot-atajo') { _ot.atajo = t.value; if (t.value !== 'otro') { var r = otRangoAtajo(t.value); _ot.desde = r.desde; _ot.hasta = r.hasta; } otCargar(); }
+    else if (t.id === 'ot-desde' || t.id === 'ot-hasta') { _ot[t.id === 'ot-desde' ? 'desde' : 'hasta'] = t.value; _ot.atajo = 'otro'; otCargar(); }
+    else if (t.id === 'ot-gran') { _ot.gran = t.value; otCargar(); }
+  });
+}
+
+async function openOrlantTablero() {
+  var overlay = document.getElementById('ot-overlay');
+  if (!overlay) return;
+  overlay.classList.add('show');
+  if (typeof motionAbrirDialogo === 'function') motionAbrirDialogo(overlay);
+  document.body.style.overflow = 'hidden';
+  _ot.abierto = true;
+  try { _ot.verMas = localStorage.getItem('ot-vermas') === '1'; } catch (e) {}
+  var host = document.getElementById('ot-host');
+  if (!host.dataset.eventos) { _otEventos(host); host.dataset.eventos = '1'; }
+  await otCargar();
+}
+function closeOrlantTablero() {
+  _ot.abierto = false;
+  if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(function () {});
+  var overlay = document.getElementById('ot-overlay');
+  overlay.classList.remove('show');
+  if (typeof motionCerrarDialogo === 'function') motionCerrarDialogo(overlay);
+  document.body.style.overflow = '';
+}
+function otPantallaCompleta() {
+  var el = document.getElementById('ot-overlay');
+  if (document.fullscreenElement) { document.exitFullscreen().catch(function () {}); return; }
+  if (el && el.requestFullscreen) el.requestFullscreen().catch(function () {});
+}
+// PDF: la vista actual, con «Ver más» abierto, por el diálogo de impresión del navegador.
+function otPdf() {
+  var antes = _ot.verMas; _ot.verMas = true; otRender();
+  document.body.classList.add('ot-imprimiendo');
+  var fin = function () { document.body.classList.remove('ot-imprimiendo'); _ot.verMas = antes; otRender(); window.removeEventListener('afterprint', fin); };
+  window.addEventListener('afterprint', fin);
+  window.print();
+}
+// Hojas del Excel (también las usa la prueba).
+function otHojasExcel(d) {
+  var g = d.gran;
+  return [
+    { nombre: 'Llamadas', filas: d.llamadas.serie.map(function (x) { return { Periodo: otPeriodoLbl(x.periodo, g), Recibidas: x.recibidas, Contestadas: x.contestadas, Abandonadas: x.abandonadas, 'Nivel de atención': otPct(x.nivelAtencion), 'NS 20 s': otPct(x.nivelServicio20s), Abandono: otPct(x.abandono) }; }) },
+    { nombre: 'Llamadas por skill', filas: d.llamadas.porSkill.map(function (x) { return { Skill: x.skill, Recibidas: x.recibidas, Contestadas: x.contestadas, 'Participación': otPct(x.participacion) }; }) },
+    { nombre: 'WhatsApp', filas: d.whatsapp.serie.map(function (x) { return { Periodo: otPeriodoLbl(x.periodo, g), Recibidos: x.recibidos, Atendidos: x.contestados, Abandono: otPct(x.abandono), '0-3 min': x.rango0a3, '3-5 min': x.rango3a5, 'Más de 5 min': x.rangoMas5, ASA: otSeg(x.asaSegundos) }; }) },
+    { nombre: 'Citas', filas: d.citas.serie.map(function (x) { return { Periodo: otPeriodoLbl(x.periodo, g), Citas: x.total, 'Línea General': x.general, '3P': x.p3 }; }) },
+    { nombre: 'Salida', filas: d.outbound.meses.map(function (m) { return { Mes: otPeriodoLbl(m.mes, 'mes'), 'Llamadas General': m.llamadasGeneral, 'Llamadas 3P': m.llamadas3p, 'Llamadas sin clasificar': m.llamadasSinAsignar, 'WhatsApp General': m.wppGeneral, 'WhatsApp 3P': m.wpp3p, 'WhatsApp sin clasificar': m.wppSinAsignar }; }) },
+  ];
+}
+function otExcel() {
+  if (!_ot.datos || typeof XLSX === 'undefined') return;
+  var wb = XLSX.utils.book_new();
+  otHojasExcel(_ot.datos).forEach(function (h) { XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(h.filas.length ? h.filas : [{ Aviso: 'Sin datos en este rango' }]), h.nombre); });
+  XLSX.writeFile(wb, 'ORLANT_tablero_nuevo.xlsx');
+}
+function orlantTableroVeTarjeta(esFullAdmin) { return esFullAdmin === true; }
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { otContenido: otContenido, otRangoAtajo: otRangoAtajo, otOutboundLinea: otOutboundLinea, otCitasLinea: otCitasLinea, otHojasExcel: otHojasExcel, otPeriodoLbl: otPeriodoLbl, orlantTableroVeTarjeta: orlantTableroVeTarjeta, OT_SECCIONES: OT_SECCIONES };
+}
