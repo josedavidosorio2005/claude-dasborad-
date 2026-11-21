@@ -9,13 +9,18 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 ## v1.239.0 — Noviembre 2026
 
-**«Gestión STA» de ORLANT: primera parte (el servidor; las pantallas llegan en la siguiente versión).**
+**«Gestión STA» de ORLANT dentro de la plataforma.**
 
-- La plataforma ya guarda la base STA, las asignaciones y las gestiones en el servidor (no en el
-  navegador), con las mismas reglas del archivo de Edwin: el número de autorización no se repite y, si
-  cambió el estado, se actualiza.
-- El supervisor de ORLANT y los administrativos manejan la base y las asignaciones; cada asesora de
-  ORLANT ve solo sus casos; el cliente de ORLANT verá solo las gráficas.
+- Nueva tarjeta «Gestión STA» (después de Calidad) con la herramienta de Edwin: el supervisor de ORLANT
+  y los administrativos cargan la base STA, ven el histórico de cargas, asignan, devuelven o pasan casos
+  y manejan las tipificaciones. La información queda guardada en la plataforma (no en el navegador), con
+  las mismas reglas del archivo de Edwin: el número de autorización no se repite y, si cambió el estado,
+  se actualiza.
+- Cada asesora de ORLANT entra desde su portal («Gestión STA») y ve solo sus casos: los codifica, agenda
+  «volver a llamar» y recibe el aviso a la hora.
+- El cliente de ORLANT ve las gráficas en su Dashboard, en la pestaña «Gestión de la base STA» (aparece
+  cuando la base tiene casos): avance de la base, gestiones y citas por día, tipificaciones, estado,
+  entidad y servicio. Solo totales, sin números de autorización ni nombres.
 - El cliente de ORLANT ya no ve «Sugerencias / Tickets».
 
 ## v1.238.0 — Noviembre 2026

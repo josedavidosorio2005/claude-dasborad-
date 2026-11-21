@@ -216,6 +216,12 @@ const TABS_EXTRA = {
     despuesDe: 'salida',
     crear: (cliente) => ({ key: 'total_trafico', label: 'Total tráfico', panels: [{ tipo: 'total_trafico_panel', campana: cliente, titulo: 'Total tráfico' }] }),
   },
+  // Fase STA: «Gestión de la base STA» (gráficas de Gestión STA para el cliente), como la
+  // migracion faseSTA_orlant_gestion_base_v1 (db.js).
+  sta_gestion: {
+    despuesDe: 'sta',
+    crear: (cliente) => ({ key: 'sta_gestion', label: 'Gestión de la base STA', oculta: true, panels: [{ tipo: 'sta_resumen_panel', campana: cliente, titulo: 'Gestión de la base STA' }] }),
+  },
 };
 function _tabEspecifica(cliente, key) {
   if (TABS_EXTRA[key]) return TABS_EXTRA[key].crear(cliente);
@@ -305,7 +311,7 @@ const PERFILES_ACTUALES = {
       // Fase 219: Total tráfico (sin carga propia: sale de lo ya cargado), justo
       // despues de "Llamadas y WhatsApp de salida" (TABS_EXTRA), igual que la
       // migracion fase219_total_trafico_v1 en produccion.
-      tabs: ['ordenamiento_medico', 'recuperacion_cancelados', 'flujo', 'sta', 'total_trafico'],
+      tabs: ['ordenamiento_medico', 'recuperacion_cancelados', 'flujo', 'sta', 'sta_gestion', 'total_trafico'], // Fase STA: sta_gestion
       secciones: ['resumen', 'salida', 'tipificacion', 'sta_categorias'],
     },
   },

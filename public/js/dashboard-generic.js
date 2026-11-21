@@ -1130,6 +1130,8 @@ async function _gdBootstrap(conservar){
       if(typeof LI_PANEL_TIPO !== 'undefined' && LI_PANEL_TIPO[p.tipo] && typeof _abCargarOpciones === 'function') fuentesSoloPanel.push(function(){ return _abCargarOpciones(LI_PANEL_TIPO[p.tipo], camp).then(function(r){ return r.meses; }); });
       if(p.tipo === 'trafico_whatsapp_combo' && typeof wppTiemposUsa === 'function' && wppTiemposUsa(camp)) fuentesSoloPanel.push(function(){ return _wppTiemposCargarOpciones(camp).then(function(r){ return r.meses; }); });
       if(p.tipo === 'llamadas_unicas_panel' && typeof _llamadasSalidaCargarOpciones === 'function') fuentesSoloPanel.push(function(){ return _llamadasSalidaCargarOpciones(camp).then(function(r){ return r.meses; }); });
+      // Fase STA: «Gestión de la base STA» (ORLANT) -- se destapa (en memoria) si la base tiene casos; no aporta meses.
+      if(p.tipo === 'sta_resumen_panel' && typeof staResumenDestapar === 'function') fuentesSoloPanel.push(function(){ return staResumenDestapar(_gd.config.layout.tabs); });
     });
   });
   fuentesSoloPanel.forEach(function(fuente){
@@ -1848,7 +1850,7 @@ function switchGenericSubtab(key){
 // la exclusion de la rejilla de graficas, que antes eran dos copias a mano.
 var GD_TIPOS_PANEL_PROPIO = ['trafico_combo', 'trafico_whatsapp_combo', 'agendas_panel', 'inasistencia_panel', 'tipificacion_panel',
   'efectividad_agendamiento_panel', 'efectividad_citas_panel', 'salida_panel', 'total_trafico_panel', 'llamadas_unicas_panel',
-  'encuesta_panel', 'calidad_resumen_panel', 'calidad_monitoreos_panel', 'agendas_usuaria_panel', 'flujo_hora_panel', 'errores_panel', 'aurora_inasistencia_panel', 'aurora_encuestas_panel', 'aurora_li_flujo_panel', 'aurora_li_cdr_panel', 'aurora_li_whatsapp_panel']; // Fase 311 // Fase 306 // Fase 284: errores_panel
+  'encuesta_panel', 'calidad_resumen_panel', 'calidad_monitoreos_panel', 'agendas_usuaria_panel', 'flujo_hora_panel', 'errores_panel', 'aurora_inasistencia_panel', 'aurora_encuestas_panel', 'aurora_li_flujo_panel', 'aurora_li_cdr_panel', 'aurora_li_whatsapp_panel', 'sta_resumen_panel']; // Fase STA // Fase 311 // Fase 306 // Fase 284: errores_panel
 // Paneles que nunca van en la rejilla de graficas (<canvas id="gd-c<i>">).
 var GD_TIPOS_SIN_LIENZO = ['kpi_row', 'calidad_kpis', 'tabla', 'nota_kpi'].concat(GD_TIPOS_PANEL_PROPIO);
 
@@ -1972,6 +1974,7 @@ function _gdRenderPanel(p, i){
   if(p.tipo === 'aurora_li_flujo_panel' || p.tipo === 'aurora_li_cdr_panel' || p.tipo === 'aurora_li_whatsapp_panel'){ _liRender(p, i); return; } // Fase 311
   if(p.tipo === 'flujo_hora_panel'){ _flujoHoraRenderPanel(p, i); return; } // Fase 196
   if(p.tipo === 'errores_panel'){ _erroresRenderPanel(p, i); return; } // Fase 284
+  if(p.tipo === 'sta_resumen_panel'){ _staResumenRenderPanel(p, i); return; } // Fase STA
   if(p.tipo === 'total_trafico_panel'){ _totalTraficoRenderPanel(p, i); return; } // Fase 219
   if(p.tipo === 'llamadas_unicas_panel'){ _llamadasUnicasRenderPanel(p, i); return; }
   if(p.tipo === 'encuesta_panel'){ _encuestaRenderPanel(p, i); return; }
@@ -2812,6 +2815,7 @@ async function _gdDatosPanelesTab(){
     if(p.tipo === 'calidad_resumen_panel'){ out = out.concat(await _gdExportarCalidadResumen(p, i)); continue; } // Fase 172
     if(p.tipo === 'flujo_hora_panel'){ out = out.concat(await _gdExportarFlujoHora(p, i)); continue; } // Fase 196
     if(p.tipo === 'total_trafico_panel'){ out = out.concat(await _gdExportarTotalTrafico(p, i)); continue; } // Fase 219
+    if(p.tipo === 'sta_resumen_panel'){ out = out.concat(await _gdExportarStaResumen(p, i)); continue; } // Fase STA
     if(p.tipo === 'nota_kpi'){
       var valoresN = {};
       (p.valores || []).forEach(function(v){ valoresN[v.clave] = _gdResolver(v.fuente).scalar; });

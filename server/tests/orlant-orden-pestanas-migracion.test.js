@@ -100,8 +100,8 @@ test('migraciones dashboards_config_orlant_orden_pestanas_v1+v2+salida_label_ord
   assert.deepEqual(claves.slice(0, 7), ['trafico', 'trafico_whatsapp', 'salida', 'agendamiento', 'inasistencia', 'tipificacion', 'calidad']);
   // El resto (ocultas) sigue presente, sin perder ninguna -- el orden entre
   // ellas no importa (no aparecen en el menu).
-  assert.deepEqual(new Set(claves.slice(7)), new Set(['flujo', 'sta', 'efectividad']));
-  assert.equal(claves.length, 10, 'ninguna pestaña se perdio ni se duplico');
+  assert.deepEqual(new Set(claves.slice(7)), new Set(['flujo', 'sta', 'sta_gestion', 'efectividad'])); // Fase STA: + sta_gestion
+  assert.equal(claves.length, 11, 'ninguna pestaña se perdio ni se duplico');
 });
 
 test('migracion dashboards_config_orlant_orden_pestanas_v1: no toca panels/subtabs/oculta de ninguna pestaña, solo el orden del array', () => {

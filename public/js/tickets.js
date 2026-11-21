@@ -40,8 +40,15 @@ async function _tkCargarCampanas() {
 }
 
 // Al entrar (session.js) y al salir (doLogout).
+// Fase STA (usuario, 20/11/2026): el cliente de ORLANT no usa Tickets (el servidor responde 403);
+// así no se pide /tickets/campanas al entrar (dejaba un 403 en la consola).
+function ticketsUsuarioSinTickets(u) {
+  var p = (u && u.perms) || {};
+  return !!u && u.rol === 'CLIENTES_DASH' && (p.campana_ORLANT === true || p.cliente_ORLANT === true);
+}
 async function ticketsAlEntrar() {
   ticketsAlSalir();
+  if (typeof currentUser !== 'undefined' && ticketsUsuarioSinTickets(currentUser)) return;
   try { await _tkCargarCampanas(); } catch (e) { return; }
   if (_tk.gestor) {
     ticketsActualizarContador();
