@@ -411,20 +411,31 @@ function hojaNoConectadas(data) {
   })));
 }
 async function correrNoConectadas(opts, partes, res) {
-  const { cargarLlamadasNoConectadas } = require('./llamadas-salida');
+  const { cargarLlamadasNoConectadas, marcarNoConectadasConsultado } = require('./llamadas-salida');
+  // Fase A32: la consulta del mes terminó bien -> el mes queda «consultado» (0 si no dejó filas).
+  const marcar = (mes, filas) => marcarNoConectadasConsultado(opts.db, { campana: opts.campana, mes, filas, archivoNombre: 'API Wolkvox (cdr_5)' });
   for (const { mes, dias } of _auto().planDe(opts)) {
+    if (_huecoOcupado(opts, mes, partes, res)) continue; // Fase A32: hueco del real (julio de 2026)
     res.consultas++;
     let { data } = await _pedir(opts, 'cdr_5', dias[0], dias[dias.length - 1]);
-    if (!data.length) { partes.push(mes + ': Wolkvox no trajo no conectadas, sin cambios'); continue; }
+    if (!data.length) { marcar(mes, 0); partes.push(mes + ': Wolkvox no trajo no conectadas, sin cambios (mes consultado: 0)'); continue; }
     const prN = quitarCuentasPrueba(data); // Fase A26
     data = prN.data;
-    if (!data.length) { _soloPrueba(opts, partes, res, 'llamadas_no_conectadas', mes, prN); continue; }
+    if (!data.length) {
+      if (_huecoOcupado(opts, mes, partes, res)) continue;
+      // En un hueco (vacío por definición) no hay nada que vaciar: solo se anota el mes, como cdr.
+      if (opts.huecoReal) { res.meses.push({ mes, filas: 0, reemplazadas: 0, prueba: prN.quitadas }); partes.push(mes + ': solo filas de la cuenta de prueba' + _textoPrueba(prN) + ', mes consultado: 0 no conectadas'); }
+      else _soloPrueba(opts, partes, res, 'llamadas_no_conectadas', mes, prN);
+      marcar(mes, 0); continue;
+    }
     let p = LS.llamadasNoConectadasParseFilas(hojaNoConectadas(data));
     data = null; // teléfonos y demás datos crudos no se guardan ni se quedan en memoria
     if (p.error) { res.estado = 'error'; res.error = 'respuesta_invalida'; partes.push(mes + ': respuesta no esperada (' + String(p.error).slice(0, 120) + '), sin cambios'); return; }
     const fuera = p.filas.filter((f) => String(f[0]).slice(0, 7) !== mes);
     if (fuera.length) { res.estado = 'error'; res.error = 'respuesta_invalida'; partes.push(mes + ': ' + fuera.length + ' llamadas fuera del mes, sin cambios'); return; }
+    if (_huecoOcupado(opts, mes, partes, res)) continue; // Fase A32: se vuelve a mirar justo antes de escribir
     const w = cargarLlamadasNoConectadas(opts.db, { campana: opts.campana, archivoNombre: 'API Wolkvox (cdr_5)', cargadoPorNombre: QUIEN, filas: p.filas, desde: mes + '-01', hasta: ing.ultimoDiaDelMes(mes) });
+    marcar(mes, w.insertadas);
     res.meses.push({ mes, filas: w.insertadas, reemplazadas: w.borradas, prueba: prN.quitadas });
     partes.push(mes + ': ' + w.insertadas + ' no conectadas (reemplazó ' + w.borradas + _textoPrueba(prN) + ', con respaldo)');
     p = null;

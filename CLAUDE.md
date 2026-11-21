@@ -170,6 +170,13 @@ asumir en qué quedó una fase anterior.
   piden: Wolkvox los rechaza («Validate dates entered», sondeo del
   20/11/2026). Otro mes, pestaña o cliente = autorización nueva por
   escrito.
+  **Ampliación (usuario, 21/11/2026, Fase A32):** julio de 2026 del real
+  también en **No conectadas** (`cdr_5`, módulo `no_conectadas` en
+  `HUECOS_REAL`), con las mismas reglas (solo si la pestaña no tiene filas
+  de julio, una sola vez, respaldo, cuenta de pruebas fuera). Un mes cuya
+  consulta de `cdr_5` terminó bien sin dejar filas queda «consultado»
+  (`llamadas_no_conectadas_meses`) y la pestaña lo muestra como 0, no
+  «Pendiente».
 - Nada de pruebas agresivas contra producción (sin límite de tasa, sin
   volumen alto, sin tocar datos que no sean los explícitamente
   autorizados). No destapar pestañas ocultas a mano, no tocar datos de

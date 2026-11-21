@@ -49,6 +49,7 @@ const otrosMeses = () => huella(REAL, "substr(fecha, 1, 7) <> '2026-07'") + '#' 
 function limpiarJulio() {
   for (const t of TABLAS) db.prepare("DELETE FROM " + t + " WHERE campana = ? AND substr(fecha, 1, 7) = '2026-07'").run(REAL);
   db.prepare("DELETE FROM wolkvox_auto_corridas WHERE franja LIKE 'hueco real%'").run();
+  db.prepare("DELETE FROM llamadas_no_conectadas_meses WHERE campana = ? AND mes = '2026-07'").run(REAL); // Fase A32
 }
 function tipificacionManual(fecha) {
   db.prepare("INSERT INTO tipificaciones (campana, canal, agente, fecha, hora, duracionMin, tipificacion, skill, archivoNombre, cargadoPorNombre, createdAt) VALUES (?, 'LLAMADAS', 'ASESOR MANUAL A30', ?, '09:00', 1, 'MANUAL A30', ?, 'manual inventado A30', 'Prueba A30', ?)").run(REAL, fecha, SK, new Date().toISOString());
@@ -64,10 +65,10 @@ for (const fecha of ['2026-08-10', '2026-10-10', '2026-11-10']) {
 }
 
 test('lista cerrada: solo julio de 2026 y solo Flujo, Flujo por hora, Tipificación y Abandonadas', () => {
-  assert.deepEqual(JSON.parse(JSON.stringify(D.HUECOS_REAL)), { '2026-07': ['flujo', 'flujo_hora', 'cdr', 'abandonadas'] });
+  assert.deepEqual(JSON.parse(JSON.stringify(D.HUECOS_REAL)), { '2026-07': ['flujo', 'flujo_hora', 'cdr', 'no_conectadas', 'abandonadas'] }); // Fase A32: + no_conectadas
   assert.ok(Object.isFrozen(D.HUECOS_REAL) && Object.isFrozen(D.HUECOS_REAL['2026-07']));
   assert.equal(auto.planDe({ ahora: AHORA, mes: '2026-07', destino: 'real', huecoReal: 'flujo' })[0].dias.length, 31);
-  for (const [mes, mod] of [['2026-07', 'encuesta'], ['2026-07', 'no_conectadas'], ['2026-08', 'flujo'], ['2026-06', 'cdr'], ['2026-10', 'cdr'], ['2026-11', 'flujo'], ['2025-11', 'flujo']]) {
+  for (const [mes, mod] of [['2026-07', 'encuesta'], ['2026-08', 'flujo'], ['2026-06', 'cdr'], ['2026-10', 'cdr'], ['2026-11', 'flujo'], ['2025-11', 'flujo']]) {
     assert.deepEqual(auto.planDe({ ahora: AHORA, mes, destino: 'real', huecoReal: mod }), [], mes + ' ' + mod);
   }
   assert.deepEqual(auto.planDe({ ahora: AHORA, mes: '2026-07', destino: 'replica', huecoReal: 'flujo' }), [], 'solo el real');
@@ -91,8 +92,9 @@ test('julio vacío: llena las 4 pestañas (34 consultas), cuenta de pruebas fuer
   const falso = crearFalso();
   const r = await correr(falso);
   assert.equal(r.estado, 'ok', r.detalle);
-  assert.equal(r.consultas, 34);
-  assert.deepEqual(falso.apis.filter((a) => a !== 'skill_1'), ['skill_7', 'cdr_1', 'skill_2'], 'Flujo y después los módulos en orden');
+  assert.equal(r.consultas, 35); // Fase A32: + cdr_5
+  assert.deepEqual(falso.apis.filter((a) => a !== 'skill_1'), ['skill_7', 'cdr_1', 'cdr_5', 'skill_2'], 'Flujo y después los módulos en orden');
+  assert.equal(n("SELECT COUNT(*) n FROM llamadas_no_conectadas_meses WHERE campana = ? AND mes = '2026-07' AND filas = 0", REAL), 1, 'Fase A32: julio consultado (0 no conectadas)');
   assert.equal(falso.apis.filter((a) => a === 'skill_1').length, 31);
   assert.equal(n("SELECT COUNT(*) n FROM calidad_nivel_servicio_diario WHERE campana = ? AND substr(fecha,1,7) = '2026-07'", REAL), 31);
   assert.equal(n("SELECT COUNT(*) n FROM flujo_hora WHERE campana = ? AND substr(fecha,1,7) = '2026-07'", REAL), 2);
@@ -122,8 +124,8 @@ test('julio con carga manual en Flujo y Tipificación: esas no se tocan (ni el A
   const falso = crearFalso();
   const r = await correr(falso);
   assert.equal(r.estado, 'ok', r.detalle);
-  assert.deepEqual(falso.apis, ['skill_7', 'skill_2'], 'Flujo y Tipificación con datos: ni se consultan');
-  assert.deepEqual(r.partes.map((p) => p.modulo + ':' + p.estado), ['flujo:con_datos', 'flujo_hora:ok', 'cdr:con_datos', 'abandonadas:ok']);
+  assert.deepEqual(falso.apis, ['skill_7', 'cdr_5', 'skill_2'], 'Flujo y Tipificación con datos: ni se consultan');
+  assert.deepEqual(r.partes.map((p) => p.modulo + ':' + p.estado), ['flujo:con_datos', 'flujo_hora:ok', 'cdr:con_datos', 'no_conectadas:ok', 'abandonadas:ok']);
   assert.equal(huella(REAL, "substr(fecha, 1, 7) = '2026-07' AND archivoNombre = 'manual inventado A30'"), flujoManual, 'Flujo y Tipificación manuales intactos');
   const f = db.prepare("SELECT ahtSegundos a, waitTimeSegundos w FROM calidad_nivel_servicio_diario WHERE campana = ? AND fecha = '2026-07-05'").get(REAL);
   assert.deepEqual([f.a, f.w], [111, 7], 'el AHT y la espera del Flujo manual no cambian');
@@ -169,6 +171,6 @@ test('una sola vez por pestaña: aunque julio se vacíe después, no se vuelve a
   const falso = crearFalso();
   const r = await correr(falso);
   assert.equal(falso.apis.length, 0);
-  assert.deepEqual(r.partes.map((p) => p.estado), ['ya_corrida', 'ya_corrida', 'ya_corrida', 'ya_corrida']);
-  assert.equal(n("SELECT COUNT(*) n FROM wolkvox_auto_corridas WHERE franja LIKE 'hueco real 2026-07 %'"), 4);
+  assert.deepEqual(r.partes.map((p) => p.estado), ['ya_corrida', 'ya_corrida', 'ya_corrida', 'ya_corrida', 'ya_corrida']);
+  assert.equal(n("SELECT COUNT(*) n FROM wolkvox_auto_corridas WHERE franja LIKE 'hueco real 2026-07 %'"), 5);
 });

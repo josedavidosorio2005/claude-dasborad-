@@ -56,13 +56,15 @@ function skillsMapeadas(db, campana) {
 // vez por pestaña, SOLO estos meses y pestañas del real, y SOLO si la pestaña no tiene ninguna fila en
 // ese mes (se revisa antes de consultar y otra vez justo antes de escribir). LISTA CERRADA: ampliarla
 // es una autorización nueva por escrito. Nov/2025–jun/2026: Wolkvox los rechaza («Validate dates entered»).
-const HUECOS_REAL = Object.freeze({ '2026-07': Object.freeze(['flujo', 'flujo_hora', 'cdr', 'abandonadas']) });
+// Fase A32 (autorización escrita del usuario, 21/11/2026): + no_conectadas (cdr_5) de julio de 2026.
+const HUECOS_REAL = Object.freeze({ '2026-07': Object.freeze(['flujo', 'flujo_hora', 'cdr', 'no_conectadas', 'abandonadas']) });
 // Pestaña -> tabla (y filtro) donde se mira si el real ya tiene datos de ese mes.
 const TABLA_HUECO = Object.freeze({
   flujo: { tabla: 'calidad_nivel_servicio_diario', extra: '' },
   flujo_hora: { tabla: 'flujo_hora', extra: '' },
   cdr: { tabla: 'tipificaciones', extra: " AND canal = 'LLAMADAS'" },
   abandonadas: { tabla: 'llamadas_abandonadas', extra: '' },
+  no_conectadas: { tabla: 'llamadas_no_conectadas', extra: '' }, // Fase A32
 });
 function huecoPermitido(mes, modulo) {
   return typeof mes === 'string' && Object.prototype.hasOwnProperty.call(HUECOS_REAL, mes) && HUECOS_REAL[mes].includes(modulo);
