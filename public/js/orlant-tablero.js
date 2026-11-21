@@ -17,8 +17,8 @@ var _ot = { seccion: 'inbound', linea: 'total', canal: 'llamadas', desde: '', ha
 
 function _otEsc(s) { return String(s === null || s === undefined ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
 function otNum(n) { return n === null || n === undefined ? '—' : Math.round(n).toLocaleString('es-CO'); }
-function otPct(v) { return v === null || v === undefined ? '—' : (Math.round(v * 1000) / 10).toLocaleString('es-CO', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' %'; }
-function otSeg(v) { return v === null || v === undefined ? '—' : Math.round(v) + ' s'; }
+function otPct(v) { return v === null || v === undefined ? '—' : (Math.round(v * 1000) / 10).toLocaleString('es-CO', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' %'; }
+function otSeg(v) { return v === null || v === undefined ? '—' : Math.round(v) + ' s'; }
 
 // Fechas de cada atajo (hoy = fecha local del navegador).
 function otRangoAtajo(atajo, hoy) {
@@ -69,7 +69,7 @@ function otContenido(d, s) {
     if (sinLinea) return { kpis: _otAviso(avisoLinea), detalle: '' };
     return {
       kpis: _otKpi(otNum(L.recibidas), 'Llamadas recibidas') + _otKpi(otNum(L.contestadas), 'Contestadas') + _otKpi(otPct(L.nivelAtencion), 'Nivel de atención', 'contestadas ÷ recibidas') +
-        _otKpi(otPct(L.nivelServicio20s), 'Nivel de servicio a 20 s') + _otKpi(otPct(L.abandono), 'Abandono'),
+        _otKpi(otPct(L.nivelServicio20s), 'Nivel de servicio a 20 s') + _otKpi(otPct(L.abandono), 'Abandono'),
       detalle: '<h3 class="ot-h3">Por período</h3>' + _otTabla(['Período', 'Recibidas', 'Contestadas', 'Nivel de atención', 'NS 20 s', 'Abandono'],
         d.llamadas.serie.map(function (x) { return [otPeriodoLbl(x.periodo, g), otNum(x.recibidas), otNum(x.contestadas), otPct(x.nivelAtencion), otPct(x.nivelServicio20s), otPct(x.abandono)]; })) +
         '<h3 class="ot-h3">Participación por skill</h3>' + _otTabla(['Skill', 'Recibidas', 'Contestadas', 'Participación'],
