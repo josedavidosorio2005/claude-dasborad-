@@ -587,7 +587,7 @@ function hbarSVG(id,rows,series,{pct100=false,maxLabel=26,maxFijo=0}={}){
   let g='';
   rows.forEach((r,i)=>{ const y=i*(bh+gap)+2, t=tot(r); let x=LB;
     g+=`<text x="${LB-10}" y="${y+bh/2+4}" text-anchor="end" class="lbl">${esc(corta(r.label,maxLabel))}</text>`;
-    g+=`<rect x="${LB}" y="${y}" width="${iw}" height="${bh}" rx="4" fill="#f2f5f7"/>`;
+    g+=`<rect x="${LB}" y="${y}" width="${iw}" height="${bh}" rx="4" style="fill:var(--sta-carril,#f2f5f7)"/>`;
     const segs=r.vals.map((v,k)=>({v,k})).filter(s=>s.v>0);
     segs.forEach((s,j)=>{ const w=pct100? (t? s.v/t*iw:0) : s.v/max*iw; const ww=Math.max(w-(j<segs.length-1?2:0),1);
       const tip=`<b>${esc(r.label)}</b><br><span style="color:${series[s.k].color}">●</span> ${esc(series[s.k].nombre)}: <b>${fmt(s.v)}</b> (${pct(s.v,t)} %)`;
@@ -604,9 +604,9 @@ function donaSVG(items,total,centro){
   items.forEach(it=>{ const a1=a0+it.n/total*Math.PI*2, tip=`<b>${esc(it.nombre)}</b><br>${fmt(it.n)} · ${pct(it.n,total)} %`;
     if(items.length===1) segs+=`<circle cx="${cx}" cy="${cy}" r="${(R+r)/2}" fill="none" stroke="${it.color}" stroke-width="${R-r}" data-tip="${esc(tip)}"/>`;
     else { const lg=a1-a0>Math.PI?1:0, P=(rad,a)=>`${cx+rad*Math.cos(a)},${cy+rad*Math.sin(a)}`;
-      segs+=`<path d="M${P(R,a0)} A${R},${R} 0 ${lg} 1 ${P(R,a1)} L${P(r,a1)} A${r},${r} 0 ${lg} 0 ${P(r,a0)}Z" fill="${it.color}" stroke="#fff" stroke-width="2" data-tip="${esc(tip)}"/>`; }
+      segs+=`<path d="M${P(R,a0)} A${R},${R} 0 ${lg} 1 ${P(R,a1)} L${P(r,a1)} A${r},${r} 0 ${lg} 0 ${P(r,a0)}Z" fill="${it.color}" style="stroke:var(--card)" stroke-width="2" data-tip="${esc(tip)}"/>`; }
     a0=a1; });
-  return `<div class="dona"><svg width="200" height="200" viewBox="0 0 200 200">${segs}<text x="${cx}" y="${cy+2}" text-anchor="middle" style="font-size:26px;font-weight:700;fill:#003C50">${fmt(total)}</text><text x="${cx}" y="${cy+20}" text-anchor="middle" style="font-size:12px;fill:#6b7c86">${centro}</text></svg>
+  return `<div class="dona"><svg width="200" height="200" viewBox="0 0 200 200">${segs}<text x="${cx}" y="${cy+2}" text-anchor="middle" style="font-size:26px;font-weight:700;fill:var(--sta-titulo,#003C50)">${fmt(total)}</text><text x="${cx}" y="${cy+20}" text-anchor="middle" style="font-size:12px;fill:var(--muted)">${centro}</text></svg>
     <div class="leyenda">${items.map(it=>`<div data-tip="${esc(`<b>${esc(it.nombre)}</b><br>${fmt(it.n)} · ${pct(it.n,total)} %`)}"><span><i style="background:${it.color}"></i>${esc(corta(it.nombre,34))}</span><span><b>${fmt(it.n)}</b> <span class="muted">${pct(it.n,total)} %</span></span></div>`).join('')}</div></div>`;
 }
 function agrupar(lista,fn,max=7){ const m=new Map(); lista.forEach(c=>{ const k=fn(c)||'(vacío)'; m.set(k,(m.get(k)||0)+1); });
@@ -621,7 +621,7 @@ function lineaSVG(id,cats,series,{fmtX=dm,tipX=d=>`${dm(d)}/${d.slice(0,4)}`}={}
   const paso=Math.max(1,Math.ceil(cats.length/Math.max(4,Math.floor(iw/70))));
   cats.forEach((d,i)=>{ if(i%paso===0||i===cats.length-1) g+=`<text x="${x(i)}" y="${H-10}" text-anchor="middle">${fmtX(d)}</text>`; });
   series.forEach(s=>{ g+=`<polyline fill="none" stroke="${s.color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" points="${s.vals.map((v,i)=>x(i)+','+y(v)).join(' ')}"/>`; });
-  if(cats.length<=45) series.forEach(s=>s.vals.forEach((v,i)=>{ g+=`<circle cx="${x(i)}" cy="${y(v)}" r="4" fill="${s.color}" stroke="#fff" stroke-width="2"/>`; }));
+  if(cats.length<=45) series.forEach(s=>s.vals.forEach((v,i)=>{ g+=`<circle cx="${x(i)}" cy="${y(v)}" r="4" fill="${s.color}" style="stroke:var(--card)" stroke-width="2"/>`; }));
   const cw=cats.length<2? iw : iw/(cats.length-1);
   cats.forEach((d,i)=>{ const tip=`<b>${tipX(d)}</b><br>`+series.map(s=>`<span style="color:${s.color}">●</span> ${esc(s.nombre)}: <b>${fmt(s.vals[i])}</b>`).join('<br>');
     g+=`<rect x="${x(i)-cw/2}" y="${T}" width="${cw}" height="${ih}" fill="transparent" data-tip="${esc(tip)}"/>`; });

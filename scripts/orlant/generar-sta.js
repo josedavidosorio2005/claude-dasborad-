@@ -42,6 +42,18 @@ css = una(css, 'body{margin:0;font-family:"Segoe UI",Roboto,Arial,sans-serif;bac
   '.sta-app{font-family:inherit;background:var(--bg);color:var(--txt);font-size:14px;min-height:100%}');
 if (/:root|(^|\n)body\{|(^|\n)html\{/.test(css)) throw new Error('quedó :root, body o html en el CSS');
 css = css.replace(/font-weight:\s*(800|900)/g, 'font-weight:700'); // Quicksand trae 400–700 (Fase 132)
+// Fase STA (prueba del 21/11): colores fijos del HTML -> variables, para el tema oscuro de la plataforma (abajo).
+// En claro cada variable cae en el mismo color de Edwin.
+[
+  ['background:#fff;', 'background:var(--card);'], ['background:#fff}', 'background:var(--card)}'],
+  ['color:var(--teal)', 'color:var(--sta-titulo,var(--teal))'],
+  ['#eef3f6', 'var(--sta-th,#eef3f6)'], ['#eef2f4', 'var(--sta-linea2,#eef2f4)'], ['#f8fbfc', 'var(--sta-hover,#f8fbfc)'],
+  ['#eef7fd', 'var(--sta-sel,#eef7fd)'], ['#cfe6f6', 'var(--sta-sel-borde,#cfe6f6)'], ['#fafcfd', 'var(--sta-drop,#fafcfd)'],
+  ['fill:#1c2b33', 'fill:var(--txt)'], ['fill:#52514e', 'fill:var(--sta-eje-txt,#52514e)'],
+  ['stroke:#e8edf0', 'stroke:var(--sta-grid,#e8edf0)'], ['stroke:#c9d3d9', 'stroke:var(--sta-eje,#c9d3d9)'],
+  ['#eaf6e6 0,#f3f6f8 100%', 'var(--sta-gest1,#eaf6e6) 0,var(--sta-gest2,#f3f6f8) 100%'], ['background:#eaf6e6', 'background:var(--sta-gest1,#eaf6e6)'],
+  ['color:#2f6b25', 'color:var(--sta-verde-txt,#2f6b25)'], ['color:#2e7d32', 'color:var(--sta-verde-txt,#2e7d32)'],
+].forEach(([de, a]) => { css = todas(css, de, a); });
 css = `/* orlant-sta-app.css — Fase STA. Estilos de «Gestión STA» (HTML de Edwin) dentro de su Shadow DOM.
    Generado por scripts/orlant/generar-sta.js desde docs/orlant/sta/Gestion_STA.html: no editar a mano. */
 ${css.trim()}
@@ -51,6 +63,27 @@ ${css.trim()}
 .tabs{overflow-x:auto;scrollbar-width:thin}
 .tabs button{flex:0 0 auto;white-space:nowrap}
 .sta-cargando{padding:40px 16px;text-align:center;color:var(--muted)}
+/* Fase STA (prueba del 21/11): contraste AA (docs/sistema-de-diseno.md). El gris de las etiquetas (#6b7c86, 4,3:1)
+   pasa al gris de la plataforma y los botones azul/verde con letra blanca (2,9:1 y 2,6:1) se oscurecen. */
+:host{--muted:var(--c-text-muted,#4f6f7d); --btn-pri:#1f6c9c; --btn-ok:#2e7d32}
+.btn.pri{background:var(--btn-pri);border-color:var(--btn-pri)}
+.btn.pri:hover{background:#185a83}
+.btn.ok{background:var(--btn-ok);border-color:var(--btn-ok)}
+.ms-acc a{color:var(--sta-enlace,#1f6c9c)}
+.tag{color:#1a5c86} .tag.v{color:#2e6a1d} .tag.a{color:#7d520c}
+.pill{background:#2e7d32}
+.acc .flecha{color:var(--sta-enlace,#1f6c9c)}
+/* Tema oscuro: el anfitrión trae data-theme (orlant-sta.js) y los tokens --c-* de la plataforma entran al Shadow DOM. */
+:host([data-theme="dark"]){
+  --bg:var(--c-bg); --card:var(--c-surface); --line:var(--c-border); --txt:var(--c-text); --muted:var(--c-text-muted);
+  --sta-titulo:var(--c-text); --sta-th:var(--c-surface-subtle); --sta-linea2:var(--c-border-soft); --sta-hover:var(--c-hover-bg);
+  --sta-sel:var(--c-hover-bg); --sta-sel-borde:var(--c-border); --sta-drop:var(--c-surface-subtle);
+  --sta-eje-txt:var(--c-text-2); --sta-grid:var(--c-border-soft); --sta-eje:var(--c-border);
+  --sta-carril:var(--c-surface-subtle); --sta-gest1:var(--c-success-bg); --sta-gest2:var(--c-bg); --sta-verde-txt:var(--c-success-text); --sta-enlace:var(--c-text-link);
+  --muted:var(--c-text-2); color-scheme:dark;
+}
+.btn.peligro{color:var(--c-danger-text,#b02a1d)}
+:host([data-theme="dark"]) .sec-gest,:host([data-theme="dark"]) .sec-gest .card,:host([data-theme="dark"]) .kpi.dest{border-color:var(--c-border)}
 `;
 
 // ── Marcado ────────────────────────────────────────────────────────────
@@ -232,6 +265,11 @@ js = js.replace(/font-weight:\s*(800|900)/g, 'font-weight:700');
 
 // Sistema de diseño (Fase 144): nada de texto bajo 12 px y todo campo con nombre accesible (D13).
 js = todas(js, 'font-size:11px', 'font-size:12px');
+// Fase STA (prueba del 21/11): colores fijos de las gráficas -> variables del tema (en claro, los mismos de Edwin).
+js = todas(js, 'fill="#f2f5f7"', 'style="fill:var(--sta-carril,#f2f5f7)"');
+js = todas(js, 'fill:#003C50', 'fill:var(--sta-titulo,#003C50)');
+js = todas(js, 'fill:#6b7c86', 'fill:var(--muted)');
+js = todas(js, 'stroke="#fff" stroke-width="2"', 'style="stroke:var(--card)" stroke-width="2"');
 M('<input class="inp" id="agBuscar" ', '<input class="inp" id="agBuscar" aria-label="Buscar en mi bandeja" ');
 M('<input class="inp" id="agGestBuscar" ', '<input class="inp" id="agGestBuscar" aria-label="Buscar por número de autorización" ');
 L('<input type="date" class="inp" id="codRellF">', '<input type="date" class="inp" id="codRellF" aria-label="Fecha para volver a llamar">');
