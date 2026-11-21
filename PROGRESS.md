@@ -625,6 +625,7 @@ mismo orden):
 - Fase A30 — Hueco de julio de 2026 del MOBILIZE real llenado con la API (34 consultas, igual a la réplica; agosto–noviembre intactos); nov/2025–jun/2026 Wolkvox los rechaza (v1.238.0, 2026-11-20)
 - Fase STA (parte 1) — «Gestión STA» de ORLANT, servidor: tablas sta_*, rutas /api/orlant/sta/*, permisos por rol y Tickets fuera para el cliente de ORLANT; interfaz en la parte 2 (v1.239.0, 2026-11-20)
 - Fase STA (parte 2) — «Gestión STA» en la plataforma (supervisor, asesor) y gráficas para el cliente de ORLANT en su Dashboard; base real cargada el 21/11: 1.322 casos nuevos (v1.239.0, 2026-11-21)
+- Fase A31 — Primeras franjas del MOBILIZE real con la API (21/11 00:05 y 7:00): noviembre real = réplica día por día, respaldo del manual guardado (8/25/67/35/33), julio y octubre intactos; corrección de horas de la A28 y sondeo nov/2025–jun/2026 (solo docs, 2026-11-21)
 - Fase A32 — MOBILIZE: «mes consultado» de no conectadas (0, no «Pendiente») y julio de 2026 del real en el hueco (v1.239.1, 2026-11-21)
 - Fase 309 — Revisión de seguridad: el cliente ya no recibe el nombre de los líderes en `GET /metas`; resto en `docs/revision-seguridad-2026-11-09.md` (v1.154.1, 2026-11-10)
 - Fase 308 — Revisión antes de la reunión con clientes y pendientes del supervisor (solo docs, 2026-11-10)

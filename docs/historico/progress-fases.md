@@ -21647,3 +21647,43 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
 - **Cambio (autorización escrita del usuario, 21/11/2026):** tabla `llamadas_no_conectadas_meses` (migración `faseA32_no_conectadas_meses_v1`): cada consulta de `cdr_5` que termina bien marca el mes (con 0 si no dejó filas); `mesesConNoConectadas` une esos meses, así que valen 0 y no «Pendiente». `HUECOS_REAL` de julio de 2026 suma `no_conectadas` (CLAUDE.md actualizado); dentro del hueco no se vacía nada y se vuelve a mirar justo antes de escribir. Una consulta que falla no marca el mes. Pruebas: `faseA32-no-conectadas-mes-consultado` (3) y `faseA30` ajustada (35 consultas, 5 pestañas).
 - **Producción (21/11, 9:06, v1.239.1; PR #896 mergeado con `--match-head-commit`, deploy OK):** 1 consulta de `cdr_5` de julio en el real (`/wolkvox/real/hueco`: flujo, flujo_hora, cdr y abandonadas «con datos», sin consultar; no_conectadas OK) y 1 en la réplica («Ejecutar ahora»). En ambas Wolkvox trajo solo 3 llamadas de la cuenta de pruebas (12319), fuera → julio «consultado» con 0. Real = réplica: julio 2 / 0 / 2, agosto 28 / 53 / 81, septiembre 67 / 90 / 157, octubre 90 / 76 / 166 y noviembre 52 / 46 / 98 (agosto a noviembre sin cambios), **Todos 239 / 265 / 504**. En pantalla (MOBILIZE real, «Llamadas Únicas y de Salida»): Todos 504 / 265 / 239 / 47,4 %; noviembre 98 / 46 / 52 / 53,1 %; julio 2 / 0 / 2 / 100 %; sin «Pendiente» y sin errores de página. 2 consultas en total.
 
+## Fase A31 — Primeras corridas del MOBILIZE real con la API (solo lectura, solo docs, 2026-11-21)
+
+- **Pedido (usuario, 21/11):** revisar en solo lectura las franjas del MOBILIZE real de las 00:05 y las 7:00 del 21/11 y comparar noviembre del real contra la foto «antes» (`server/data/a29-foto-antes-mobilize-real.txt`, local, ignorada por git) y contra la réplica, pestaña por pestaña y día por día, solo con conteos. La salida no se repite (Fase A32).
+- **Cómo (21/11, 9:47–9:49, v1.239.1, Brave con la sesión de administrador del usuario, solo GET):** Historial, `/wolkvox/estado`, versiones del Centro de cargas y las filas de cada pestaña-mes. Las filas se procesaron dentro de la página y solo salieron conteos, sumas y huellas sha256 por día y por columna (sin las columnas de origen); nunca nombres ni valores.
+- **Corridas:** 12 líneas del real en el Historial (6 por franja: Flujo `skill_1` con 20 consultas, `skill_7`, `cdr_1`, `diagram_4`, `cdr_5` y `skill_2`), todas OK, ninguna con error. Las dos franjas dan lo mismo:
+  - Flujo: 14 filas / 20 días consultados (1 skill; 66 filas sin llamadas descartadas).
+  - Flujo por hora: 51 filas.
+  - Tipificación: 111 llamadas (52 de salida, 48 únicas de ingreso).
+  - Encuesta: 67.
+  - No conectadas: 46.
+  - Abandonadas: 1.
+  - A las 00:05 reemplazaron el manual (8 / 25 / 67 / 35 / 33 / 0); a las 7:00, lo de las 00:05.
+- **`/wolkvox/estado`:** el real con `desdeMes` 2026-11, interruptor `WOLKVOX_REAL_ACTIVO` y `activoAlArrancar` true. Horarios 00:05, 7:00 y 13:00. Uso del día 102 de 2.800 (incluye las 2 consultas de la Fase A32). Solo responde con la campaña interna (réplica): pedido con `MOBILIZE` da 404.
+- **Respaldo del noviembre manual:** se guardó a las 00:05 (21/11 05:05 UTC), versiones v139–v144, origen manual. Los registros coinciden exactamente con la foto «antes»:
+  - Flujo 8, Flujo por hora 25, Tipificación 67, Encuesta 35 y No conectadas 33.
+  - Abandonadas estaba vacía y no deja versión.
+  - Quedan además las de la API (v141 y v152–v158).
+  - Total: 18 versiones de noviembre vivas (30 días).
+- **Noviembre, real contra «antes»:** del 1 al 12/11 el real tiene hoy los mismos días y las mismas filas que la carga manual: Flujo 8 días / 8 filas, Flujo por hora 8 / 25, Tipificación 8 / 67, Encuesta 8 / 35, No conectadas 6 / 33 y Abandonadas 0 / 0. Del 13 al 20/11 suma lo nuevo de la API:
+  - Flujo 14 días / 14 filas (60 ingresadas, 59 contestadas).
+  - Flujo por hora 14 / 51.
+  - Tipificación 13 / 111.
+  - Encuesta 13 / 67.
+  - No conectadas 9 / 46 (hasta el 19/11).
+  - Abandonadas 1 / 1 (14/11).
+- **Noviembre, real contra réplica:** **igual en todas las pestañas y en todos los días**: huella del mes y de cada día iguales (Flujo 14/14, Flujo por hora 14/14, Tipificación 13/13, Encuesta 13/13, No conectadas 9/9, Abandonadas 1/1). La diferencia de AHT ±1 s / espera de la Fase A25 ya no existe: los dos lados salen de la API.
+- **Julio y octubre del real no cambiaron:** ninguna versión de julio u octubre se guardó después del hueco (20/11, 15:30) y las 12 líneas del real del 21/11 son solo de 2026-11.
+  - **Julio:** real = réplica en las 6 pestañas (7 / 11 / 2 / 0 / 4 / 0 filas, huellas iguales).
+  - **Octubre** del real sigue siendo la carga manual (última versión del 04/11). Las filas son las mismas que en la réplica (Flujo 26, Flujo por hora 77, Tipificación 204, No conectadas 76, Abandonadas 2), salvo Encuesta (113 contra 112).
+  - En octubre las huellas difieren en el formato de columnas que la API arma distinto al archivo manual: Flujo (`abandonPct`, AHT y espera), Tipificación (`codAct`, nombre de asesor), Encuesta (`connId`, hora, nombre de asesor) y No conectadas (nombre de asesor en 9 días). Ya era así antes del 21/11 y no se tocó (octubre y anteriores nunca se llenan con la API).
+- **Nada se escribió** en producción por esta revisión. Brave cerrado y scripts borrados.
+
+## Fase A28 — corrección de horas (2026-11-21)
+
+- La entrada de la Fase A28 dice que el deploy de su PR «solo reinicia el servidor (19:xx Colombia…)». **Era 14:xx Colombia** (19:xx UTC): la foto «antes» de la Fase A29, tomada justo después, es de las 14:39 Colombia (19:39 UTC). Sigue igual de lejos de las franjas (13:00 y 00:05). La entrada original no se reescribe.
+
+## Sondeo de Wolkvox nov/2025–jun/2026 (2026-11-20, solo lectura)
+
+- **Autorizado por el usuario (20/11), antes de la Fase A30:** 16 consultas por «Probar» (`skill_7` y `cdr_1`, mes completo, de noviembre de 2025 a junio de 2026). Las 16 respondieron **404 «Validate dates entered»**: Wolkvox **rechaza esas fechas** (no es «sin registros»); con el mismo formato sí respondió de julio a octubre de 2026. Esos 8 meses no se pueden llenar por la API: el hueco del real quedó solo en julio de 2026. Uso del día: 94 de 2.800. Ningún dato escrito (solo la línea de auditoría `WOLKVOX_PRUEBA` de cada consulta). Detalle en `docs/plan-api-wolkvox.md` §10.26.
+
