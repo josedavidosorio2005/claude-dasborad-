@@ -5440,6 +5440,25 @@ function agregarStaGestionOrlant() {
 }
 runOnceMigration('faseSTA_orlant_gestion_base_v1', agregarStaGestionOrlant);
 
+// Fase A32 (usuario 21/11/2026): «mes consultado» de las no conectadas. llamadas_no_conectadas guarda una
+// fila por llamada, así que un mes en el que Wolkvox (cdr_5) respondió bien pero sin llamadas válidas
+// (ninguna, o solo de la cuenta de pruebas) no se distinguía de un mes nunca consultado y la pestaña
+// decía «Pendiente». Una fila aquí = ese mes se consultó: la pestaña lo cuenta como 0 si no tiene filas.
+function crearNoConectadasMeses() {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS llamadas_no_conectadas_meses (
+      campana TEXT NOT NULL,
+      mes TEXT NOT NULL,
+      filas INTEGER NOT NULL,
+      archivoNombre TEXT NOT NULL DEFAULT '',
+      consultadoEn TEXT NOT NULL,
+      PRIMARY KEY (campana, mes)
+    );
+  `);
+  asegurarDatosVersion();
+}
+runOnceMigration('faseA32_no_conectadas_meses_v1', crearNoConectadasMeses);
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {

@@ -7,6 +7,16 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.239.1 — Noviembre 2026
+
+**MOBILIZE: «Llamadas Únicas y de Salida» ya no se queda en «Pendiente» por un mes sin no conectadas.**
+
+- Cuando la consulta a Wolkvox de las llamadas no conectadas de un mes termina bien pero no trae ninguna
+  llamada (o solo de la cuenta de pruebas), ese mes cuenta como 0 en vez de «Pendiente». Así el total de
+  «Todos» vuelve a salir.
+- Julio de 2026 del MOBILIZE real se puede completar con sus no conectadas (una sola vez).
+- Un mes que de verdad no tiene esa información sigue diciendo «Pendiente».
+
 ## v1.239.0 — Noviembre 2026
 
 **«Gestión STA» de ORLANT dentro de la plataforma.**

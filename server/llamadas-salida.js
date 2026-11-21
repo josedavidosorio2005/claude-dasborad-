@@ -155,7 +155,23 @@ function _rangoNc(q) {
 }
 function mesesConNoConectadas(db, q) {
   const { where, params } = _rangoNc(q);
-  return db.prepare(`SELECT DISTINCT substr(fecha,1,7) AS v FROM llamadas_no_conectadas WHERE ${where} ORDER BY v`).all(params).map((x) => x.v);
+  const conFilas = db.prepare(`SELECT DISTINCT substr(fecha,1,7) AS v FROM llamadas_no_conectadas WHERE ${where} ORDER BY v`).all(params).map((x) => x.v);
+  return [...new Set(conFilas.concat(mesesNoConectadasConsultados(db, q)))].sort();
+}
+// Fase A32: meses en los que la consulta de no conectadas (cdr_5) terminó bien, aunque no dejara filas
+// (Wolkvox sin llamadas, o solo de la cuenta de pruebas): ese mes vale 0, no «Pendiente».
+function mesesNoConectadasConsultados(db, q) {
+  const c = ['campana = @campana'];
+  const p = { campana: q.campana };
+  if (q.desde) { c.push('mes >= @mDesde'); p.mDesde = String(q.desde).slice(0, 7); }
+  if (q.hasta) { c.push('mes <= @mHasta'); p.mHasta = String(q.hasta).slice(0, 7); }
+  return db.prepare(`SELECT mes FROM llamadas_no_conectadas_meses WHERE ${c.join(' AND ')} ORDER BY mes`).all(p).map((x) => x.mes);
+}
+function marcarNoConectadasConsultado(db, { campana, mes, filas, archivoNombre }) {
+  if (!/^\d{4}-\d{2}$/.test(String(mes || ''))) throw new Error('mes inválido');
+  db.prepare(`INSERT INTO llamadas_no_conectadas_meses (campana, mes, filas, archivoNombre, consultadoEn) VALUES (?, ?, ?, ?, ?)
+    ON CONFLICT(campana, mes) DO UPDATE SET filas = excluded.filas, archivoNombre = excluded.archivoNombre, consultadoEn = excluded.consultadoEn`)
+    .run(campana, mes, Number(filas) || 0, archivoNombre || '', nowStr());
 }
 function _noConectadasBase(db, q, grupo) {
   const { where, params } = _rangoNc(q);
@@ -313,6 +329,7 @@ function cargarLlamadasNoConectadas(db, { campana, archivoNombre, cargadoPorNomb
 }
 
 module.exports = {
+  marcarNoConectadasConsultado, mesesNoConectadasConsultados, // Fase A32
   CAMPOS_FILA,
   filaArrayAObjeto,
   impactoLlamadasSalida,
