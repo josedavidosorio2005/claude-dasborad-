@@ -21687,3 +21687,25 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
 
 - **Autorizado por el usuario (20/11), antes de la Fase A30:** 16 consultas por «Probar» (`skill_7` y `cdr_1`, mes completo, de noviembre de 2025 a junio de 2026). Las 16 respondieron **404 «Validate dates entered»**: Wolkvox **rechaza esas fechas** (no es «sin registros»); con el mismo formato sí respondió de julio a octubre de 2026. Esos 8 meses no se pueden llenar por la API: el hueco del real quedó solo en julio de 2026. Uso del día: 94 de 2.800. Ningún dato escrito (solo la línea de auditoría `WOLKVOX_PRUEBA` de cada consulta). Detalle en `docs/plan-api-wolkvox.md` §10.26.
 
+## Fase STA (parte 3) — Pendientes de la prueba local, tema oscuro y guion para Edwin (v1.240.0, 2026-11-21)
+
+- **Pedido (usuario, 21/11):** probar EN LOCAL (servidor local, Playwright con Brave, base ficticia; producción sin tocar) lo que quedó pendiente de la parte 2: devolver y pasar casos entre asesoras, quitar pendientes, filtros de asignación (entidad y servicio), búsqueda e histórico de la asesora, aviso con una gestión abierta, 768 px y tema oscuro. Corregir lo que falle en una rama nueva, con pruebas y PR con CI en verde, **sin mergear**. Guion para la prueba del lunes con Edwin.
+- **Prueba local (21/11, 10:00–10:11, servidor local con base nueva desechable, 90 casos ficticios `PRB…`, supervisora, 2 asesoras y cliente ficticios):**
+  - **Supervisora:** filtro Entidad («Quitar todo» y una sola) da 30, más Servicio (quitado con la búsqueda) da 15. Asignar 6 → los 6 de esa entidad y ese servicio. Pedir 50 → aviso «solo hay 9», ventana «No hay suficientes casos» → asigna los 9. «Limpiar filtros» vuelve a 75 libres. Devolver por cantidad (4), pasar 3 marcados uno a uno a la otra asesora (confirmación con nombres) y «Seleccionar todos» + Devolver para quitar todos los pendientes: los conteos del servidor cuadran en cada paso.
+  - **Asesora:** búsqueda en la bandeja («25 de 72»); histórico «Últimas 50 de 52» con 50 filas, búsqueda por número (1 resultado) y número inexistente («No encontré gestiones…»). «Volver a llamar» programada por la pantalla; con otra gestión abierta sale el aviso discreto y no la alerta grande; al cancelar sale «Debes volver a llamar» y el aviso se apaga.
+  - **Cliente:** pestaña «Gestión de la base STA» con 7 indicadores y 10 gráficas, en claro y en oscuro.
+  - **Tamaño:** 768 px (supervisora, 5 pestañas; asesora, 3; cliente): sin scroll horizontal de la página. Consola sin errores.
+  - `quitarPendientes` del HTML de Edwin no tiene botón (tampoco en el original). Quitar los pendientes de una asesora se hace con «Seleccionar todos» + «Devolver a disponibles».
+- **Fallas encontradas y corregidas (rama `faseSTA-prueba-pendientes`):**
+  1. **Sin tema oscuro:** el anfitrión ya pasaba `data-theme`, pero el CSS no tenía reglas para el modo oscuro y la herramienta seguía clara dentro de la plataforma oscura.
+  2. **Contraste bajo en claro**, con los colores del HTML de Edwin: gris de etiquetas y pestañas 4,33:1, botones blancos sobre azul 2,89:1 y sobre verde 2,6:1, etiquetas 4,34–4,45:1, pastilla «Gestión» 3,48:1 y botón rojo 4,38:1.
+  3. **En oscuro, gráficas en SVG con colores fijos:** el centro de las donas en teal sobre fondo oscuro, y carriles blancos con el texto claro en las barras.
+- **Cambio:** solo en el generador (`scripts/orlant/generar-sta.js`); el HTML de Edwin no se toca.
+  - Los colores fijos pasan a variables con el mismo color de Edwin como respaldo, así que en claro se ven igual.
+  - En oscuro, las variables toman los tokens `--c-*` de la plataforma, que entran al Shadow DOM.
+  - El gris de las etiquetas pasa a `--c-text-muted`. Se oscurecen el botón azul (`#1f6c9c`), el verde y la pastilla (`#2e7d32`) y las etiquetas (azul, verde y ámbar). El rojo de «peligro» pasa a `--c-danger-text`.
+  - Se regeneran `public/js/orlant-sta-app.js` y `public/css/orlant-sta-app.css`.
+  - Verificado con Playwright y Brave: ningún texto bajo 4,5:1 en claro ni en oscuro, a 1440 y 768 px, en las 8 pestañas.
+- **Pruebas:** nueva `faseSTA-orlant-sta-tema` (3): sin fondos blancos ni colores fijos de Edwin en el CSS y en el JS; cada variable tiene su valor en oscuro; contraste AA calculado en claro y con los tokens de oscuro. La guardiana del generador sigue reproduciendo lo publicado.
+- **Guion para la prueba del lunes:** `docs/orlant/sta/guia-prueba-edwin.md` (supervisor, asesora y cliente, paso a paso, sin datos reales; avisa que en producción la base es real y que se usen pocos casos).
+

@@ -7,6 +7,16 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.240.0 — Noviembre 2026
+
+**ORLANT: «Gestión STA» con tema oscuro y colores más legibles.**
+
+- La herramienta «Gestión STA» (supervisor y asesoras) ahora cambia a oscuro cuando se activa el tema
+  oscuro de la plataforma, igual que el resto de las pantallas. Las gráficas también.
+- Algunos textos grises, etiquetas y botones (azul, verde y rojo) quedaron un poco más oscuros para que
+  se lean mejor. En el tema claro se ve casi igual que antes.
+- Nueva guía corta para la prueba con Edwin (supervisor, asesora y cliente).
+
 ## v1.239.1 — Noviembre 2026
 
 **MOBILIZE: «Llamadas Únicas y de Salida» ya no se queda en «Pendiente» por un mes sin no conectadas.**
