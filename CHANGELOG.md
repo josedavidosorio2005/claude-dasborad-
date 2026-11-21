@@ -7,6 +7,16 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.241.0 — Noviembre 2026
+
+**ORLANT: dos tarjetas nuevas en «Total tráfico».**
+
+- **Citas asignadas:** cuántas citas se agendaron en los meses elegidos (Línea General y 3P).
+- **Efectividad de agendamiento:** citas asignadas ÷ interacciones atendidas y realizadas (llamadas y
+  WhatsApp, de entrada y de salida).
+- Si un mes todavía no tiene agendas cargadas, se avisa y ese mes no entra en el porcentaje.
+- La exportación de «Total tráfico» trae las dos columnas nuevas.
+
 ## v1.240.0 — Noviembre 2026
 
 **ORLANT: «Gestión STA» con tema oscuro y colores más legibles.**

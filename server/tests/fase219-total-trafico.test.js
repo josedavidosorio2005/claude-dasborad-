@@ -42,7 +42,8 @@ test('por mes: ingresados = entrada + salida; contestados = contestados de entra
 
 test('varios meses: totales sumados, nunca el promedio de los %', () => {
   const s = totalTraficoSuma(totalTraficoPorMes(db, 'ORLANT'));
-  assert.deepEqual(s, { ingresados: 210, contestados: 165, nivelAtencion: 165 / 210 });
+  assert.deepEqual([s.ingresados, s.contestados, s.nivelAtencion], [210, 165, 165 / 210]);
+  assert.equal(s.citasAsignadas, null, 'Fase B1: sin agendas, citas null');
   assert.equal(totalTraficoSuma([]).nivelAtencion, null);
 });
 
@@ -87,7 +88,8 @@ test('vista: tarjetas con descripcion corta ("Incluye todas las salidas") y 2 ba
   assert.match(js, /label: 'Total llamadas \+ WhatsApp'/);
   assert.match(js, /label: 'Total contestados'/);
   const { totalTraficoSumaFilas } = require('../../public/js/total-trafico.js');
-  assert.deepEqual(totalTraficoSumaFilas([{ ingresados: 10, contestados: 8 }, { ingresados: 30, contestados: 12 }]), { ingresados: 40, contestados: 20, nivelAtencion: 0.5 });
+  const sf = totalTraficoSumaFilas([{ ingresados: 10, contestados: 8 }, { ingresados: 30, contestados: 12 }]);
+  assert.deepEqual([sf.ingresados, sf.contestados, sf.nivelAtencion], [40, 20, 0.5]);
   const gen = fs.readFileSync(path.join(RAIZ, 'js', 'dashboard-generic.js'), 'utf8');
   assert.ok(gen.includes("if(p.tipo === 'total_trafico_panel'){ _totalTraficoRenderPanel(p, i); return; }"));
   assert.ok(gen.includes('async function _gdExportarTotalTrafico(p, i){'));

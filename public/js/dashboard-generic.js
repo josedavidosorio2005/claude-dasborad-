@@ -2521,15 +2521,24 @@ async function _gdExportarTotalTrafico(p, i){
   try{ filas = await apiRequest('GET', '/calidad/total-trafico/mensual?campana='+encodeURIComponent(p.campana)) || []; }catch(e){}
   var filasM = (typeof gdAplicarFiltroMeses === 'function' ? gdAplicarFiltroMeses(filas, function(f){ return f.mes; }) : filas);
   if(!filasM.length) return [{ titulo: titulo, tipo: 'aviso', filas: [], mensaje: 'Sin tráfico para los meses elegidos.' }];
+  var conCitas = typeof totalTraficoMuestraCitas === 'function' && totalTraficoMuestraCitas(p.campana); // Fase B1
+  var pct = function(v){ return v === null || v === undefined ? '—' : gdFmtValor(v*100, '%'); };
   var fila = function(mes, f, nivel){
-    return { Mes: mes, 'Llamadas de entrada': f.llamadasEntrada, 'Llamadas contestadas': f.llamadasContestadas, 'WhatsApp de entrada': f.whatsappEntrada,
+    var o = { Mes: mes, 'Llamadas de entrada': f.llamadasEntrada, 'Llamadas contestadas': f.llamadasContestadas, 'WhatsApp de entrada': f.whatsappEntrada,
       'WhatsApp contestados': f.whatsappContestados, 'Llamadas de salida': f.llamadasSalida, 'WhatsApp de salida': f.whatsappSalida,
-      'Total ingresados': f.ingresados, 'Total contestados (incluye todas las salidas)': f.contestados, 'Nivel de atención total': nivel === null ? '—' : gdFmtValor(nivel*100, '%') };
+      'Total ingresados': f.ingresados, 'Total contestados (incluye todas las salidas)': f.contestados, 'Nivel de atención total': pct(nivel) };
+    if(conCitas){
+      o['Citas asignadas'] = f.citasAsignadas === null || f.citasAsignadas === undefined ? '—' : f.citasAsignadas;
+      o['Efectividad de agendamiento (citas ÷ interacciones atendidas y realizadas)'] = pct(f.efectividadAgendamiento);
+    }
+    return o;
   };
   var out = filasM.map(function(f){ return fila(citasAtendidasMesLbl(f.mes), f, f.nivelAtencion); });
   var tot = {};
   ['llamadasEntrada','llamadasContestadas','whatsappEntrada','whatsappContestados','llamadasSalida','whatsappSalida','ingresados','contestados'].forEach(function(k){ tot[k] = filasM.reduce(function(a, f){ return a + (f[k] || 0); }, 0); });
-  out.push(fila('TOTAL ('+citasAtendidasRangoLbl(filasM)+')', tot, totalTraficoSumaFilas(filasM).nivelAtencion));
+  var sumaTt = totalTraficoSumaFilas(filasM);
+  tot.citasAsignadas = sumaTt.citasAsignadas; tot.efectividadAgendamiento = sumaTt.efectividadAgendamiento;
+  out.push(fila('TOTAL ('+citasAtendidasRangoLbl(filasM)+')', tot, sumaTt.nivelAtencion));
   return [{ titulo: titulo, tipo: 'tabla', filas: out }];
 }
 
