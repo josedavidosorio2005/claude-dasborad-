@@ -176,7 +176,8 @@ El plan:
 ## 5. Qué falta pedir
 
 - ~~Token de ORLANT~~ **Listo (21/11):** la operación `inconexion-orlant` en `wv0034` responde. El usuario
-  lo carga en SSM el lunes 23/11. Falta que Wolkvox autorice la IP del servidor para `wv0034`, si hace falta (§7).
+  lo carga en SSM el lunes 23/11. La IP 3.85.54.96 ya quedó como permanente en el firewall del Manager de
+  `wv0034` (21/11); falta comprobarlo desde el servidor (§7).
 - **OK de Jairo** para consultar la operación de ORLANT, y del usuario para cada interruptor.
 - **Skills de 3P:** lista de skills (y colas de WhatsApp) que son 3P y las que son General.
 - **Meta de WhatsApp:** ¿«atendido a tiempo» es 0–3 min? ¿Qué % se espera? ¿Hay meta de abandono?
@@ -198,7 +199,7 @@ El plan:
 | N2 | Inbound llamadas (C3) con los datos manuales de hoy + ASA y participación por skill | 8–10 | mapa de skills para la línea |
 | N3 | WhatsApp (C4) con la carga manual (`whatsapp_tiempos`: 0–3 / 3–5 / >5, TMO, ASA) | 6–8 | meta de WhatsApp |
 | N4 | Citas (C5): General/3P ya; por canal según lo que decida Edwin | 4–10 | definición del canal |
-| N5 | Motor Wolkvox generalizado por operación (sin cambiar MOBILIZE) + réplica «ORLANT PRUEBAS API» + «Diagnóstico de red» para `wv0034` | 12–16 | token en SSM (lunes 23/11) + IP autorizada (§7) + OK de Jairo |
+| N5 | Motor Wolkvox generalizado por operación (sin cambiar MOBILIZE) + réplica «ORLANT PRUEBAS API» + «Diagnóstico de red» para `wv0034` | 12–16 | token en SSM (lunes 23/11) + OK de Jairo (IP ya autorizada el 21/11, §7) |
 | N6 | Réplica ORLANT: Flujo, Flujo por hora, cdr_1, no conectadas; comparación día por día contra lo manual | 10–14 | N5 |
 | N7 | Salida (C6): realizadas, contactabilidad, intentos, citas | 8–10 | N6 + decisión del hash |
 | N8 | Asesores (E2): guardar `agent_1`/`agent_5` (ocupación, horas, Talk/ACW, por hora) | 10–12 | N6 |
@@ -209,7 +210,7 @@ El plan:
 **Total aproximado:** 82–118 horas.
 
 Lo que se puede empezar ya, sin esperar a nadie, es **N1** (con los datos manuales).
-**N5** en adelante espera el token en SSM (lunes 23/11), la IP autorizada en `wv0034` (§7) y el OK de Jairo.
+**N5** en adelante espera el token en SSM (lunes 23/11) y el OK de Jairo; la IP ya quedó autorizada en `wv0034` (21/11, §7).
 
 ## 7. IP del servidor y firewall de Wolkvox (cómo se resolvió con MOBILIZE y qué hacer con ORLANT)
 
@@ -240,6 +241,10 @@ La 100.51.93.1 de bitácoras viejas era de la cuenta anterior, ya retirada. La I
 estática siga pegada a la instancia.
 
 ### Qué hacer con ORLANT (`inconexion-orlant`, `wv0034`)
+
+> **Hecho (usuario, 21/11/2026):** la IP **3.85.54.96** quedó agregada **como permanente** en el
+> firewall del Manager de `wv0034`. Los pasos 1 y 2 de abajo ya no hacen falta, salvo que la comprobación
+> (diagnóstico de red) salga mal. Sigue pendiente cargar el token en SSM (paso 3) y comprobarlo después de N5.
 
 `wv0034` es **otro servidor de Wolkvox** (MOBILIZE está en `wv0072`). No sabemos si el firewall que
 autorizó 3.85.54.96 es común a todos los servidores o va por servidor. Hay que suponer que no y

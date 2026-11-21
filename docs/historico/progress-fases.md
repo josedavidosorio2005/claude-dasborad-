@@ -21747,3 +21747,13 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
 - **Versión:** 1.242.0, para no chocar con el PR #902 (B1, 1.241.0, sin mergear). Si uno entra antes, el otro ajusta su versión y su CHANGELOG.
 - **Sigue (lunes 23/11):** token en SSM, IP 3.85.54.96 para `wv0034` (plan §7), N2 (mapa de skills → línea, TMO/ASA) y N5 (motor por operación + réplica «ORLANT PRUEBAS API»).
 
+### Fase N1 — revisión de la versión final (2026-11-21)
+
+- **Pedido (usuario):** volver a mirar en local la versión final del PR #904 (después de pasar tamaños y bordes a los tokens), a 1440 y 375 px, en claro y oscuro, y corregir en la misma rama.
+- **Revisión** (Brave, base desechable, datos ficticios): 9 vistas × 4 combinaciones, más la descarga de Excel.
+  - Esta vez el contraste incluye el encabezado: el script ya lee los degradados y mezcla las transparencias.
+  - Resultado: contraste 0 fallas, sin desborde lateral, consola sin errores y Excel descargado en las 4.
+  - **Falló un punto:** a 1440 px, los botones del encabezado (Excel, PDF, pantalla completa, Cerrar) medían menos de 44 px.
+- **Arreglo:** `.ot-acciones .aurora-close` con mínimo 44 × 44 px y sin partir el texto (`nowrap`, como pide la prueba de la Fase 144), solo en este tablero; los demás tableros no cambian. Además, «20 s», «95 s» y «78,7 %» llevan espacio que no se corta, para que la unidad no quede sola en otra línea. Repetida la revisión: 0 fallas. Suite 3413/0.
+- **Plan:** la IP 3.85.54.96 quedó agregada como permanente en el firewall del Manager de `wv0034` (usuario, 21/11). Anotado en la §7 del plan.
+
