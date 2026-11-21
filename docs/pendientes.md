@@ -307,6 +307,30 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 
 ## 2. Esperando una respuesta de Edwin
 
+- **Plan de acción de ORLANT — preguntas para el lunes 23/11** (anotado el 21/11/2026) — Prioridad ALTA (entregas 27/11 y 30/11).
+  - **B1, Total tráfico: «Citas asignadas» y «Efectividad de agendamiento»** (hecho en la rama `faseB1-orlant-citas-total-trafico`, PR sin mergear). Hoy: citas asignadas = filas de Agendamiento del mes (Línea General + 3P, la misma base de la Efectividad de Citas); efectividad = citas ÷ interacciones atendidas y realizadas (llamadas y WhatsApp contestados de entrada + todas las salidas, igual que «Total contestados»). Un mes sin agendas cargadas sale «—» y no entra al %. Confirmar:
+    1. ¿«Citas asignadas» son las agendas del aplicativo (fecha de solicitud), o las citas por fecha de la cita?
+    2. ¿La salida suma completa en el denominador (cada salida cuenta como «realizada»), o solo las conectadas?
+    3. ¿Reemplaza a la «Efectividad de Citas» actual (agendas ÷ contestados de entrada) o conviven las dos? Hoy dan números distintos porque esta suma la salida.
+    4. ¿Las tarjetas van solo en Total tráfico o también en la exportación y el reporte PDF?
+  - **B2, asistencia de citas con corte mensual:** espera el archivo y la definición de Edwin. Preguntar: qué archivo trae la asistencia (¿el mismo de Inasistencia o uno nuevo?), qué es «corte mensual» (mes de la cita o de la solicitud) y la fórmula (asistidas ÷ citas del mes).
+  - **B3, filtro Total / Línea General / 3P / Llamadas / WhatsApp en esas tarjetas:** lo que hay hoy:
+    - **Citas:** traen General / 3P, pero no el canal (Agendamiento no dice si la cita salió de una llamada o de un WhatsApp).
+    - **Salida:** viene repartida por línea y por canal.
+    - **Entrada:** Tráfico de Llamadas y de WhatsApp vienen por skill o cola, sin línea.
+
+    Preguntar:
+    - ¿Cómo se sabe la línea de la entrada (¿qué skills o colas son 3P?)?
+    - ¿Cómo se sabe el canal de una cita?
+    - Si no se puede, ¿el filtro aplica solo donde exista el dato (por ejemplo, «Llamadas» y «WhatsApp» solo en el denominador)?
+  - **Equidad (30/11):** pasar a SinCo el HTML de Equidad de Isa, con carga semanal de su Excel. Pedir:
+    - el HTML y 1–2 semanas de su Excel (sin datos de pacientes, o se dejan fuera del repo como los demás);
+    - quién lo carga y quién lo ve (¿el cliente de ORLANT también?);
+    - si una semana reemplaza a la anterior o se acumula;
+    - qué hace hoy el HTML (cálculos y gráficas) que deba quedar igual.
+
+  Cómo se cierra: respuestas de Edwin, y entonces se ajusta B1 antes de mergear y se arman B2, B3 y Equidad.
+
 - **Inventario (diseño de Edwin), después de la I6** (19/11/2026): las 6 fases quedaron hechas (1.227.0–1.232.0). Lo único
   del diseño que no se pasó son **vistas extra del Panel** (gráficas de estado por tipo y por sede); el Panel ya tiene
   los estados y el rendimiento. Preguntarle a Edwin si las quiere y cuáles, antes de hacerlas.

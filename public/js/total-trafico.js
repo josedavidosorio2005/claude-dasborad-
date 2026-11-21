@@ -9,6 +9,10 @@
 'use strict';
 
 var _ttCampanaPorPanel = {};
+// Fase B1 (plan de accion, «mejoras» 27/11): tarjetas de citas solo donde las
+// pidieron (ORLANT: su tabla agendas es la base cruda del aplicativo).
+var TT_CITAS_CLIENTES = ['ORLANT'];
+function totalTraficoMuestraCitas(campana){ return TT_CITAS_CLIENTES.indexOf(campana) !== -1; }
 
 async function _totalTraficoRenderPanel(p, i){
   var campana = p.campana;
@@ -43,7 +47,15 @@ async function _totalTraficoRenderPanel(p, i){
     kpi(delMeses.length ? gdFmtValor(s.ingresados) : '—', 'Total ingresados · llamadas y WhatsApp, de entrada y de salida · '+lbl) +
     kpi(delMeses.length ? gdFmtValor(s.contestados) : '—', 'Total contestados · incluye todas las salidas · '+lbl) +
     kpi(delMeses.length && s.nivelAtencion !== null ? gdFmtValor(s.nivelAtencion*100, '%') : '—', 'Nivel de atención total · contestados ÷ ingresados · '+lbl) +
+    (totalTraficoMuestraCitas(campana) ?
+      kpi(s.citasAsignadas !== null ? gdFmtValor(s.citasAsignadas) : '—', 'Citas asignadas · agendas de Línea General y 3P · '+lbl) +
+      kpi(s.efectividadAgendamiento !== null ? gdFmtValor(s.efectividadAgendamiento*100, '%') : '—', 'Efectividad de agendamiento · citas asignadas ÷ interacciones atendidas y realizadas · '+lbl)
+      : '') +
     '</div>';
+  if(totalTraficoMuestraCitas(campana) && delMeses.length && s.mesesSinCitas.length){
+    html += '<p class="lu-aviso tt-nota-citas">Sin agendas cargadas en '+esc(s.mesesSinCitas.map(mesNombreLargo).join(', '))+
+      (s.citasAsignadas !== null ? ': las citas y la efectividad de agendamiento cuentan solo los meses con agendas.' : '.')+'</p>';
+  }
   // Fase 297: Aurora y HLM, lineas de ingreso por mes con su propio titulo.
   if(typeof totalTraficoLineasAplica === 'function' && totalTraficoLineasAplica(campana)){ // Fase 300: + ORLANT
     html += '<div class="aurora-chart-title gl-titulo">Flujo de llamadas &amp; WhatsApp – líneas de ingreso por mes</div>';
@@ -57,10 +69,18 @@ async function _totalTraficoRenderPanel(p, i){
 }
 
 // Totales sumados de varios meses (nunca el promedio de los %).
+// Fase B1: citas solo de los meses con agendas, contra los contestados de esos
+// mismos meses (igual que totalTraficoSuma del servidor).
 function totalTraficoSumaFilas(filas){
-  var ing = 0, con = 0;
-  (filas || []).forEach(function(f){ ing += f.ingresados || 0; con += f.contestados || 0; });
-  return { ingresados: ing, contestados: con, nivelAtencion: ing > 0 ? con / ing : null };
+  var ing = 0, con = 0, citas = null, conCitas = 0, sinCitas = [];
+  (filas || []).forEach(function(f){
+    ing += f.ingresados || 0; con += f.contestados || 0;
+    if(f.citasAsignadas === null || f.citasAsignadas === undefined){ sinCitas.push(f.mes); return; }
+    citas = (citas || 0) + f.citasAsignadas; conCitas += f.contestados || 0;
+  });
+  return { ingresados: ing, contestados: con, nivelAtencion: ing > 0 ? con / ing : null,
+    citasAsignadas: citas, contestadosConCitas: conCitas,
+    efectividadAgendamiento: citas !== null && conCitas > 0 ? citas / conCitas : null, mesesSinCitas: sinCitas };
 }
 
 // 2 barras por mes: Total llamadas + WhatsApp (ingresados) y Total contestados.
@@ -116,5 +136,5 @@ function _ttDibujarLineas(i, filas){
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { totalTraficoSumaFilas: totalTraficoSumaFilas };
+  module.exports = { totalTraficoSumaFilas: totalTraficoSumaFilas, totalTraficoMuestraCitas: totalTraficoMuestraCitas };
 }

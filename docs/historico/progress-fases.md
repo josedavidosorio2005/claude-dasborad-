@@ -21715,3 +21715,28 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - **No revisado en producción:** las vistas de asesora y cliente (sin su sesión). Se probaron en local y quedan para la prueba con Edwin (`docs/orlant/sta/guia-prueba-edwin.md`).
   - Las capturas, que tenían nombres de asesoras, se borraron.
 
+## Fase B1 — ORLANT, plan de acción «mejoras»: citas y efectividad de agendamiento en Total tráfico (v1.241.0, 2026-11-21, PR sin mergear)
+
+- **Pedido (usuario, 21/11; plan de acción fuera del repo):**
+  - «Mejoras» (27/11) es el dashboard actual de ORLANT, en tres partes:
+    - **B1:** tarjetas «Citas asignadas» y «Efectividad de agendamiento» en Total tráfico, con efectividad = citas asignadas ÷ interacciones atendidas y realizadas (entrada + salida, llamadas + WhatsApp);
+    - **B2:** asistencia de citas con corte mensual (espera a Edwin);
+    - **B3:** filtro Total / Línea General / 3P / Llamadas / WhatsApp en esas tarjetas.
+  - «Equidad» (30/11) es el HTML de Equidad de Isa con carga semanal de su Excel (espera esos archivos).
+  - Para hoy: en local, revisar los datos, decir si B1 sale con lo que hay y, si se puede, empezarlo sin mergear.
+- **Datos que ya existen:**
+  - **Citas:** la tabla `agendas` (base cruda del Agendamiento, una fila por cita con `tipoLinea` General / 3P y la fecha de solicitud, sin canal). Es la misma que usa la Efectividad de Citas de la Fase 212 (agendas ÷ contestados de entrada).
+  - **Interacciones:** Total tráfico (Fase 219) ya calcula «Total contestados» = llamadas y WhatsApp contestados de entrada + todas las salidas (General + 3P + sin clasificar).
+  - Conclusión: **B1 sale con lo que hay**, sin archivo nuevo.
+- **Cambio:**
+  - **Servidor:** `totalTraficoPorMes` agrega por mes `citasAsignadas` (y la división General / 3P) y `efectividadAgendamiento` = citas ÷ contestados. Un mes sin agendas queda en `null`, nunca en 0.
+  - **Suma de varios meses:** suma las citas y las divide entre los contestados de esos mismos meses; nunca promedia porcentajes. Avisa qué meses no tienen agendas.
+  - **Pantalla:** dos tarjetas nuevas en Total tráfico, solo ORLANT (`TT_CITAS_CLIENTES`); Aurora y HLM no cambian. La exportación trae las dos columnas.
+- **Verificación local** (base desechable, datos ficticios; producción sin tocar):
+  - Con 875 citas (septiembre y octubre) sobre 3.690 contestados la efectividad da 23,7 %. Noviembre, sin agendas, sale en el aviso.
+  - Revisado a 1440 y 375 px, en claro y en oscuro: sin scroll horizontal y consola sin errores.
+- **Pruebas:**
+  - nueva `faseB1-orlant-citas-total-trafico` (3): por mes, suma de varios meses, servidor = pantalla, ruta y textos;
+  - `fase219-total-trafico` ajustada a los campos nuevos.
+- **Abierto:** las preguntas para Edwin del lunes 23/11 (definición de citas, denominador, si reemplaza a la Efectividad de Citas) están en `docs/pendientes.md`, junto con lo que falta para B2, B3 y Equidad.
+
