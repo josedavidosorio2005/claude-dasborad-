@@ -22142,3 +22142,21 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - a 768 y 375 sin scroll horizontal;
   - sin errores, salvo el 400 y los 404 esperados.
 - **Producción:** 1.253.0 (#920). GH3 sin mergear; espera el OK del usuario y los pasos de AWS.
+
+### Fase GH3 — verificación en producción (2026-11-23)
+
+- **AWS:** el usuario creó, el 23/11, el bucket `inconexion-talento-humano-2026` (privado, con versiones y SSE-S3), la política insertada `TalentoHumanoSoportesS3` y el parámetro `/inconexion/prod/GH_SOPORTES_S3_BUCKET`.
+- **#921 mergeado** (`ls-remote` + `--match-head-commit`). Deploy OK a la primera, sin timeouts de SSH. `/api/health`: `ok:true`, versión 1.254.0.
+- **Prueba autorizada por el usuario**, en Brave y como administrador (él inició sesión), con 1 PDF INVENTADO, sin empleados ni datos de personas. Resultado, 11/11:
+  - `soportesActivos:true`, así que el servidor leyó el parámetro;
+  - la barra dice «también los soportes adjuntos»;
+  - subir: guardado en S3, sin copia en el navegador;
+  - abrir: vuelve igual (nombre, tipo, tamaño y contenido), y la descarga de la app funciona;
+  - borrar: ya no se entrega;
+  - la bitácora anota «subido» y «borrado», sin el nombre;
+  - sin errores de consola, salvo el 404 esperado después de borrar.
+- **Cifrado:** el servidor sube con `ServerSideEncryption: AES256` y el bucket tiene SSE-S3 por defecto. Desde este equipo no hay acceso a AWS; la propiedad del objeto la confirma el usuario en la consola.
+- **Lo que queda de la prueba:**
+  - el objeto `talento-humano/soportes/prueba-gh3-1795461819691-*.pdf` sigue en el bucket, porque el servidor no tiene `DeleteObject`;
+  - en la base quedan una fila de `gh_archivos` marcada como borrada y 2 registros en la bitácora.
+- `GH_ROL_ACTIVO` sigue apagado.
