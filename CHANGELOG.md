@@ -7,6 +7,21 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.258.0 — Noviembre 2026
+
+**Inventario de sistemas: el «Panel general» ahora se ve como el diseño de Edwin.**
+
+- Arriba están los botones «Ver gráficas de» (Todos o un solo tipo) y los botones Excel y Registrar ingreso.
+- Las tarjetas muestran equipos asignados, libres, en reparación, malos, torres, portátiles, agentes y actas pendientes. Cada una abre su vista.
+- Gráficas nuevas:
+  - una dona con el estado de los equipos y otra con el rendimiento por memoria RAM;
+  - barras por tipo, por sede y por operación, separadas por estado;
+  - marcas más comunes;
+  - valor del inventario propio y renta mensual de los equipos de proveedores;
+  - calidad de los datos: sin sede, sin operación, códigos repetidos, agentes incompletos y actas por firmar o atrasadas;
+  - movimientos de los últimos 6 meses.
+- Solo cambia cómo se ve. Los elementos, agentes y actas guardados no se tocan.
+
 ## v1.257.0 — Noviembre 2026
 
 **Gestión STA de ORLANT: botón «Descargar plantilla» para la carga de la base.**

@@ -82,7 +82,7 @@ function activosTab(tab) {
   var seccion = AC_VISTA_ESTADO[tab] ? 'elementos' : tab; // las vistas por estado usan la lista de elementos
   ['panel', 'elementos', 'agentes', 'registrar', 'ajustes', 'actas', 'admin', 'historial', 'novedadesgh'].forEach(function (t) { _acEl('ac-p-' + t).classList.toggle('hidden', t !== seccion); });
   var txt = AC_VISTA_TXT[tab];
-  _acEl('ac-vista-cab').innerHTML = '<h4 class="ac-vista-tit">' + esc(txt[0]) + '</h4><p class="vis-ayuda">' + esc(txt[1]) + '</p>' + (tab === 'panel' || tab === 'registrar' ? activosFlujoHtml(_ac.ambito) : '');
+  _acEl('ac-vista-cab').innerHTML = '<h4 class="ac-vista-tit">' + esc(txt[0]) + '</h4><p class="vis-ayuda">' + esc(txt[1]) + '</p>' + (tab === 'registrar' ? activosFlujoHtml(_ac.ambito) : '') /* Fase GH5: el panel de Edwin no lleva el flujo */;
   _acRefrescarMenu();
   var main = document.querySelector('#activos-overlay .ac-main'); if (main) main.scrollTop = 0;
   if (tab === 'panel') _acPanel();
@@ -118,7 +118,8 @@ function activosPanelHtml(r, config) {
 async function _acPanel() {
   var c = _acEl('ac-p-panel');
   c.innerHTML = '<p class="vis-vacio">Cargando…</p>';
-  try { c.innerHTML = activosPanelHtml(await apiRequest('GET', '/activos/resumen?ambito=' + _ac.ambito), _ac.config); }
+  // Fase GH5: panel del diseño de Edwin (activosPanel2Html); activosPanelHtml queda para quien lo use.
+  try { c.innerHTML = activosPanel2Html(await apiRequest('GET', '/activos/panel?ambito=' + _ac.ambito + (_ac.panelTipo ? '&tipo=' + encodeURIComponent(_ac.panelTipo) : ''))); }
   catch (e) { c.innerHTML = ''; _acError(e.message); }
 }
 
@@ -1031,3 +1032,110 @@ async function activosNovedadesGH() {
 }
 function activosNovedadesGHVer(id) { activosTab('agentes'); activosVerAgente(id); }
 if (typeof module !== 'undefined' && module.exports) module.exports.activosNovedadesGHHtml = activosNovedadesGHHtml;
+
+// ── Fase GH5 (pedido del usuario, 23/11): «Panel general» igual al diseño de Edwin ──
+// Chips «Ver gráficas de», tarjetas con detalle, dona por estado y por RAM, barras por tipo/sede/operación,
+// marcas, valor, renta, calidad de los datos y movimientos de 6 meses. Datos: GET /activos/panel.
+var ACP_ESTADOS = [['en_uso', 'En uso'], ['libre', 'Libres'], ['en_reparacion', 'En reparación'], ['malo', 'Malos'], ['de_baja', 'Dados de baja']];
+var ACP_REND = [['bajo', 'Bajo (menos de 8 GB)'], ['medio', 'Medio (8 a 15 GB)'], ['alto', 'Alto (16 GB o más)'], ['sin', 'Sin dato (RAM no registrada)']];
+var ACP_MOV = [['ingresos', 'Ingresos'], ['asignaciones', 'Asignaciones'], ['devoluciones', 'Devoluciones'], ['danos', 'Daños y reparaciones']];
+function _acpPct(n, t) { return t ? Math.round(n * 1000 / t) / 10 : 0; }
+function _acpMiles(n) { return '$ ' + Math.round(n || 0).toLocaleString('es-CO'); }
+function _acpLeyenda(items, pref) { return '<div class="acp-ley">' + items.map(function (x) { return '<span><i class="acp-c-' + pref + x[0] + '"></i>' + esc(x[1]) + '</span>'; }).join('') + '</div>'; }
+function _acpCard(titulo, ayuda, cuerpo, pie, extra) { return '<article class="acp-card' + (extra ? ' ' + extra : '') + '"><h4>' + esc(titulo) + '</h4>' + (ayuda ? '<p class="acp-ayuda">' + esc(ayuda) + '</p>' : '') + cuerpo + (pie ? '<div class="acp-pie">' + pie + '</div>' : '') + '</article>'; }
+function _acpBtn(txt, onclick) { return '<button type="button" class="acp-btn" onclick="' + onclick + '">' + esc(txt) + '</button>'; }
+// Dona con conic-gradient: segmentos [clase, n]; los colores salen de los tokens (clases acp-c-*).
+function _acpDona(seg, total, etiqueta, pref) {
+  var acc = 0, partes = [];
+  seg.forEach(function (s) { if (!s[1] || !total) return; var a = acc * 100 / total; acc += s[1]; partes.push('var(--acp-' + pref + s[0] + ') ' + a.toFixed(2) + '% ' + (acc * 100 / total).toFixed(2) + '%'); });
+  var fondo = partes.length ? 'conic-gradient(' + partes.join(',') + ')' : 'var(--c-border-soft)';
+  return '<div class="acp-dona" role="img" aria-label="' + esc(etiqueta + ': ' + total) + '" style="background:' + fondo + '"><div><b>' + total + '</b><span>' + esc(etiqueta) + '</span></div></div>';
+}
+function _acpFilasEstado(seg, total, pref) {
+  return '<ul class="acp-filas">' + seg.map(function (s) { return '<li><i class="acp-c-' + pref + s[0] + '"></i><span>' + esc(s[2]) + '</span><b>' + s[1] + '</b><small>' + _acpPct(s[1], total) + '%</small></li>'; }).join('') + '</ul>';
+}
+// Barra apilada por estado (tipo, sede u operación).
+function _acpApiladas(filas, max) {
+  if (!filas.length) return '<p class="acp-vacio">Sin datos.</p>';
+  return '<div class="acp-barras">' + filas.map(function (f) {
+    return '<div class="acp-bar"><span class="acp-bar-n" title="' + esc(f.nombre) + '">' + esc(f.nombre) + '</span><div class="acp-bar-t">' +
+      ACP_ESTADOS.map(function (e) { var n = f.porEstado[e[0]] || 0; return n ? '<i class="acp-c-e' + e[0] + '" style="width:' + (n * 100 / max).toFixed(2) + '%" title="' + esc(e[1] + ': ' + n) + '"></i>' : ''; }).join('') +
+      '</div><b>' + f.total + '</b></div>';
+  }).join('') + '</div>';
+}
+function _acpSimples(filas, clase, fmt) {
+  var max = Math.max.apply(null, filas.map(function (f) { return f.v; }).concat([0]));
+  return '<div class="acp-barras">' + filas.map(function (f) {
+    return '<div class="acp-bar"><span class="acp-bar-n" title="' + esc(f.nombre) + '">' + esc(f.nombre) + '</span><div class="acp-bar-t"><i class="' + clase + '" style="width:' + (max ? f.v * 100 / max : 0).toFixed(2) + '%"></i></div><b>' + esc(fmt ? fmt(f.v) : String(f.v)) + '</b></div>';
+  }).join('') + '</div>';
+}
+// Líneas de los últimos 6 meses (SVG; cada serie con su clase de color).
+function _acpMovimientos(m) {
+  var W = 600, H = 170, px = 26, py = 14, max = Math.max(4, Math.max.apply(null, m.reduce(function (a, x) { return a.concat(ACP_MOV.map(function (s) { return x[s[0]]; })); }, [0])));
+  var X = function (i) { return px + i * (W - 2 * px) / Math.max(1, m.length - 1); }, Y = function (v) { return H - py - v * (H - 2 * py) / max; };
+  var ejes = [0, 0.5, 1].map(function (f) { var v = Math.round(max * f); return '<line x1="' + px + '" x2="' + (W - px) + '" y1="' + Y(v) + '" y2="' + Y(v) + '" class="acp-eje"/><text x="2" y="' + (Y(v) + 4) + '" class="acp-txt">' + v + '</text>'; }).join('');
+  var series = ACP_MOV.map(function (s) {
+    var pts = m.map(function (x, i) { return X(i).toFixed(1) + ',' + Y(x[s[0]]).toFixed(1); });
+    return '<polyline class="acp-l-' + s[0] + '" fill="none" points="' + pts.join(' ') + '"/>' + m.map(function (x, i) { return '<circle class="acp-l-' + s[0] + '" cx="' + X(i).toFixed(1) + '" cy="' + Y(x[s[0]]).toFixed(1) + '" r="3.5"><title>' + esc(s[1] + ' ' + x.mes + ': ' + x[s[0]]) + '</title></circle>'; }).join('');
+  }).join('');
+  var MES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sept', 'oct', 'nov', 'dic'];
+  var etiq = m.map(function (x, i) { return '<text x="' + X(i).toFixed(1) + '" y="' + (H + 12) + '" text-anchor="middle" class="acp-txt">' + MES[Number(x.mes.slice(5)) - 1] + ' ' + x.mes.slice(2, 4) + '</text>'; }).join('');
+  return '<svg class="acp-mov" viewBox="0 0 ' + W + ' ' + (H + 18) + '" role="img" aria-label="Movimientos de los últimos 6 meses">' + ejes + series + etiq + '</svg>';
+}
+function activosPanel2Html(p) {
+  var e = p.porEstado, enUso = e.en_uso || 0, vivos = p.total - (e.de_baja || 0);
+  var chips = '<div class="acp-chips" role="group" aria-label="Ver gráficas de"><span class="acp-chips-t">Ver gráficas de:</span>' +
+    [{ codigo: '', nombre: 'Todos' }].concat(p.tipos).map(function (t) { var on = (p.tipo || '') === t.codigo; return '<button type="button" class="acp-chip' + (on ? ' on' : '') + '" aria-pressed="' + on + '" onclick="activosPanelTipo(\'' + esc(t.codigo) + '\')">' + (on ? '✓ ' : '') + esc(t.nombre) + '</button>'; }).join('') + '</div>';
+  var cab = '<div class="acp-cab"><div class="acp-acc">' + _acpBtn('Excel', 'activosPanelExcel()') + _acpBtn('Registrar ingreso', "activosTab('registrar')") + '</div>' + chips + '</div>';
+  var tipoN = function (c) { return p.porTipo.filter(function (t) { return t.codigo === c; })[0]; };
+  var kpi = function (tit, n, sub, tab) { return '<button type="button" class="acp-kpi" onclick="activosTab(\'' + tab + '\')"><span>' + esc(tit) + '</span><b>' + n + '</b><small>' + esc(sub) + '</small></button>'; };
+  var kpis = [kpi('Equipos asignados', enUso, p.agentes.conEquipo + ' agentes con equipo', 'asignados'), kpi('Libres', e.libre || 0, 'Equipos y elementos disponibles', 'libres'),
+    kpi('En reparación', e.en_reparacion || 0, 'Pendientes por arreglo', 'reparacion'), kpi('Malos', e.malo || 0, 'No se pueden entregar', 'malos')];
+  ['TORRE', 'PORTATIL'].forEach(function (c) { var t = tipoN(c); if (t) kpis.push(kpi(t.nombre, t.total, (t.porEstado.en_uso || 0) + ' asignados · ' + (t.porEstado.libre || 0) + ' libres', 'elementos')); });
+  if (!p.tipo) { kpis.push(kpi('Agentes', p.agentes.activos, p.agentes.conEquipo + ' con equipo asignado', 'agentes')); if (p.actasPendientes !== null) kpis.push(kpi('Actas pendientes', p.actasPendientes, 'Por completar o firmar', 'actas')); }
+  if (!p.total) return cab + '<div class="acp-kpis">' + kpis.join('') + '</div><p class="vis-vacio">Aún no hay elementos. Regístralos en «Registrar ingreso».</p>';
+  var segE = ACP_ESTADOS.map(function (x) { return [x[0], e[x[0]] || 0, x[1]]; });
+  var g = [];
+  g.push(_acpCard('¿En qué estado están los equipos y elementos?', 'Cuántos están en uso, libres, en reparación, malos o dados de baja.',
+    '<div class="acp-dona-w">' + _acpDona(segE, p.total, 'elementos', 'e') + _acpFilasEstado(segE, p.total, 'e') + '</div>',
+    '<span>' + _acpPct(enUso, p.total) + '% en uso · ' + (e.libre || 0) + ' libres para entregar</span>' + _acpBtn('Ver libres', "activosTab('libres')")));
+  if (p.porRendimiento) {
+    var r = p.porRendimiento, tr = ACP_REND.reduce(function (a, x) { return a + (r[x[0]] || 0); }, 0), segR = ACP_REND.map(function (x) { return [x[0], r[x[0]] || 0, x[1]]; });
+    g.push(_acpCard('Rendimiento según la memoria RAM', 'Torres y portátiles. Bajo: menos de 8 GB · Medio: 8 a 15 GB · Alto: 16 GB o más.',
+      '<div class="acp-dona-w">' + _acpDona(segR, tr, 'equipos', 'r') + _acpFilasEstado(segR, tr, 'r') + '</div>',
+      '<span>' + (r.bajo ? r.bajo + ' con rendimiento bajo' : 'Ningún equipo con rendimiento bajo') + '</span>' + _acpBtn('Ver rendimiento bajo', "activosVerRendimiento('bajo')")));
+  }
+  var maxT = Math.max.apply(null, p.porTipo.map(function (t) { return t.total; }).concat([1]));
+  var ley = _acpLeyenda(ACP_ESTADOS, 'e');
+  g.push(_acpCard('¿Cuántos hay de cada tipo?', 'Todos los elementos registrados, por tipo y estado.', ley + _acpApiladas(p.porTipo, maxT),
+    '<span>' + p.total + ' elementos en total</span>' + _acpBtn('Ver inventario', "activosTab('elementos')")));
+  var maxS = Math.max.apply(null, p.porSede.map(function (t) { return t.total; }).concat([1]));
+  var sinS = p.porSede.filter(function (s) { return s.sin; })[0];
+  g.push(_acpCard('Elementos por sede', 'Cantidad por sede, separada por estado (sin los dados de baja).', ley + _acpApiladas(p.porSede, maxS),
+    '<span>' + (sinS ? sinS.total : 0) + ' sin sede registrada</span>' + _acpBtn('Ver datos', "activosTab('elementos')")));
+  var maxO = Math.max.apply(null, p.porOperacion.map(function (t) { return t.total; }).concat([1]));
+  var sinO = p.porOperacion.filter(function (s) { return s.sin; })[0];
+  g.push(_acpCard('Elementos por operación', 'Por departamento u operación donde están, separada por estado.', ley + _acpApiladas(p.porOperacion, maxO),
+    '<span>' + (sinO ? sinO.total : 0) + ' sin operación asignada</span>' + _acpBtn('Ver datos', "activosTab('elementos')")));
+  g.push(_acpCard('Marcas más comunes', 'Marcas de todos los elementos.', _acpSimples(p.marcas.map(function (m) { return { nombre: m.nombre, v: m.n }; }), 'acp-c-marca'),
+    '<span>' + p.total + ' registrados</span>' + _acpBtn('Ver datos', "activosTab('elementos')")));
+  g.push(_acpCard('Valor del inventario por elemento', 'Suma del precio de compra de los elementos propios de InConexion (sin los dados de baja ni los rentados).',
+    _acpSimples(p.valor.porTipo.map(function (v) { return { nombre: v.nombre, v: v.valor }; }), 'acp-c-valor', _acpMiles),
+    '<span>Total: <b>' + _acpMiles(p.valor.total) + '</b> · ' + p.valor.sinPrecio + ' propio(s) sin precio</span>' + _acpBtn('Ver datos', "activosTab('elementos')")));
+  g.push(_acpCard('Renta mensual por elemento', 'Lo que se paga cada mes por elementos de proveedores diferentes a InConexion, por proveedor.',
+    p.renta.porProveedor.length ? _acpSimples(p.renta.porProveedor.map(function (x) { return { nombre: x.proveedor, v: x.valor }; }), 'acp-c-renta', _acpMiles) : '<p class="acp-vacio">No hay elementos rentados con precio de renta registrado.</p>',
+    '<span>Total al mes: <b>' + _acpMiles(p.renta.total) + '</b> · ' + p.renta.n + ' elemento(s) de proveedores</span>'));
+  g.push(_acpCard('Calidad de los datos', 'Datos que conviene completar o corregir.', '<ul class="acp-cal">' + p.calidad.map(function (c) {
+    return '<li><span>' + esc(c.l) + '</span><b class="acp-cal-n' + (c.n ? ' hay' : '') + '">' + c.n + '</b>' + (c.n && c.ir ? _acpBtn('Ver', "activosTab('" + c.ir + "')") : c.n ? _acpBtn('Ver', "activosTab('elementos')") : '') + '</li>';
+  }).join('') + '</ul>'));
+  var mm = p.movimientos[p.movimientos.length - 1];
+  g.push(_acpCard('Movimientos de los últimos 6 meses', 'Lo que ingresa, se asigna, se devuelve o se daña cada mes.', _acpLeyenda(ACP_MOV, 'l') + _acpMovimientos(p.movimientos),
+    '<span>Este mes: ' + mm.ingresos + ' ingresos · ' + mm.asignaciones + ' asignaciones · ' + mm.devoluciones + ' devoluciones · ' + mm.danos + ' daños y reparaciones</span>' + _acpBtn('Ver historial', "activosTab('historial')"), 'acp-ancha'));
+  return cab + '<div class="acp-kpis">' + kpis.join('') + '</div><div class="acp-grid">' + g.join('') + '</div>' + (vivos < 0 ? '' : '');
+}
+function activosPanelTipo(codigo) { _ac.panelTipo = codigo || ''; _acPanel(); }
+async function activosPanelExcel() {
+  try { _ac.lista = (await apiRequest('GET', '/activos?ambito=' + _ac.ambito + (_ac.panelTipo ? '&tipo=' + encodeURIComponent(_ac.panelTipo) : ''))).activos; activosExportar('elementos', 'excel'); }
+  catch (e) { _acError(e.message); }
+}
+if (typeof module !== 'undefined' && module.exports) { module.exports.activosPanel2Html = activosPanel2Html; }

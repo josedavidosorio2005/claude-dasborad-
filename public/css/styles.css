@@ -2718,6 +2718,64 @@ div.ca-bar-fila{cursor:default}
 .ac-import{border:1px solid var(--c-border);border-radius:12px;padding:12px 14px;margin:0 0 16px}
 .ac-link{background:none;border:0;padding:0;font:inherit;color:inherit;text-decoration:underline;cursor:pointer;min-height:24px}
 .ac-sub{margin:14px 0 6px;color:var(--c-text-2)}
+/* Fase GH5: «Panel general» del Inventario igual al diseño de Edwin (activosPanel2Html). Solo tokens. */
+#ac-p-panel{--acp-elibre:var(--c-brand-blue);--acp-een_uso:var(--c-brand-green);--acp-een_reparacion:var(--c-warning);--acp-emalo:var(--c-danger);--acp-ede_baja:var(--c-brand-gray-mid);
+  --acp-rbajo:var(--c-danger);--acp-rmedio:var(--c-warning);--acp-ralto:var(--c-brand-green);--acp-rsin:var(--c-brand-gray-mid)}
+.acp-cab{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin:0 0 12px}
+.acp-acc{display:flex;gap:8px;order:2}
+.acp-chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center;order:1;flex:1 1 420px}
+.acp-chips-t{font-size:var(--fs-note);font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--c-text-2);margin-right:4px}
+.acp-chip{min-height:36px;padding:4px 14px;border-radius:999px;border:1px solid var(--c-brand-blue);background:transparent;color:var(--c-text);font:inherit;font-size:var(--fs-note);font-weight:600;cursor:pointer}
+.acp-chip.on{background:var(--c-brand);border-color:var(--c-brand);color:var(--c-on-brand)}
+.acp-chip:focus-visible,.acp-btn:focus-visible,.acp-kpi:focus-visible{outline:var(--focus-ring, 2px solid var(--c-brand-blue));outline-offset:2px}
+.acp-btn{min-height:36px;padding:6px 14px;border-radius:var(--r-md);border:1px solid var(--c-brand-blue);background:transparent;color:var(--c-text);font:inherit;font-size:var(--fs-note);font-weight:600;cursor:pointer;white-space:nowrap}
+.acp-btn:hover,.acp-chip:hover{background:var(--c-surface-subtle)}
+.acp-kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin:0 0 14px}
+.acp-kpi{display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;padding:12px 14px;border:1px solid var(--c-border-soft);border-radius:var(--r-md);background:var(--c-surface);color:var(--c-text);font:inherit;cursor:pointer}
+.acp-kpi span{font-size:var(--fs-note);color:var(--c-text-2)}
+.acp-kpi b{font-size:var(--fs-h2);line-height:1.1}
+.acp-kpi small{font-size:var(--fs-note);color:var(--c-text-muted)}
+.acp-kpi:hover{border-color:var(--c-brand-blue)}
+.acp-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.acp-card{border:1px solid var(--c-border-soft);border-radius:var(--r-md);background:var(--c-surface);padding:14px 16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.acp-card h4{margin:0;color:var(--c-brand-blue);font-size:var(--fs-body)}
+.acp-ancha{grid-column:1/-1}
+.acp-ayuda{margin:0;font-size:var(--fs-note);color:var(--c-text-muted)}
+.acp-pie{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin-top:auto;font-size:var(--fs-note);color:var(--c-text-2)}
+.acp-vacio{margin:8px 0;text-align:center;color:var(--c-text-muted);font-size:var(--fs-note)}
+.acp-dona-w{display:flex;flex-wrap:wrap;gap:18px;align-items:center}
+.acp-dona{width:132px;height:132px;border-radius:50%;display:grid;place-items:center;flex:none}
+.acp-dona>div{width:88px;height:88px;border-radius:50%;background:var(--c-surface);display:flex;flex-direction:column;align-items:center;justify-content:center}
+.acp-dona b{font-size:var(--fs-h2);line-height:1}
+.acp-dona span{font-size:var(--fs-note);color:var(--c-text-muted)}
+.acp-filas{list-style:none;margin:0;padding:0;flex:1 1 180px;display:flex;flex-direction:column;gap:8px}
+.acp-filas li{display:grid;grid-template-columns:12px 1fr auto 52px;gap:8px;align-items:center;font-size:var(--fs-note)}
+.acp-filas small{color:var(--c-text-muted);text-align:right}
+.acp-filas i,.acp-ley i{display:inline-block;width:10px;height:10px;border-radius:3px}
+.acp-ley{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:var(--fs-note);color:var(--c-text-2)}
+.acp-ley span{display:inline-flex;align-items:center;gap:5px}
+.acp-barras{display:flex;flex-direction:column;gap:8px}
+.acp-bar{display:grid;grid-template-columns:minmax(80px,30%) 1fr auto;gap:10px;align-items:center;font-size:var(--fs-note)}
+.acp-bar-n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.acp-bar-t{display:flex;height:12px;border-radius:var(--r-sm);background:var(--c-surface-alt);overflow:hidden}
+.acp-bar-t i{display:block;height:100%}
+.acp-c-elibre{background:var(--acp-elibre)}.acp-c-een_uso{background:var(--acp-een_uso)}.acp-c-een_reparacion{background:var(--acp-een_reparacion)}.acp-c-emalo{background:var(--acp-emalo)}.acp-c-ede_baja{background:var(--acp-ede_baja)}
+.acp-c-rbajo{background:var(--acp-rbajo)}.acp-c-rmedio{background:var(--acp-rmedio)}.acp-c-ralto{background:var(--acp-ralto)}.acp-c-rsin{background:var(--acp-rsin)}
+.acp-c-marca{background:var(--c-accent)}.acp-c-valor{background:var(--c-brand-green)}.acp-c-renta{background:var(--c-purple)}
+.acp-c-lingresos{background:var(--c-brand-blue)}.acp-c-lasignaciones{background:var(--c-brand-green)}.acp-c-ldevoluciones{background:var(--c-purple)}.acp-c-ldanos{background:var(--c-danger)}
+.acp-cal{list-style:none;margin:0;padding:0}
+.acp-cal li{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--c-border-soft);font-size:var(--fs-note)}
+.acp-cal li span{flex:1}
+.acp-cal-n{min-width:28px;text-align:center;padding:2px 8px;border-radius:999px;background:var(--c-success-bg);color:var(--c-success-text)}
+.acp-cal-n.hay{background:var(--c-warning-bg);color:var(--c-warning-text)}
+.acp-mov{width:100%;height:auto}
+.acp-eje{stroke:var(--c-border-soft);stroke-width:1}
+.acp-txt{fill:var(--c-text-muted);font-size:var(--fs-note)}
+.acp-mov polyline{stroke-width:2}
+polyline.acp-l-ingresos{stroke:var(--c-brand-blue)}polyline.acp-l-asignaciones{stroke:var(--c-brand-green)}polyline.acp-l-devoluciones{stroke:var(--c-purple)}polyline.acp-l-danos{stroke:var(--c-danger)}
+circle.acp-l-ingresos{fill:var(--c-brand-blue)}circle.acp-l-asignaciones{fill:var(--c-brand-green)}circle.acp-l-devoluciones{fill:var(--c-purple)}circle.acp-l-danos{fill:var(--c-danger)}
+@media (max-width:900px){.acp-grid{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:480px){.acp-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.acp-bar{grid-template-columns:minmax(64px,34%) 1fr auto}.acp-acc{width:100%}.acp-acc .acp-btn{flex:1}}
 .ac-sedes,.ac-hist{margin:0 0 10px 18px}
 .ac-estado-form{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin:12px 0}
 .ac-estado-form .ig{margin-bottom:0}

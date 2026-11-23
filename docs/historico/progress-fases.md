@@ -22267,3 +22267,39 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - sin scroll horizontal a 768 y 375 px;
   - 0 errores de consola.
 - **PR sin mergear** (pedido del usuario).
+
+## Fase GH5 — Inventario de sistemas: «Panel general» como el diseño de Edwin (v1.258.0, 2026-11-23)
+
+- **Pedido (usuario, 23/11):** comparar pantalla por pantalla el Inventario del HTML de Edwin de hoy (`docs/gestion-humana/Plataforma_InConexion.html`, en `.gitignore`) con el «Inventario de sistemas» de SinCo, dar la lista de diferencias e implementarlas, conservando los datos y actas del servidor. Rama nueva, PR sin mergear.
+- **Comparación:** la app de Edwin se abrió en Brave desde una copia fuera del repo, con su plantilla real (`SEED_RAW`) reemplazada por datos INVENTADOS de la misma forma. SinCo se revisó con la base demo local y elementos inventados.
+  - La lista de 10 diferencias está en `docs/gestion-humana/inventario-diferencias.md`, sin datos reales.
+  - Dos de ellas son decisiones del usuario: el tema oscuro fijo y que los agentes salgan de Gestión Humana.
+- **Cambio de esta fase (diferencia 1, la más grande):**
+  - `server/activos-panel.js` (solo lectura) y `GET /api/activos/panel?ambito&tipo` (ADMIN y SISTEMAS, igual que el resto del inventario). Calculan:
+    - estados y tipos;
+    - RAM, sin los dados de baja;
+    - sede y operación por estado;
+    - marcas;
+    - valor de los propios: proveedor vacío o InConexión, sin baja;
+    - renta de los de proveedores;
+    - calidad de los datos y movimientos de 6 meses (del historial del inventario).
+  - `activosPanel2Html` en `public/js/activos.js` dibuja:
+    - chips «Ver gráficas de», tarjetas, donas con `conic-gradient`, barras apiladas y la línea de 6 meses en SVG;
+    - los botones abren la vista correspondiente;
+    - Excel descarga el inventario (del tipo elegido).
+  - El panel ya no muestra los pasos del ciclo; siguen en «Registrar ingreso».
+  - `activosPanelHtml` y `/activos/resumen` se quedan como estaban (los usan el menú y otras pruebas).
+  - El CSS (`.acp-*`) usa solo tokens: azul y verde de marca, aviso, peligro y gris, en claro y oscuro.
+- **Pruebas:** nueva `faseGH5-inventario-panel` (4):
+  - conteos, valor y renta, sede y operación, calidad, marcas y movimientos;
+  - chips por tipo e inmuebles;
+  - permisos (ADMIN, SISTEMAS, 403 y 401);
+  - la interfaz.
+  - Ruta declarada en fase118.
+- **Revisión local** (Brave vía Playwright, base demo, 11 elementos inventados que se borraron al final):
+  - las 12 secciones del panel;
+  - renta 90.000 y valor 12.100.000, que cuadran con lo creado;
+  - el chip «Torres» filtra;
+  - sin scroll horizontal a 1440, 768 y 375;
+  - 0 errores de consola.
+- **Sigue:** GH5b (Registrar ingreso por tarjetas), GH5c (listas e «Inventario» por tipo) y GH5d (Actas, Historial, Ajustes y menú), según la lista. **PR sin mergear** (pedido del usuario).
