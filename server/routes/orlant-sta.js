@@ -92,6 +92,13 @@ router.post(BASE + '/devolver', requireActor, soloGestor, h((req, res) => {
   log(req, 'STA_DEVOLVER', `${STA.CAMPANA} · ${r.devueltos} casos del asesor ${Number(b.agenteId)} a libres`);
   res.json(r);
 }));
+// Pedido de Edwin (23/11/2026): regresar gestionados a disponibles (por codificación o marcados).
+router.post(BASE + '/gestionados/regresar', requireActor, soloGestor, h((req, res) => {
+  const b = req.body || {};
+  const r = STA.regresarGestionados(db, { tipi: b.tipi, numeros: b.numeros, por: actorLabel(req.actor) });
+  log(req, 'STA_REGRESAR', `${STA.CAMPANA} · ${r.regresados} gestionados regresados a disponibles · ` + (Array.isArray(b.numeros) ? 'marcados uno a uno' : 'codificación «' + String(b.tipi).slice(0, 80) + '»'));
+  res.json(r);
+}));
 router.post(BASE + '/pasar', requireActor, soloGestor, h((req, res) => {
   const b = req.body || {};
   const r = STA.pasar(db, { agenteId: b.agenteId, destinoId: b.destinoId, cantidad: b.cantidad, numeros: b.numeros });
