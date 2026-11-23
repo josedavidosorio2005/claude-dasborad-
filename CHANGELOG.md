@@ -7,6 +7,16 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.252.0 — Noviembre 2026
+
+**Talento humano: la app de Gestión humana de Edwin, dentro de SinCo (primera parte, de prueba).**
+
+- En el menú hay una tarjeta nueva, «Talento humano», por ahora solo para el administrador.
+- Abre la app de Gestión humana que diseñó Edwin, tal cual se ve, con el menú y la barra de SinCo: panel, empleados, incapacidades y ausentismos, costos, alertas, vacaciones, cumpleaños, retirados, administrativo y copias de seguridad.
+- Entra **sin los datos de prueba** y sin los botones para cargarlos.
+- «⌂ Menú principal» vuelve al menú de SinCo.
+- Todavía es de prueba: lo que se registre queda solo en el navegador de quien lo use. No hay que cargar datos reales hasta la siguiente parte, que los guarda en la plataforma y la abre a Gestión humana.
+
 ## v1.251.0 — Noviembre 2026
 
 **ORLANT: en «Total tráfico» se puede ver Total, solo Llamadas o solo WhatsApp.**

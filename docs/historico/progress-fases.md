@@ -21990,3 +21990,51 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
 - **Pruebas:** nueva `faseB3-orlant-filtro-canal` (3). `fase219-total-trafico` revisa el texto de siempre en su nuevo lugar.
 - **Revisión visual (local, Brave vía Playwright, base demo):** a 1440 claro, 768 oscuro y 375 claro, 19/19 sin errores de consola.
   - Primera versión: el botón activo quedaba azul sobre teal con el puntero encima, porque una regla `.gd-subtab-btn:hover` posterior pisaba el color. Se corrigió usando la variante `gd-botones-resaltados`, que ya existía; medido: blanco sobre teal en reposo, con foco y con el puntero encima.
+
+## Fase GH1 — «Talento humano»: la app de Gestión humana de Edwin dentro de SinCo (v1.252.0, 2026-11-23)
+
+- **Pedido:** Edwin, reunión del 23/11. Plan aprobado por el usuario (#918, `docs/gestion-humana/plan.md`).
+  - Montar su app de Gestión humana en SinCo con su visual tal cual, usando el menú y la barra de SinCo y sin datos de prueba.
+  - GH1 corre en local y **no se mergea** sin OK.
+- **El HTML original:** el usuario lo copió de Descargas a `docs/gestion-humana/Plataforma_InConexion.html`, ruta ignorada por git (`git status --ignored` la marca `!!`).
+- **Generador `scripts/gestion-humana/generar-talento-humano.js`:** solo lee la app `app-gh`. El inventario (`app-inv`, con datos reales en `SEED_RAW`) nunca se lee. Genera `public/gestion-humana/talento-humano.{html,css}` y `talento-humano-app.js`, con estos cambios:
+  - **Sin datos de prueba.** Se cambian por funciones vacías:
+    - `demoData` (empleados de ejemplo);
+    - `demoVN` (vacaciones y novedades);
+    - `ausDemo`, `ausCargarDemo` y `ausQuitarDemo` (ausentismo);
+    - `impDemo` (indicadores de impacto).
+
+    El arranque las sigue llamando, pero con la base vacía no siembra nada. Salen los 2 botones «Cargar datos de prueba».
+  - **Sin su inicio ni el aviso de «vista previa».** Ese aviso bloqueaba las descargas dentro de un marco.
+  - **Sin SheetJS embebido:** usa el de SinCo (0.20.3).
+  - **«⌂ Menú principal»** llama a `talentoHumanoCerrar` de SinCo.
+  - Falla si un reemplazo no encuentra su texto exacto. Solo imprime tamaños.
+- **Por qué iframe y no Shadow DOM** (el plan decía Shadow DOM, como Televentas):
+  - La app tiene 135 `onclick` en línea que llaman funciones globales; en Shadow DOM habría que reescribirlos.
+  - El iframe del mismo origen aísla igual su CSS y su JS sin tocar su lógica.
+  - La CSP ya lo permite (`frame-ancestors 'self'`, `default-src 'self'`) y no hubo que cambiarla. La página generada no tiene `<script>` en línea.
+- **SinCo:**
+  - Tarjeta «Talento humano» (`i-contact`), **solo para el administrador** en GH1, porque guarda en el navegador. En GH2 pasa al servidor y se abre al rol GESTION_HUMANA.
+  - Ventana de módulo `#th-overlay` en pantalla completa:
+    - barra de SinCo con el aviso «Versión de prueba… No cargues datos reales todavía» y «Cerrar» de 44 px;
+    - el iframe carga `gestion-humana/talento-humano.html?v=<build>` una sola vez por página.
+  - Se cierra con «Cerrar», con «⌂ Menú principal», al salir y con «Ver como» (`cerrar-ventanas.js`). Escape no la cierra (`motion-helpers.js`).
+  - `state.js`: el corrimiento de la franja «DATOS DE DEMOSTRACIÓN» (solo en bases demo) también se aplica a esta ventana, con `important`, porque la regla de ventanas de módulo fija `margin` y `height`.
+- **Pruebas:**
+  - Nueva `faseGH1-talento-humano` (6), sobre lo generado. Revisa:
+    - que no queden datos ni botones de prueba;
+    - que no haya cédulas, celulares ni correos;
+    - el SheetJS de SinCo, sin scripts en línea;
+    - «⌂ Menú principal»;
+    - la tarjeta solo para ADMIN;
+    - el cierre;
+    - el `.gitignore`.
+  - Ajustada `fase357b-menu-unico` (tarjeta nueva).
+- **Revisión local** (Brave vía Playwright, base demo, navegador nuevo), a 1440 claro, 768 oscuro y 375 claro: 24/24, 0 errores de consola. En cada ancho:
+  - la app carga con 0 empleados y sin botones de prueba;
+  - sus 10 vistas abren;
+  - «Cerrar» mide 44×44, el iframe ocupa todo el ancho y no hay scroll horizontal;
+  - «⌂ Menú principal» y «Cerrar» funcionan y Escape no la cierra.
+
+  Además, su «Exportar» (indicadores de impacto) descarga el `.xlsx` desde el iframe.
+- **Sigue:** GH2 (guardar en el servidor por clave con versión, permisos por rol), GH3 (soportes en S3 privado), GH4 (Inventario: «Novedades desde Gestión Humana»), GH5 y GH6.

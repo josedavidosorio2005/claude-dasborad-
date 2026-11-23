@@ -2096,6 +2096,19 @@
   </div>
 </div>
 
+<!-- Fase GH1 (pedido de Edwin 23/11): «Talento humano», su app de Gestión humana tal cual, en un iframe del
+     mismo origen (generada por scripts/gestion-humana/generar-talento-humano.js). Pantalla completa, solo «Cerrar». -->
+<div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="th-title" id="th-overlay">
+  <div class="modal modal-th">
+    <div class="th-barra">
+      <h3 id="th-title">Talento humano</h3>
+      <p class="th-aviso" id="th-aviso">Versión de prueba: lo que se registre queda solo en este navegador. No cargues datos reales todavía.</p>
+      <button class="tk-cerrar" type="button" onclick="talentoHumanoCerrar()" aria-label="Cerrar">×</button>
+    </div>
+    <iframe id="th-frame" class="th-frame" title="Talento humano"></iframe>
+  </div>
+</div>
+
 <!-- Fase 369 (E1): «Inventario de sistemas» (ADMIN y SISTEMAS). Pantalla completa, solo se cierra con «Cerrar». -->
 <div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="activos-title" id="activos-overlay">
   <div class="modal modal-activos">
@@ -2475,6 +2488,7 @@
 <script src="js/horarios-logic.js"></script>
 <script src="js/centro-horarios.js"></script>
 <script src="js/activos.js"></script>
+<script src="js/talento-humano.js"></script>
 <script src="js/dashboard-generic.js"></script>
 <script src="js/sura-televentas-app.js"></script>
 <script src="js/sura-televentas-paleta-logic.js"></script>

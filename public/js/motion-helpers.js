@@ -399,7 +399,7 @@ if (typeof document !== 'undefined' && typeof document.getElementById === 'funct
 // cierran. Los diálogos chicos encima de ellas (confirmaciones, formularios) siguen igual. Al salir
 // de sesión y con «Ver como» se siguen cerrando todas (cerrar-ventanas.js).
 var VENTANAS_MODULO = ['calidad-overlay', 'gd-overlay', 'stv-overlay', 'gerencia-overlay', 'gestionhumana-overlay', 'inventario-overlay',
-  'modal-malla', 'modal-tickets', 'cargas-overlay', 'centro-overlay', 'dashcfg-overlay', 'supervisar-lider-overlay', 'activos-overlay']; // + Fase 369
+  'modal-malla', 'modal-tickets', 'cargas-overlay', 'centro-overlay', 'dashcfg-overlay', 'supervisar-lider-overlay', 'activos-overlay', 'th-overlay']; // + Fase 369, + GH1
 function esVentanaModulo(id) { return VENTANAS_MODULO.indexOf(id) !== -1; }
 if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
   // En captura: el clic directo sobre el fondo de una ventana de módulo no llega a sus propios

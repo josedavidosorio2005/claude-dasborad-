@@ -185,6 +185,7 @@ Sobre las direcciones que aparecen en el HTML:
 - Toma solo la app de Talento humano, sin SheetJS (usa el de SinCo).
 - Quita el generador de prueba y sus botones.
 - La monta dentro de SinCo con su menú y su barra, en Shadow DOM como Televentas, para que su visual no choque con el de SinCo.
+  - *Hecho en GH1 con un iframe del mismo origen en vez de Shadow DOM: sus 135 `onclick` en línea llaman funciones globales y el iframe aísla igual sin tocar su lógica (ver `docs/historico/progress-fases.md`, Fase GH1).*
 - Agrega la tarjeta en el menú único.
 - Incluye una prueba guardiana.
 - En esta fase todavía guarda en el navegador y solo la ve ADMIN.
