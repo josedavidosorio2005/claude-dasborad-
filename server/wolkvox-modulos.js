@@ -19,7 +19,7 @@ const FH = require('../public/js/flujo-hora-logic.js');
 const D = require('./wolkvox-destinos'); // Fase A24: réplica o MOBILIZE real (lista cerrada)
 
 const CAMPANA = ing.CAMPANA_INGESTA;
-const OPERACION = 'MOBILIZE';
+// Fase N5: la operación de Wolkvox sale del destino (D.operacionDe), ya no de una constante.
 const QUIEN = 'Consulta automática Wolkvox';
 
 // ── Fase A26 (20/11/2026, pedido de Edwin): cuentas de PRUEBA de Wolkvox ──
@@ -111,7 +111,7 @@ async function _pedir(opts, api, desde, hasta) {
   let cuerpo;
   try {
     cuerpo = (await wv.consultarReporte({
-      db: opts.db, operacion: OPERACION, api, env: opts.env, ahora: opts.ahora, fetchImpl: opts.fetchImpl, credenciales: opts.cred,
+      db: opts.db, operacion: D.operacionDe(opts.destino), api, env: opts.env, ahora: opts.ahora, fetchImpl: opts.fetchImpl, credenciales: opts.cred,
       dateIni: wv.fechaWolkvox(desde, '00:00:00'), dateEnd: wv.fechaWolkvox(hasta, '23:59:59'),
     })).cuerpo;
   } catch (e) {
@@ -517,6 +517,7 @@ async function correrModulo(nombre, opts) {
     return res;
   };
   if (!D.campanaLista(db, dest)) { res.estado = 'omitida'; partes.push(dest.clave === 'replica' ? 'la réplica no existe' : 'la campaña no existe o es interna'); return terminar(); }
+  const OPERACION = dest.operacion; // Fase N5: del destino (hoy MOBILIZE en los dos)
   const cred = opts.credenciales || wv.credenciales(OPERACION, env);
   if (!cred) { res.estado = 'omitida'; partes.push('falta el token o el servidor de Wolkvox'); return terminar(); }
   const meses = A.planDe({ mes: opts.mes, ahora, destino: dest, huecoReal: opts.huecoReal });

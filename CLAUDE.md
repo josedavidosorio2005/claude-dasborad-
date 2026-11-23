@@ -177,6 +177,23 @@ asumir en qué quedó una fase anterior.
   consulta de `cdr_5` terminó bien sin dejar filas queda «consultado»
   (`llamadas_no_conectadas_meses`) y la pestaña lo muestra como 0, no
   «Pendiente».
+- **Excepción escrita (usuario, 23/11/2026, ORLANT por API, Fase N5):** el
+  deploy de la Fase N5 puede crear por migración la réplica oculta «ORLANT
+  PRUEBAS API» (interna, vacía, solo el administrador completo). Desde esa
+  réplica, un administrador puede usar contra la operación de Wolkvox
+  `inconexion-orlant` (servidor `wv0034`):
+  - «Diagnóstico de red»: DNS, TCP 443 y TLS; sin token, sin petición HTTP
+    y sin gastar consultas.
+  - «Probar»: `skill_1` de un día ya cerrado, 1 consulta; solo muestra
+    nombres de campos y de skills, nunca valores.
+
+  Token y servidor en SSM (`WOLKVOX_ORLANT_TOKEN` SecureString,
+  `WOLKVOX_ORLANT_SERVIDOR`); los crea el usuario. Hasta nuevo OK, máximo 1
+  diagnóstico y 1 «Probar». No guarda datos de Wolkvox en ninguna campaña y
+  no toca el ORLANT real ni otro cliente. Mismo tope de 2.800 consultas al
+  día por token. La consulta automática de ORLANT (Fase N6,
+  `WOLKVOX_ORLANT_AUTO_ACTIVO`) y pasar al ORLANT real necesitan
+  autorización nueva por escrito.
 - Nada de pruebas agresivas contra producción (sin límite de tasa, sin
   volumen alto, sin tocar datos que no sean los explícitamente
   autorizados). No destapar pestañas ocultas a mano, no tocar datos de

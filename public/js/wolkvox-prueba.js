@@ -1,6 +1,7 @@
 // wolkvox-prueba.js — Fase W2 (docs/plan-api-wolkvox.md): botón «Probar conexión» con Wolkvox
 // en el encabezado del tablero. SOLO para el administrador completo y SOLO en una campaña interna
-// (la réplica oculta «MOBILIZE PRUEBAS API»); el servidor lo vuelve a exigir (403/404).
+// (las réplicas ocultas «MOBILIZE PRUEBAS API» y «ORLANT PRUEBAS API»); el servidor lo vuelve a
+// exigir (403/404).
 // Muestra code, msg, cuántas filas y los NOMBRES de los campos: nunca un valor. Todo lo que llega
 // del servidor se pinta con textContent.
 
@@ -30,6 +31,9 @@ function _wvPintarEstado(e) {
   _wvTexto('wv-estado-uso', e.usoHoy + ' de ' + e.tope + ' (límite de Wolkvox: ' + e.limiteLicencia + ' por día)');
   var btn = _wvEl('wv-probar-btn');
   if (btn) btn.disabled = !e.configurado;
+  // Fase N5: «Ejecutar ahora» solo en la réplica de MOBILIZE (la de ORLANT no tiene consulta automática).
+  var auto = _wvEl('wv-auto-btn');
+  if (auto) auto.classList.toggle('hidden', e.autoDisponible === false);
 }
 
 async function wvPruebaAbrir() {

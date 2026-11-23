@@ -21774,3 +21774,36 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - el selector sin `role="tab"`;
   - los textos de los avisos.
 
+## Fase N5 — ORLANT y Wolkvox: motor por operación, réplica «ORLANT PRUEBAS API» apagada y «Diagnóstico de red» sin token (v1.243.0, 2026-11-23)
+
+- **Pedido (usuario, 23/11):** empezar N5 (`docs/orlant/nuevo-dashboard/plan.md` §4 y §7) en una rama nueva desde `main`, **solo en local**, sin consultas reales a Wolkvox. Motor por operación sin cambiar MOBILIZE, réplica oculta «ORLANT PRUEBAS API» apagada y «Diagnóstico de red» para `wv0034`. Mostrar el texto de la autorización para `CLAUDE.md` antes de tocar producción. El token de ORLANT **todavía no está en SSM**: el diagnóstico tiene que funcionar sin token, y «Probar» queda para después.
+- **Rama:** `faseN5-wolkvox-por-operacion` (desde `main` 59784be). Sin push ni PR.
+- **Cambios:**
+  - `server/wolkvox.js`: `OPERACION_DE_CAMPANA` (congelada) suma `'ORLANT PRUEBAS API' → 'ORLANT'`, así que el token y el servidor son `WOLKVOX_ORLANT_TOKEN` / `WOLKVOX_ORLANT_SERVIDOR`, y el contador del día (`wolkvox_uso`) es por operación, o sea por token. Nuevo `servidorDe()`: con eso el «Diagnóstico de red» (DNS, TCP 443 y TLS, sin token ni HTTP) **solo necesita el servidor**. Sin servidor da 409, como antes.
+  - `server/wolkvox-destinos.js`: cada destino lleva su `operacion` (los dos siguen siendo de MOBILIZE) e `interna`. Nuevo `operacionDe()`. `wolkvox-auto.js` y `wolkvox-modulos.js` toman la operación del destino en vez de la constante. La lista cerrada de destinos **no cambia** (réplica y real de MOBILIZE).
+  - `server/routes/wolkvox.js`: `GET /wolkvox/estado` devuelve `autoDisponible` (solo la réplica de MOBILIZE), `auto` (`null` fuera de ella) y `servidorEncontrado`. «Ejecutar ahora» en la réplica de ORLANT sigue respondiendo 404. `public/js/wolkvox-prueba.js` oculta «Ejecutar ahora» cuando no hay consulta automática.
+  - `server/db.js`: migración idempotente `faseN5_replica_orlant_api_v1`, que crea la réplica interna (`interno: true`, `replicaDe: 'ORLANT'`) con los módulos Tráfico de Llamadas y Tipificación, vacía.
+    - La plantilla de ORLANT trae pestañas fijas al ORLANT real («Gestión STA», «Total tráfico»). La réplica se queda solo con las pestañas cuyos paneles leen de ella misma, así que nunca muestra datos del ORLANT real.
+    - No toca ORLANT, usuarios, permisos ni datos.
+  - **Apagada:** la réplica de ORLANT no tiene consulta automática ni interruptor. Eso llega en la N6, con su propia autorización.
+- **Pruebas:** nueva `faseN5-wolkvox-orlant` (11), que cubre:
+  - la migración: tablero, que ORLANT queda intacto y que es idempotente;
+  - el mapa de operaciones y que los destinos de MOBILIZE no cambian;
+  - el contador separado por operación y el estado de la réplica;
+  - el diagnóstico sin token: corre, no hace HTTP y no gasta consultas;
+  - sin servidor, 409; «Probar» sin token, 409 sin llamar a Wolkvox; «Ejecutar ahora», 404;
+  - el cliente con el permiso marcado recibe 403, y el ORLANT real 404;
+  - `servidorDe` solo acepta un nombre corto.
+
+  Se ajustó `faseW3-diagnostico-red` (ahora el 409 es por falta de servidor, no de token) y las listas exactas de clientes de 7 archivos (+ «ORLANT PRUEBAS API»). Suite completa en local: 3.420 pruebas, 0 fallas.
+- **Verificación visual (local, Playwright con Brave, copia desechable de la base demo, Wolkvox bloqueado con servidores inválidos):** réplica de ORLANT y ventana «Probar conexión» a 375, 768 y 1440 px.
+  - Solo la pestaña Tráfico de Llamadas. «Ejecutar ahora» no aparece, «Probar» sale desactivado sin token y «Diagnóstico de red» está disponible.
+  - Sin errores de consola ni scroll horizontal, y **0 peticiones** a probar, diagnóstico o ejecutar.
+- **Diagnóstico de red real: no se corrió.** Tiene que salir desde el servidor de producción (IP 3.85.54.96, la que se autorizó en el firewall de `wv0034`); desde el PC no prueba el firewall. Corre después del deploy de N5 y de cargar `WOLKVOX_ORLANT_SERVIDOR` en SSM, con el OK del usuario (máximo 1 diagnóstico y, si sale en Sí, 1 «Probar»).
+- **Autorización (usuario, 23/11):** texto aprobado tal cual y agregado a `CLAUDE.md` («Excepción escrita (usuario, 23/11/2026, ORLANT por API, Fase N5)»).
+- **Versión:** v1.243.0, después de #902 (v1.241.0) y #904 (v1.242.0). Al mergear después de ellos hay que resolver `server/package.json`, `CHANGELOG.md`, `PROGRESS.md` y la bitácora, conservando las tres entradas.
+- **Pendiente:**
+  - PR con CI en verde, **sin mergear** hasta el OK del usuario.
+  - Después del deploy: cargar `WOLKVOX_ORLANT_SERVIDOR` (y el token) en SSM; lo hace el usuario cuando tenga acceso a AWS.
+  - Con su OK: 1 diagnóstico de red desde producción y, solo si sale en Sí, 1 «Probar».
+- **#904 en producción (23/11):** mergeado con `--match-head-commit` (merge `6a7e253`); CI de `main` y deploy OK a la primera; `/api/health` muestra 1.242.0. Después se actualizó #905 con `main` (merge, sin force push), conservando las entradas de las dos fases en versión, CHANGELOG, PROGRESS y bitácora.

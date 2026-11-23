@@ -56,7 +56,7 @@ test('sin ningun cliente: listas vacias', async () => {
 
 // Fase W1: el administrador ve todos; quien gestiona usuarios, todos MENOS los internos
 // (la replica de pruebas de la API la ve solo el administrador completo).
-const sinInternos = (t) => { const fuera = (n) => n === 'MOBILIZE PRUEBAS API'; return Object.fromEntries(Object.entries(t).map(([k, v]) => [k, v.filter((n) => !fuera(n))])); };
+const sinInternos = (t) => { const fuera = (n) => n === 'MOBILIZE PRUEBAS API' || n === 'ORLANT PRUEBAS API'; /* Fase N5 */ return Object.fromEntries(Object.entries(t).map(([k, v]) => [k, v.filter((n) => !fuera(n))])); };
 test('el administrador ve todos; quien gestiona usuarios, todos menos los internos', async () => {
   assert.ok(todos().registro.length >= 2, 'el registro de prueba tiene varios clientes');
   assert.ok(todos().registro.includes('MOBILIZE PRUEBAS API'));

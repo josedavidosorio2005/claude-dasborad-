@@ -1,7 +1,7 @@
 // routes/wolkvox.js — Fase W2 (docs/plan-api-wolkvox.md): «Probar conexión» con Wolkvox.
 // SOLO el administrador completo (isFullAdmin) y SOLO en una campaña interna que tenga operacion
-// de Wolkvox (hoy, la replica oculta «MOBILIZE PRUEBAS API»). El Mobilize real y los demas
-// clientes no tienen nada aqui: para ellos, 404.
+// de Wolkvox (las replicas ocultas «MOBILIZE PRUEBAS API» y, desde la Fase N5, «ORLANT PRUEBAS
+// API»). Los reales y los demas clientes no tienen nada aqui: para ellos, 404.
 // La respuesta al navegador trae code, msg, cuantas filas y los NOMBRES de los campos; nunca un
 // valor de los datos, ni el token, ni el servidor, ni la URL.
 'use strict';
@@ -39,6 +39,10 @@ router.get(
   wrap((req, res) => {
     const op = operacionPermitida(req, res, req.query.campana);
     if (!op) return;
+    // Fase N5: la consulta automática (y «Ejecutar ahora») es SOLO de la réplica de MOBILIZE.
+    // La réplica de ORLANT solo tiene «Diagnóstico de red» y «Probar».
+    const wvAuto = require('../wolkvox-auto');
+    const autoDisponible = op === wvAuto.OPERACION && req.query.campana === wvAuto.CAMPANA;
     res.json({
       configurado: wv.estaConfigurado(op),
       diagnostico: wv.diagnostico(op), // solo si/no: token encontrado, servidor encontrado, servidor con formato valido
@@ -48,7 +52,9 @@ router.get(
       fechaSugerida: ayerColombia(),
       reportes: Object.keys(wv.REPORTES),
       reportesNombres: wv.REPORTES, // Fase A5: para la lista de «Probar»
-      auto: require('../wolkvox-auto').estado(db), // Fase A1: horarios, interruptor al arrancar, ultima corrida (sin secretos)
+      autoDisponible, // Fase N5
+      auto: autoDisponible ? wvAuto.estado(db) : null, // Fase A1: horarios, interruptor al arrancar, ultima corrida (sin secretos)
+      servidorEncontrado: wv.servidorDe(op) !== null, // Fase N5: basta para el «Diagnóstico de red» (sin token)
     });
   })
 );

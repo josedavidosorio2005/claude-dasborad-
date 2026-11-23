@@ -28,7 +28,7 @@ const CON_AURORA = ANTES.concat([AURORA, 'HOSPITAL LA MARIA']);
 const CON_SURA = CON_AURORA.concat(['SURA']);
 // Fase W1: + la replica interna de Mobilize (solo admin), al final; sin Calidad.
 // Fase 354: + las 2 sedes de HLM justo despues de HLM (mismo orden, por nombre); sin Calidad todavia.
-const CON_REPLICA = CON_AURORA.concat(['HOSPITAL LA MARIA - CASTILLA', 'HOSPITAL LA MARIA - SEDE 33', 'SURA', 'MOBILIZE PRUEBAS API']);
+const CON_REPLICA = CON_AURORA.concat(['HOSPITAL LA MARIA - CASTILLA', 'HOSPITAL LA MARIA - SEDE 33', 'SURA', 'MOBILIZE PRUEBAS API', 'ORLANT PRUEBAS API']); // Fase N5: + replica de ORLANT
 
 function listaDeConstants(nombre) {
   const m = leer('constants.js').match(new RegExp('var ' + nombre + " = \\[([^\\]]*)\\];"));
@@ -84,7 +84,7 @@ test('GET /api/dashboard/clientes expone las listas del registro (y sigue igual 
   const t = await tokenFor('admin', MASTER_PASSWORD);
   const r = await request(app).get('/api/dashboard/clientes').set(auth(t));
   assert.equal(r.status, 200);
-  assert.deepEqual(r.body.clientes.slice().sort(), [AURORA, 'HOSPITAL LA MARIA', 'HOSPITAL LA MARIA - CASTILLA', 'HOSPITAL LA MARIA - SEDE 33', 'MOBILIZE', 'MOBILIZE PRUEBAS API', 'ORLANT']); // Fase 354 // Fase W1
+  assert.deepEqual(r.body.clientes.slice().sort(), [AURORA, 'HOSPITAL LA MARIA', 'HOSPITAL LA MARIA - CASTILLA', 'HOSPITAL LA MARIA - SEDE 33', 'MOBILIZE', 'MOBILIZE PRUEBAS API', 'ORLANT', 'ORLANT PRUEBAS API']); // Fase 354 // Fase W1
   assert.deepEqual(r.body.listaClientes, CON_REPLICA);
   assert.deepEqual(r.body.campanasCalidad, CON_SURA); // Fase 321
   assert.deepEqual(Object.keys(r.body).sort(), ['campanasCalidad', 'clientes', 'listaClientes', 'registro']);

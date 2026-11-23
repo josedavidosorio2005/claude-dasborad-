@@ -7,6 +7,17 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.243.0 — Noviembre 2026
+
+**ORLANT: preparación para conectar Wolkvox (todavía sin consultas).**
+
+- Nueva réplica oculta «ORLANT PRUEBAS API», igual que la de MOBILIZE: solo la ve el administrador,
+  está vacía y no tiene consulta automática (está apagada).
+- En esa réplica, el botón de Wolkvox tiene «Diagnóstico de red» para comprobar que el servidor llega al
+  Wolkvox de ORLANT. No usa la clave ni gasta consultas: solo necesita saber el nombre del servidor.
+- «Probar» queda listo para cuando la clave de ORLANT esté guardada. Hasta entonces sale desactivado.
+- MOBILIZE sigue exactamente igual: misma consulta automática, mismos horarios y mismo contador.
+
 ## v1.242.0 — Noviembre 2026
 
 **ORLANT: primer borrador del tablero nuevo (solo lo ve el administrador).**

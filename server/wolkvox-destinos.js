@@ -17,8 +17,8 @@ const CAMPANA_REAL = 'MOBILIZE';
 const DESDE_MES_REAL = '2026-11'; // Fase A29 (20/11/2026): antes '2026-12'
 
 const DESTINOS = Object.freeze({
-  replica: Object.freeze({ clave: 'replica', campana: CAMPANA_REPLICA, interruptor: 'WOLKVOX_AUTO_ACTIVO', modulos: 'WOLKVOX_AUTO_MODULOS', desdeMes: null, sufijoFranja: '' }),
-  real: Object.freeze({ clave: 'real', campana: CAMPANA_REAL, interruptor: 'WOLKVOX_REAL_ACTIVO', modulos: 'WOLKVOX_REAL_MODULOS', desdeMes: DESDE_MES_REAL, sufijoFranja: ' real' }),
+  replica: Object.freeze({ clave: 'replica', campana: CAMPANA_REPLICA, operacion: 'MOBILIZE', interna: true, interruptor: 'WOLKVOX_AUTO_ACTIVO', modulos: 'WOLKVOX_AUTO_MODULOS', desdeMes: null, sufijoFranja: '' }),
+  real: Object.freeze({ clave: 'real', campana: CAMPANA_REAL, operacion: 'MOBILIZE', interna: false, interruptor: 'WOLKVOX_REAL_ACTIVO', modulos: 'WOLKVOX_REAL_MODULOS', desdeMes: DESDE_MES_REAL, sufijoFranja: ' real' }),
 });
 const CAMPANAS_PERMITIDAS = Object.freeze([CAMPANA_REPLICA, CAMPANA_REAL]);
 
@@ -36,12 +36,16 @@ function recortarPlan(dest, meses) {
   return d.desdeMes ? meses.filter((m) => m.mes >= d.desdeMes) : meses;
 }
 
+// Fase N5 (23/11/2026): la operación de Wolkvox (de quién es el token y el contador del día) sale
+// del destino, no de una constante. Hoy los dos destinos son de MOBILIZE: nada cambia para ellos.
+function operacionDe(dest) { return destino(dest).operacion; }
+
 // ¿La campaña destino está lista para recibir datos? La réplica tiene que existir y ser INTERNA;
 // el real tiene que existir y NO ser interno (así una confusión de nombres nunca cruza los dos).
 function campanaLista(db, dest) {
   const d = destino(dest);
   const { esCampanaInterna } = require('./clientes-registro');
-  if (d.clave === 'replica') return esCampanaInterna(db, d.campana);
+  if (d.interna) return esCampanaInterna(db, d.campana);
   return !!db.prepare('SELECT 1 FROM clientes_registro WHERE nombre = ?').get(d.campana) && !esCampanaInterna(db, d.campana);
 }
 
@@ -81,4 +85,4 @@ function flujoConCargaManual(db, mes, archivoApi) {
   return db.prepare("SELECT COUNT(*) n FROM calidad_nivel_servicio_diario WHERE campana = ? AND substr(fecha, 1, 7) = ? AND COALESCE(archivoNombre, '') <> ?").get(CAMPANA_REAL, mes, archivoApi).n > 0;
 }
 
-module.exports = { DESTINOS, CAMPANAS_PERMITIDAS, CAMPANA_REPLICA, CAMPANA_REAL, DESDE_MES_REAL, destino, recortarPlan, campanaLista, skillsMapeadas, HUECOS_REAL, huecoPermitido, filasEnHueco, flujoConCargaManual };
+module.exports = { DESTINOS, CAMPANAS_PERMITIDAS, CAMPANA_REPLICA, CAMPANA_REAL, DESDE_MES_REAL, destino, operacionDe, recortarPlan, campanaLista, skillsMapeadas, HUECOS_REAL, huecoPermitido, filasEnHueco, flujoConCargaManual };
