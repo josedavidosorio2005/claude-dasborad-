@@ -353,6 +353,30 @@ js = todas(js, "'${esc(id)}'", '${jsArg(id)}', 1);
   if (m) throw new Error('quedó un valor con esc() dentro de un string de un manejador en línea: ' + m[0].slice(0, 80));
 }
 
+// 8c) Asignar, filtros Entidad / Servicio / Descripción CUPS (pendiente del 23/11: Isa vio en «Servicio»
+// opciones como Audífonos que no correspondían). Causa: opciones() contaba TODOS los casos libres, sin
+// los otros filtros puestos; con una Entidad elegida, «Servicio» seguía ofreciendo servicios que esa
+// entidad no tiene (y sus conteos eran de toda la base), y al marcarlos no salía ningún caso.
+// Ahora cada lista sale de los casos libres que pasan los DEMÁS filtros (los suyos no), como en un
+// filtro en cascada; una opción ya marcada que se queda sin casos se sigue mostrando (con 0) para poder
+// quitarla. msNormalizar compara los valores, no solo el tamaño.
+L(`function filtrar(){
+  const d=x=>x?x:null;
+  return disponibles().filter(c=>{
+    if(F.ent && !F.ent.has(c['Entidad']||'')) return false;
+    if(F.serv && !F.serv.has(c['Servicio']||'')) return false;
+    if(F.cups && !F.cups.has(c['Descripcion Cups']||'')) return false;`, `function filtrar(sin){ // sin: filtro de lista que no se aplica (para armar sus propias opciones)
+  return disponibles().filter(c=>{
+    if(sin!=='ent' && F.ent && !F.ent.has(c['Entidad']||'')) return false;
+    if(sin!=='serv' && F.serv && !F.serv.has(c['Servicio']||'')) return false;
+    if(sin!=='cups' && F.cups && !F.cups.has(c['Descripcion Cups']||'')) return false;`);
+L(`function opciones(campo){ const m=new Map(); disponibles().forEach(c=>{ const v=c[campo]||''; m.set(v,(m.get(v)||0)+1); });`,
+  `function opciones(campo){ const m=new Map(), k=Object.keys(MS_CAMPO).find(x=>MS_CAMPO[x]===campo);
+  filtrar(k).forEach(c=>{ const v=c[campo]||''; m.set(v,(m.get(v)||0)+1); });
+  if(k && F[k]) F[k].forEach(v=>{ if(!m.has(v)) m.set(v,0); });`);
+L(`function msNormalizar(k){ if(F[k] && F[k].size===msTodos(k).length) F[k]=null; }`,
+  `function msNormalizar(k){ const t=msTodos(k); if(F[k] && F[k].size===t.length && t.every(v=>F[k].has(v))) F[k]=null; }`);
+
 // 9) Manejadores en línea (onclick, onchange, oninput, onkeydown): sus llamadas pasan a STAapp.<función>.
 const nombres = [...new Set([...js.matchAll(/(?:^|\n)(?:async )?function (\w+)\(/g)].map((m) => m[1]))];
 const reLlamada = new RegExp('(^|[^.\\w$])(' + nombres.join('|') + ')\\(', 'g');

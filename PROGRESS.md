@@ -643,6 +643,7 @@ mismo orden):
 - Fase GH3 — «Talento humano»: soportes adjuntos a S3 privado (`/api/gh/archivos`, tipo por contenido, bitácora sin nombre); apagado sin `GH_SOPORTES_S3_BUCKET` (v1.254.0, 2026-11-23)
 - Fase GH4 — Inventario de sistemas: «Novedades de Gestión Humana» (retirados, ausentes hoy y próximos 7 días con elementos asignados; solo lectura y lo mínimo, `/api/activos/novedades-gh`) (v1.255.0, 2026-11-23)
 - Ticket #3 SURA — Calidad, «Calificar»: «ID de agente» se llena solo al elegir el asesor (enlace con Wolkvox o último monitoreo; editable; aviso si no hay dato) (v1.256.0, 2026-11-23)
+- Fase STA7 — Gestión STA: filtros de la asignación (Entidad, Servicio, CUPS) en cascada; «Servicio» ya no ofrece servicios que no corresponden (v1.256.1, 2026-11-23)
 - Fase STA8 — Gestión STA de ORLANT: «Descargar plantilla» en la carga (Excel vacío con las 8 columnas) (v1.257.0, 2026-11-23)
 - Fase 309 — Revisión de seguridad: el cliente ya no recibe el nombre de los líderes en `GET /metas`; resto en `docs/revision-seguridad-2026-11-09.md` (v1.154.1, 2026-11-10)
 - Fase 308 — Revisión antes de la reunión con clientes y pendientes del supervisor (solo docs, 2026-11-10)

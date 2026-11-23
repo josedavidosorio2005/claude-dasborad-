@@ -14,6 +14,13 @@ sepan que hay nuevo, que se corrigio y que falta.
 - En «Cargar base de datos» hay un botón nuevo, «Descargar plantilla». Baja un Excel vacío (`Plantilla_base_STA.xlsx`) que solo trae las 8 columnas que pide la carga, en el mismo orden: Fecha Ingreso Sta, Entidad, Numero Autorizacion, Estado, Descripcion Cups, Fecha Autorizacion, Fecha Expiracion y Servicio.
 - Se llena y se sube como siempre.
 
+## v1.256.1 — Noviembre 2026
+
+**Gestión STA (ORLANT): el filtro «Servicio» de la asignación ya solo muestra lo que corresponde.**
+
+- Al asignar casos, si se elegía una Entidad, la lista de «Servicio» seguía mostrando servicios de toda la base, por ejemplo Audífonos aunque esa entidad no tuviera ninguno libre. Al marcarlos no salía ningún caso.
+- Ahora cada lista (Entidad, Servicio y Descripción CUPS) muestra solo lo que queda con los otros filtros puestos, con su cantidad de casos libres.
+- Si algo ya marcado se queda sin casos, sigue apareciendo con 0 para poder quitarlo.
 ## v1.256.0 — Noviembre 2026
 
 **Calidad: el «ID de agente» se llena solo al elegir el asesor (ticket #3 de SURA).**

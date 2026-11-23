@@ -22232,6 +22232,21 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - sigue editable;
   - a 1440, 768 y 375 sin scroll horizontal;
   - 0 errores de consola.
+## Fase STA7 — Gestión STA: filtro «Servicio» de la asignación (v1.256.1, 2026-11-23)
+
+- **Pedido:** el usuario, 23/11, pendiente del STA: en la asignación, el filtro «Servicio» muestra opciones que no corresponden (Isa lo vio con Audífonos). Hay que encontrar la causa y corregirla con una prueba, por el generador y sin editar el HTML de Edwin.
+- **Causa:** en el HTML de Edwin, `opciones(campo)` contaba **todos** los casos libres sin aplicar los demás filtros. Con una Entidad elegida, «Servicio» seguía ofreciendo servicios que esa entidad no tiene libres (con conteos de toda la base), y al marcarlos el conteo de disponibles daba 0. El servidor filtra igual que la pantalla (`disponiblesFiltrados`), así que la asignación nunca tomó casos equivocados: el problema era solo de las opciones que se mostraban.
+- **Cambio** (`scripts/orlant/generar-sta.js`, paso 8c; `public/js/orlant-sta-app.js` regenerado):
+  - `filtrar(sin)` deja fuera un filtro de lista;
+  - las opciones de Entidad, Servicio y Descripción CUPS salen de los casos libres que pasan los **demás** filtros, incluidas las fechas (filtro en cascada); la lista propia no se recorta, para poder ampliar la selección;
+  - una opción marcada que se queda sin casos se muestra con 0, para poder quitarla;
+  - `msNormalizar` compara los valores y no solo el tamaño.
+- **Pruebas:** nueva `faseSTA7-filtro-servicio-asignacion` (6). Corre las funciones reales del archivo generado en un `vm`, con casos inventados:
+  - sin filtros;
+  - Entidad → Servicio y CUPS, y Servicio → Entidad;
+  - una opción marcada que queda en 0;
+  - `msNormalizar`;
+  - la guardiana del generador.
 
 ## Fase STA8 — Gestión STA de ORLANT: «Descargar plantilla» (v1.257.0, 2026-11-23)
 
