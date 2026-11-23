@@ -21741,5 +21741,10 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - Solo la pestaña Tráfico de Llamadas. «Ejecutar ahora» no aparece, «Probar» sale desactivado sin token y «Diagnóstico de red» está disponible.
   - Sin errores de consola ni scroll horizontal, y **0 peticiones** a probar, diagnóstico o ejecutar.
 - **Diagnóstico de red real: no se corrió.** Tiene que salir desde el servidor de producción (IP 3.85.54.96, la que se autorizó en el firewall de `wv0034`); desde el PC no prueba el firewall. Corre después del deploy de N5 y de cargar `WOLKVOX_ORLANT_SERVIDOR` en SSM, con el OK del usuario (máximo 1 diagnóstico y, si sale en Sí, 1 «Probar»).
-- **Pendiente:** el OK del usuario al texto de la autorización para `CLAUDE.md` (propuesto en el chat), el PR con CI y la versión ajustada contra #902 y #904.
+- **Autorización (usuario, 23/11):** texto aprobado tal cual y agregado a `CLAUDE.md` («Excepción escrita (usuario, 23/11/2026, ORLANT por API, Fase N5)»).
+- **Versión:** v1.243.0, después de #902 (v1.241.0) y #904 (v1.242.0). Al mergear después de ellos hay que resolver `server/package.json`, `CHANGELOG.md`, `PROGRESS.md` y la bitácora, conservando las tres entradas.
+- **Pendiente:**
+  - PR con CI en verde, **sin mergear** hasta el OK del usuario.
+  - Después del deploy: cargar `WOLKVOX_ORLANT_SERVIDOR` (y el token) en SSM; lo hace el usuario cuando tenga acceso a AWS.
+  - Con su OK: 1 diagnóstico de red desde producción y, solo si sale en Sí, 1 «Probar».
 
