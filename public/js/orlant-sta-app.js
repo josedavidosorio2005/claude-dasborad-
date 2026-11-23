@@ -421,17 +421,18 @@ async function pasarSel(ag){
 
 function selAgente(id){ agSel=id; pintarAsignar(); }
 function disponibles(){ return Object.values(S.casos).filter(c=>!c._agente); }
-function filtrar(){
-  const d=x=>x?x:null;
+function filtrar(sin){ // sin: filtro de lista que no se aplica (para armar sus propias opciones)
   return disponibles().filter(c=>{
-    if(F.ent && !F.ent.has(c['Entidad']||'')) return false;
-    if(F.serv && !F.serv.has(c['Servicio']||'')) return false;
-    if(F.cups && !F.cups.has(c['Descripcion Cups']||'')) return false;
+    if(sin!=='ent' && F.ent && !F.ent.has(c['Entidad']||'')) return false;
+    if(sin!=='serv' && F.serv && !F.serv.has(c['Servicio']||'')) return false;
+    if(sin!=='cups' && F.cups && !F.cups.has(c['Descripcion Cups']||'')) return false;
     const rng=(v,a,b)=>{ const s=(v||'').slice(0,10); if(a&&(!s||s<a)) return false; if(b&&(!s||s>b)) return false; return true; };
     return rng(c['Fecha Ingreso Sta'],F.ingD,F.ingH) && rng(c['Fecha Autorizacion'],F.autD,F.autH) && rng(c['Fecha Expiracion'],F.expD,F.expH);
   }).sort((a,b)=>(a['Fecha Ingreso Sta']||'').localeCompare(b['Fecha Ingreso Sta']||''));
 }
-function opciones(campo){ const m=new Map(); disponibles().forEach(c=>{ const v=c[campo]||''; m.set(v,(m.get(v)||0)+1); });
+function opciones(campo){ const m=new Map(), k=Object.keys(MS_CAMPO).find(x=>MS_CAMPO[x]===campo);
+  filtrar(k).forEach(c=>{ const v=c[campo]||''; m.set(v,(m.get(v)||0)+1); });
+  if(k && F[k]) F[k].forEach(v=>{ if(!m.has(v)) m.set(v,0); });
   return [...m.entries()].sort((a,b)=>String(a[0]).localeCompare(String(b[0]),'es')); }
 function msHTML(key,titulo,campo){
   const set=F[key], ops=opciones(campo);
@@ -449,7 +450,7 @@ function toggleMs(k){ ROOT.querySelectorAll('.ms-pan').forEach(p=>{ if(p.parentE
 function filtrarMs(k,q){ q=q.toLowerCase(); ROOT.querySelectorAll(`#ms_${k} .ms-list label`).forEach(l=>l.style.display=l.dataset.v.includes(q)?'':'none'); }
 // F[k] === null significa "todas marcadas" (incluye opciones nuevas que lleguen en otra carga)
 function msTodos(k){ return opciones(MS_CAMPO[k]).map(o=>o[0]); }
-function msNormalizar(k){ if(F[k] && F[k].size===msTodos(k).length) F[k]=null; }
+function msNormalizar(k){ const t=msTodos(k); if(F[k] && F[k].size===t.length && t.every(v=>F[k].has(v))) F[k]=null; }
 function msTexto(k){ const s=F[k]; if(!s) return 'Todos'; if(!s.size) return 'Ninguno';
   return s.size===1 ? ([...s][0]||'(vacío)') : `${s.size} de ${msTodos(k).length}`; }
 function msRefrescarTexto(k){ ROOT.querySelector(`#ms_${k} .ms-btn span`).textContent=msTexto(k); actualizarConteo(); }

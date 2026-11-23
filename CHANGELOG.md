@@ -7,6 +7,14 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.255.1 — Noviembre 2026
+
+**Gestión STA (ORLANT): el filtro «Servicio» de la asignación ya solo muestra lo que corresponde.**
+
+- Al asignar casos, si se elegía una Entidad, la lista de «Servicio» seguía mostrando servicios de toda la base, por ejemplo Audífonos aunque esa entidad no tuviera ninguno libre. Al marcarlos no salía ningún caso.
+- Ahora cada lista (Entidad, Servicio y Descripción CUPS) muestra solo lo que queda con los otros filtros puestos, con su cantidad de casos libres.
+- Si algo ya marcado se queda sin casos, sigue apareciendo con 0 para poder quitarlo.
+
 ## v1.255.0 — Noviembre 2026
 
 **Inventario de sistemas: «Novedades de Gestión Humana» (cuarta parte de Talento humano).**
