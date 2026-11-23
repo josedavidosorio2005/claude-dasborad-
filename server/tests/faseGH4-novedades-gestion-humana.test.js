@@ -89,9 +89,11 @@ test('el menú del inventario trae el conteo (retirados + ausentes) y la vista d
   global.esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   try {
     const UI = require('../../public/js/activos.js');
-    assert.ok(UI.AC_MENU.sistemas.some((x) => x[0] === 'novedadesgh'));
+    // Fase GH5d (diseño de Edwin): las novedades salen del menú y son una pestaña de «Actas», con su conteo.
+    assert.ok(!UI.AC_MENU.sistemas.some((x) => x[0] === 'novedadesgh'));
     assert.ok(!UI.AC_MENU.inmuebles.some((x) => x[0] === 'novedadesgh'));
-    assert.match(UI.activosMenuHtml('sistemas', 'panel', { porEstado: {}, total: 0, novedadesGH: { retirados: 2, ausentes: 2 } }), /data-ac-vista="novedadesgh"[^]*?ac-menu-n">4</);
+    assert.match(UI.activosActasPestanasHtml('novedades', 4), /acp-chip on" aria-pressed="true" onclick="activosActasPestana\('novedades'\)">Novedades de GH \(4\)/);
+    assert.match(UI.activosActasPestanasHtml('pendiente', 0), /Actas pendientes[^]*Actas firmadas[^]*Todas[^]*>Novedades de GH</);
     const datos = (await request(app).get('/api/activos/novedades-gh').set(H(tk.sis))).body;
     const html = UI.activosNovedadesGHHtml(datos, { tipos: [{ codigo: 'DIADEMA', nombre: 'Diadema' }] });
     assert.match(html, /Retirados con elementos a su nombre/);

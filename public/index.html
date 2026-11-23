@@ -2123,6 +2123,7 @@
     <section id="ac-p-panel" aria-label="Panel"></section>
     <section id="ac-p-elementos" class="hidden" aria-label="Elementos">
       <div id="ac-lista-zona">
+        <div id="ac-inv-tipos" class="hidden" aria-label="Inventario por tipo"></div>
         <div class="ac-filtros">
           <div class="ig"><label for="ac-f-tipo">Tipo</label><select id="ac-f-tipo" onchange="activosBuscar()"></select></div>
           <div class="ig" id="ac-f-estado-ig"><label for="ac-f-estado">Estado</label><select id="ac-f-estado" onchange="activosBuscar()"></select></div>
@@ -2162,6 +2163,7 @@
       <div id="ac-ag-detalle" class="hidden"></div>
     </section>
     <section id="ac-p-registrar" class="hidden" aria-label="Registrar">
+      <div id="ac-r-tarjetas"></div><!-- Fase GH5b: una tarjeta por tipo, como el diseño de Edwin -->
       <form id="ac-r-form" onsubmit="activosRegistrar(event)" novalidate>
         <div class="ac-filtros">
           <div class="ig"><label for="ac-r-tipo">Tipo de elemento</label><select id="ac-r-tipo" onchange="activosCambioTipo()"></select></div>
@@ -2193,6 +2195,8 @@
     </section>
     <section id="ac-p-actas" class="hidden" aria-label="Actas"><!-- Fase 379 (I4): todas las actas, automáticas y manuales -->
       <div id="ac-actas-kpis"></div>
+      <div class="ac-chips ac-actas-cab"><div id="ac-ac-pestanas" class="acp-chips" role="group" aria-label="Ver actas"></div><button type="button" class="btn-primary ac-btn" onclick="activosActaManual()">Generar acta manual</button></div><!-- Fase GH5d -->
+      <div id="ac-ac-zona">
       <div class="ac-filtros">
         <div class="ig"><label for="ac-ac-estado">Estado</label><select id="ac-ac-estado" onchange="activosActasBuscar()"><option value="">Todas</option><option value="pendiente">Por firmar</option><option value="atrasada">Atrasadas</option><option value="firmada">Firmadas</option><option value="anulada">Anuladas</option></select></div>
         <div class="ig"><label for="ac-ac-tipo">Tipo</label><select id="ac-ac-tipo" onchange="activosActasBuscar()"></select></div>
@@ -2201,8 +2205,9 @@
       <div class="ac-chips"><p id="ac-ac-conteo" class="vis-ayuda"></p><div class="ac-export" role="group" aria-label="Descargar"><button type="button" class="btn-cancel ac-btn" onclick="activosExportar('actas', 'xlsx')">Excel</button><button type="button" class="btn-cancel ac-btn" onclick="activosExportar('actas', 'pdf')">PDF</button></div></div>
       <div id="ac-ac-lista" aria-live="polite"></div>
       <div id="ac-ac-anular"></div>
+      </div>
+      <div id="ac-p-novedadesgh" class="hidden" aria-label="Novedades de Gestión Humana" aria-live="polite"></div><!-- Fase GH4; GH5d: dentro de Actas -->
     </section>
-    <section id="ac-p-novedadesgh" class="hidden" aria-label="Novedades de Gestión Humana" aria-live="polite"></section><!-- Fase GH4 -->
     <section id="ac-p-historial" class="hidden" aria-label="Historial"><!-- Fase 381 (I6) -->
       <div class="ac-filtros">
         <div class="ig"><label for="ac-h-desde">Desde</label><input type="date" id="ac-h-desde" onchange="activosHistorialBuscar()"></div>
@@ -2214,6 +2219,10 @@
       <div id="ac-h-lista" aria-live="polite"></div>
     </section>
     <section id="ac-p-ajustes" class="hidden" aria-label="Ajustes">
+      <!-- Fase GH5d: Ajustes en tarjetas, como el diseño de Edwin. Mismos campos y funciones de antes. -->
+      <div class="aj-grid">
+      <article class="acp-card aj-card aj-ancha"><h4>Excel</h4><p class="acp-ayuda">Descarga todo el inventario o importa elementos nuevos desde una plantilla.</p>
+        <div class="acr-acc"><button type="button" class="acp-btn" onclick="activosAjustesExcel()">Exportar todo a Excel</button></div>
       <div class="ac-import"><!-- Fase 381 (I6): importar desde Excel con vista previa -->
         <h5 class="ac-sub">Importar elementos desde Excel</h5>
         <p class="vis-ayuda" id="ac-imp-ayuda">Elige el tipo, descarga la plantilla, llénala y súbela. Primero verás una revisión fila por fila; nada se guarda hasta que confirmes. Columnas: Código, Marca, Modelo, Serial, Sede, Operación, Propietario / proveedor, Estado (Libre, En reparación o Malo), Observaciones y los campos del tipo.</p>
@@ -2224,21 +2233,35 @@
         </div>
         <div id="ac-imp-res" aria-live="polite"></div>
       </div>
-      <p class="vis-ayuda">Un valor por línea. Se usan en las listas de Registrar y en los filtros.</p>
-      <div class="ac-filtros">
+      </article>
+      <article class="acp-card aj-card"><h4>Sedes</h4><p class="acp-ayuda">Un valor por línea. Se usan al registrar y en los filtros.</p>
         <div class="ig"><label for="ac-l-sedes">Sedes</label><textarea id="ac-l-sedes" rows="6"></textarea><button type="button" class="btn-cancel ac-btn" onclick="activosGuardarLista('sedes')">Guardar sedes</button></div>
+      </article>
+      <article class="acp-card aj-card"><h4>Operaciones</h4><p class="acp-ayuda">Un valor por línea.</p>
         <div class="ig"><label for="ac-l-operaciones">Operaciones</label><textarea id="ac-l-operaciones" rows="6"></textarea><button type="button" class="btn-cancel ac-btn" onclick="activosGuardarLista('operaciones')">Guardar operaciones</button></div>
+      </article>
+      <article class="acp-card aj-card"><h4>Propietarios / proveedores</h4><p class="acp-ayuda">Un valor por línea: la empresa y los proveedores que rentan equipos.</p>
         <div class="ig"><label for="ac-l-proveedores">Proveedores</label><textarea id="ac-l-proveedores" rows="6"></textarea><button type="button" class="btn-cancel ac-btn" onclick="activosGuardarLista('proveedores')">Guardar proveedores</button></div>
+      </article>
+      <article class="acp-card aj-card"><h4>Motivos frecuentes</h4>
         <div class="ig"><label for="ac-l-motivos">Motivos frecuentes</label><textarea id="ac-l-motivos" rows="6" aria-describedby="ac-l-motivos-ayuda"></textarea><span class="vis-ayuda" id="ac-l-motivos-ayuda">Se sugieren al escribir un motivo; se puede escribir otro.</span><button type="button" class="btn-cancel ac-btn" onclick="activosGuardarLista('motivos')">Guardar motivos</button></div>
+      </article>
+      <article class="acp-card aj-card"><h4>Estados</h4><p class="acp-ayuda">Son fijos: de ellos dependen las actas (entrega, devolución, reparación, baja).</p>
+        <ul id="ac-aj-estados" class="aj-estados"></ul>
+      </article>
       </div>
+      <article class="acp-card aj-card aj-ancha">
       <!-- Fase 372 (E4): formularios editables (tipos y campos) y textos del acta. -->
       <h4 class="ac-sub">Formularios por tipo</h4>
       <p class="vis-ayuda">Un campo no se borra: se oculta y lo ya guardado se conserva. El tipo de dato de un campo no cambia. Un tipo se desactiva solo si no tiene elementos sin dar de baja.</p>
       <div id="ac-tipos"></div>
       <div id="ac-tipo-editor" class="hidden"></div>
+      </article>
+      <article class="acp-card aj-card aj-ancha">
       <h4 class="ac-sub">Textos del acta</h4>
       <p class="vis-ayuda">Cada acta guarda el texto vigente al crearla: cambiarlo no altera las actas ya creadas.</p>
       <div id="ac-textos" class="ac-filtros"></div>
+      </article>
     </section>
     <datalist id="ac-motivos-lista"></datalist>
     </div><!-- .ac-main -->
