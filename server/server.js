@@ -230,6 +230,8 @@ function createApp() {
     if (req.method === 'POST' && RUTA_SURA_BASE.test(rutaNormalizada(req))) return jsonLimiteSura(req, res, next);
     // Fase 371 (E3): el acta firmada llega en base64 (PDF de hasta 5 MB).
     if (req.method === 'POST' && /^\/api\/activos\/actas\/[1-9]\d{0,9}\/firmada$/.test(rutaNormalizada(req))) return jsonLimiteMayor(req, res, next);
+    // Fase GH2: cada sección de Talento humano va entera (hasta 6 MB; la revisa gh-estado.js).
+    if (req.method === 'PUT' && /^\/api\/gh\/estado\/[a-z0-9_]{1,60}$/.test(rutaNormalizada(req))) return jsonLimiteMayor(req, res, next);
     return jsonLimiteNormal(req, res, next);
   }
 
@@ -387,6 +389,7 @@ function createApp() {
   api.use(require('./routes/admin'));
   api.use(require('./routes/wolkvox')); // Fase W2: probar conexion (solo admin, solo la replica)
   api.use(require('./routes/activos')); // Fase 369: «Inventario de sistemas» (ADMIN y SISTEMAS)
+  api.use(require('./routes/gh-estado')); // Fase GH2: «Talento humano» (ADMIN; GESTION_HUMANA con GH_ROL_ACTIVO=1)
   api.use(require('./routes/tickets')); // Fase 356: Sugerencias / Tickets
   api.use(require('./routes/malla')); // Fase 358: Malla de turnos
 
