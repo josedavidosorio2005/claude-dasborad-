@@ -81,8 +81,12 @@ test('migracion fase219_total_trafico_v1: la pestaña va justo despues de "salid
 test('vista: tarjetas con descripcion corta ("Incluye todas las salidas") y 2 barras por mes; tipo registrado', () => {
   const RAIZ = path.join(__dirname, '..', '..', 'public');
   const js = fs.readFileSync(path.join(RAIZ, 'js', 'total-trafico.js'), 'utf8');
-  assert.match(js, /'Total ingresados · llamadas y WhatsApp, de entrada y de salida · '/);
-  assert.match(js, /'Total contestados · incluye todas las salidas · '/);
+  // B3 (plan ORLANT, canal): el texto sale de totalTraficoCanalTexto; con «Total» es el de siempre.
+  assert.match(js, /'Total ingresados · '\+cTxt\.ingresados\+' · '/);
+  assert.match(js, /'Total contestados · '\+cTxt\.contestados\+' · '/);
+  const tt = require(path.join(RAIZ, 'js', 'total-trafico.js'));
+  assert.equal(tt.totalTraficoCanalTexto('total').ingresados, 'llamadas y WhatsApp, de entrada y de salida');
+  assert.equal(tt.totalTraficoCanalTexto('total').contestados, 'incluye todas las salidas');
   assert.match(js, /'Nivel de atención total · contestados ÷ ingresados · '/);
   assert.match(js, /label: 'Total llamadas \+ WhatsApp'/);
   assert.match(js, /label: 'Total contestados'/);

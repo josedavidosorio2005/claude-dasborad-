@@ -21963,3 +21963,15 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - la descarga trae los mismos bytes;
   - sin desplazamiento horizontal y 0 errores de consola (22/22).
   - Los tickets de prueba se borraron al terminar.
+
+## Fase B3 (canal) — ORLANT: Total / Llamadas / WhatsApp en Total tráfico (v1.250.0, 2026-11-23)
+
+- **Pedido (usuario, 23/11):** avanzar sin Edwin lo que se pueda del plan de ORLANT (B2 asistencia mensual, B3 filtro línea/canal). B2 necesita el archivo y la definición de Edwin, y no se tocó. De B3 se hizo solo la parte **canal**: el servidor ya da cada mes separado por canal. La parte **línea** (General / 3P) espera a Edwin, porque la entrada no trae línea.
+- **Cambio (solo interfaz, `public/js/total-trafico.js`):** grupo de botones `gd-botones-resaltados` (44 px, «✓» en el activo, `aria-pressed`), solo para ORLANT.
+  - Con «Llamadas» o «WhatsApp», cada tarjeta suma la entrada y la salida de ese canal (cada salida cuenta como contestada, Fase 219) y la gráfica deja solo esa línea.
+  - Cambiar de canal no vuelve a pedir datos al servidor.
+  - La exportación sigue con el total.
+  - No depende de B1 (#902). Si B1 entra después, hay que rebasar `total-trafico.js`, la versión y el CHANGELOG.
+- **Pruebas:** nueva `faseB3-orlant-filtro-canal` (3). `fase219-total-trafico` revisa el texto de siempre en su nuevo lugar.
+- **Revisión visual (local, Brave vía Playwright, base demo):** a 1440 claro, 768 oscuro y 375 claro, 19/19 sin errores de consola.
+  - Primera versión: el botón activo quedaba azul sobre teal con el puntero encima, porque una regla `.gd-subtab-btn:hover` posterior pisaba el color. Se corrigió usando la variante `gd-botones-resaltados`, que ya existía; medido: blanco sobre teal en reposo, con foco y con el puntero encima.
