@@ -530,7 +530,12 @@ router.get(
       )
       .all({ id: req.actor.id || 0, nombre, campana });
     // Fase 343: el asesor nunca recibe el telefono del cliente final (antes si, en sus propios monitoreos).
-    res.json(conFechaLlamada(rows.map((r) => monitoreoPara(req.actor, r)))); // Fase 346
+    // Pedido de Edwin (23/11/2026): `sinVer` marca en su lista los que todavía no abrió con «Ver detalle».
+    // Mismo criterio que la alerta (/mios/nuevos) y la pestaña «Vistos»: sin vistoPorAsesorAt y creado
+    // después del corte de la Fase 95 (los viejos y los de prueba nunca cuentan). Solo se calcula; no
+    // cambia ningún dato.
+    const desde = alertaAsesorDesdeId();
+    res.json(conFechaLlamada(rows.map((r) => Object.assign(monitoreoPara(req.actor, r), { sinVer: !r.vistoPorAsesorAt && r.id > desde })))); // Fase 346
   })
 );
 

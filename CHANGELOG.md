@@ -7,6 +7,14 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.250.0 — Noviembre 2026
+
+**Calidad, portal de la asesora: «Sin ver» en los monitoreos que todavía no abrió.**
+
+- En «Resultados de Calidad», cada monitoreo que la asesora no ha abierto con «Ver Detalle» se marca en rojo con la etiqueta «Sin ver».
+- Arriba de la lista sale «Te faltan N por ver». Al abrir un monitoreo con «Ver Detalle», su marca desaparece y el número baja.
+- No cambia cuándo se cuenta como visto (sigue siendo al abrir «Ver Detalle»), ni la pestaña «Vistos» del supervisor.
+
 ## v1.249.0 — Noviembre 2026
 
 **Tickets: «Ruta de ingreso» y un archivo adjunto.**
