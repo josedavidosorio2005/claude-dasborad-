@@ -231,13 +231,14 @@ function _publico(a) {
   const o = Object.assign({}, a, { datos: JSON.parse(a.datos || '{}') });
   o.rendimiento = a.conRam ? rendimientoDe(o.datos.ram_gb) : null; // Fase 377
   delete o.conRam;
-  o.agente = a.agenteId ? { id: a.agenteId, nombre: a.agenteNombre } : null;
-  delete o.agenteId; delete o.agenteNombre;
+  // Fase GH5c: + cédula y «asignado desde» para la lista de Asignados (diseño de Edwin).
+  o.agente = a.agenteId ? { id: a.agenteId, nombre: a.agenteNombre, documento: a.agenteDocumento || '', desde: a.agenteDesde || '' } : null;
+  delete o.agenteId; delete o.agenteNombre; delete o.agenteDocumento; delete o.agenteDesde;
   return o;
 }
 // El agente actual de cada elemento sale de su asignación abierta (hasta IS NULL).
 // Fase 377: conRam = el tipo lleva RAM (para el rendimiento).
-const SELECT_ACTIVO = `SELECT a.*, s.agenteId, g.nombre AS agenteNombre,
+const SELECT_ACTIVO = `SELECT a.*, s.agenteId, g.nombre AS agenteNombre, g.documento AS agenteDocumento, s.desde AS agenteDesde,
   EXISTS (SELECT 1 FROM activos_tipos t, json_each(t.campos) c WHERE t.codigo = a.tipo AND json_extract(c.value, '$.k') = 'ram_gb') AS conRam FROM activos a
   LEFT JOIN activos_asignaciones s ON s.activoId = a.id AND s.hasta IS NULL
   LEFT JOIN activos_agentes g ON g.id = s.agenteId`;

@@ -26,6 +26,9 @@ sepan que hay nuevo, que se corrigio y que falta.
   - hay una tarjeta «Nueva tecnología», un botón «Importar desde Excel» y la lista «Últimos ingresos»;
   - el formulario se abre al elegir el tipo y queda en ese tipo para registrar el siguiente.
 - En las listas (Libres, Asignados, etc.), el conteo dice cuántos hay de cada tipo: «22 elementos con estos filtros · 4 monitor · 2 portátil».
+- Las listas (Libres, Asignados, En reparación y Malos) tienen las columnas de Edwin: Tipo, Código, Nombre, Equipo (con el serial debajo), Procesador, RAM, Sede y Operación. En Asignados también Agente, Cédula y «Asignado desde».
+- Cada fila trae los botones «Estado» (cambiar el estado) y, en Asignados, «Recibir» (devolver el equipo). «Ver» sigue abriendo el detalle.
+- «Inventario completo» ahora se llama «Inventario»: arriba tiene una tarjeta por tipo con libres, en uso, reparación y malos; «Ver detalle» filtra la lista por ese tipo.
 - Solo cambia cómo se ve. Los elementos, agentes y actas guardados no se tocan.
 
 ## v1.257.0 — Noviembre 2026

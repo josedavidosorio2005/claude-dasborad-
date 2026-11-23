@@ -90,10 +90,10 @@ test('interfaz: consulta, columna de rendimiento y tarjetas del panel (escapadas
     const config = { tipos: [{ codigo: 'TORRE', nombre: 'Torre', campos: [] }, { codigo: 'MOUSE', nombre: 'Mouse', campos: [] }], estados: A.ESTADOS, rendimientos: A.RENDIMIENTOS };
     const fila = { id: 1, codigo: '<b>', tipo: 'TORRE', estado: 'libre', marca: '', modelo: '', serial: '', sede: '', operacion: '<i>', datos: { ram_gb: 4 }, rendimiento: 'bajo', agente: null };
     const html = UI.activosListaHtml([fila], config);
-    assert.ok(html.includes('<th scope="col">Rendimiento</th>') && html.includes('vis-rojo') && html.includes('4 GB'));
+    assert.ok(html.includes('<th scope="col">RAM</th>') /* GH5c: el rendimiento va en la columna RAM */ && html.includes('vis-rojo') && html.includes('4 GB'));
     assert.ok(!html.includes('<b>') && !html.includes('<i>'));
     const sinRam = UI.activosListaHtml([Object.assign({}, fila, { tipo: 'MOUSE', rendimiento: null, datos: {} })], config);
-    assert.ok(!sinRam.includes('Rendimiento'), 'sin elementos con RAM no hay columna');
+    assert.ok(!sinRam.includes('>RAM<'), 'sin elementos con RAM no hay columna');
     const panel = UI.activosPanelHtml({ total: 2, porEstado: { libre: 2 }, porTipo: { TORRE: { libre: 2 } }, porSede: [], porRendimiento: { bajo: 1, medio: 0, alto: 1, sin: 0 } }, config);
     assert.ok(panel.includes('Rendimiento según la RAM') && panel.includes("activosVerRendimiento('alto')") && panel.includes('16 GB o más'));
     assert.ok(!UI.activosPanelHtml({ total: 1, porEstado: { libre: 1 }, porTipo: {}, porSede: [], porRendimiento: null }, config).includes('Rendimiento según'));

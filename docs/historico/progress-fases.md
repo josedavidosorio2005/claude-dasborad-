@@ -22312,4 +22312,11 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - `activosConteoTexto` agrega a la línea de conteo de las listas el detalle por tipo, como la línea de resumen de Edwin.
   - Prueba agregada.
   - Revisión local OK, 0 errores; los 3 elementos inventados se borraron.
-- **Sigue:** el resto de GH5c (listas e «Inventario» por tipo) y GH5d (Actas, Historial, Ajustes y menú), según la lista. **PR sin mergear** (pedido del usuario).
+- **GH5c (resto, mismo PR), diferencias 4 y 5:**
+  - Decisiones del usuario (23/11): tema = el de SinCo; agentes desde Gestión Humana = todavía no.
+  - `activosListaHtml(lista, config, vista)`: columnas de Edwin (Tipo, Código, Nombre, Equipo con el serial debajo, Procesador, RAM, Sede, Operación; Asignados + Agente, Cédula y «Asignado desde»; la vista completa + Estado y Agente). Acciones «Estado» y, en Asignados, «Recibir» (abren el detalle en el formulario que toca); «Ver» se conserva.
+  - Servidor: el `agente` de cada elemento trae también `documento` y `desde` (asignación abierta). Solo lectura, mismos permisos.
+  - «Inventario completo» pasa a «Inventario», con chips y una tarjeta por tipo (`activosInvTiposHtml`, `#ac-inv-tipos`); «Ver detalle» filtra la lista.
+  - Pruebas: 2 nuevas en `faseGH5-inventario-panel` (API y HTML); `fase376` ajustada al nuevo nombre del menú.
+  - Revisión local en Brave a 375, 768 y 1440 (base demo, 4 elementos inventados `QA-GH5C-*`): sin scroll horizontal de la página (la tabla se desplaza dentro de su caja), «Recibir» abre «Quitar asignación», «Estado» enfoca el selector, «Ver detalle» filtra el tipo, 0 errores de consola. Los elementos inventados se borraron de la base local.
+- **Sigue:** GH5d (Actas, Historial, Ajustes y menú), según la lista. **PR sin mergear** (pedido del usuario).

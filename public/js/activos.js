@@ -7,9 +7,9 @@ var _ac = { config: null, tab: 'panel', lista: [], sel: null, ambito: 'sistemas'
 // Fase 376 (I1, diseño de Edwin): menú lateral con el ciclo de cada elemento. «sec» = título de sección.
 var AC_MENU = {
   sistemas: [['sec', 'Menú'], ['panel', 'Panel general'], ['sec', 'Ciclo de elementos'], ['registrar', 'Registrar ingreso', '1'], ['libres', 'Libres', '2'], ['asignados', 'Asignados', '3'],
-    ['reparacion', 'En reparación', '4'], ['malos', 'Malos', '5'], ['sec', 'Gestión'], ['elementos', 'Inventario completo'], ['agentes', 'Agentes'], ['novedadesgh', 'Novedades de Gestión Humana'], ['admin', 'Equipos administrables'], ['actas', 'Actas'], ['historial', 'Historial'], ['ajustes', 'Ajustes y datos']], // Fase 379: + Actas; Fase 380: + administrables; Fase 381: + Historial
+    ['reparacion', 'En reparación', '4'], ['malos', 'Malos', '5'], ['sec', 'Gestión'], ['elementos', 'Inventario'], ['agentes', 'Agentes'], ['novedadesgh', 'Novedades de Gestión Humana'], ['admin', 'Equipos administrables'], ['actas', 'Actas'], ['historial', 'Historial'], ['ajustes', 'Ajustes y datos']], // Fase 379: + Actas; Fase 380: + administrables; Fase 381: + Historial
   inmuebles: [['sec', 'Menú'], ['panel', 'Panel general'], ['sec', 'Ciclo de elementos'], ['registrar', 'Registrar ingreso', '1'], ['libres', 'Libres', '2'],
-    ['reparacion', 'En reparación', '3'], ['malos', 'Malos', '4'], ['sec', 'Gestión'], ['elementos', 'Inventario completo'], ['historial', 'Historial'], ['ajustes', 'Ajustes y datos']], // Fase 381: + Historial
+    ['reparacion', 'En reparación', '3'], ['malos', 'Malos', '4'], ['sec', 'Gestión'], ['elementos', 'Inventario'], ['historial', 'Historial'], ['ajustes', 'Ajustes y datos']], // Fase 381: + Historial
 };
 // Vistas por estado (juntan todos los tipos) y su texto.
 var AC_VISTA_ESTADO = { libres: 'libre', asignados: 'en_uso', reparacion: 'en_reparacion', malos: 'malo' };
@@ -20,7 +20,7 @@ var AC_VISTA_TXT = {
   asignados: ['Asignados', 'Elementos entregados a un agente.'],
   reparacion: ['En reparación', 'Elementos pendientes por arreglo. Al repararse vuelven a «Libres».'],
   malos: ['Malos', 'Elementos que no se pueden entregar.'],
-  elementos: ['Inventario completo', 'Todos los elementos, con filtros por tipo, estado, sede, operación, propietario y rendimiento.'],
+  elementos: ['Inventario', 'Equipos, componentes y tecnologías: una tarjeta por tipo y la lista completa, con filtros por tipo, estado, sede, operación, propietario y rendimiento.'],
   agentes: ['Agentes', 'Quién tiene cada elemento: asignar, devolver y cambiar, con actas.'],
   novedadesgh: ['Novedades de Gestión Humana', 'Agentes con elementos asignados que en Talento humano aparecen retirados, ausentes hoy o por ausentarse en los próximos 7 días. Solo lectura: los cambios se hacen en Talento humano; aquí se recogen o se revisan los equipos.'],
   admin: ['Equipos administrables', 'Red e infraestructura: servidores, switches, DVR / NVR, routers y firewalls, access points y UPS. Se registran en «Registrar ingreso»; el código se asigna solo según el tipo.'],
@@ -86,7 +86,7 @@ function activosTab(tab) {
   _acRefrescarMenu();
   var main = document.querySelector('#activos-overlay .ac-main'); if (main) main.scrollTop = 0;
   if (tab === 'panel') _acPanel();
-  if (seccion === 'elementos') { _ac.estadoFijo = AC_VISTA_ESTADO[tab] || null; _acEl('ac-f-estado-ig').classList.toggle('hidden', !!_ac.estadoFijo); activosCerrarDetalleSinBuscar(); _acFiltrosYLista(); }
+  if (seccion === 'elementos') { _ac.estadoFijo = AC_VISTA_ESTADO[tab] || null; _acEl('ac-f-estado-ig').classList.toggle('hidden', !!_ac.estadoFijo); activosCerrarDetalleSinBuscar(); _acFiltrosYLista(); _acInvTipos(); }
   if (tab === 'agentes') _acAgentes();
   if (tab === 'registrar') _acFormulario();
   if (tab === 'ajustes') _acAjustes();
@@ -171,7 +171,7 @@ async function activosBuscar() {
   c.innerHTML = '<p class="vis-vacio">Cargando…</p>';
   try {
     _ac.lista = (await apiRequest('GET', '/activos?' + activosConsulta(f))).activos;
-    c.innerHTML = activosListaHtml(_ac.lista, _ac.config);
+    c.innerHTML = activosListaHtml(_ac.lista, _ac.config, _ac.tab);
     _acEl('ac-conteo').textContent = activosConteoTexto(_ac.lista, _ac.config); // Fase GH5c: con el detalle por tipo, como Edwin
   } catch (e) { c.innerHTML = ''; _acError(e.message); }
 }
@@ -182,18 +182,68 @@ function activosRendHtml(a, config) {
   var ram = a.datos && typeof a.datos.ram_gb === 'number' ? a.datos.ram_gb + ' GB' : 'sin RAM registrada';
   return '<span class="vis-pill ' + (AC_CLASE_REND[a.rendimiento] || '') + '" title="' + esc(ram) + '">' + esc(r ? r.nombre : a.rendimiento) + '</span>';
 }
-function activosListaHtml(lista, config) {
+// Fase GH5c: columnas de Edwin. Tipo (etiqueta), Código, Nombre, Equipo, Procesador, RAM, Sede y
+// Operación; Asignados suma Agente, Cédula y «Asignado desde»; la vista completa, Estado y Agente.
+// Acciones directas: «Estado» (cambiar estado) y, en Asignados, «Recibir»; «Ver» abre el detalle.
+function activosListaHtml(lista, config, vista) {
   if (!lista.length) return '<p class="vis-vacio">Ningún elemento coincide.</p>';
   var tipoN = function (c) { var t = config.tipos.find(function (x) { return x.codigo === c; }); return t ? t.nombre : c; };
   var estN = function (c) { var e = config.estados.find(function (x) { return x.codigo === c; }); return e ? e.nombre : c; };
-  var conRend = lista.some(function (a) { return a.rendimiento; }); // Fase 377: columna solo si algún elemento lleva RAM
-  return '<div class="table-wrap"><table class="vis-tabla"><thead><tr><th scope="col">Código</th><th scope="col">Tipo</th><th scope="col">Estado</th><th scope="col">Marca / modelo</th><th scope="col">Serial</th>' + (conRend ? '<th scope="col">RAM</th><th scope="col">Rendimiento</th>' : '') + '<th scope="col">Sede</th><th scope="col">Operación</th><th scope="col">Agente</th><th scope="col"><span class="sr-only">Acciones</span></th></tr></thead><tbody>' +
+  var d = function (a) { return a.datos || {}; };
+  var conProc = lista.some(function (a) { return d(a).procesador; });
+  var conRend = lista.some(function (a) { return a.rendimiento; }); // Fase 377: RAM solo si algún elemento la lleva
+  var conNombre = lista.some(function (a) { return d(a).nombre_equipo; });
+  var asig = vista === 'asignados', completa = !AC_VISTA_ESTADO[vista];
+  var th = function (t) { return '<th scope="col">' + esc(t) + '</th>'; };
+  var cab = th('Tipo') + th('Código') + (conNombre ? th('Nombre') : '') + th('Equipo') + (conProc ? th('Procesador') : '') + (conRend ? th('RAM') : '') + th('Sede') + th('Operación') +
+    (completa ? th('Estado') + th('Agente') : '') + (asig ? th('Agente') + th('Cédula') + th('Asignado desde') : '') + th('Acciones');
+  return '<div class="table-wrap"><table class="vis-tabla acl-tabla"><thead><tr>' + cab + '</tr></thead><tbody>' +
     lista.map(function (a) {
-      var rend = conRend ? '<td class="vis-num">' + (a.rendimiento && typeof a.datos.ram_gb === 'number' ? esc(a.datos.ram_gb) + ' GB' : '') + '</td><td>' + activosRendHtml(a, config) + '</td>' : '';
-      return '<tr><th scope="row">' + esc(a.codigo) + '</th><td>' + esc(tipoN(a.tipo)) + '</td><td><span class="vis-pill ' + (AC_CLASE_ESTADO[a.estado] || '') + '">' + esc(estN(a.estado)) + '</span></td><td>' + esc([a.marca, a.modelo].filter(Boolean).join(' ')) + '</td><td>' + esc(a.serial) + '</td>' + rend + '<td>' + esc(a.sede) + '</td><td>' + esc(a.operacion) + '</td><td>' + esc(a.agente ? a.agente.nombre : '') + '</td>' +
-        '<td><button type="button" class="btn-cancel ac-btn" onclick="activosVer(' + Number(a.id) + ')">Ver</button></td></tr>';
+      var id = Number(a.id), x = d(a), g = a.agente || {};
+      var equipo = esc([a.marca, a.modelo].filter(Boolean).join(' ')) + (a.serial ? '<small class="acl-serial">S/N ' + esc(a.serial) + '</small>' : '');
+      var ram = conRend ? '<td class="vis-num">' + (typeof x.ram_gb === 'number' ? esc(x.ram_gb) + ' GB ' : '') + activosRendHtml(a, config) + '</td>' : '';
+      var acc = '<button type="button" class="btn-cancel ac-btn" onclick="activosVer(' + id + ')" aria-label="Ver ' + esc(a.codigo) + '">Ver</button>' +
+        (a.estado !== 'de_baja' ? '<button type="button" class="btn-cancel ac-btn" onclick="activosAccionEstado(' + id + ')" aria-label="Cambiar estado de ' + esc(a.codigo) + '">Estado</button>' : '') +
+        (asig && a.agente ? '<button type="button" class="btn-primary ac-btn" onclick="activosAccionRecibir(' + id + ')" aria-label="Recibir ' + esc(a.codigo) + '">Recibir</button>' : '');
+      return '<tr><td><span class="acl-tipo" data-tipo="' + esc(a.tipo) + '">' + esc(tipoN(a.tipo)) + '</span></td><th scope="row">' + esc(a.codigo) + '</th>' +
+        (conNombre ? '<td>' + esc(x.nombre_equipo || '') + '</td>' : '') + '<td>' + equipo + '</td>' + (conProc ? '<td>' + esc(x.procesador || '') + '</td>' : '') + ram +
+        '<td>' + esc(a.sede) + '</td><td>' + esc(a.operacion) + '</td>' +
+        (completa ? '<td><span class="vis-pill ' + (AC_CLASE_ESTADO[a.estado] || '') + '">' + esc(estN(a.estado)) + '</span></td><td>' + esc(g.nombre || '') + '</td>' : '') +
+        (asig ? '<td>' + esc(g.nombre || '') + '</td><td>' + esc(g.documento || '') + '</td><td>' + (g.desde ? esc(_acFecha(g.desde)) : '') + '</td>' : '') +
+        '<td><div class="acl-acc">' + acc + '</div></td></tr>';
     }).join('') + '</tbody></table></div>';
 }
+// Acciones directas de la lista: abren el detalle ya en el formulario que corresponde.
+async function activosAccionEstado(id) {
+  await activosVer(id);
+  var s = _acEl('ac-nuevo-estado'); if (s) { try { s.scrollIntoView({ block: 'center' }); } catch (e) { /* sin scroll */ } s.focus(); }
+}
+async function activosAccionRecibir(id) {
+  await activosVer(id);
+  if (_ac.sel && _ac.sel.agente) await activosGestion('quitar');
+}
+// Fase GH5c: vista «Inventario» con una tarjeta por tipo (libres, en uso, reparación y malos).
+function activosInvTiposHtml(tipos, porTipo, actual) {
+  var activos = tipos.filter(function (t) { return t.activo !== false; });
+  var chips = '<div class="acp-chips" role="group" aria-label="Ver tipo"><button type="button" class="acp-chip' + (!actual ? ' on' : '') + '" aria-pressed="' + String(!actual) + '" onclick="activosInvTipo(\'\')">Todos</button>' +
+    activos.map(function (t) { return '<button type="button" class="acp-chip' + (actual === t.codigo ? ' on' : '') + '" aria-pressed="' + String(actual === t.codigo) + '" onclick="activosInvTipo(\'' + esc(t.codigo) + '\')">' + esc(t.plural || t.nombre) + '</button>'; }).join('') + '</div>';
+  var est = [['libre', 'Libres'], ['en_uso', 'En uso'], ['en_reparacion', 'Reparación'], ['malo', 'Malos']];
+  var cards = activos.map(function (t) {
+    var x = porTipo[t.codigo] || {}, total = Object.keys(x).reduce(function (a, k) { return a + (x[k] || 0); }, 0);
+    return '<article class="acp-card aci-card' + (actual === t.codigo ? ' aci-sel' : '') + '"><div class="acr-top"><h4><span class="acl-tipo" data-tipo="' + esc(t.codigo) + '">' + esc(t.nombre) + '</span></h4><b class="aci-total" title="Total">' + total + '</b></div>' +
+      '<dl class="aci-est">' + est.map(function (e) { return '<div><dt>' + esc(e[1]) + '</dt><dd>' + (x[e[0]] || 0) + '</dd></div>'; }).join('') + '</dl>' +
+      '<button type="button" class="acp-btn" onclick="activosInvTipo(\'' + esc(t.codigo) + '\')">Ver detalle</button></article>';
+  }).join('');
+  return chips + '<div class="acr-grid aci-grid">' + cards + '</div>';
+}
+async function _acInvTipos() {
+  var c = _acEl('ac-inv-tipos'); if (!c) return;
+  c.classList.toggle('hidden', _ac.tab !== 'elementos');
+  if (_ac.tab !== 'elementos') return;
+  try { var r = await apiRequest('GET', '/activos/resumen?ambito=' + _ac.ambito); c.innerHTML = activosInvTiposHtml(_ac.config.tipos, r.porTipo || {}, _acEl('ac-f-tipo').value); }
+  catch (e) { _acError(e.message); }
+}
+function activosInvTipo(codigo) { _acEl('ac-f-tipo').value = codigo || ''; activosBuscar(); _acInvTipos(); }
 
 // Detalle: datos, cambio de estado con motivo e historial.
 async function activosVer(id) {
@@ -1190,4 +1240,4 @@ function activosVerTipo(codigo) {
 function activosEditarFormulario(codigo) { activosTab('ajustes'); activosEditarTipo(codigo); }
 function activosNuevaTecnologia() { activosTab('ajustes'); activosEditarTipo(null); }
 function activosIrImportar() { activosTab('ajustes'); var s = _acEl('ac-imp-tipo'); if (s) { try { s.scrollIntoView({ block: 'center' }); } catch (e) { /* */ } s.focus(); } }
-if (typeof module !== 'undefined' && module.exports) { module.exports.activosPanel2Html = activosPanel2Html; module.exports.activosRegistrarTarjetasHtml = activosRegistrarTarjetasHtml; module.exports.activosConteoTexto = activosConteoTexto; }
+if (typeof module !== 'undefined' && module.exports) { module.exports.activosPanel2Html = activosPanel2Html; module.exports.activosRegistrarTarjetasHtml = activosRegistrarTarjetasHtml; module.exports.activosConteoTexto = activosConteoTexto; module.exports.activosListaHtml = activosListaHtml; module.exports.activosInvTiposHtml = activosInvTiposHtml; }

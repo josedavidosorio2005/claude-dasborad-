@@ -114,3 +114,44 @@ test('GH5c: la línea de conteo de las listas lleva el detalle por tipo (como Ed
   assert.equal(UI.activosConteoTexto([{ tipo: 'TORRE' }], cfg), '1 elemento con estos filtros', 'un solo tipo: sin detalle');
   assert.equal(UI.activosConteoTexto([], cfg), '0 elementos con estos filtros');
 });
+
+test('GH5c: la lista trae la cédula y la fecha de la asignación del agente', async () => {
+  const id = (await request(app).get('/api/activos?ambito=sistemas&q=GH5-T2').set(H(tk.sis))).body.activos[0].id;
+  const r = await request(app).post('/api/activos/' + id + '/asignar').set(H(tk.sis)).send({ agenteNuevo: { nombre: 'Agente Inventado GH5', documento: '9000555', operacion: '' } });
+  assert.equal(r.status, 200, JSON.stringify(r.body));
+  const a = (await request(app).get('/api/activos?ambito=sistemas&estado=en_uso&q=GH5-T2').set(H(tk.sis))).body.activos[0];
+  assert.equal(a.agente.nombre, 'Agente Inventado GH5');
+  assert.equal(a.agente.documento, '9000555');
+  assert.match(a.agente.desde, /^\d{4}-\d{2}-\d{2}/);
+  assert.ok(!('agenteDocumento' in a) && !('agenteDesde' in a), 'sin columnas sueltas');
+});
+
+test('GH5c: columnas y acciones de Edwin en las listas, y la vista «Inventario» por tipo', () => {
+  global.esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const UI = require(path.join(__dirname, '..', '..', 'public', 'js', 'activos.js'));
+  const cfg = { tipos: [{ codigo: 'TORRE', nombre: 'Torre', plural: 'Torres' }, { codigo: 'MONITOR', nombre: 'Monitor' }, { codigo: 'VIEJO', nombre: 'Viejo', activo: false }],
+    estados: [{ codigo: 'libre', nombre: 'Libre' }, { codigo: 'en_uso', nombre: 'En uso' }, { codigo: 'de_baja', nombre: 'De baja' }], rendimientos: [{ codigo: 'alto', nombre: 'Alto' }] };
+  const lista = [
+    { id: 1, tipo: 'TORRE', codigo: 'GH5-X1', marca: 'MarcaInventada', modelo: 'M1', serial: 'S-1', sede: 'Sede A', operacion: 'Op A', estado: 'en_uso', rendimiento: 'alto',
+      datos: { nombre_equipo: 'PC-01', procesador: 'Proc Inventado', ram_gb: 16 }, agente: { id: 7, nombre: 'Agente <b>', documento: '123', desde: '2026-11-20T15:00:00.000Z' } },
+    { id: 2, tipo: 'MONITOR', codigo: 'GH5-X2', marca: '', modelo: '', serial: '', sede: '', operacion: '', estado: 'de_baja', rendimiento: null, datos: {}, agente: null },
+  ];
+  const asig = UI.activosListaHtml(lista, cfg, 'asignados');
+  for (const t of ['>Tipo<', '>Código<', '>Nombre<', '>Equipo<', '>Procesador<', '>RAM<', '>Sede<', '>Operación<', '>Agente<', '>Cédula<', '>Asignado desde<', '>Acciones<']) assert.ok(asig.includes(t), 'falta ' + t);
+  assert.ok(!asig.includes('>Estado</th>'), 'Asignados no repite la columna Estado');
+  assert.match(asig, /activosAccionRecibir\(1\)/);
+  assert.match(asig, /activosAccionEstado\(1\)/);
+  assert.ok(!/activosAccionEstado\(2\)/.test(asig), 'un elemento de baja no cambia de estado');
+  assert.ok(asig.includes('Agente &lt;b&gt;') && asig.includes('S/N S-1') && asig.includes('16 GB'));
+  const libres = UI.activosListaHtml(lista, cfg, 'libres');
+  assert.ok(!libres.includes('Recibir') && !libres.includes('>Cédula<'), 'Libres sin Recibir ni cédula');
+  const todo = UI.activosListaHtml(lista, cfg, 'elementos');
+  assert.ok(todo.includes('>Estado</th>') && todo.includes('De baja'));
+  assert.match(UI.activosListaHtml([], cfg, 'libres'), /Ningún elemento coincide/);
+  const inv = UI.activosInvTiposHtml(cfg.tipos, { TORRE: { libre: 2, en_uso: 3, en_reparacion: 1, malo: 0, de_baja: 1 } }, 'TORRE');
+  assert.ok(!inv.includes('Viejo'), 'sin tipos desactivados');
+  assert.match(inv, /aci-card aci-sel[\s\S]*Torre[\s\S]*>7<\/b>/);
+  assert.match(inv, /<dt>Libres<\/dt><dd>2<\/dd>[\s\S]*<dt>En uso<\/dt><dd>3<\/dd>[\s\S]*<dt>Reparación<\/dt><dd>1<\/dd>[\s\S]*<dt>Malos<\/dt><dd>0<\/dd>/);
+  assert.match(inv, /acp-chip on" aria-pressed="true" onclick="activosInvTipo\('TORRE'\)">Torres/);
+  assert.match(inv, /Ver detalle/);
+});

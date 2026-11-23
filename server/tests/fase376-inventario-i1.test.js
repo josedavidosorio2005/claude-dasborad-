@@ -60,7 +60,7 @@ test('interfaz: menú con el ciclo y conteos; inmuebles sin agentes ni asignados
   try {
     const UI = require(path.join(__dirname, '..', '..', 'public', 'js', 'activos.js'));
     const m = UI.activosMenuHtml('sistemas', 'libres', { total: 9, porEstado: { libre: 4, en_uso: 3, en_reparacion: 1, malo: 1 } });
-    for (const x of ['Panel general', 'Registrar ingreso', 'Libres', 'Asignados', 'En reparación', 'Malos', 'Inventario completo', 'Agentes', 'Ajustes y datos']) assert.ok(m.includes(x), x);
+    for (const x of ['Panel general', 'Registrar ingreso', 'Libres', 'Asignados', 'En reparación', 'Malos', 'Inventario', 'Agentes', 'Ajustes y datos']) assert.ok(m.includes(x), x);
     assert.match(m, /data-ac-vista="libres" aria-current="page"/);
     assert.match(m, /Libres<\/span><span class="ac-menu-n">4</);
     const mi = UI.activosMenuHtml('inmuebles', 'panel', null);
