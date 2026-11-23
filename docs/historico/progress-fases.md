@@ -22090,3 +22090,55 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - **Observación:** un empleado sin salario ni sede hace que los gráficos de Edwin muestren errores de SVG (`NaN`) en la consola. Es su código y no se tocó.
 - **Producción:** sin `GH_ROL_ACTIVO`, nadie más que el administrador entra. Encenderlo necesita el OK del usuario.
 - **Sigue:** GH3 (soportes en S3 privado), GH4, GH5 y GH6.
+
+## Fase GH3 — «Talento humano»: soportes adjuntos a S3 privado (v1.254.0, 2026-11-23)
+
+- **Pedido:** el usuario, 23/11: GH3 en local, sin mergear, como las actas. Antes de crear o cambiar algo en AWS, pasos clic por clic (consola en español) y esperar su «listo».
+- **Servidor:**
+  - `server/gh-archivos.js` crea la tabla `gh_archivos` (id, empId, nombre, tipo, bytes, s3Key, quién y cuándo subió y borró).
+  - Rutas en `routes/gh-estado.js`, con los mismos permisos de Talento humano:
+    - `POST /api/gh/archivos`;
+    - `GET /api/gh/archivos/:id`;
+    - `DELETE /api/gh/archivos/:id`.
+  - El tipo se revisa por el contenido: PDF, PNG, JPG, WEBP, DOC o DOCX, hasta 8 MB (el mismo tope de la app). El cuerpo de esa ruta acepta 12 MB por el base64.
+  - La clave en S3 es `talento-humano/soportes/<id>-<fecha>.<ext>`, con `AES256` y sin el nombre del archivo.
+  - Subir el mismo id otra vez no duplica; un id borrado no revive.
+  - Borrar marca la fila y deja el objeto (sin `s3:DeleteObject`).
+  - Si S3 falla, responde 502 sin detalles y no guarda la fila.
+  - La bitácora anota «soporte:subido» y «soporte:borrado», sin nombre ni contenido.
+  - `GET /api/gh/estado` devuelve también `soportesActivos`.
+  - **Apagado** sin `GH_SOPORTES_S3_BUCKET`, que se agregó a `SSM_KEYS`; subir responde 503.
+- **Navegador:**
+  - `ghCrearArchivos` en `talento-humano-api.js` reemplaza el IndexedDB de la app con la misma forma (`put`, `get` y `del`).
+  - Encendido, sube y trae del servidor. Si el servidor no tiene el soporte (404), lo busca en el navegador: son los guardados antes de encender S3.
+  - Apagado, todo sigue en el navegador, como antes.
+  - El generador deja su `IDB` como `IDB_LOCAL`, agrega `const IDB=ghArchivos(IDB_LOCAL)` y cambia «No se encontró el archivo en este equipo» por «No se encontró el soporte».
+  - El pie ya no dice «solo en este navegador»; la barra de SinCo dice según el estado si los soportes van a la plataforma o siguen en el navegador.
+- **AWS (lo hace el usuario):** guía en `docs/gestion-humana/soportes-s3.md`:
+  - bucket aparte `inconexion-talento-humano-2026` (privado, con versiones, SSE-S3);
+  - declaración `TalentoHumanoSoportesS3` en `deploy/iam-policy-instance.json`, solo `PutObject` y `GetObject` sobre `talento-humano/*`;
+  - parámetro `/inconexion/prod/GH_SOPORTES_S3_BUCKET`;
+  - después, reiniciar.
+  - No se creó nada en AWS.
+- **Pruebas:**
+  - Nueva `faseGH3-talento-humano-soportes` (7), con un S3 falso:
+    - apagado responde 503;
+    - sube, cifra, no duplica, entrega, borra y no revive;
+    - tipo por contenido, ids y 8 MB;
+    - permisos con y sin `GH_ROL_ACTIVO`;
+    - S3 caído da 502 sin fila;
+    - `ghCrearArchivos` encendido, apagado y con respaldo local;
+    - lo generado.
+  - Declaradas en fase118.
+- **Revisión local** (Brave vía Playwright, base demo, S3 falso en memoria, archivos SINTÉTICOS; al final se vaciaron las tablas `gh_*` locales):
+  - la barra dice «también los soportes adjuntos»;
+  - el soporte sube y vuelve igual, sin copia en IndexedDB;
+  - el put va cifrado a `talento-humano/soportes/`, sin el nombre;
+  - la descarga de la app trae el archivo;
+  - un soporte guardado antes en el navegador se abre y se borra;
+  - lo borrado ya no se entrega;
+  - la bitácora no lleva el nombre;
+  - un archivo que no es PDF, imagen ni Word recibe 400;
+  - a 768 y 375 sin scroll horizontal;
+  - sin errores, salvo el 400 y los 404 esperados.
+- **Producción:** 1.253.0 (#920). GH3 sin mergear; espera el OK del usuario y los pasos de AWS.

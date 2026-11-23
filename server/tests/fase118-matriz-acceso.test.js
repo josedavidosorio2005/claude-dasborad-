@@ -380,7 +380,8 @@ declarar(['GET /gerencia/kpis', 'GET /gerencia/periodos', 'GET /gerencia/resumen
 declarar(['POST /gerencia/kpis', 'PUT /gerencia/kpis/:id', 'DELETE /gerencia/kpis/:id', 'POST /gerencia/carga'], 'moduloYcarga:Gerencia');
 // Fase GH2: «Talento humano» (app de Edwin) -- ADMIN; GESTION_HUMANA solo con GH_ROL_ACTIVO=1; probado
 // rol por rol (apagado y encendido) en faseGH2-talento-humano-servidor.test.js.
-declarar(['GET /gh/acceso', 'GET /gh/estado', 'PUT /gh/estado/:clave', 'GET /gh/bitacora'], 'skip');
+declarar(['GET /gh/acceso', 'GET /gh/estado', 'PUT /gh/estado/:clave', 'GET /gh/bitacora',
+  'POST /gh/archivos', 'GET /gh/archivos/:id', 'DELETE /gh/archivos/:id'], 'skip'); // Fase GH3: en faseGH3-talento-humano-soportes.test.js
 declarar(['GET /gh/personal', 'GET /gh/resumen'], 'modulo:GestionHumana');
 declarar(['POST /gh/personal', 'PUT /gh/personal/:id', 'DELETE /gh/personal/:id'], 'modulo:GestionHumana');
 

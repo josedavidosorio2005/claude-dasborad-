@@ -18,6 +18,8 @@
 //   - «⌂ Menú principal» cierra la ventana y vuelve al menú de SinCo.
 //   - GH2: todo localStorage pasa a GH_STORE (public/gestion-humana/talento-humano-api.js, a mano), que
 //     guarda en el servidor (/api/gh/estado); las marcas internas de la app siguen en el navegador.
+//   - GH3: los soportes adjuntos (su IndexedDB `IDB`) pasan por ghArchivos (mismo archivo a mano): a S3
+//     privado por /api/gh/archivos cuando está encendido; si no, siguen en el navegador como antes.
 // Corre en un iframe del mismo origen (sus 135 onclick en línea llaman funciones globales: en un
 // Shadow DOM habría que reescribirlos). Falla si un reemplazo no encuentra su texto exacto (el HTML
 // cambió): revisar el reemplazo antes de forzarlo. No imprime datos, solo tamaños.
@@ -63,7 +65,7 @@ let markup = entre(gh, '</style>\n</head>\n<body>\n', '\n\n<script>\n/* ========
 if (!markup.includes('<button class="home-btn" onclick="volverMenu()"')) throw new Error('no encontré «⌂ Menú principal»');
 // Fase GH2: los datos ya no quedan en el navegador (los soportes adjuntos sí, hasta GH3).
 markup = una(markup, 'Los datos se guardan en este navegador. Descarga una copia de respaldo con frecuencia.',
-  'Los datos se guardan en la plataforma (SinCo). Los soportes adjuntos, por ahora, solo en este navegador. Descarga una copia de respaldo con frecuencia.');
+  'Los datos se guardan en la plataforma (SinCo). Descarga una copia de respaldo con frecuencia.');
 
 // ── Lógica ──
 let js = entre(gh, '</defs></svg>\n\n<script>', '</script>\n<script>window.volverMenu=');
@@ -87,6 +89,16 @@ js = una(js, '${AUS.some(r=>r.demo&&!r.anulado)?`<button class="btn dan" onclick
   if (n !== 22) throw new Error(`localStorage aparece ${n} veces (se esperaban 22): revisar el HTML`);
   js = js.split('localStorage.').join('GH_STORE.');
   if (/localStorage/.test(js)) throw new Error('quedó un localStorage sin pasar a GH_STORE');
+}
+// 4) Fase GH3: soportes adjuntos. Su objeto IDB (IndexedDB del navegador) queda como IDB_LOCAL y IDB
+//    pasa a ser ghArchivos(IDB_LOCAL) (talento-humano-api.js): con S3 encendido, sube y trae del
+//    servidor; apagado, sigue en el navegador. Las llamadas IDB.put/get/del de la app no cambian.
+js = una(js, 'const IDB={db:null,', 'const IDB_LOCAL={db:null,');
+js = una(js, '\nconst MAXF=8*1024*1024;', '\nconst IDB=ghArchivos(IDB_LOCAL);\nconst MAXF=8*1024*1024;');
+{
+  const a = "toast('No se encontró el archivo en este equipo')";
+  if (js.split(a).length - 1 !== 2) throw new Error('texto de archivo no encontrado: revisar el HTML');
+  js = js.split(a).join("toast('No se encontró el soporte')");
 }
 for (const k of ['demoData()', 'ausDemo()', 'demoVN()']) {
   const def = js.indexOf('function ' + k.replace('()', '(){return'));

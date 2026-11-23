@@ -5,7 +5,8 @@
 //   - guarda cada sección con PUT /api/gh/estado/:clave y su `version`. Si otra persona guardó antes
 //     (409), esa sección deja de guardar y avisa que hay que volver a abrir: nunca pisa lo del otro;
 //   - si falla la red, avisa y lo vuelve a intentar con el siguiente cambio o al cerrar (sin bucle);
-//   - las marcas internas de la app (_init*, _impdemo, _lastcopy) siguen en el navegador.
+//   - las marcas internas de la app (_init*, _impdemo, _lastcopy) siguen en el navegador;
+//   - GH3: ghArchivos reemplaza el IndexedDB de los soportes (a S3 privado si está encendido).
 // Las peticiones van por apiRequest de SinCo (window.parent, mismo origen): misma sesión y token.
 'use strict';
 
@@ -96,6 +97,55 @@ function ghCrearAlmacen(opts) {
     _version: function (k) { return versiones[k] || 0; }, _bloqueada: function (k) { return !!bloqueadas[k]; } };
 }
 
+// ── Fase GH3: soportes adjuntos ──
+// Reemplaza el IDB de la app (IndexedDB del navegador) con la misma forma: put({id,empId,name,type,
+// size,blob}), get(id) → {id,empId,name,type,size,blob} | undefined, del(id).
+// opts: api; local (el IDB original, IDB_LOCAL); activo (S3 encendido en el servidor);
+// aBase64(blob) → Promise<string>; deBase64(b64, tipo) → Blob.
+// Encendido: sube y trae del servidor (S3 privado). Si el servidor no lo tiene (404), busca en este
+// navegador (soportes guardados antes de encender S3). Apagado: todo sigue en el navegador.
+function ghCrearArchivos(opts) {
+  var local = opts.local;
+  function put(o) {
+    if (!opts.activo) return local.put(o);
+    return Promise.resolve(opts.aBase64(o.blob)).then(function (b64) {
+      return opts.api('POST', '/gh/archivos', { id: String(o.id), empId: o.empId ? String(o.empId) : '', nombre: o.name, base64: b64 });
+    });
+  }
+  function get(id) {
+    if (!opts.activo) return local.get(id);
+    return opts.api('GET', '/gh/archivos/' + encodeURIComponent(id)).then(function (r) {
+      return { id: r.id, empId: r.empId, name: r.name, type: r.type, size: r.size, blob: opts.deBase64(r.base64, r.type) };
+    }, function (e) {
+      if (e && e.status === 404) return local.get(id);
+      throw e;
+    });
+  }
+  function del(id) {
+    var enLocal = Promise.resolve().then(function () { return local.del(id); }).catch(function () { /* nada */ });
+    if (!opts.activo) return enLocal;
+    return opts.api('DELETE', '/gh/archivos/' + encodeURIComponent(id)).then(function () { return enLocal; });
+  }
+  return { put: put, get: get, del: del };
+}
+function _ghABase64(blob) {
+  return new Promise(function (ok, ko) {
+    var r = new FileReader();
+    r.onload = function () { var s = String(r.result || ''); ok(s.slice(s.indexOf(',') + 1)); };
+    r.onerror = function () { ko(r.error); };
+    r.readAsDataURL(blob);
+  });
+}
+function _ghDeBase64(b64, tipo) {
+  var bin = atob(b64), u = new Uint8Array(bin.length);
+  for (var i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+  return new Blob([u], { type: tipo || 'application/octet-stream' });
+}
+var GH_AVISO_BARRA = {
+  activos: 'Se guarda en la plataforma, también los soportes adjuntos.',
+  apagados: 'Se guarda en la plataforma. Los soportes adjuntos, por ahora, quedan solo en este navegador.',
+};
+
 // ── En el navegador: leer del servidor y después cargar la app de Edwin ──
 function _ghAviso(tipo, texto) {
   var el = document.getElementById('gh-aviso');
@@ -125,6 +175,11 @@ function ghArrancar() {
     var almacen = ghCrearAlmacen({ api: api, local: window.localStorage, alAviso: _ghAviso });
     almacen.cargar(r && r.claves);
     window.GH_STORE = almacen;
+    var activos = !!(r && r.soportesActivos);
+    window.ghArchivos = function (idbLocal) {
+      return ghCrearArchivos({ api: api, local: idbLocal, activo: activos, aBase64: _ghABase64, deBase64: _ghDeBase64 });
+    };
+    try { var barra = padre.document.getElementById('th-aviso'); if (barra) barra.textContent = activos ? GH_AVISO_BARRA.activos : GH_AVISO_BARRA.apagados; } catch (e) { /* nada */ }
     var s = document.createElement('script');
     s.src = 'talento-humano-app.js' + (location.search || '');
     document.body.appendChild(s);
@@ -134,7 +189,7 @@ function ghArrancar() {
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { GH_CLAVES: GH_CLAVES, GH_TEXTOS: GH_TEXTOS, ghCrearAlmacen: ghCrearAlmacen };
+  module.exports = { GH_CLAVES: GH_CLAVES, GH_TEXTOS: GH_TEXTOS, GH_AVISO_BARRA: GH_AVISO_BARRA, ghCrearAlmacen: ghCrearAlmacen, ghCrearArchivos: ghCrearArchivos };
 } else if (typeof window !== 'undefined' && typeof document !== 'undefined') {
   ghArrancar();
 }

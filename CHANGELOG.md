@@ -7,6 +7,15 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.254.0 — Noviembre 2026
+
+**Talento humano: los soportes adjuntos también se guardan en la plataforma (tercera parte).**
+
+- Los soportes (incapacidades, licencias, cartas de retiro, en PDF, imagen o Word, hasta 8 MB) se guardan en un almacenamiento privado de la plataforma, no en el navegador. Nadie los puede abrir con un enlace: solo desde Talento humano.
+- Solo se aceptan PDF, imágenes (JPG, PNG, WEBP) y Word, revisando el archivo por dentro.
+- Queda registro de quién subió o borró un soporte y cuándo, sin copiar el archivo ni su nombre.
+- **Todavía está apagado:** hasta que se configure el almacenamiento, los soportes siguen quedando en el navegador como antes, y la barra de arriba lo dice.
+
 ## v1.253.0 — Noviembre 2026
 
 **Talento humano guarda en la plataforma (segunda parte).**

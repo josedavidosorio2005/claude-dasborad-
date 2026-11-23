@@ -52,6 +52,7 @@ ahí (`path.join(SERVER_DIR, 'node_modules', ...)`), nunca con un
   - Ese HTML está en `.gitignore`: su inventario trae datos reales. Solo lee la app de Gestión humana (`app-gh`).
   - Quita su inicio, el SheetJS embebido y los datos de prueba.
   - Fase GH2: cambia todo `localStorage` por `GH_STORE`, que vive en `public/gestion-humana/talento-humano-api.js`. Ese archivo se escribe a mano y no lo toca el generador; guarda en `/api/gh/estado`.
+  - Fase GH3: su `IDB` (IndexedDB de los soportes) queda como `IDB_LOCAL` y `IDB` pasa a `ghArchivos(IDB_LOCAL)`, del mismo archivo a mano.
   - Falla si el HTML cambió donde hay un reemplazo.
   - Después, correr `server/tests/faseGH1-talento-humano.test.js`.
 
