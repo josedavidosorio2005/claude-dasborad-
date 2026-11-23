@@ -1,5 +1,6 @@
 // wolkvox.js — Fase W2 (docs/plan-api-wolkvox.md): cliente de la API de Wolkvox, SOLO en el
-// servidor y por ahora SOLO para la replica oculta «MOBILIZE PRUEBAS API».
+// servidor. Por operación (Fase N5): cada operación tiene su token, su servidor y su contador
+// de consultas del día (el límite de 3000 es por token).
 //
 // Reglas:
 //  - El token y el servidor salen de process.env (WOLKVOX_<OPERACION>_TOKEN y
@@ -49,8 +50,11 @@ const REPORTES = {
   skill_2: 'Detalle de llamadas abandonadas (Skills 2, probable)', // Fase A18
 };
 
-// Campaña de la plataforma -> operacion de Wolkvox (de quien es el token). SOLO la replica.
-const OPERACION_DE_CAMPANA = { 'MOBILIZE PRUEBAS API': 'MOBILIZE' };
+// Campaña de la plataforma -> operacion de Wolkvox (de quien es el token). SOLO las réplicas
+// internas: el MOBILIZE real y el ORLANT real nunca están aquí (no tienen «Probar» ni diagnóstico).
+// Fase N5 (23/11/2026): + la réplica «ORLANT PRUEBAS API» (operación de ORLANT, servidor wv0034;
+// token y servidor en WOLKVOX_ORLANT_TOKEN / WOLKVOX_ORLANT_SERVIDOR). Sin consulta automática.
+const OPERACION_DE_CAMPANA = Object.freeze({ 'MOBILIZE PRUEBAS API': 'MOBILIZE', 'ORLANT PRUEBAS API': 'ORLANT' });
 
 class WolkvoxError extends Error {
   constructor(codigo, mensaje, httpStatus, causa) {
@@ -120,6 +124,16 @@ function credenciales(operacion, env) {
   return { token, servidor };
 }
 function estaConfigurado(operacion, env) { return credenciales(operacion, env) !== null; }
+// Fase N5: solo el servidor (nombre corto validado), sin exigir el token. Lo usa el «Diagnóstico
+// de red», que no manda token ni petición HTTP: así se puede comprobar el firewall de Wolkvox
+// antes de cargar el token en SSM. null si falta o no tiene formato de nombre corto.
+function servidorDe(operacion, env) {
+  env = env || process.env;
+  if (!_operacionValida(operacion)) return null;
+  _cargarArchivoLocal(env);
+  const servidor = _leer(env, operacion, 'SERVIDOR');
+  return servidor && _SERVIDOR_VALIDO.test(servidor) ? servidor : null;
+}
 // Solo si/no, nunca un valor ni un largo: para que el administrador sepa que revisar en SSM.
 function diagnostico(operacion, env) {
   env = env || process.env;
@@ -402,11 +416,12 @@ async function _probarHost(red, host, familias, ms) {
 
 async function diagnosticarRed(opts) {
   const env = opts.env || process.env;
-  const cred = opts.credenciales || credenciales(opts.operacion, env);
-  if (!cred) throw new WolkvoxError('sin_configurar', 'Falta configurar el token o el servidor de Wolkvox de esta operación');
+  // Fase N5: basta el servidor (el token no se usa aquí).
+  const servidor = (opts.credenciales && opts.credenciales.servidor) || servidorDe(opts.operacion, env);
+  if (!servidor) throw new WolkvoxError('sin_configurar', 'Falta configurar el servidor de Wolkvox de esta operación');
   const red = opts.red || _redPorDefecto(env);
   const ms = opts.tiempoMs || DIAG_TIEMPO_MS;
-  const wolkvox = await _probarHost(red, cred.servidor + '.wolkvox.com', [4, 6], ms);
+  const wolkvox = await _probarHost(red, servidor + '.wolkvox.com', [4, 6], ms);
   const control = await _probarHost(red, DIAG_CONTROL, [4], ms);
   return { wolkvox, control: { dns: control.dns, ipv4: control.ipv4 }, tiempoMaximoMs: ms };
 }
@@ -433,6 +448,7 @@ module.exports = {
   WolkvoxError,
   credenciales,
   estaConfigurado,
+  servidorDe, // Fase N5
   diagnostico,
   errorRango,
   fechaWolkvox,

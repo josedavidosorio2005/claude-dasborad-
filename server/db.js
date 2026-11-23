@@ -5291,6 +5291,58 @@ function crearReplicaMobilizeApi() {
 }
 runOnceMigration('faseW1_replica_mobilize_api_v1', crearReplicaMobilizeApi);
 
+// Fase N5 (23/11/2026, docs/orlant/nuevo-dashboard/plan.md §4): replica OCULTA de ORLANT para
+// probar la API de Wolkvox de ORLANT (operacion `inconexion-orlant`, servidor wv0034), «ORLANT
+// PRUEBAS API». Mismo patron que la de MOBILIZE (Fase W1): fila nueva en el registro con los
+// modulos de ORLANT que van a salir de Wolkvox (Trafico de Llamadas y Tipificacion), los
+// parametros que ORLANT tiene HOY mas `interno: true` (solo el administrador completo la ve) y
+// `replicaDe: 'ORLANT'`, y su tablero con la plantilla de ORLANT, VACIO. APAGADA: no tiene
+// consulta automatica (eso es la Fase N6, con su propio interruptor y autorizacion escrita); solo
+// «Diagnostico de red» y «Probar». No toca ninguna fila de ORLANT, no crea usuarios, permisos,
+// datos ni plantillas de Calidad. Idempotente: si la fila o el tablero ya existen, no hace nada.
+const REPLICA_API_ORLANT = {
+  nombre: 'ORLANT PRUEBAS API',
+  titulo: 'ORLANT pruebas API',
+  modulos: ['flujo_llamadas', 'tipificacion'],
+};
+function crearReplicaOrlantApi() {
+  const { generarLayout, PERFILES_ACTUALES } = require('./plantillas-cliente');
+  const base = PERFILES_ACTUALES.ORLANT;
+  const perfil = Object.assign({}, base, {
+    nombre: REPLICA_API_ORLANT.nombre,
+    titulo: REPLICA_API_ORLANT.titulo,
+    modulos: REPLICA_API_ORLANT.modulos,
+    visibles: (base.visibles || []).filter((m) => REPLICA_API_ORLANT.modulos.includes(m)),
+  });
+  const orl = db.prepare("SELECT parametros, logo FROM clientes_registro WHERE nombre = 'ORLANT'").get();
+  let parametros = {};
+  try { parametros = orl && orl.parametros ? JSON.parse(orl.parametros) : {}; } catch (e) { parametros = {}; }
+  parametros = Object.assign({}, parametros, { interno: true, replicaDe: 'ORLANT' });
+  const now = new Date().toISOString();
+  const maxOrden = db.prepare('SELECT COALESCE(MAX(orden), 0) AS m FROM clientes_registro').get().m;
+  db.transaction(() => {
+    db.prepare(
+      `INSERT OR IGNORE INTO clientes_registro
+         (nombre, orden, dashboard, modulos, parametros, logo, activo, createdAt, updatedAt)
+       VALUES (?, ?, 1, ?, ?, ?, 1, ?, ?)`
+    ).run(REPLICA_API_ORLANT.nombre, maxOrden + 1, JSON.stringify(REPLICA_API_ORLANT.modulos), JSON.stringify(parametros), orl ? orl.logo : null, now, now);
+    if (!db.prepare('SELECT 1 FROM dashboards_config WHERE cliente = ?').get(REPLICA_API_ORLANT.nombre)) {
+      const cfg = generarLayout(perfil);
+      // La plantilla de ORLANT trae pestañas fijas al ORLANT real («Gestión STA», «Total tráfico»)
+      // y otras del resumen manual: la réplica se queda SOLO con las pestañas cuyos paneles leen
+      // de ella misma (Tráfico de Llamadas y Tipificación). Nunca muestra datos del ORLANT real.
+      cfg.layout.tabs = cfg.layout.tabs.filter((t) => Array.isArray(t.panels) && t.panels.length > 0 &&
+        t.panels.every((p) => p && p.campana === REPLICA_API_ORLANT.nombre));
+      db.prepare(
+        `INSERT INTO dashboards_config (cliente, titulo, vista, secciones, layout, activo, createdAt, updatedAt)
+         VALUES (?, ?, NULL, ?, ?, 1, ?, ?)`
+      ).run(REPLICA_API_ORLANT.nombre, cfg.titulo, JSON.stringify(cfg.secciones), JSON.stringify(cfg.layout), now, now);
+    }
+  })();
+  if (!config.isTest) console.log('[db] Migracion faseN5_replica_orlant_api_v1 aplicada.');
+}
+runOnceMigration('faseN5_replica_orlant_api_v1', crearReplicaOrlantApi);
+
 // Fase 353 (C, aprobado por el usuario el 13/11 con dry-run): los monitoreos sin usuario cuyo
 // asesor coincide EXACTO (mayusculas y espacios al borde aparte) con un UNICO usuario ASESOR
 // activo de su campaña quedan enlazados por id. Hoy ya llegan al portal por nombre; con el id no
@@ -5554,6 +5606,7 @@ module.exports.TABLAS_SIN_VERSION_DATOS = TABLAS_SIN_VERSION_DATOS;
 module.exports.recalcularPctAtencionAbandono = recalcularPctAtencionAbandono;
 module.exports.orlantCalidadSoloNueva = orlantCalidadSoloNueva; // Fase 332: prueba de idempotencia
 module.exports.crearReplicaMobilizeApi = crearReplicaMobilizeApi; // Fase W1
+module.exports.crearReplicaOrlantApi = crearReplicaOrlantApi; // Fase N5
 module.exports.REPLICA_API = REPLICA_API;
 module.exports.crearSedesHospitalLaMaria = crearSedesHospitalLaMaria; // Fase 354: prueba de idempotencia
 module.exports.prenderDatosAnterioresHlm = prenderDatosAnterioresHlm; // Fase 354b

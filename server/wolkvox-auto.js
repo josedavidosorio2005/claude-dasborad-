@@ -278,6 +278,7 @@ async function correrUnaVez(opts) {
   };
 
   if (!D.campanaLista(db, dest)) { res.estado = 'omitida'; partes.push(dest.clave === 'replica' ? 'la réplica no existe' : 'la campaña no existe o es interna'); return terminar(); }
+  const OPERACION = dest.operacion; // Fase N5: del destino (hoy MOBILIZE en los dos)
   const cred = opts.credenciales || wv.credenciales(OPERACION, env);
   if (!cred) { res.estado = 'omitida'; partes.push('falta el token o el servidor de Wolkvox'); return terminar(); }
 

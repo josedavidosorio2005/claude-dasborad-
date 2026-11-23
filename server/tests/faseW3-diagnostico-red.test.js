@@ -144,10 +144,12 @@ test('diagnóstico: se cuelga al abrir la conexión → TIEMPO_AGOTADO sin TLS; 
   assert.deepEqual(r.body.wolkvox.ipv4, { omitido: 'sin DNS' });
 });
 
-test('diagnóstico sin token o servidor configurado: 409 y no toca la red', async () => {
-  delete process.env.WOLKVOX_MOBILIZE_TOKEN;
+// Fase N5 (23/11): el diagnóstico solo necesita el SERVIDOR (no usa el token); sin token corre
+// igual (ver faseN5-wolkvox-orlant.test.js). Sin servidor: 409 y no toca la red.
+test('diagnóstico sin servidor configurado: 409 y no toca la red', async () => {
+  delete process.env.WOLKVOX_MOBILIZE_SERVIDOR;
   const r = await request(app).post('/api/wolkvox/diagnostico-red').set(H(admin)).send({ campana: R });
-  process.env.WOLKVOX_MOBILIZE_TOKEN = TOKEN;
+  process.env.WOLKVOX_MOBILIZE_SERVIDOR = SERVIDOR;
   assert.equal(r.status, 409);
   assert.equal(red.llamadas.length, 0);
 });

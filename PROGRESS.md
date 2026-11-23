@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.240.0` (ver `server/package.json`, expuesta en
+- **Versión**: `1.240.0` en producción; `1.243.0` en la rama local de la Fase N5 (sin PR; `1.241.0` = PR #902, `1.242.0` = PR #904, sin mergear) (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -628,6 +628,7 @@ mismo orden):
 - Fase STA (parte 3) — Pendientes de la prueba local (devolver/pasar/quitar, filtros, búsqueda e histórico, aviso con gestión abierta, 768 px) y tema oscuro con contraste AA; guion para Edwin (v1.240.0, 2026-11-21)
 - Fase A31 — Primeras franjas del MOBILIZE real con la API (21/11 00:05 y 7:00): noviembre real = réplica día por día, respaldo del manual guardado (8/25/67/35/33), julio y octubre intactos; corrección de horas de la A28 y sondeo nov/2025–jun/2026 (solo docs, 2026-11-21)
 - Fase A32 — MOBILIZE: «mes consultado» de no conectadas (0, no «Pendiente») y julio de 2026 del real en el hueco (v1.239.1, 2026-11-21)
+- Fase N5 — ORLANT y Wolkvox: motor por operación (MOBILIZE igual), réplica oculta «ORLANT PRUEBAS API» apagada y «Diagnóstico de red» sin token; solo en local, sin consultas (v1.243.0, 2026-11-23)
 - Fase 309 — Revisión de seguridad: el cliente ya no recibe el nombre de los líderes en `GET /metas`; resto en `docs/revision-seguridad-2026-11-09.md` (v1.154.1, 2026-11-10)
 - Fase 308 — Revisión antes de la reunión con clientes y pendientes del supervisor (solo docs, 2026-11-10)
 - Fase 307 — Calidad para que los líderes evalúen: ORLANT conserva su Calidad y suma «Resultado de los monitoreos» al final; Aurora ya lo tenía (se muestra con el primer monitoreo) (v1.154.0, 2026-11-10)
