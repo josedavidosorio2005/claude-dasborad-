@@ -4,7 +4,7 @@
 // supervisor de ORLANT / ADMIN / GERENCIA → vista de supervisor; ASESOR de ORLANT → solo sus casos.
 'use strict';
 
-var _sta = { host: null, root: null, app: null, abierto: false, observador: null };
+var _sta = { host: null, root: null, app: null, abierto: false };
 var STA_BASE = '/orlant/sta';
 
 // ArrayBuffer -> base64 sin armar un string gigante a mano (como Televentas).
@@ -17,11 +17,12 @@ function _staBase64(buf) {
   });
 }
 
-function _staApi() {
+function _staApi(vista) {
   var caso = function (n) { return STA_BASE + '/casos/' + encodeURIComponent(n); };
   var num = function (x) { return Number(x); };
   return {
-    estado: function () { return apiRequest('GET', STA_BASE + '/estado'); },
+    // Pedido de Edwin (23/11): la pestaña del Dashboard pide la vista «cliente» (solo «Gráficas»).
+    estado: function () { return apiRequest('GET', STA_BASE + '/estado' + (vista === 'cliente' ? '?vista=cliente' : '')); },
     cargar: async function (file, columnas, filas) {
       var buf = await file.arrayBuffer();
       var b64 = await _staBase64(buf);
@@ -56,9 +57,24 @@ function _staHojaCss() {
   return '<link rel="stylesheet" href="css/orlant-sta-app.css' + v + '">';
 }
 
+// Anfitriones de la app (el overlay y, desde el 23/11, la pestaña STA del Dashboard): todos siguen el tema.
+var _staHosts = [];
+var _staObsTema = null;
 function _staSincronizarTema() {
-  if (!_sta.host) return;
-  _sta.host.setAttribute('data-theme', document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light');
+  var t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+  _staHosts = _staHosts.filter(function (h) { return h === _sta.host || document.body.contains(h); });
+  _staHosts.forEach(function (h) { h.setAttribute('data-theme', t); });
+}
+function _staRegistrarHost(host, app) {
+  if (_staHosts.indexOf(host) === -1) _staHosts.push(host);
+  if (!_staObsTema) {
+    _staObsTema = new MutationObserver(_staSincronizarTema);
+    _staObsTema.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  }
+  // Los manejadores en línea del HTML de Edwin llaman a window.STAapp: la instancia que recibe el
+  // clic, el foco o la tecla pasa a ser la activa (antes de que corra el manejador).
+  ['pointerdown', 'focusin', 'keydown'].forEach(function (ev) { host.addEventListener(ev, function () { app.activar(); }, true); });
+  _staSincronizarTema();
 }
 
 async function openOrlantSta() {
@@ -72,14 +88,14 @@ async function openOrlantSta() {
   if (!_sta.host) {
     _sta.host = document.getElementById('sta-host');
     _sta.root = _sta.host.shadowRoot || _sta.host.attachShadow({ mode: 'open' });
-    _sta.observador = new MutationObserver(_staSincronizarTema);
-    _sta.observador.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
   }
-  _staSincronizarTema();
   if (!_sta.app) {
     _sta.root.innerHTML = _staHojaCss() + STA_MARKUP;
     _sta.app = staCrearApp(_sta.root, _staApi(), function () { return _sta.abierto; }, closeOrlantSta);
+    _staRegistrarHost(_sta.host, _sta.app);
   }
+  _staSincronizarTema();
+  _sta.app.activar();
   try {
     await _sta.app.iniciar();
     document.getElementById('sta-sub').textContent = _sta.app.vista() === 'supervisor'
@@ -97,6 +113,23 @@ function closeOrlantSta() {
   overlay.classList.remove('show');
   if (typeof motionCerrarDialogo === 'function') motionCerrarDialogo(overlay);
   document.body.style.overflow = '';
+}
+
+// Pedido de Edwin (23/11/2026): la pestaña STA del Dashboard de ORLANT muestra la MISMA visual de
+// «Gráficas» del supervisor, de solo lectura (el servidor manda los casos recortados). Monta la app de
+// Edwin en un Shadow DOM propio dentro de `contenedor` y devuelve la instancia.
+async function staMontarCliente(contenedor) {
+  var host = document.createElement('div');
+  host.className = 'sta-cli-host';
+  contenedor.innerHTML = '';
+  contenedor.appendChild(host);
+  var root = host.attachShadow({ mode: 'open' });
+  root.innerHTML = _staHojaCss() + STA_MARKUP;
+  var app = staCrearApp(root, _staApi('cliente'), function () { return document.body.contains(host); }, function () {});
+  _staRegistrarHost(host, app);
+  app.activar();
+  await app.iniciar();
+  return app;
 }
 
 // ¿Quién ve la tarjeta «Gestión STA»? (el servidor vuelve a revisar cada ruta)

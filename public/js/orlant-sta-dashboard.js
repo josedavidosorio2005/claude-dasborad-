@@ -1,5 +1,7 @@
 // orlant-sta-dashboard.js — Fase STA (parte 2, usuario 21/11/2026): las gráficas de «Gestión STA»
 // dentro del Dashboard de ORLANT, pestaña «Gestión de la base STA» (panel sta_resumen_panel).
+// Desde el 23/11 (pedido de Edwin) el panel monta la visual de «Gráficas» de Edwin (orlant-sta.js,
+// staMontarCliente); el resumen de agregados sigue para destapar la pestaña y para «Exportar».
 // Es lo que ve el CLIENTE de ORLANT (que no tiene la tarjeta «Gestión STA»); también el
 // supervisor de ORLANT y los administrativos. Lee GET /api/orlant/sta/resumen, que solo trae
 // agregados (ningún número de autorización, paciente ni asesor). Toda la base: no depende de «Meses».
@@ -88,77 +90,25 @@ function staResumenDestapar(tabs) {
   }).catch(function () { return []; });
 }
 
-function _staResCard(titulo, id, alto) {
-  return '<div class="aurora-card"><div class="aurora-card-title">' + esc(titulo) + '</div>' +
-    '<div class="aurora-chart-wrap" style="height:' + alto + 'px"><canvas id="' + id + '"></canvas></div></div>';
-}
-
-function _staResHorizontal(o) {
-  o.indexAxis = 'y';
-  var x = o.scales.x, y = o.scales.y;
-  o.scales.x = { grid: { color: CHART_GRID }, ticks: { font: { size: 12 }, color: CHART_TICK, precision: 0 }, beginAtZero: true };
-  o.scales.y = { grid: { display: false }, ticks: { font: { size: 12 }, color: CHART_TICK, autoSkip: false, callback: function (v) { var s = this.getLabelForValue(v); return s && s.length > 28 ? s.slice(0, 27) + '…' : s; } } };
-  void x; void y;
-  return o;
-}
-
+// Pedido de Edwin (23/11/2026): la MISMA visual de «Gráficas» del panel de Gestión STA (el código de
+// Edwin: agendas por asesor, codificación general, efectividad por asesor, gestiones por día y análisis
+// por campos de la base), de solo lectura, con sus filtros. Antes eran gráficas propias más simples.
 async function _staResumenRenderPanel(p, i) {
   var host = document.getElementById('gd-p' + i); if (!host) return;
   host.innerHTML = '<div class="aurora-card"><div class="aurora-card-title">' + esc(p.titulo || 'Gestión de la base STA') + '</div><div class="loading-state"><span class="spinner" aria-hidden="true"></span>Cargando…</div></div>';
-  var r = null;
-  try { r = await _staResCargar(); } catch (e) { r = null; }
-  if (!document.getElementById('gd-p' + i)) return;
-  if (!r) { host.innerHTML = '<div class="aurora-card"><div class="gd-vacio" role="status">No se pudo leer la base STA.</div></div>'; return; }
-  var kpis = staResumenKpis(r).map(function (k) { return '<div class="aurora-kpi"><div class="kv">' + esc(k.v) + '</div><div class="kl">' + esc(k.l) + '</div></div>'; }).join('');
-  var cab = '<div class="aurora-card sta-res-cab"><div class="aurora-card-title">' + esc(p.titulo || 'Gestión de la base STA') + '</div>' +
-    '<p class="sta-res-nota">Toda la base STA cargada (no depende de «Meses»). ' +
-    (r.efectivas && r.efectivas.length ? 'Tipificaciones efectivas: ' + esc(r.efectivas.join(', ')) + '.' : 'No hay tipificaciones marcadas como efectivas.') + '</p>' +
-    '<div class="aurora-kpis">' + kpis + '</div></div>';
-  if (!r.total) { host.innerHTML = cab + '<div class="aurora-card"><div class="gd-vacio" role="status">Todavía no hay casos en la base STA.</div></div>'; return; }
-  var tipis = staResumenTipis(r.porTipi), dias = staResumenDias(r.porDia);
-  var ent = staResumenCategorias(r.porEntidad, 10), serv = staResumenCategorias(r.porServicio, 10), est = staResumenCategorias(r.porEstado, 10);
-  var altoH = function (n) { return Math.max(180, 50 + n * 30); };
-  host.innerHTML = cab + '<div class="aurora-grid-2 sta-res-grid">' +
-    _staResCard('Avance de la base', 'sta-res-avance-' + i, 260) +
-    _staResCard('Gestiones y citas por día', 'sta-res-dias-' + i, 260) +
-    _staResCard('Gestiones por tipificación', 'sta-res-tipis-' + i, altoH(tipis.length || 1)) +
-    _staResCard('Casos por estado de la base', 'sta-res-estado-' + i, altoH(est.length)) +
-    _staResCard('Casos por entidad', 'sta-res-entidad-' + i, altoH(ent.length)) +
-    _staResCard('Casos por servicio', 'sta-res-servicio-' + i, altoH(serv.length)) +
-    '</div>';
-  if (typeof _gdChart !== 'function' || typeof lo !== 'function') return;
-  var colores = [PC[0], PC[1], PC[2]];
-  // 1. Avance (dona)
-  var oD = typeof loPie === 'function' ? loPie() : lo();
-  _gdChart('sta-res-avance-' + i, { type: 'doughnut', data: { labels: STA_RES_PARTES.map(function (x) { return x[1]; }),
-    datasets: [{ data: [r.gestionados, r.pendientes, r.sinAsignar], backgroundColor: colores }] }, options: typeof loDatalabelsAuto === 'function' ? loDatalabelsAuto(oD) : oD });
-  // 2. Por día (líneas)
-  var oL = lo(null, 50);
-  oL.scales.y.beginAtZero = true; oL.scales.y.ticks.precision = 0;
-  var dm = function (s) { return s.slice(8, 10) + '/' + s.slice(5, 7); };
-  _gdChart('sta-res-dias-' + i, { type: 'line', data: { labels: dias.map(function (d) { return dm(d.dia); }), datasets: [
-    { label: 'Gestiones', data: dias.map(function (d) { return d.gestiones; }), borderColor: PC[0], backgroundColor: PC[0], borderWidth: 2.5, tension: 0, pointRadius: 4, pointBackgroundColor: CHART_DL_BG, pointBorderWidth: 2 },
-    { label: 'Citas', data: dias.map(function (d) { return d.citas; }), borderColor: PC[3] || PC[1], backgroundColor: PC[3] || PC[1], borderWidth: 2.5, tension: 0, pointRadius: 4, pointBackgroundColor: CHART_DL_BG, pointBorderWidth: 2 },
-  ] }, options: oL });
-  // 3. Tipificaciones (barras horizontales)
-  var oT = _staResHorizontal(lo());
-  oT.plugins.legend = { display: false };
-  oT.plugins.datalabels.align = 'end'; oT.plugins.datalabels.anchor = 'end';
-  oT.layout = { padding: { right: 36 } };
-  _gdChart('sta-res-tipis-' + i, { type: 'bar', data: { labels: tipis.map(function (t) { return t.nombre; }),
-    datasets: [{ label: 'Gestiones', data: tipis.map(function (t) { return t.n; }), backgroundColor: PC[0], borderRadius: 4 }] }, options: oT });
-  // 4–6. Por estado, entidad y servicio (barras apiladas: gestionados, pendientes, sin asignar)
-  var apiladas = function (id, filas) {
-    var o = _staResHorizontal(lo());
-    o.scales.x.stacked = true; o.scales.y.stacked = true;
-    o.plugins.datalabels.align = 'center'; o.plugins.datalabels.anchor = 'center';
-    o.plugins.datalabels.formatter = function (v) { return v ? v : ''; };
-    _gdChart(id, { type: 'bar', data: { labels: filas.map(function (f) { return f.nombre || '(vacío)'; }),
-      datasets: STA_RES_PARTES.map(function (x, k) { return { label: x[1], data: filas.map(function (f) { return f[x[0]]; }), backgroundColor: colores[k], borderRadius: 2 }; }) }, options: o });
-  };
-  apiladas('sta-res-estado-' + i, est);
-  apiladas('sta-res-entidad-' + i, ent);
-  apiladas('sta-res-servicio-' + i, serv);
+  if (typeof staMontarCliente !== 'function' || typeof staCrearApp !== 'function') {
+    host.innerHTML = '<div class="aurora-card"><div class="gd-vacio" role="status">No se pudo abrir la visual de Gestión STA.</div></div>';
+    return;
+  }
+  var cont = document.createElement('div');
+  cont.className = 'sta-res-app';
+  try {
+    host.innerHTML = '';
+    host.appendChild(cont);
+    await staMontarCliente(cont);
+  } catch (e) {
+    if (document.getElementById('gd-p' + i)) host.innerHTML = '<div class="aurora-card"><div class="gd-vacio" role="status">No se pudo leer la base STA.</div></div>';
+  }
 }
 
 async function _gdExportarStaResumen() {

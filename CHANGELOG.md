@@ -7,6 +7,15 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.245.0 — Noviembre 2026
+
+**ORLANT: la pestaña «Gestión de la base STA» del cliente se ve igual que las «Gráficas» del panel de Gestión STA.**
+
+- Mismas gráficas que ve el supervisor: agendas por asesor, codificación general, efectividad por asesor, gestiones por día y el análisis por campos de la base.
+- Con los mismos filtros (asesor, entidad, servicio y fechas de gestión).
+- Es solo para mirar: el cliente no puede cambiar nada.
+- No se muestran números de autorización ni datos de los pacientes.
+
 ## v1.244.0 — Noviembre 2026
 
 **ORLANT: la réplica de pruebas ya puede llenarse sola con Wolkvox (todavía apagada) y mapa de skills.**

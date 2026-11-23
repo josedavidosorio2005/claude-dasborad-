@@ -84,6 +84,10 @@ ${css.trim()}
 }
 .btn.peligro{color:var(--c-danger-text,#b02a1d)}
 :host([data-theme="dark"]) .sec-gest,:host([data-theme="dark"]) .sec-gest .card,:host([data-theme="dark"]) .kpi.dest{border-color:var(--c-border)}
+/* Pedido de Edwin (23/11/2026): vista del CLIENTE de ORLANT = solo «Gráficas» del supervisor, de solo lectura
+   (sin la cabecera «Visual de supervisor» ni las demás pestañas). */
+.sta-app.sta-cliente #vSupervisor > header.top,.sta-app.sta-cliente #vSupervisor nav.tabs{display:none}
+.sta-app.sta-cliente #vSupervisor main{padding-top:0}
 `;
 
 // ── Marcado ────────────────────────────────────────────────────────────
@@ -155,7 +159,7 @@ L("document.addEventListener('mousemove',e=>{", "ROOT.addEventListener('mousemov
 // 3) Navegación: sin pantalla de inicio ni «elegir agente»; la vista la da el servidor.
 L("function mostrar(id){ ['inicio','vAgente','vSupervisor'].forEach(", "function mostrar(id){ ['vAgente','vSupervisor'].forEach(");
 L("function salir(){ agenteActual=null; mostrar('inicio'); document.title=TITULO; }", 'function salir(){ CERRAR(); }');
-funcion('irAgente', 'async function iniciar(){ await cargarEstado(); if(VISTA===\'supervisor\'){ mostrar(\'vSupervisor\'); tabSup(\'base\'); } else { mostrar(\'vAgente\'); abrirPanelAgente(); } }');
+funcion('irAgente', 'async function iniciar(){ await cargarEstado(); ROOT.querySelector(\'.sta-app\').classList.toggle(\'sta-cliente\', VISTA===\'cliente\'); if(VISTA===\'cliente\'){ mostrar(\'vSupervisor\'); tabSup(\'graficas\'); } else if(VISTA===\'supervisor\'){ mostrar(\'vSupervisor\'); tabSup(\'base\'); } else { mostrar(\'vAgente\'); abrirPanelAgente(); } }');
 funcion('irSupervisor', '');
 funcion('cambiarAgente', '');
 funcion('elegirAgente', '');
@@ -297,7 +301,7 @@ const app = `// orlant-sta-app.js — Fase STA: «Gestión STA» de ORLANT (HTML
 //   - sin SheetJS embebido (usa js/vendor/xlsx-0.20.3.full.min.js de la plataforma);
 //   - corre dentro de un Shadow DOM (ROOT);
 //   - lo que guardaba IndexedDB va a la API /api/orlant/sta (objeto API, orlant-sta.js); la vista
-//     (supervisor o asesor) la decide el servidor;
+//     (supervisor, asesor o cliente: solo «Gráficas», de solo lectura) la decide el servidor;
 //   - sin agregar/renombrar/eliminar ni cambiar de agente (son los ASESOR de ORLANT), sin respaldo,
 //     restaurar ni borrar todo; «Descargar» el Excel de cada carga;
 //   - los manejadores en línea llaman a STAapp.<función> (un solo nombre global).
@@ -309,7 +313,7 @@ ${js.trim()}
 
 var STAapp = { ${nombres.join(', ')}, $: $ };
 if (typeof window !== 'undefined') window.STAapp = STAapp;
-return { iniciar: iniciar, refrescar: refrescar, vista: function(){ return VISTA; } };
+return { iniciar: iniciar, refrescar: refrescar, vista: function(){ return VISTA; }, activar: function(){ if (typeof window !== 'undefined') window.STAapp = STAapp; } };
 }
 
 if (typeof module !== 'undefined' && module.exports) module.exports = { STA_MARKUP: STA_MARKUP, staCrearApp: staCrearApp };

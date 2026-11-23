@@ -21879,3 +21879,24 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - Los 19 nombres (Postman del 20/11) y las respuestas de Edwin para llenar el mapa.
   - Push y PR cuando el usuario lo pida.
   - Después del deploy, encender `WOLKVOX_ORLANT_AUTO_ACTIVO` y los módulos solo con su OK explícito (no se creó nada en SSM).
+
+## Fase STA (parte 4) — Pedido 1 de Edwin (reunión 23/11): la pestaña STA del cliente con la visual de «Gráficas» (v1.245.0, 2026-11-23)
+
+- **Pedido (usuario, 23/11, urgente):** en el Dashboard del cliente ORLANT, la pestaña STA tiene que mostrar la MISMA visual de «Gráficas» del panel de Gestión STA, de solo lectura. Cambios solo por `scripts/orlant/generar-sta.js`; el HTML de Edwin no se toca.
+- **Decisión del usuario (23/11):** se muestran los **nombres reales de las asesoras**, igual que en el panel de Edwin. Hasta ahora el resumen del cliente los excluía y ORLANT tiene `asesorVisibleCliente = false`; esta excepción es solo para la pestaña STA.
+- **Cambios:**
+  - Servidor: `GET /api/orlant/sta/estado?vista=cliente` (`STA.estadoCliente`). Lo pueden pedir el cliente de ORLANT y quienes gestionan el STA.
+    - Los casos van **recortados**: los 7 campos que se grafican (`CAMPOS_CLIENTE`) y estado, asesora, codificación, fecha de gestión y citas.
+    - Nunca van el número de autorización, otras columnas de la base, observaciones, rellamadas ni historial.
+    - El id es un consecutivo sin relación con el caso.
+  - Generador: vista `cliente`, que muestra solo «Gráficas» y oculta la cabecera y las demás pestañas (`.sta-cliente`).
+  - Generador: `activar()`. La instancia que recibe el clic, el foco o la tecla se vuelve la activa (`window.STAapp`), así el overlay y la pestaña no se pisan los manejadores en línea.
+  - `orlant-sta.js`: `staMontarCliente`, que monta la app de Edwin en un Shadow DOM propio dentro del panel. Todos los anfitriones siguen el tema.
+  - `orlant-sta-dashboard.js`: el panel `sta_resumen_panel` monta esa visual. El resumen de agregados sigue para destapar la pestaña y para «Exportar».
+- **Pruebas:**
+  - Nueva `faseSTA4-cliente-graficas` (4): permisos, casos recortados (con una columna de paciente inventada que no sale), solo lectura y cableado del navegador.
+  - La guardiana del generador reproduce lo publicado.
+- **Revisión visual (local, Brave, copia desechable de la base demo con una base STA inventada de 40 casos y 4 gestiones):** a 375, 768 y 1440 px, en claro y oscuro.
+  - Se ve solo «Gráficas»: 6 indicadores y 11 gráficas, con el nombre de la asesora.
+  - No aparece ningún número de autorización en la página. Los filtros repintan con el panel del supervisor abierto antes.
+  - Sin scroll horizontal y 0 errores de consola.
