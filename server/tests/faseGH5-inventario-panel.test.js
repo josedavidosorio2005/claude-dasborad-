@@ -155,3 +155,16 @@ test('GH5c: columnas y acciones de Edwin en las listas, y la vista Â«InventarioÂ
   assert.match(inv, /acp-chip on" aria-pressed="true" onclick="activosInvTipo\('TORRE'\)">Torres/);
   assert.match(inv, /Ver detalle/);
 });
+
+test('GH5d: Ajustes en tarjetas (mismos campos de antes) con Estados de solo lectura', () => {
+  const fs = require('fs');
+  const html = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'index.html'), 'utf8');
+  const i = html.indexOf('<section id="ac-p-ajustes"'); const sec = html.slice(i, html.indexOf('</section>', i));
+  for (const t of ['>Excel<', '>Sedes<', '>Operaciones<', '>Propietarios / proveedores<', '>Motivos frecuentes<', '>Estados<', 'Formularios por tipo', 'Textos del acta', 'activosAjustesExcel()']) assert.ok(sec.includes(t), 'falta ' + t);
+  for (const id of ['ac-imp-tipo', 'ac-imp-file', 'ac-l-sedes', 'ac-l-operaciones', 'ac-l-proveedores', 'ac-l-motivos', 'ac-tipos', 'ac-textos', 'ac-aj-estados']) assert.ok(sec.includes('id="' + id + '"'), 'falta #' + id);
+  global.esc = global.esc || ((s) => String(s));
+  const UI = require(path.join(__dirname, '..', '..', 'public', 'js', 'activos.js'));
+  const e = UI.activosAjEstadosHtml([{ codigo: 'libre', nombre: 'Libre' }, { codigo: 'malo', nombre: 'Malo' }]);
+  assert.match(e, /vis-verde">Libre<[\s\S]*vis-rojo">Malo</);
+  assert.ok(!/<(input|select|textarea|button)/.test(e), 'los estados no se editan');
+});

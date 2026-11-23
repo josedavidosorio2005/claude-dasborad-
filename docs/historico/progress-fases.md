@@ -22325,4 +22325,9 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - Arreglo visual: el chip activo (`.acp-chip.on`) perdía el fondo al pasar el mouse (venía del Panel general de GH5).
   - Pruebas: `faseGH4` ajustada (las novedades ya no están en el menú; pestañas con conteo).
   - Revisión local a 375, 768 y 1440: sin scroll horizontal, pestañas y ruta vieja OK, 0 errores de consola. Datos inventados borrados de la base local.
-- **Sigue:** GH5d resto (Historial y Ajustes en tarjetas), según la lista. **PR sin mergear** (pedido del usuario).
+- **GH5d (resto, mismo PR), diferencias 8 y 9:**
+  - Historial se queda como está, con más columnas que el de Edwin (decisión del usuario, 23/11).
+  - Ajustes en tarjetas (`.aj-grid`, `.aj-card`): Excel (nuevo «Exportar todo a Excel», `activosAjustesExcel`, archivo `inventario-de-sistemas-todo.xlsx`; la importación de antes), Sedes, Operaciones, Propietarios / proveedores, Motivos frecuentes, Estados (solo lectura, `activosAjEstadosHtml`), Formularios por tipo y Textos del acta. Mismos ids y funciones; no se traen Usuario, Copia .json ni Zona de cuidado.
+  - Prueba nueva en `faseGH5-inventario-panel` (tarjetas, ids y estados sin controles).
+  - Revisión local a 375, 768 y 1440: 8 tarjetas, sin scroll horizontal, la descarga de Excel funciona, 0 errores de consola. Elementos inventados borrados de la base local.
+- **Estado:** la lista de 10 diferencias queda cerrada salvo las decisiones 2 (tema: el de SinCo) y 6 (agentes desde Gestión Humana: todavía no). **PR sin mergear** (pedido del usuario).

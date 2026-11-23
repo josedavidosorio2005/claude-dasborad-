@@ -428,7 +428,7 @@ function activosExportar(vista, formato) {
   var lista = { elementos: _ac.lista, admin: _ac.adLista, actas: _ac.actasLista, historial: _ac.histLista }[vista] || [];
   if (!lista.length) { showToast('No hay filas para descargar con estos filtros.', 'error'); return; }
   var t = activosFilasExport(vista, lista, _ac.config);
-  if (vista === 'elementos') t.titulo = (_ac.ambito === 'inmuebles' ? 'Inventario de inmuebles' : 'Inventario de sistemas') + ' · ' + ((AC_VISTA_TXT[_ac.tab] || [''])[0]);
+  if (vista === 'elementos') t.titulo = (_ac.ambito === 'inmuebles' ? 'Inventario de inmuebles' : 'Inventario de sistemas') + ' · ' + (_ac.tab === 'ajustes' ? 'Todo' : (AC_VISTA_TXT[_ac.tab] || [''])[0]); // GH5d: «Exportar todo» desde Ajustes
   var hoy = new Date().toLocaleDateString('es-CO', { timeZone: 'America/Bogota' });
   if (formato === 'pdf') {
     var w = window.open('', '_blank');
@@ -584,7 +584,13 @@ function _acAjustes() {
   _acTipos(); _acTextos(); // Fase 372 (E4)
   _acEl('ac-imp-tipo').innerHTML = _acOpciones(_ac.config.tipos.filter(function (t) { return t.activo !== false; })); // Fase 381
   _acEl('ac-imp-res').innerHTML = '';
+  _acEl('ac-aj-estados').innerHTML = activosAjEstadosHtml(_ac.config.estados); // Fase GH5d
 }
+// Fase GH5d: tarjeta «Estados» (solo lectura) y «Exportar todo a Excel».
+function activosAjEstadosHtml(estados) {
+  return (estados || []).map(function (e) { return '<li><span class="vis-pill ' + (AC_CLASE_ESTADO[e.codigo] || 'vis-gris') + '">' + esc(e.nombre) + '</span></li>'; }).join('');
+}
+function activosAjustesExcel() { _ac.panelTipo = ''; activosPanelExcel(); }
 // Fase 372: los motivos frecuentes se sugieren en los campos de motivo (datalist); el motivo sigue libre.
 function _acMotivos() {
   var d = _acEl('ac-motivos-lista');
@@ -1261,4 +1267,4 @@ function activosVerTipo(codigo) {
 function activosEditarFormulario(codigo) { activosTab('ajustes'); activosEditarTipo(codigo); }
 function activosNuevaTecnologia() { activosTab('ajustes'); activosEditarTipo(null); }
 function activosIrImportar() { activosTab('ajustes'); var s = _acEl('ac-imp-tipo'); if (s) { try { s.scrollIntoView({ block: 'center' }); } catch (e) { /* */ } s.focus(); } }
-if (typeof module !== 'undefined' && module.exports) { module.exports.activosPanel2Html = activosPanel2Html; module.exports.activosRegistrarTarjetasHtml = activosRegistrarTarjetasHtml; module.exports.activosConteoTexto = activosConteoTexto; module.exports.activosListaHtml = activosListaHtml; module.exports.activosInvTiposHtml = activosInvTiposHtml; module.exports.activosActasPestanasHtml = activosActasPestanasHtml; }
+if (typeof module !== 'undefined' && module.exports) { module.exports.activosPanel2Html = activosPanel2Html; module.exports.activosRegistrarTarjetasHtml = activosRegistrarTarjetasHtml; module.exports.activosConteoTexto = activosConteoTexto; module.exports.activosListaHtml = activosListaHtml; module.exports.activosInvTiposHtml = activosInvTiposHtml; module.exports.activosActasPestanasHtml = activosActasPestanasHtml; module.exports.activosAjEstadosHtml = activosAjEstadosHtml; }

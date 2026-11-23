@@ -30,6 +30,7 @@ sepan que hay nuevo, que se corrigio y que falta.
 - Cada fila trae los botones «Estado» (cambiar el estado) y, en Asignados, «Recibir» (devolver el equipo). «Ver» sigue abriendo el detalle.
 - «Inventario completo» ahora se llama «Inventario»: arriba tiene una tarjeta por tipo con libres, en uso, reparación y malos; «Ver detalle» filtra la lista por ese tipo.
 - **Actas** tiene pestañas como en el diseño de Edwin: «Actas pendientes», «Actas firmadas», «Todas» y «Novedades de GH» (con cuántas hay). Las novedades de Gestión Humana ya no están en el menú: se ven dentro de Actas. El botón «Generar acta manual» lleva a Agentes, donde se elige a quién.
+- **Ajustes y datos** ahora va en tarjetas, como el diseño de Edwin: Excel (exportar todo e importar), Sedes, Operaciones, Propietarios / proveedores, Motivos frecuentes, Estados (fijos, solo para ver), Formularios por tipo y Textos del acta. Todo funciona igual que antes.
 - Solo cambia cómo se ve. Los elementos, agentes y actas guardados no se tocan.
 
 ## v1.257.0 — Noviembre 2026
