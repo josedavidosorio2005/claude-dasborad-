@@ -22232,3 +22232,23 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - sigue editable;
   - a 1440, 768 y 375 sin scroll horizontal;
   - 0 errores de consola.
+
+## Fase STA8 — Gestión STA de ORLANT: «Descargar plantilla» (v1.257.0, 2026-11-23)
+
+- **Pedido:** pendiente (b) del STA. En el panel de carga, un botón «Descargar plantilla» que baje un Excel vacío solo con los 8 encabezados que pide la carga.
+- **Cambio:**
+  - Todo por `scripts/orlant/generar-sta.js`; el HTML de Edwin no se tocó.
+  - En la tarjeta «Cargar base de datos», debajo de la zona de arrastre, hay un botón con una línea de ayuda.
+  - La nueva función `descargarPlantilla()` arma con SheetJS (ya cargado en `index.html`) la hoja «Base STA». Lleva solo la fila de encabezados `CAMPOS`, que es la misma lista que exige `server/orlant-sta.js`, con un ancho de columna legible.
+  - El archivo se llama `Plantilla_base_STA.xlsx`.
+  - Si SheetJS no está, avisa en vez de romperse.
+- **Pruebas:** nueva `faseSTA8-plantilla-base` (3):
+  - los encabezados de la app son iguales a los del servidor, en el mismo orden;
+  - el Excel generado se vuelve a leer con SheetJS: una sola fila y la hoja correcta, más el aviso sin SheetJS;
+  - el botón está en el panel de carga y en `STAapp`.
+- **Revisión local** (Brave vía Playwright, base demo con 5 casos inventados que se borraron al final), 7/7:
+  - el botón está en el panel;
+  - descarga `Plantilla_base_STA.xlsx` con los 8 encabezados exactos y sin filas;
+  - sin scroll horizontal a 768 y 375 px;
+  - 0 errores de consola.
+- **PR sin mergear** (pedido del usuario).

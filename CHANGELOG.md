@@ -7,6 +7,13 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.257.0 — Noviembre 2026
+
+**Gestión STA de ORLANT: botón «Descargar plantilla» para la carga de la base.**
+
+- En «Cargar base de datos» hay un botón nuevo, «Descargar plantilla». Baja un Excel vacío (`Plantilla_base_STA.xlsx`) que solo trae las 8 columnas que pide la carga, en el mismo orden: Fecha Ingreso Sta, Entidad, Numero Autorizacion, Estado, Descripcion Cups, Fecha Autorizacion, Fecha Expiracion y Servicio.
+- Se llena y se sube como siempre.
+
 ## v1.256.0 — Noviembre 2026
 
 **Calidad: el «ID de agente» se llena solo al elegir el asesor (ticket #3 de SURA).**
