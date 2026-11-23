@@ -752,6 +752,23 @@ INSERT OR IGNORE INTO ticket_tipos (codigo, nombre, activo, orden) VALUES ('SUGE
 if (!db.prepare('PRAGMA table_info(tickets)').all().some((c) => c.name === 'tipoCodigo')) {
   db.exec('ALTER TABLE tickets ADD COLUMN tipoCodigo TEXT');
 }
+// Pedido 7 de Edwin (23/11/2026): «Ruta de ingreso» (texto opcional: por dónde entró a la plataforma)
+// y 1 adjunto opcional (imagen PNG/JPG o PDF, hasta 3 MB). Agregar una columna y una tabla nueva no
+// cambia ningún dato existente. El adjunto va en su propia tabla (la lista de tickets nunca lo lee) y
+// en la base, como el Excel original del STA: no hace falta tocar permisos de S3 (solo cubren actas/*).
+if (!db.prepare('PRAGMA table_info(tickets)').all().some((c) => c.name === 'rutaIngreso')) {
+  db.exec('ALTER TABLE tickets ADD COLUMN rutaIngreso TEXT');
+}
+db.exec(`
+CREATE TABLE IF NOT EXISTS tickets_adjuntos (
+  ticketId INTEGER PRIMARY KEY REFERENCES tickets(id) ON DELETE CASCADE,
+  nombre TEXT NOT NULL,
+  tipo TEXT NOT NULL CHECK (tipo IN ('image/png','image/jpeg','application/pdf')),
+  bytes INTEGER NOT NULL,
+  datos BLOB NOT NULL,
+  createdAt TEXT NOT NULL
+);
+`);
 
 // Fase 153 (Paso 1): registro de clientes. La semilla (ORLANT y MOBILIZE tal
 // como estaban en las listas fijas) corre una sola vez; despues el registro

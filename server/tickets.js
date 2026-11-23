@@ -1,7 +1,8 @@
 // tickets.js — Fase 356: «Sugerencias / Tickets». Reglas y consultas (las rutas viven en
 // routes/tickets.js). Decisiones del usuario (17/11/2026):
 //  - Cualquier usuario con sesión crea (tipo Sugerencia / Problema / Pregunta, campaña
-//    obligatoria o «General (plataforma)», descripción de 1 a 2.000 caracteres, sin adjuntos)
+//    obligatoria o «General (plataforma)», descripción de 1 a 2.000 caracteres; desde el pedido 7
+//    de Edwin, 23/11/2026: «Ruta de ingreso» opcional y 1 adjunto opcional, imagen o PDF de hasta 3 MB)
 //    y ve SOLO los suyos, con su estado y el hilo de respuestas; también contesta en el suyo.
 //  - ADMIN y REPORTES («gestores») ven todos, cambian el estado (Nuevo, En revisión, Resuelto)
 //    y responden. Solo ADMIN borra (borrado definitivo; el Historial guarda quién, cuándo y el
@@ -88,17 +89,66 @@ function editarTipo(db, codigo, cambios) {
 const _SELECT_TICKET = `SELECT t.*, COALESCE(t.tipoCodigo, t.tipo) AS tipoEfectivo,
   (SELECT nombre FROM ticket_tipos tt WHERE tt.codigo = COALESCE(t.tipoCodigo, t.tipo)) AS tipoNombre`;
 
-function crear(db, actor, b, ahora) {
+// ── Pedido 7 de Edwin (23/11/2026): 1 adjunto opcional, imagen (PNG/JPG) o PDF, hasta 3 MB ──
+// El tipo sale del CONTENIDO (firma del archivo), nunca de la extensión ni de lo que diga el navegador.
+const ADJUNTO_MAX_BYTES = 3 * 1024 * 1024;
+const ADJUNTO_EXT = { 'image/png': 'png', 'image/jpeg': 'jpg', 'application/pdf': 'pdf' };
+function _tipoPorFirma(buf) {
+  if (buf.length >= 8 && buf.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) return 'image/png';
+  if (buf.length >= 3 && buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) return 'image/jpeg';
+  if (buf.length >= 5 && buf.subarray(0, 5).toString('latin1') === '%PDF-') return 'application/pdf';
+  return null;
+}
+// Nombre seguro para mostrar y descargar: sin rutas ni caracteres raros, con la extensión del tipo real.
+function _nombreAdjunto(nombre, tipo) {
+  const base = String(nombre || '').split(/[\\/]/).pop().replace(/\.[^.]*$/, '')
+    .normalize('NFC').replace(/[^\p{L}\p{N} ._()-]+/gu, '_').replace(/\s+/g, ' ').trim().slice(0, 80) || 'adjunto';
+  return base + '.' + ADJUNTO_EXT[tipo];
+}
+// { nombre, datos(base64) } → { nombre, tipo, buf } o { error }.
+function leerAdjunto(adj) {
+  const b64 = adj && adj.datos;
+  if (typeof b64 !== 'string' || !b64.length || !/^[A-Za-z0-9+/]+={0,2}$/.test(b64)) return { error: 'Adjunto no válido: sube una imagen (PNG o JPG) o un PDF, hasta 3 MB' };
+  const buf = Buffer.from(b64, 'base64');
+  if (buf.length > ADJUNTO_MAX_BYTES) return { error: 'El adjunto pesa más de 3 MB' };
+  const tipo = buf.length >= 16 ? _tipoPorFirma(buf) : null;
+  if (!tipo) return { error: 'El adjunto debe ser una imagen (PNG o JPG) o un PDF' };
+  return { nombre: _nombreAdjunto(adj.nombre, tipo), tipo, buf };
+}
+function rutaLimpia(v) {
+  const s = typeof v === 'string' ? v.replace(/[\u0000-\u001f\u007f]+/g, ' ').trim() : '';
+  return s || null;
+}
+
+function crear(db, actor, b, ahora, adjunto) {
   const a = _autor(actor);
-  const r = db.prepare(
-    `INSERT INTO tickets (tipo, tipoCodigo, campana, descripcion, estado, autorId, autorUser, autorNombre, autorRol, createdAt, updatedAt)
-     VALUES (?, ?, ?, ?, 'NUEVO', ?, ?, ?, ?, ?, ?)`
-  ).run(TIPOS_BASE.includes(b.tipo) ? b.tipo : 'SUGERENCIA', b.tipo, b.campana, b.descripcion, a.autorId, a.autorUser, a.autorNombre, a.autorRol, ahora, ahora);
-  return obtener(db, r.lastInsertRowid);
+  let id;
+  db.transaction(() => {
+    const r = db.prepare(
+      `INSERT INTO tickets (tipo, tipoCodigo, campana, descripcion, rutaIngreso, estado, autorId, autorUser, autorNombre, autorRol, createdAt, updatedAt)
+       VALUES (?, ?, ?, ?, ?, 'NUEVO', ?, ?, ?, ?, ?, ?)`
+    ).run(TIPOS_BASE.includes(b.tipo) ? b.tipo : 'SUGERENCIA', b.tipo, b.campana, b.descripcion, rutaLimpia(b.rutaIngreso), a.autorId, a.autorUser, a.autorNombre, a.autorRol, ahora, ahora);
+    id = r.lastInsertRowid;
+    if (adjunto) {
+      db.prepare('INSERT INTO tickets_adjuntos (ticketId, nombre, tipo, bytes, datos, createdAt) VALUES (?, ?, ?, ?, ?, ?)')
+        .run(id, adjunto.nombre, adjunto.tipo, adjunto.buf.length, adjunto.buf, ahora);
+    }
+  })();
+  return obtener(db, id);
 }
 
 function obtener(db, id) {
-  return db.prepare(_SELECT_TICKET + ' FROM tickets t WHERE t.id = ?').get(id) || null;
+  return db.prepare(_SELECT_TICKET + `, a.nombre AS adjNombre, a.tipo AS adjTipo, a.bytes AS adjBytes
+    FROM tickets t LEFT JOIN tickets_adjuntos a ON a.ticketId = t.id WHERE t.id = ?`).get(id) || null;
+}
+function adjuntoDe(db, id) {
+  return db.prepare('SELECT nombre, tipo, bytes, datos FROM tickets_adjuntos WHERE ticketId = ?').get(id) || null;
+}
+const ADJUNTOS_POR_DIA = 20;
+function adjuntosRecientes(db, actor, desdeIso) {
+  const a = _autor(actor);
+  const quien = a.autorId === null ? ['t.autorId IS NULL AND t.autorUser = ?', a.autorUser] : ['t.autorId = ?', a.autorId];
+  return db.prepare(`SELECT COUNT(*) n FROM tickets_adjuntos x JOIN tickets t ON t.id = x.ticketId WHERE ${quien[0]} AND x.createdAt >= ?`).get(quien[1], desdeIso).n;
 }
 
 // Lista: el autor solo lo suyo; el gestor, «mios» o «todos» con filtros.
@@ -113,7 +163,8 @@ function listar(db, actor, q) {
   if (q.estado) { where.push('t.estado = ?'); params.push(q.estado); }
   if (q.tipo) { where.push('COALESCE(t.tipoCodigo, t.tipo) = ?'); params.push(q.tipo); }
   if (q.campana) { where.push('t.campana = ?'); params.push(q.campana); }
-  const sql = `${_SELECT_TICKET}, (SELECT COUNT(*) FROM tickets_respuestas r WHERE r.ticketId = t.id) AS respuestas
+  const sql = `${_SELECT_TICKET}, (SELECT COUNT(*) FROM tickets_respuestas r WHERE r.ticketId = t.id) AS respuestas,
+               (SELECT a.tipo FROM tickets_adjuntos a WHERE a.ticketId = t.id) AS adjTipo
                FROM tickets t ${where.length ? 'WHERE ' + where.join(' AND ') : ''}
                ORDER BY t.id DESC LIMIT 500`;
   return db.prepare(sql).all(...params);
@@ -143,6 +194,7 @@ function cambiarEstado(db, ticket, estado, ahora) {
 function borrar(db, ticket) {
   db.transaction(() => {
     db.prepare('DELETE FROM tickets_respuestas WHERE ticketId = ?').run(ticket.id);
+    db.prepare('DELETE FROM tickets_adjuntos WHERE ticketId = ?').run(ticket.id); // pedido 7 (23/11)
     db.prepare('DELETE FROM tickets WHERE id = ?').run(ticket.id);
   })();
 }
@@ -158,6 +210,9 @@ function publico(t, actor) {
     id: t.id, tipo: t.tipoEfectivo || t.tipo, tipoNombre: t.tipoNombre || null, campana: t.campana, descripcion: t.descripcion, estado: t.estado,
     autorNombre: t.autorNombre, autorRol: t.autorRol, createdAt: t.createdAt, updatedAt: t.updatedAt,
     respuestas: t.respuestas, esMio: esAutor(actor, t),
+    // Pedido 7 (23/11/2026): la ruta y los datos del adjunto (nunca su contenido: va por /adjunto).
+    rutaIngreso: t.rutaIngreso || null,
+    adjunto: t.adjTipo ? (t.adjNombre ? { nombre: t.adjNombre, tipo: t.adjTipo, bytes: t.adjBytes } : { tipo: t.adjTipo }) : null,
   };
 }
 function respuestaPublica(r, actor) {
@@ -176,5 +231,6 @@ module.exports = {
   esGestor, puedeBorrar, esAutor, puedeVer, campanasDe, campanaPermitida,
   TIPOS_BASE, tipos, tipoActivo, nombreTipoValido, crearTipo, editarTipo, // Fase 364
   crear, obtener, listar, respuestasDe, responder, cambiarEstado, borrar, contarNuevos,
+  ADJUNTO_MAX_BYTES, ADJUNTOS_POR_DIA, leerAdjunto, adjuntoDe, adjuntosRecientes, // pedido 7 (23/11)
   publico, respuestaPublica,
 };

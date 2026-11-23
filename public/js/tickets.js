@@ -1,7 +1,8 @@
 // tickets.js — Fase 356: «Sugerencias / Tickets» (interfaz). Botón en el menú de cuenta de las
 // 4 páginas; un diálogo con «Nuevo», «Mis tickets» y, para ADMIN y REPORTES, «Todos». El
 // servidor decide todo (server/tickets.js); aquí solo se pinta. Todo texto del servidor se
-// escapa (tickets-logic.js) o va por textContent. Sin adjuntos.
+// escapa (tickets-logic.js) o va por textContent. Desde el pedido 7 de Edwin (23/11/2026): «Ruta de
+// ingreso» y 1 adjunto (imagen o PDF, hasta 3 MB), los dos opcionales.
 'use strict';
 
 var _tk = { campanas: [], gestor: false, borrar: false, tab: 'nuevo', detalle: null, cargado: false, timer: null };
@@ -180,9 +181,22 @@ async function _tkEnviar(ev) {
   var body = { tipo: _tkEl('tk-tipo').value, campana: _tkEl('tk-campana').value, descripcion: _tkEl('tk-desc').value };
   if (!body.campana) { _tkError('Elige la campaña'); _tkEl('tk-campana').focus(); return; }
   if (!ticketsTextoValido(body.descripcion)) { _tkError('Escribe la descripción (hasta 2.000 caracteres)'); _tkEl('tk-desc').focus(); return; }
+  // Pedido 7 de Edwin (23/11/2026): ruta de ingreso y 1 adjunto, opcionales (el servidor revisa el contenido).
+  var ruta = _tkEl('tk-ruta').value.trim();
+  if (ruta) body.rutaIngreso = ruta;
+  var f = _tkEl('tk-adjunto').files && _tkEl('tk-adjunto').files[0];
+  if (f) {
+    var malo = ticketsAdjuntoError(f);
+    if (malo) { _tkError(malo); _tkEl('tk-adjunto').focus(); return; }
+  }
   try {
-    var r = await withButtonLoading(_tkEl('tk-enviar-btn'), 'Enviando…', function () { return apiRequest('POST', '/tickets', body); });
+    var r = await withButtonLoading(_tkEl('tk-enviar-btn'), 'Enviando…', async function () {
+      if (f) body.adjunto = { nombre: f.name, datos: await _tkLeerBase64(f) };
+      return apiRequest('POST', '/tickets', body);
+    });
     _tkEl('tk-desc').value = '';
+    _tkEl('tk-ruta').value = '';
+    _tkEl('tk-adjunto').value = '';
     _tkContadores();
     showToast('Ticket #' + r.ticket.id + ' enviado', 'ok');
     ticketsActualizarContador();
@@ -212,6 +226,15 @@ function _tkPintarDetalle(t, respuestas) {
   _tkEl('tk-det-meta').textContent = (t.esMio ? 'Enviado por ti' : 'Enviado por ' + t.autorNombre + ' (' + t.autorRol + ')') +
     ' · ' + ticketsFecha(t.createdAt) + ' · Estado: ' + ticketsEstadoLbl(t.estado);
   _tkEl('tk-det-desc').textContent = t.descripcion;
+  // Pedido 7 (23/11/2026): ruta de ingreso y adjunto (todo por textContent).
+  _tkEl('tk-det-ruta').textContent = t.rutaIngreso ? 'Ruta de ingreso: ' + t.rutaIngreso : '';
+  _tkEl('tk-det-ruta').classList.toggle('hidden', !t.rutaIngreso);
+  _tkEl('tk-det-adjunto').classList.toggle('hidden', !t.adjunto);
+  _tkEl('tk-det-adj-nombre').textContent = t.adjunto ? 'Adjunto: ' + t.adjunto.nombre + ' (' + ticketsTamano(t.adjunto.bytes) + ')' : '';
+  var img = _tkEl('tk-det-adj-img');
+  img.classList.add('hidden');
+  img.removeAttribute('src');
+  if (t.adjunto && /^image\//.test(t.adjunto.tipo)) _tkVistaImagen(t.id);
   _tkEl('tk-gestion').classList.toggle('hidden', !_tk.gestor);
   _tkEl('tk-det-estado').value = t.estado;
   _tkEl('tk-hilo').innerHTML = ticketsHiloHtml(respuestas);
@@ -220,6 +243,49 @@ function _tkPintarDetalle(t, respuestas) {
   _tkEl('tk-borrar-wrap').classList.toggle('hidden', !_tk.borrar);
   ticketsCancelarBorrar();
 }
+// ── Pedido 7 (23/11/2026): adjunto ──
+function _tkLeerBase64(file) {
+  return new Promise(function (ok, mal) {
+    var fr = new FileReader();
+    fr.onload = function () { ok(String(fr.result).split(',')[1] || ''); };
+    fr.onerror = function () { mal(new Error('No se pudo leer el archivo')); };
+    fr.readAsDataURL(file);
+  });
+}
+async function _tkTraerAdjunto(id) {
+  var res = await fetch(API_BASE + '/tickets/' + encodeURIComponent(id) + '/adjunto', { headers: apiHeaders(false) });
+  if (!res.ok) { var d = null; try { d = await res.json(); } catch (e) { /* sin cuerpo */ } throw new Error((d && d.error) || friendlyHttpError(res.status)); }
+  return res.blob();
+}
+// Vista previa de una imagen: data: (la CSP no permite blob: en img-src). Solo PNG/JPG del servidor.
+async function _tkVistaImagen(id) {
+  try {
+    var b = await _tkTraerAdjunto(id);
+    if (!_tk.detalle || _tk.detalle.id !== id || !/^image\/(png|jpeg)$/.test(b.type)) return;
+    var fr = new FileReader();
+    fr.onload = function () {
+      if (!_tk.detalle || _tk.detalle.id !== id) return;
+      var img = _tkEl('tk-det-adj-img');
+      img.src = String(fr.result);
+      img.classList.remove('hidden');
+    };
+    fr.readAsDataURL(b);
+  } catch (e) { /* sin vista previa: queda el botón de descarga */ }
+}
+async function ticketsDescargarAdjunto() {
+  if (!_tk.detalle || !_tk.detalle.adjunto) return;
+  _tkError('');
+  var t = _tk.detalle;
+  try {
+    var b = await withButtonLoading(_tkEl('tk-adj-btn'), 'Descargando…', function () { return _tkTraerAdjunto(t.id); });
+    var url = URL.createObjectURL(b);
+    var a = document.createElement('a');
+    a.href = url; a.download = t.adjunto.nombre || ('ticket-' + t.id + '-adjunto');
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 10000);
+  } catch (e) { _tkError(e.message || 'No se pudo descargar el adjunto'); }
+}
+
 function ticketsVolver() {
   _tk.detalle = null;
   _tkEl('tk-panel-detalle').classList.add('hidden');
@@ -300,9 +366,9 @@ async function ticketsBorrar() {
   var ft = _tkEl('tk-tipo-form'); if (ft) ft.addEventListener('submit', _tkAgregarTipo); // Fase 364
   ['tk-desc', 'tk-resp'].forEach(function (id) { var el = _tkEl(id); if (el) el.addEventListener('input', _tkContadores); });
   // Al corregir el campo, el aviso de error se va (si no, «Elige la campaña» quedaba a la vista).
-  ['tk-campana', 'tk-desc', 'tk-resp'].forEach(function (id) {
+  ['tk-campana', 'tk-desc', 'tk-resp', 'tk-adjunto'].forEach(function (id) {
     var el = _tkEl(id);
-    if (el) el.addEventListener(id === 'tk-campana' ? 'change' : 'input', function () { _tkError(''); });
+    if (el) el.addEventListener(id === 'tk-campana' || id === 'tk-adjunto' ? 'change' : 'input', function () { _tkError(''); });
   });
   ['tk-f-estado', 'tk-f-tipo', 'tk-f-campana'].forEach(function (id) { var el = _tkEl(id); if (el) el.addEventListener('change', _tkCargarLista); });
 })();

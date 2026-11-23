@@ -1732,6 +1732,8 @@ const errorGuardarBody = z.strictObject({
 
 // Fase 356: «Sugerencias / Tickets». Texto de 1 a 2.000 caracteres (sin adjuntos).
 const TICKET_TEXTO_MAX = 2000;
+const TICKET_RUTA_MAX = 200; // Pedido 7 de Edwin (23/11/2026)
+const TICKET_ADJUNTO_B64_MAX = Math.ceil((3 * 1024 * 1024) / 3) * 4 + 4; // 3 MB en base64
 const TICKET_TIPOS = ['SUGERENCIA', 'PROBLEMA', 'PREGUNTA'];
 const TICKET_ESTADOS = ['NUEVO', 'EN_REVISION', 'RESUELTO'];
 const ticketTexto = z.string().trim()
@@ -1741,6 +1743,13 @@ const ticketCrearBody = z.strictObject({
   tipo: z.string({ message: 'Elige el tipo' }).trim().regex(/^[A-Z0-9_]{1,40}$/, 'Elige el tipo'), // Fase 364: lista editable (el servidor revisa que esté activo)
   campana: z.string().trim().min(1, 'Elige la campaña').max(120),
   descripcion: ticketTexto,
+  // Pedido 7 de Edwin (23/11/2026): ambos opcionales. El contenido del adjunto lo revisa
+  // server/tickets.js (leerAdjunto: PNG, JPG o PDF reales, hasta 3 MB).
+  rutaIngreso: z.string().trim().max(TICKET_RUTA_MAX, 'La ruta de ingreso puede tener hasta ' + TICKET_RUTA_MAX + ' caracteres').optional(),
+  adjunto: z.strictObject({
+    nombre: z.string().trim().min(1).max(200),
+    datos: z.string().min(1).max(TICKET_ADJUNTO_B64_MAX, 'El adjunto pesa más de 3 MB'),
+  }, { message: 'Adjunto no válido' }).optional(),
 });
 const ticketRespuestaBody = z.strictObject({
   texto: z.string().trim()
