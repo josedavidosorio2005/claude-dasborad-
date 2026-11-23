@@ -373,7 +373,7 @@ function buildGestionHumana(db) {
 const ADAPTERS = {
   GERENCIA: { permiso: 'Gerencia', config: GERENCIA_CONFIG, build: buildGerencia },
   // Fase 383: INVENTARIO (el Inventario anterior) retirado; sus tablas quedan intactas.
-  GESTION_HUMANA: { permiso: 'GestionHumana', config: GH_CONFIG, build: buildGestionHumana },
+  // Fase GH7: GESTION_HUMANA (la Gestión humana anterior) retirada; /dashboard/GESTION_HUMANA da 404. Su tabla queda intacta.
 };
 
 module.exports = { ADAPTERS, listarMeses };

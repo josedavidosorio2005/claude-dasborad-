@@ -22267,3 +22267,28 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - sin scroll horizontal a 768 y 375 px;
   - 0 errores de consola.
 - **PR sin mergear** (pedido del usuario).
+
+## Fase GH7 — Retiro de la Gestión humana anterior (v1.259.0, 2026-11-23)
+
+- **OK del usuario (23/11):** retirar la Gestión humana de la Fase 10 (personal por campaña), distinta de Talento humano.
+- **Conteos en producción antes del retiro** (23/11, 17:22, solo lectura, solo GET, sesión del administrador):
+  - `gestion_humana_personal`: 0 registros;
+  - historial: 0 eventos `GH_PERSONAL*`;
+  - usuarios: 0 con el rol `GESTION_HUMANA` y 1 con el permiso `GestionHumana`, de 67;
+  - el tablero `GESTION_HUMANA` respondía 200 (vacío).
+- **Cambio:**
+  - `routes/gestion-humana.js`: `/gh/personal*` y `/gh/resumen` responden 410 con un aviso que lleva a Talento humano. Se conserva el `no-store` de `/gh`, que también usa Talento humano.
+  - `dashboard-adapters.js`: sin `GESTION_HUMANA`, así que `/dashboard/GESTION_HUMANA` da 404.
+  - Interfaz: sin la tarjeta (`DASH_MODULES`) y con la entrada del menú siempre oculta.
+  - Se conservan la tabla `gestion_humana_personal`, el rol `GESTION_HUMANA` y el permiso en la matriz.
+  - No se tocan Talento humano (`/gh/estado`, `/gh/acceso`, `/gh/bitacora`, `/gh/archivos`), los dashboards de clientes, Calidad, STA ni el Inventario.
+  - Mismo patrón que el Inventario anterior (Fase 383).
+- **Respaldo antes del merge (pendiente):**
+  - exportar `GET /api/gh/personal`, que hoy devuelve `[]`;
+  - confirmar que el último respaldo diario a S3 tiene menos de 24 h (workflow «Salud del servidor»).
+- **Pruebas:**
+  - `gestion-humana.test.js` reescrita: 410, 404, tabla y Talento humano intactos, tarjeta y menú ocultos.
+  - `fase118` y `role-matrix` ajustadas.
+  - `fase225-gh-meses` salió con el módulo.
+  - Suite local: 3502 pasan, 0 fallan.
+- **PR sin mergear** (pedido del usuario).
