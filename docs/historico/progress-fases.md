@@ -21920,3 +21920,8 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - Marcados, incluido un Agendado con citas; los pendientes o inexistentes no cuentan.
   - El navegador.
   - La guardiana del generador sigue en verde.
+- **Seguridad (revisión automática del 23/11):** el número del caso viene del Excel que se sube, y dentro de un manejador en línea `esc()` no basta: el navegador decodifica `&#39;` y la comilla rompe el string de JS. Una base armada podía ejecutar código en la sesión de otro gestor.
+  - El generador agrega `jsArg()`, que pasa el valor como texto JSON y después lo escapa para HTML.
+  - Corrige el caso nuevo (`marcarGest`) y los 3 que ya venían del HTML de Edwin (`selUno`, `abrirCodificar`, `guardarCodificacion`).
+  - El generador falla si vuelve a quedar el patrón. La prueba lo verifica con un número malicioso.
+

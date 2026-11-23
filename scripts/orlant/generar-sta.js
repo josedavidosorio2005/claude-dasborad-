@@ -217,7 +217,7 @@ funcion('pintarGestSup', `function pintarGestSup(){
   if(!l.length){ $('gsTabla').innerHTML='<div class="card vacio">No hay gestiones para mostrar.</div>'; return; }
   const vis=l.slice(0,max), todos=vis.every(c=>selGest.has(c._id));
   $('gsTabla').innerHTML=\`<div class="tw"><table><thead><tr><th><input type="checkbox" aria-label="Marcar todos los mostrados" \${todos?'checked':''} onchange="marcarGestTodos(this.checked)"></th><th>Fecha</th><th>Hora</th><th>Numero Autorizacion</th><th>Codificación</th><th>Citas</th><th>Agente</th></tr></thead><tbody>
-    \${vis.map(c=>\`<tr><td><input type="checkbox" aria-label="Marcar \${esc(c['Numero Autorizacion'])}" \${selGest.has(c._id)?'checked':''} onchange="marcarGest('\${esc(c._id)}',this.checked)"></td><td class="nw">\${verFecha(c._fg)}</td><td class="nw">\${c._fg.slice(11,19)}</td><td class="nw">\${esc(c['Numero Autorizacion'])}</td><td><span class="tag \${S.efectivas.includes(c._tipi)?'v':''}">\${esc(c._tipi)}</span></td><td>\${c._citas||''}</td><td>\${esc(nombreAgente(c._agente))}</td></tr>\`).join('')}
+    \${vis.map(c=>\`<tr><td><input type="checkbox" aria-label="Marcar \${esc(c['Numero Autorizacion'])}" \${selGest.has(c._id)?'checked':''} onchange="marcarGest(\${jsArg(c._id)},this.checked)"></td><td class="nw">\${verFecha(c._fg)}</td><td class="nw">\${c._fg.slice(11,19)}</td><td class="nw">\${esc(c['Numero Autorizacion'])}</td><td><span class="tag \${S.efectivas.includes(c._tipi)?'v':''}">\${esc(c._tipi)}</span></td><td>\${c._citas||''}</td><td>\${esc(nombreAgente(c._agente))}</td></tr>\`).join('')}
   </tbody></table></div>\${l.length>max?\`<div class="fila" style="margin-top:10px"><span class="muted">Mostrando las últimas \${max} de \${l.length.toLocaleString('es-CO')}.</span><button class="btn pri sm" onclick="exportarGestionados()">Descargar todas (Excel)</button></div>\`:''}\`;
 }
 const selGest=new Set();
@@ -326,6 +326,18 @@ L('<input type="checkbox" ${todos?', '<input type="checkbox" aria-label="Selecci
 L('<input type="checkbox" ${sel.has(c._id)?', '<input type="checkbox" aria-label="Seleccionar ${esc(c[\'Numero Autorizacion\'])}" ${sel.has(c._id)?');
 L('<input class="inp" placeholder="Buscar…" ', '<input class="inp" aria-label="Buscar opciones" placeholder="Buscar…" ');
 L('<input class="inp" id="dlgIn" ', '<input class="inp" id="dlgIn" aria-label="${esc(titulo)}" ');
+
+// 8b) Seguridad (revisión del 23/11): el número del caso viene del Excel que se sube. Dentro de un
+// manejador en línea, esc() no basta: el navegador decodifica &#39; y la comilla rompe el string de JS.
+// Se pasa como texto JSON (comillas y barras escapadas) y después se escapa para HTML: jsArg().
+L("const esc = s => String(s??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',\"'\":'&#39;'}[c]));",
+  "const esc = s => String(s??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',\"'\":'&#39;'}[c]));\nconst jsArg = v => esc(JSON.stringify(String(v??'')));");
+js = todas(js, "'${esc(c._id)}'", '${jsArg(c._id)}', 1);
+js = todas(js, "'${esc(id)}'", '${jsArg(id)}', 1);
+{
+  const m = js.match(/on(?:click|change|input|keydown)=\\?"[^"]*'\$\{esc\(/);
+  if (m) throw new Error('quedó un valor con esc() dentro de un string de un manejador en línea: ' + m[0].slice(0, 80));
+}
 
 // 9) Manejadores en línea (onclick, onchange, oninput, onkeydown): sus llamadas pasan a STAapp.<función>.
 const nombres = [...new Set([...js.matchAll(/(?:^|\n)(?:async )?function (\w+)\(/g)].map((m) => m[1]))];

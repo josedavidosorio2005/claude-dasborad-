@@ -43,6 +43,7 @@ async function refrescar(){ try{ await cargarEstado(); }catch(e){ toast('No se p
 ===================================================================== */
 const $ = id => ROOT.getElementById(id);
 const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const jsArg = v => esc(JSON.stringify(String(v??'')));
 const p2 = n => String(n).padStart(2,'0');
 function isoLocal(d){ return `${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())} ${p2(d.getHours())}:${p2(d.getMinutes())}:${p2(d.getSeconds())}`; }
 function ahora(){ return isoLocal(new Date()); }
@@ -123,7 +124,7 @@ function pintarBandeja(){
   $('agBuscarInfo').textContent = q? `${lista.length} de ${todos.length}` : '';
   if(!todos.length){ $('agTabla').innerHTML=`<div class="card vacio">No tienes casos pendientes en tu bandeja.</div>`; return; }
   $('agTabla').innerHTML = `<div class="tw"><table><thead><tr><th></th>${S.columnas.map(c=>`<th>${esc(c)}</th>`).join('')}<th>Asignado</th></tr></thead><tbody>
-    ${lista.map(c=>`<tr><td><button class="btn pri sm" onclick="STAapp.abrirCodificar('${esc(c._id)}')">Codificar</button></td>
+    ${lista.map(c=>`<tr><td><button class="btn pri sm" onclick="STAapp.abrirCodificar(${jsArg(c._id)})">Codificar</button></td>
       ${S.columnas.map(k=>`<td class="${CAMPOS_FECHA.includes(k)||k==='Numero Autorizacion'?'nw':''}">${verValor(k,c[k])}</td>`).join('')}
       <td class="nw">${verFecha(c._asignado,true)}</td></tr>`).join('')}
   </tbody></table></div>`;
@@ -143,7 +144,7 @@ function abrirCodificar(id){
       <label class="f" style="margin-top:14px">Observación *<textarea class="inp" id="codObs" rows="3" placeholder="Describe lo que pasó en la llamada"></textarea></label>
       <p class="muted" style="font-size:12px;margin-bottom:0">La fecha y hora se registran automáticamente al guardar.</p>
     </div>
-    <footer><button class="btn" onclick="STAapp.cerrarModal()">Cancelar</button><button class="btn ok" onclick="STAapp.guardarCodificacion('${esc(id)}')">Guardar gestión</button></footer>
+    <footer><button class="btn" onclick="STAapp.cerrarModal()">Cancelar</button><button class="btn ok" onclick="STAapp.guardarCodificacion(${jsArg(id)})">Guardar gestión</button></footer>
   </div></div>`;
 }
 function pideCitas(t){ return S.efectivas.includes(t); }
@@ -177,7 +178,7 @@ function pintarRellamadas(){
   $('cntRell').style.background = venc?'var(--red)':''; $('cntRell').style.color = venc?'#fff':'';
   $('rellTabla').innerHTML = !l.length ? `<div class="card vacio">No tienes llamadas pendientes por devolver.</div>` :
     `<div class="tw"><table><thead><tr><th></th><th>Llamar el</th><th>Numero Autorizacion</th><th>Entidad</th><th>Descripcion Cups</th><th>Observación anterior</th></tr></thead><tbody>
-    ${l.map(c=>{ const v=c._rell.cuando<=now; return `<tr><td><button class="btn ${v?'ok':'pri'} sm" onclick="STAapp.abrirCodificar('${esc(c._id)}')">Gestionar</button></td>
+    ${l.map(c=>{ const v=c._rell.cuando<=now; return `<tr><td><button class="btn ${v?'ok':'pri'} sm" onclick="STAapp.abrirCodificar(${jsArg(c._id)})">Gestionar</button></td>
       <td class="nw">${v?'<span class="tag" style="background:#fbe5e5;color:#8d2626">Ahora</span> ':''}${verFecha(c._rell.cuando,true)}</td><td class="nw">${esc(c['Numero Autorizacion'])}</td><td>${esc(c['Entidad'])}</td><td>${esc(c['Descripcion Cups'])}</td><td>${esc(c._obs)}</td></tr>`; }).join('')}
     </tbody></table></div>`;
 }
@@ -388,7 +389,7 @@ function pintarPendTodos(){
           <button class="btn sm pri" onclick="STAapp.pasarSel('${a.id}')">Pasar</button>
         </div>
         <div class="tw" style="max-height:340px"><table><thead><tr><th style="width:34px"><input type="checkbox" aria-label="Seleccionar todos" ${todos?'checked':''} onclick="STAapp.selTodos('${a.id}',this.checked)" title="Seleccionar todos"></th><th>Numero Autorizacion</th><th>Entidad</th><th>Servicio</th><th>Descripcion Cups</th><th>Fecha Ingreso Sta</th><th>Asignado</th></tr></thead><tbody>
-        ${pend.slice(0,500).map(c=>`<tr><td><input type="checkbox" aria-label="Seleccionar ${esc(c['Numero Autorizacion'])}" ${sel.has(c._id)?'checked':''} onchange="STAapp.selUno('${a.id}','${esc(c._id)}',this.checked)"></td><td class="nw">${esc(c['Numero Autorizacion'])}</td><td>${esc(c['Entidad'])}</td><td>${esc(c['Servicio'])}</td><td>${esc(c['Descripcion Cups'])}</td><td class="nw">${verFecha(c['Fecha Ingreso Sta'],true)}</td><td class="nw">${verFecha(c._asignado,true)}</td></tr>`).join('')}
+        ${pend.slice(0,500).map(c=>`<tr><td><input type="checkbox" aria-label="Seleccionar ${esc(c['Numero Autorizacion'])}" ${sel.has(c._id)?'checked':''} onchange="STAapp.selUno('${a.id}',${jsArg(c._id)},this.checked)"></td><td class="nw">${esc(c['Numero Autorizacion'])}</td><td>${esc(c['Entidad'])}</td><td>${esc(c['Servicio'])}</td><td>${esc(c['Descripcion Cups'])}</td><td class="nw">${verFecha(c['Fecha Ingreso Sta'],true)}</td><td class="nw">${verFecha(c._asignado,true)}</td></tr>`).join('')}
         </tbody></table></div>${pend.length>500?`<p class="muted">Mostrando 500 de ${pend.length} (Seleccionar todos toma los ${pend.length})</p>`:''}`}</div>`}
     </div>`; }).join('');
 }
@@ -734,7 +735,7 @@ function pintarGestSup(){
   if(!l.length){ $('gsTabla').innerHTML='<div class="card vacio">No hay gestiones para mostrar.</div>'; return; }
   const vis=l.slice(0,max), todos=vis.every(c=>selGest.has(c._id));
   $('gsTabla').innerHTML=`<div class="tw"><table><thead><tr><th><input type="checkbox" aria-label="Marcar todos los mostrados" ${todos?'checked':''} onchange="STAapp.marcarGestTodos(this.checked)"></th><th>Fecha</th><th>Hora</th><th>Numero Autorizacion</th><th>Codificación</th><th>Citas</th><th>Agente</th></tr></thead><tbody>
-    ${vis.map(c=>`<tr><td><input type="checkbox" aria-label="Marcar ${esc(c['Numero Autorizacion'])}" ${selGest.has(c._id)?'checked':''} onchange="STAapp.marcarGest('${esc(c._id)}',this.checked)"></td><td class="nw">${verFecha(c._fg)}</td><td class="nw">${c._fg.slice(11,19)}</td><td class="nw">${esc(c['Numero Autorizacion'])}</td><td><span class="tag ${S.efectivas.includes(c._tipi)?'v':''}">${esc(c._tipi)}</span></td><td>${c._citas||''}</td><td>${esc(nombreAgente(c._agente))}</td></tr>`).join('')}
+    ${vis.map(c=>`<tr><td><input type="checkbox" aria-label="Marcar ${esc(c['Numero Autorizacion'])}" ${selGest.has(c._id)?'checked':''} onchange="STAapp.marcarGest(${jsArg(c._id)},this.checked)"></td><td class="nw">${verFecha(c._fg)}</td><td class="nw">${c._fg.slice(11,19)}</td><td class="nw">${esc(c['Numero Autorizacion'])}</td><td><span class="tag ${S.efectivas.includes(c._tipi)?'v':''}">${esc(c._tipi)}</span></td><td>${c._citas||''}</td><td>${esc(nombreAgente(c._agente))}</td></tr>`).join('')}
   </tbody></table></div>${l.length>max?`<div class="fila" style="margin-top:10px"><span class="muted">Mostrando las últimas ${max} de ${l.length.toLocaleString('es-CO')}.</span><button class="btn pri sm" onclick="STAapp.exportarGestionados()">Descargar todas (Excel)</button></div>`:''}`;
 }
 const selGest=new Set();

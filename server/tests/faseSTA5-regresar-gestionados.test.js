@@ -101,3 +101,21 @@ test('navegador: barra «Regresar a disponibles» y casillas en Gestionados (por
   const mont = fs.readFileSync(path.join(__dirname, '..', '..', 'public/js/orlant-sta.js'), 'utf8');
   assert.match(mont, /regresar: function \(cuerpo\) \{ return apiRequest\('POST', STA_BASE \+ '\/gestionados\/regresar', cuerpo\); \}/);
 });
+
+// Revisión de seguridad (23/11): el número del caso viene del Excel; dentro de un manejador en línea va como
+// texto JSON escapado para HTML (jsArg), nunca '${esc(...)}' (el navegador decodifica &#39; y rompe el string).
+test('seguridad: ningún valor del caso dentro de un string de manejador en línea; jsArg resiste comillas', () => {
+  const appJs = fs.readFileSync(path.join(__dirname, '..', '..', 'public/js/orlant-sta-app.js'), 'utf8');
+  const viejo = /on(?:click|change|input|keydown)="[^"]*'\$\{esc\(/;
+  assert.ok(!viejo.test(appJs), 'quedó un esc() dentro de un string de manejador');
+  assert.ok(viejo.test(appJs.replace('STAapp.abrirCodificar(${jsArg(c._id)})', "STAapp.abrirCodificar('${esc(c._id)}')")), 'la prueba detecta el patrón viejo');
+  for (const x of ['STAapp.marcarGest(${jsArg(c._id)},this.checked)', 'STAapp.abrirCodificar(${jsArg(c._id)})', 'STAapp.guardarCodificacion(${jsArg(id)})']) assert.ok(appJs.includes(x), x);
+  // jsArg: lo que el navegador decodifica del atributo es un literal JS válido con el valor exacto.
+  const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const jsArg = (v) => esc(JSON.stringify(String(v ?? '')));
+  const malo = "x');alert(1);('\"</td>";
+  const decod = jsArg(malo).replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+  assert.equal(JSON.parse(decod), malo);
+  assert.ok(!/["']\s*\)\s*;/.test(jsArg(malo)), 'en el HTML no queda una comilla suelta');
+});
+
