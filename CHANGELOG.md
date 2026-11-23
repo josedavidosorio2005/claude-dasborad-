@@ -20,6 +20,11 @@ sepan que hay nuevo, que se corrigio y que falta.
   - valor del inventario propio y renta mensual de los equipos de proveedores;
   - calidad de los datos: sin sede, sin operación, códigos repetidos, agentes incompletos y actas por firmar o atrasadas;
   - movimientos de los últimos 6 meses.
+- **«Registrar ingreso»** también cambia:
+  - tiene una tarjeta por tipo, con cuántos hay registrados y cuántos libres;
+  - cada tarjeta trae los botones Registrar, Ver inventario y Editar formulario;
+  - hay una tarjeta «Nueva tecnología», un botón «Importar desde Excel» y la lista «Últimos ingresos»;
+  - el formulario se abre al elegir el tipo y queda en ese tipo para registrar el siguiente.
 - Solo cambia cómo se ve. Los elementos, agentes y actas guardados no se tocan.
 
 ## v1.257.0 — Noviembre 2026

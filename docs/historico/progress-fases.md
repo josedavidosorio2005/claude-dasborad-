@@ -22302,4 +22302,10 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - el chip «Torres» filtra;
   - sin scroll horizontal a 1440, 768 y 375;
   - 0 errores de consola.
-- **Sigue:** GH5b (Registrar ingreso por tarjetas), GH5c (listas e «Inventario» por tipo) y GH5d (Actas, Historial, Ajustes y menú), según la lista. **PR sin mergear** (pedido del usuario).
+- **GH5b (mismo PR), diferencia 3, «Registrar ingreso»:**
+  - `activosRegistrarTarjetasHtml` dibuja una tarjeta por tipo activo: «N registrados · M libres» y los botones Registrar, Ver inventario (Ver equipos en administrables) y Editar formulario.
+  - Además: la tarjeta «Nueva tecnología», «Importar desde Excel» y «Últimos ingresos» (las 5 últimas acciones «Ingreso» del historial).
+  - El formulario de siempre se abre al elegir el tipo. Después de registrar se queda en ese tipo (antes `reset()` lo devolvía al primero) y refresca las tarjetas.
+  - Prueba agregada a `faseGH5-inventario-panel`.
+  - Revisión local, 11/11: tarjetas, abrir el formulario, registrar, últimos ingresos, Ver inventario filtrado, Editar formulario y sin scroll horizontal a 768 y 375. El elemento inventado se borró.
+- **Sigue:** GH5c (listas e «Inventario» por tipo) y GH5d (Actas, Historial, Ajustes y menú), según la lista. **PR sin mergear** (pedido del usuario).

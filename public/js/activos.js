@@ -128,7 +128,8 @@ function _acOpciones(lista, sel, vacio) {
   return (vacio ? '<option value="">' + esc(vacio) + '</option>' : '') + lista.map(function (o) { var v = o.codigo || o; var n = o.plural || o.nombre || o; return '<option value="' + esc(v) + '"' + (v === sel ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('');
 }
 function _acFiltrosYLista() {
-  _acEl('ac-f-tipo').innerHTML = _acOpciones(_ac.config.tipos, _acEl('ac-f-tipo').value, 'Todos los tipos');
+  _acEl('ac-f-tipo').innerHTML = _acOpciones(_ac.config.tipos, _ac.tipoInicial || _acEl('ac-f-tipo').value, 'Todos los tipos');
+  _ac.tipoInicial = null; // Fase GH5b
   _acEl('ac-f-estado').innerHTML = _acOpciones(_ac.config.estados, _acEl('ac-f-estado').value, 'Todos los estados');
   _acEl('ac-f-sede').innerHTML = _acOpciones(_ac.config.listas.sedes, _acEl('ac-f-sede').value, 'Todas las sedes');
   _acEl('ac-f-operacion').innerHTML = _acOpciones(_ac.config.listas.operaciones, _acEl('ac-f-operacion').value, 'Todas las operaciones'); // Fase 376
@@ -501,6 +502,7 @@ function _acFormulario() {
     _acEl('ac-r-' + k).innerHTML = _acOpciones(_ac.config.listas[l], null, _ac.config.listas[l].length ? '—' : 'Agrega ' + l + ' en Ajustes');
   });
   activosCambioTipo();
+  _ac.regTipo = null; _acEl('ac-r-form').classList.add('hidden'); activosRegistrarTarjetas(); // Fase GH5b
 }
 function activosCambioTipo() {
   var esAdm = _acEl('ac-r-tipo').value === 'ADMINISTRABLE'; // Fase 380: código automático
@@ -519,7 +521,9 @@ async function activosRegistrar(ev) {
     var r = await apiRequest('POST', '/activos', b);
     showToast('Registrado: ' + r.activo.codigo + (r.aviso ? '. Ojo: ' + r.aviso : ''), r.aviso ? 'warning' : 'ok');
     _acEl('ac-r-form').reset();
+    _acEl('ac-r-tipo').value = b.tipo; // Fase GH5b: sigue en el tipo elegido
     activosCambioTipo();
+    activosRegistrarTarjetas();
     _acEl('ac-r-nota').textContent = 'Se registró ' + r.activo.codigo + '. Puedes registrar el siguiente.';
   } catch (e) { _acError(e.message); }
 }
@@ -1138,4 +1142,46 @@ async function activosPanelExcel() {
   try { _ac.lista = (await apiRequest('GET', '/activos?ambito=' + _ac.ambito + (_ac.panelTipo ? '&tipo=' + encodeURIComponent(_ac.panelTipo) : ''))).activos; activosExportar('elementos', 'excel'); }
   catch (e) { _acError(e.message); }
 }
-if (typeof module !== 'undefined' && module.exports) { module.exports.activosPanel2Html = activosPanel2Html; }
+// ── Fase GH5b: «Registrar ingreso» con una tarjeta por tipo (diseño de Edwin) ──
+var ACR_AYUDA = { TORRE: 'CPU de escritorio: procesador, RAM y disco. Entra a Libres y se asigna al agente.', MONITOR: 'Pantalla con su código y serial.',
+  PORTATIL: 'Propio (InConexion) o de un proveedor.', DIADEMA: 'Diadema o headset para el agente.', TECLADO: 'Teclado con su código y serial.', MOUSE: 'Mouse con su código y serial.',
+  ADMINISTRABLE: 'Servidor, switch, DVR/NVR, router o firewall, access point o UPS. El código se asigna solo según el tipo.' };
+function activosRegistrarTarjetasHtml(tipos, porTipo, ultimos) {
+  var cab = '<div class="acr-cab"><button type="button" class="acp-btn" onclick="activosNuevaTecnologia()">+ Nueva tecnología</button><button type="button" class="acp-btn" onclick="activosIrImportar()">Importar desde Excel</button></div>';
+  var tarjetas = tipos.filter(function (t) { return t.activo !== false; }).map(function (t) {
+    var x = porTipo[t.codigo] || {}, total = Object.keys(x).reduce(function (a, k) { return a + (x[k] || 0); }, 0);
+    var c = esc(t.codigo);
+    return '<article class="acp-card acr-card"><div class="acr-top"><h4>' + esc(t.nombre) + '</h4><button type="button" class="acr-edit" onclick="activosEditarFormulario(\'' + c + '\')">Editar formulario</button></div>' +
+      (ACR_AYUDA[t.codigo] ? '<p class="acp-ayuda">' + esc(ACR_AYUDA[t.codigo]) + '</p>' : '') +
+      '<p class="acr-n">' + total + ' registrados' + (t.codigo === 'ADMINISTRABLE' ? '' : ' · ' + (x.libre || 0) + ' libres') + '</p>' +
+      '<div class="acr-acc"><button type="button" class="btn-primary ac-btn" onclick="activosRegistrarTipo(\'' + c + '\')">+ Registrar</button><button type="button" class="acp-btn" onclick="activosVerTipo(\'' + c + '\')">' + (t.codigo === 'ADMINISTRABLE' ? 'Ver equipos' : 'Ver inventario') + '</button></div></article>';
+  }).join('');
+  var nueva = '<article class="acp-card acr-card acr-nueva"><h4>Nueva tecnología</h4><p class="acp-ayuda">¿Llegó un tipo de equipo que no está en la lista (celulares, tablets, impresoras…)? Crea su formulario aquí.</p><div class="acr-acc"><button type="button" class="acp-btn" onclick="activosNuevaTecnologia()">+ Crear formulario</button></div></article>';
+  var ult = '<article class="acp-card acr-ultimos"><h4>Últimos ingresos</h4>' + (ultimos && ultimos.length ? '<ul class="acr-lista">' + ultimos.map(function (h) {
+    return '<li><b>' + esc(h.codigo) + '</b><span>' + esc(((_ac.config && _acTipo(h.tipo)) || { nombre: h.tipo }).nombre) + '</span><small>' + esc(String(h.fecha || '').slice(0, 16).replace('T', ' ')) + (h.quien ? ' · ' + esc(h.quien) : '') + '</small></li>';
+  }).join('') + '</ul>' : '<p class="acp-ayuda">Todavía no hay ingresos registrados.</p>') + '</article>';
+  return cab + '<div class="acr-grid">' + tarjetas + nueva + '</div>' + ult;
+}
+async function activosRegistrarTarjetas() {
+  var c = _acEl('ac-r-tarjetas'); if (!c) return;
+  try {
+    var r = await Promise.all([apiRequest('GET', '/activos/resumen?ambito=' + _ac.ambito), apiRequest('GET', '/activos/historial?ambito=' + _ac.ambito + '&accion=Ingreso')]);
+    c.innerHTML = activosRegistrarTarjetasHtml(_ac.config.tipos, r[0].porTipo || {}, (r[1].historial || []).slice(0, 5));
+  } catch (e) { _acError(e.message); }
+}
+function activosRegistrarTipo(codigo) {
+  _ac.regTipo = codigo; _acEl('ac-r-tipo').value = codigo; activosCambioTipo();
+  var f = _acEl('ac-r-form'); f.classList.remove('hidden');
+  try { f.scrollIntoView({ block: 'start', behavior: 'smooth' }); } catch (e) { /* sin scroll suave */ }
+  var cod = _acEl('ac-r-codigo'); if (cod && !cod.disabled) cod.focus();
+}
+function activosVerTipo(codigo) {
+  ['tipo', 'estado', 'sede', 'operacion', 'proveedor', 'rend', 'q'].forEach(function (k) { var el = _acEl('ac-f-' + k); el.value = ''; el.removeAttribute('data-v'); });
+  _acEl('ac-f-pend').checked = false; _acEl('ac-f-dup').checked = false;
+  if (codigo === 'ADMINISTRABLE' && _ac.ambito === 'sistemas') { activosTab('admin'); return; }
+  _ac.tipoInicial = codigo; activosTab('elementos');
+}
+function activosEditarFormulario(codigo) { activosTab('ajustes'); activosEditarTipo(codigo); }
+function activosNuevaTecnologia() { activosTab('ajustes'); activosEditarTipo(null); }
+function activosIrImportar() { activosTab('ajustes'); var s = _acEl('ac-imp-tipo'); if (s) { try { s.scrollIntoView({ block: 'center' }); } catch (e) { /* */ } s.focus(); } }
+if (typeof module !== 'undefined' && module.exports) { module.exports.activosPanel2Html = activosPanel2Html; module.exports.activosRegistrarTarjetasHtml = activosRegistrarTarjetasHtml; }

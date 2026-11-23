@@ -92,3 +92,17 @@ test('interfaz: activosPanel2Html dibuja las tarjetas del diseño y el estado va
   const vacio = UI.activosPanel2Html(P.panel(db, 'inmuebles', ''));
   assert.match(vacio, /Aún no hay elementos/);
 });
+
+test('GH5b: «Registrar ingreso» con una tarjeta por tipo, «Nueva tecnología» y «Últimos ingresos»', () => {
+  global.esc = global.esc || ((s) => String(s == null ? '' : s));
+  const UI = require(path.join(__dirname, '..', '..', 'public', 'js', 'activos.js'));
+  const tipos = [{ codigo: 'TORRE', nombre: 'Torre' }, { codigo: 'ADMINISTRABLE', nombre: 'Equipo administrable' }, { codigo: 'VIEJO', nombre: 'Viejo', activo: false }];
+  const html = UI.activosRegistrarTarjetasHtml(tipos, { TORRE: { libre: 2, en_uso: 1, malo: 1 } }, [{ codigo: 'GH5-T9', tipo: 'TORRE', fecha: '2026-11-23T10:00:00', quien: 'Prueba' }]);
+  assert.match(html, /<h4>Torre<\/h4>/);
+  assert.match(html, /4 registrados · 2 libres/);
+  assert.match(html, /0 registrados<\/p>/, 'administrables sin «libres»');
+  assert.ok(!html.includes('Viejo'), 'un tipo desactivado no tiene tarjeta');
+  for (const f of ["activosRegistrarTipo('TORRE')", "activosVerTipo('TORRE')", "activosEditarFormulario('TORRE')", 'activosNuevaTecnologia()', 'activosIrImportar()', 'Ver equipos']) assert.ok(html.includes(f), 'falta ' + f);
+  assert.match(html, /Últimos ingresos[\s\S]*GH5-T9/);
+  assert.match(UI.activosRegistrarTarjetasHtml(tipos, {}, []), /Todavía no hay ingresos registrados/);
+});
