@@ -21807,3 +21807,28 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - Después del deploy: cargar `WOLKVOX_ORLANT_SERVIDOR` (y el token) en SSM; lo hace el usuario cuando tenga acceso a AWS.
   - Con su OK: 1 diagnóstico de red desde producción y, solo si sale en Sí, 1 «Probar».
 - **#904 en producción (23/11):** mergeado con `--match-head-commit` (merge `6a7e253`); CI de `main` y deploy OK a la primera; `/api/health` muestra 1.242.0. Después se actualizó #905 con `main` (merge, sin force push), conservando las entradas de las dos fases en versión, CHANGELOG, PROGRESS y bitácora.
+
+### Fase N5 — producción: merges, deploy y la única prueba contra Wolkvox de ORLANT (2026-11-23)
+
+- **Merges (OK del usuario, 23/11), de a uno, con `git ls-remote` + `--match-head-commit`:**
+  - #904 (N1, v1.242.0): merge `6a7e253`, CI de `main` y deploy OK a la primera, `/api/health` 1.242.0.
+  - Después se actualizó #905 con `main` (merge, sin force push): CI verde sobre `493f998`.
+  - #905 (N5, v1.243.0): merge `d960d3e`, deploy OK a la primera, `/api/health` 1.243.0.
+  - #902 sigue abierto, esperando las respuestas de Edwin; ajusta su versión al mergear.
+- **SSM:** el usuario cargó `WOLKVOX_ORLANT_SERVIDOR` y `WOLKVOX_ORLANT_TOKEN` (SecureString) el 23/11, antes del deploy de #905.
+- **Prueba autorizada (usuario, 23/11): 1 «Diagnóstico de red» y, solo si salía en Sí, 1 «Probar» (`skill_1` del 20/11), en «ORLANT PRUEBAS API».** Se hizo con Brave visible, con un contexto nuevo en el que el usuario inició sesión a mano. El script bloqueaba toda escritura salvo una POST a cada ruta autorizada.
+  - **Intento 1 (9:15):** el script esperaba un usuario con rol ADMIN, pero el administrador maestro deja `currentUser` en null y nunca lo detectó. Se detuvo **sin ninguna petición a Wolkvox** y se corrigió la detección con `isFullAdmin()` + token de sesión.
+  - **Estado (9:25):** token y servidor guardados: Sí; consultas del día de ORLANT: 0 de 2.800; «Ejecutar ahora» oculto.
+  - **Diagnóstico de red (9:25, 0 consultas):** todo en Sí; la IP 3.85.54.96 sí pasa el firewall de `wv0034` (21/11).
+    - DNS: 1 IPv4, 0 IPv6.
+    - TCP 443 por IPv4: 5 ms.
+    - TLS por IPv4: 30 ms.
+    - IPv6: sin dirección.
+    - Control de salida a internet: 3 ms.
+  - **«Probar» (9:25, 1 consulta):** `skill_1` del 20/11, día completo. Respondió HTTP 200, code 200, en 7,2 s.
+    - 19 filas, 12 campos y 19 skills: igual que la prueba de Postman del 21/11.
+    - Solo se vieron conteos y nombres de campos, nunca valores.
+    - Consultas de ORLANT hoy: 1 de 2.800.
+  - Se usaron exactamente 1 diagnóstico y 1 «Probar». No hubo otras peticiones bloqueadas ni errores de consola. La sesión se cerró con el navegador y no se guardó nada en ninguna campaña.
+- **Siguiente (N6, autorización nueva):** consulta automática de la réplica de ORLANT (`WOLKVOX_ORLANT_AUTO_ACTIVO`, apagada) y el mapa de skills a línea (General / 3P). Nada más contra Wolkvox de ORLANT sin un OK nuevo.
+
