@@ -25,6 +25,7 @@ sepan que hay nuevo, que se corrigio y que falta.
   - cada tarjeta trae los botones Registrar, Ver inventario y Editar formulario;
   - hay una tarjeta «Nueva tecnología», un botón «Importar desde Excel» y la lista «Últimos ingresos»;
   - el formulario se abre al elegir el tipo y queda en ese tipo para registrar el siguiente.
+- En las listas (Libres, Asignados, etc.), el conteo dice cuántos hay de cada tipo: «22 elementos con estos filtros · 4 monitor · 2 portátil».
 - Solo cambia cómo se ve. Los elementos, agentes y actas guardados no se tocan.
 
 ## v1.257.0 — Noviembre 2026

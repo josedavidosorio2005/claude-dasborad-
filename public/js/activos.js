@@ -172,7 +172,7 @@ async function activosBuscar() {
   try {
     _ac.lista = (await apiRequest('GET', '/activos?' + activosConsulta(f))).activos;
     c.innerHTML = activosListaHtml(_ac.lista, _ac.config);
-    _acEl('ac-conteo').textContent = _ac.lista.length + (_ac.lista.length === 1 ? ' elemento' : ' elementos') + ' con estos filtros';
+    _acEl('ac-conteo').textContent = activosConteoTexto(_ac.lista, _ac.config); // Fase GH5c: con el detalle por tipo, como Edwin
   } catch (e) { c.innerHTML = ''; _acError(e.message); }
 }
 var AC_CLASE_REND = { bajo: 'vis-rojo', medio: 'vis-amarillo', alto: 'vis-verde', sin: 'vis-gris' };
@@ -1142,6 +1142,12 @@ async function activosPanelExcel() {
   try { _ac.lista = (await apiRequest('GET', '/activos?ambito=' + _ac.ambito + (_ac.panelTipo ? '&tipo=' + encodeURIComponent(_ac.panelTipo) : ''))).activos; activosExportar('elementos', 'excel'); }
   catch (e) { _acError(e.message); }
 }
+// Fase GH5c: «N elementos con estos filtros · 4 monitor · 2 portátil» (como la línea de resumen de Edwin).
+function activosConteoTexto(lista, config) {
+  var n = {}; lista.forEach(function (a) { n[a.tipo] = (n[a.tipo] || 0) + 1; });
+  var partes = ((config && config.tipos) || []).filter(function (t) { return n[t.codigo]; }).map(function (t) { return n[t.codigo] + ' ' + String(t.nombre).toLowerCase(); });
+  return lista.length + (lista.length === 1 ? ' elemento' : ' elementos') + ' con estos filtros' + (partes.length > 1 ? ' · ' + partes.join(' · ') : '');
+}
 // ── Fase GH5b: «Registrar ingreso» con una tarjeta por tipo (diseño de Edwin) ──
 var ACR_AYUDA = { TORRE: 'CPU de escritorio: procesador, RAM y disco. Entra a Libres y se asigna al agente.', MONITOR: 'Pantalla con su código y serial.',
   PORTATIL: 'Propio (InConexion) o de un proveedor.', DIADEMA: 'Diadema o headset para el agente.', TECLADO: 'Teclado con su código y serial.', MOUSE: 'Mouse con su código y serial.',
@@ -1184,4 +1190,4 @@ function activosVerTipo(codigo) {
 function activosEditarFormulario(codigo) { activosTab('ajustes'); activosEditarTipo(codigo); }
 function activosNuevaTecnologia() { activosTab('ajustes'); activosEditarTipo(null); }
 function activosIrImportar() { activosTab('ajustes'); var s = _acEl('ac-imp-tipo'); if (s) { try { s.scrollIntoView({ block: 'center' }); } catch (e) { /* */ } s.focus(); } }
-if (typeof module !== 'undefined' && module.exports) { module.exports.activosPanel2Html = activosPanel2Html; module.exports.activosRegistrarTarjetasHtml = activosRegistrarTarjetasHtml; }
+if (typeof module !== 'undefined' && module.exports) { module.exports.activosPanel2Html = activosPanel2Html; module.exports.activosRegistrarTarjetasHtml = activosRegistrarTarjetasHtml; module.exports.activosConteoTexto = activosConteoTexto; }

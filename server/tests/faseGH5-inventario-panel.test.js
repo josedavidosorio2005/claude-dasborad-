@@ -106,3 +106,11 @@ test('GH5b: «Registrar ingreso» con una tarjeta por tipo, «Nueva tecnología�
   assert.match(html, /Últimos ingresos[\s\S]*GH5-T9/);
   assert.match(UI.activosRegistrarTarjetasHtml(tipos, {}, []), /Todavía no hay ingresos registrados/);
 });
+
+test('GH5c: la línea de conteo de las listas lleva el detalle por tipo (como Edwin)', () => {
+  const UI = require(path.join(__dirname, '..', '..', 'public', 'js', 'activos.js'));
+  const cfg = { tipos: [{ codigo: 'TORRE', nombre: 'Torre' }, { codigo: 'MONITOR', nombre: 'Monitor' }] };
+  assert.equal(UI.activosConteoTexto([{ tipo: 'TORRE' }, { tipo: 'MONITOR' }, { tipo: 'MONITOR' }], cfg), '3 elementos con estos filtros · 1 torre · 2 monitor');
+  assert.equal(UI.activosConteoTexto([{ tipo: 'TORRE' }], cfg), '1 elemento con estos filtros', 'un solo tipo: sin detalle');
+  assert.equal(UI.activosConteoTexto([], cfg), '0 elementos con estos filtros');
+});

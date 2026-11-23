@@ -22308,4 +22308,8 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - El formulario de siempre se abre al elegir el tipo. Después de registrar se queda en ese tipo (antes `reset()` lo devolvía al primero) y refresca las tarjetas.
   - Prueba agregada a `faseGH5-inventario-panel`.
   - Revisión local, 11/11: tarjetas, abrir el formulario, registrar, últimos ingresos, Ver inventario filtrado, Editar formulario y sin scroll horizontal a 768 y 375. El elemento inventado se borró.
-- **Sigue:** GH5c (listas e «Inventario» por tipo) y GH5d (Actas, Historial, Ajustes y menú), según la lista. **PR sin mergear** (pedido del usuario).
+- **GH5c (parte, mismo PR):**
+  - `activosConteoTexto` agrega a la línea de conteo de las listas el detalle por tipo, como la línea de resumen de Edwin.
+  - Prueba agregada.
+  - Revisión local OK, 0 errores; los 3 elementos inventados se borraron.
+- **Sigue:** el resto de GH5c (listas e «Inventario» por tipo) y GH5d (Actas, Historial, Ajustes y menú), según la lista. **PR sin mergear** (pedido del usuario).
