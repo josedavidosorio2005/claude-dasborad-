@@ -85,8 +85,8 @@ const CLAVE=['tipoContrato','fIngresoSS','fInicio','sede','cargo','nombre','tipo
 /* ===================== ALMACENAMIENTO ===================== */
 const KEY='inconexion_gh_empleados_v1';
 let DB=[];
-function load(){try{DB=JSON.parse(localStorage.getItem(KEY)||'[]')}catch(e){DB=[]}}
-function persist(){try{localStorage.setItem(KEY,JSON.stringify(DB))}catch(e){toast('No se pudo guardar en el navegador. Descarga un respaldo.')}}
+function load(){try{DB=JSON.parse(GH_STORE.getItem(KEY)||'[]')}catch(e){DB=[]}}
+function persist(){try{GH_STORE.setItem(KEY,JSON.stringify(DB))}catch(e){toast('No se pudo guardar en el navegador. Descarga un respaldo.')}}
 
 /* ===================== UTILIDADES ===================== */
 const $=s=>document.querySelector(s);
@@ -274,7 +274,7 @@ function vImpacto(){document.querySelectorAll('#nav button').forEach(b=>b.classL
 function impSheet(L){return sheetSimple(['NÚMERO ID','NOMBRE','OPERACIÓN','CARGO','GÉNERO','CABEZA DE HOGAR','PRIMER EMPLEO','RÉGIMEN DE ORIGEN','TIENE HIJOS','N° HIJOS','ACTUALIZADO'],
   L.map(e=>{const i=impOk(e)?e.imp:{};return [e.numId,e.nombre,e.centro||'',e.cargo||'',e.genero||'',i.cabeza||'Pendiente',i.primer||'',i.regimen||'',i.hijos||'',i.hijos==='Sí'?+i.numHijos:'',i.demo?'Dato de prueba':pd(i.fecha)||'']}))}
 function exportImp(){const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,impSheet(activos().filter(e=>!FIMP.centro||e.centro===FIMP.centro)),'Indicadores de impacto');XLSX.writeFile(wb,`Indicadores_Impacto_${stamp()}.xlsx`)}
-function impQuitarDemo(){confirmBox('Quitar datos de prueba','Se borrarán los indicadores de prueba. Los que se llenaron con el formulario se conservan.','Quitar',()=>{DB.forEach(e=>{if(e.imp&&e.imp.demo)delete e.imp});localStorage.setItem(KEY+'_impdemo','off');persist();render();toast('Datos de prueba quitados')})}
+function impQuitarDemo(){confirmBox('Quitar datos de prueba','Se borrarán los indicadores de prueba. Los que se llenaron con el formulario se conservan.','Quitar',()=>{DB.forEach(e=>{if(e.imp&&e.imp.demo)delete e.imp});GH_STORE.setItem(KEY+'_impdemo','off');persist();render();toast('Datos de prueba quitados')})}
 /* SinCo (GH1): sin indicadores de impacto de prueba. */
 function impDemo(){}
 
@@ -459,7 +459,7 @@ function sugerencia(m){m=(m||'').toLowerCase();
 }
 // Equipos asignados en Sistemas (inventario) a una persona de GH
 function equiposSistemas(e){
-  try{const D=JSON.parse(localStorage.getItem('inventario_activos_inconexion_v1')||'null');if(!D||!Array.isArray(D.agentes))return [];
+  try{const D=JSON.parse(GH_STORE.getItem('inventario_activos_inconexion_v1')||'null');if(!D||!Array.isArray(D.agentes))return [];
     const c=x=>String(x||'').replace(/[^0-9A-Za-z]/g,''),nn=x=>String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
     const a=D.agentes.find(x=>c(x.cedula)&&c(x.cedula)===c(e.numId))||D.agentes.find(x=>nn(x.nombre)===nn(e.nombre));if(!a)return [];
     const T={torre:'Torre',monitor:'Monitor',teclado:'Teclado',mouse:'Mouse',diadema:'Diadema',portatil:'Portátil'};const out=[];
@@ -673,8 +673,8 @@ const addYears=(dt,n)=>{const x=new Date(dt);x.setFullYear(x.getFullYear()+n);re
 
 /* ===================== DATOS DE VACACIONES Y NOVEDADES ===================== */
 let VAC=[],NOV=[];
-function loadVN(){try{VAC=JSON.parse(localStorage.getItem(KEY+'_vac')||'[]');NOV=JSON.parse(localStorage.getItem(KEY+'_nov')||'[]')}catch(e){VAC=[];NOV=[]}}
-function saveVN(){try{localStorage.setItem(KEY+'_vac',JSON.stringify(VAC));localStorage.setItem(KEY+'_nov',JSON.stringify(NOV))}catch(e){toast('No se pudo guardar en el navegador')}}
+function loadVN(){try{VAC=JSON.parse(GH_STORE.getItem(KEY+'_vac')||'[]');NOV=JSON.parse(GH_STORE.getItem(KEY+'_nov')||'[]')}catch(e){VAC=[];NOV=[]}}
+function saveVN(){try{GH_STORE.setItem(KEY+'_vac',JSON.stringify(VAC));GH_STORE.setItem(KEY+'_nov',JSON.stringify(NOV))}catch(e){toast('No se pudo guardar en el navegador')}}
 const emp=id=>DB.find(e=>e.id===id);
 const empAct=id=>{const e=emp(id);return e&&e.estado!=='Retirado'?e:null}; // solo empleados activos
 const uniqA=k=>[...new Set(activos().map(e=>e[k]).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));
@@ -1114,8 +1114,8 @@ let AUS=[],AUSCFG={div:30,diasEmp:2,pEmpInc:66.67,pEPS:66.67,pARL:100,pOtras:100
 const AUS_CAUSAS=['Incapacidad','Vacaciones','Día de la familia','Compensatorio de votaciones','Licencia remunerada','Licencia no remunerada','Suspensión de contrato'];
 const AUS_SUB={'Incapacidad':['Enfermedad general','Accidente de trabajo','Enfermedad laboral','Posquirúrgico','No especificada'],'Vacaciones':['Período de vacaciones'],'Día de la familia':['Día de la familia'],'Compensatorio de votaciones':['Jurado / día de votación'],'Licencia remunerada':['Licencia de maternidad','Licencia de paternidad','Luto / calamidad doméstica','Otra licencia remunerada'],'Licencia no remunerada':['Licencia no remunerada'],'Suspensión de contrato':['Suspensión de contrato']};
 const AUS_H=['Id','Fuente','Año','Mes','Fecha','Trabajador','Cédula','Cargo','Área','Tipo de trabajador','Causa de ausentismo','Subtipo / diagnóstico','Días','Detalle original','Salario básico','Salario día','Días asumidos por la empresa','Días asegurados (EPS/ARL)','% pago asumido','% pago asegurado','Costo asumido','Costo asegurado','Costo total'];
-function loadAus(){try{AUS=JSON.parse(localStorage.getItem(AUS_KEY)||'[]');const c=JSON.parse(localStorage.getItem(AUSCFG_KEY)||'null');if(c)AUSCFG=Object.assign(AUSCFG,c)}catch(e){AUS=[]}}
-function saveAus(){try{localStorage.setItem(AUS_KEY,JSON.stringify(AUS));localStorage.setItem(AUSCFG_KEY,JSON.stringify(AUSCFG))}catch(e){toast('No se pudo guardar: el navegador no tiene espacio suficiente')}}
+function loadAus(){try{AUS=JSON.parse(GH_STORE.getItem(AUS_KEY)||'[]');const c=JSON.parse(GH_STORE.getItem(AUSCFG_KEY)||'null');if(c)AUSCFG=Object.assign(AUSCFG,c)}catch(e){AUS=[]}}
+function saveAus(){try{GH_STORE.setItem(AUS_KEY,JSON.stringify(AUS));GH_STORE.setItem(AUSCFG_KEY,JSON.stringify(AUSCFG))}catch(e){toast('No se pudo guardar: el navegador no tiene espacio suficiente')}}
 // cálculo de costos (replica las fórmulas del archivo original)
 function ausCalc(r){
   const P=AUSCFG,sal=+r.sal||0,salDia=sal/P.div,dias=+r.dias||0,c=r.causa||'',sub=r.sub||'';
@@ -1403,14 +1403,14 @@ const CK=Object.fromEntries(CATS.map(c=>[c.k,c]));
 const CFG_KEY=KEY+'_cfg';
 let CFG={cat:{},dias:15,diasVac:30,meses:2,clave:[...CLAVE]};
 function loadCfg(){
-  try{const c=JSON.parse(localStorage.getItem(CFG_KEY)||'null');if(c)CFG=Object.assign(CFG,c)}catch(e){}
+  try{const c=JSON.parse(GH_STORE.getItem(CFG_KEY)||'null');if(c)CFG=Object.assign(CFG,c)}catch(e){}
   CATS.forEach(c=>{if(!Array.isArray(CFG.cat[c.k]))CFG.cat[c.k]=(L[c.k]||[]).map(n=>({n}))});
   // migración: volver al nombre "Licencia de luto"
   const LARGO='Licencia por luto (fallecimiento de un familiar)',old=CFG.cat.novedad.find(x=>x.n===LARGO);if(old){if(CFG.cat.novedad.some(x=>x.n===LUTO))CFG.cat.novedad=CFG.cat.novedad.filter(x=>x!==old);else old.n=LUTO}
   if(NOV.some(n=>n.tipo===LARGO)){NOV.forEach(n=>{if(n.tipo===LARGO)n.tipo=LUTO});saveVN()}
   syncCat();
 }
-function saveCfg(){try{localStorage.setItem(CFG_KEY,JSON.stringify(CFG))}catch(e){toast('No se pudo guardar la configuración')}}
+function saveCfg(){try{GH_STORE.setItem(CFG_KEY,JSON.stringify(CFG))}catch(e){toast('No se pudo guardar la configuración')}}
 function catList(k){return CFG.cat[k].map(x=>x.n)}
 function syncCat(){ // agrega a los catálogos los valores que ya usan los empleados
   CATS.forEach(c=>{const have=new Set(catList(c.k));uniq(c.campo).forEach(v=>{if(!have.has(v)){CFG.cat[c.k].push({n:v});have.add(v)}})});
@@ -1499,7 +1499,7 @@ function delItem(i){
 }
 /* ===================== IMPORTAR / EXPORTAR ===================== */
 function vDatos(){
-  const A=activos(),last=(()=>{try{return localStorage.getItem(KEY+'_lastcopy')}catch(e){return null}})();
+  const A=activos(),last=(()=>{try{return GH_STORE.getItem(KEY+'_lastcopy')}catch(e){return null}})();
   const dd=last?days(pd(last.slice(0,10)),today()):null;
   $('#main').innerHTML=`<div class="top"><div><h1>Copias de seguridad</h1><div class="sub">Descargue la información de Gestión Humana en Excel para guardar copias</div></div></div>
   <div class="cp-hero card">
@@ -1611,7 +1611,7 @@ function copiaCompleta(){
   XLSX.utils.book_append_sheet(wb,sheetCargos(DB),'Historial de cargos');
   XLSX.utils.book_append_sheet(wb,impSheet(activos()),'Indicadores de impacto');
   XLSX.writeFile(wb,`Gestion_Humana_Copia_${stamp()}.xlsx`);
-  try{localStorage.setItem(KEY+'_lastcopy',new Date().toISOString())}catch(e){}
+  try{GH_STORE.setItem(KEY+'_lastcopy',new Date().toISOString())}catch(e){}
   toast('Copia completa descargada');if(VIEW==='datos')vDatos();
 }
 function exportXlsx(vista){
@@ -1651,8 +1651,8 @@ function quitarDemo(){
 }
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){if($('#ovConf').classList.contains('show'))closeOv('ovConf');else{['ovRet','ovVac','ovNov','ovHV','ovND','ovDet','ovEmp'].some(id=>{const o=$('#'+id);if(o&&o.classList.contains('show')){closeOv(id);return true}})}}});
 load();loadVN();loadCfg();loadAus();
-try{if(!AUS.some(r=>r.demo)&&!localStorage.getItem(KEY+'_init_aus2')){AUS=AUS.concat(ausDemo());saveAus()}localStorage.setItem(KEY+'_init_aus2','1')}catch(e){}
-try{if(!DB.length&&!localStorage.getItem(KEY+'_init')){DB=demoData();persist();syncCat();localStorage.setItem(KEY+'_init','1')}}catch(e){}
-try{if(!localStorage.getItem(KEY+'_init_vn')&&!VAC.length&&!NOV.length&&DB.some(isDemo)){const d=demoVN();VAC=d.V;NOV=d.N;saveVN()}localStorage.setItem(KEY+'_init_vn','1')}catch(e){}
+try{if(!AUS.some(r=>r.demo)&&!GH_STORE.getItem(KEY+'_init_aus2')){AUS=AUS.concat(ausDemo());saveAus()}GH_STORE.setItem(KEY+'_init_aus2','1')}catch(e){}
+try{if(!DB.length&&!GH_STORE.getItem(KEY+'_init')){DB=demoData();persist();syncCat();GH_STORE.setItem(KEY+'_init','1')}}catch(e){}
+try{if(!GH_STORE.getItem(KEY+'_init_vn')&&!VAC.length&&!NOV.length&&DB.some(isDemo)){const d=demoVN();VAC=d.V;NOV=d.N;saveVN()}GH_STORE.setItem(KEY+'_init_vn','1')}catch(e){}
 impDemo();{let m=false;DB.forEach(e=>{if(!Array.isArray(e.histCargos)||!e.histCargos.length){cargosDe(e);m=true}});if(m)persist()}
 render();

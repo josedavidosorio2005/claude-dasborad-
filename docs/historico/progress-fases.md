@@ -22038,3 +22038,55 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
 
   Además, su «Exportar» (indicadores de impacto) descarga el `.xlsx` desde el iframe.
 - **Sigue:** GH2 (guardar en el servidor por clave con versión, permisos por rol), GH3 (soportes en S3 privado), GH4 (Inventario: «Novedades desde Gestión Humana»), GH5 y GH6.
+
+## Fase GH2 — «Talento humano» guarda en el servidor (v1.253.0, 2026-11-23)
+
+- **Pedido:** el usuario, 23/11: GH2 en local, sin mergear. Guardar en el servidor (`gh_estado` por clave con versión, bitácora sin contenido, permisos GESTION_HUMANA + ADMIN) con el adaptador en el generador. La tarjeta queda preparada para el rol GESTION_HUMANA, pero no se abre a nadie en producción sin su OK.
+- **Servidor:**
+  - `server/gh-estado.js`, con dos tablas:
+    - `gh_estado (clave, valor, version, actualizadoPor, actualizadoAt)`;
+    - `gh_bitacora (clave, version, usuario, fecha, bytes, elementos)`, **sin el contenido**.
+  - Lista cerrada de 6 claves: `inconexion_gh_empleados_v1` y sus sufijos `_vac`, `_nov`, `_aus`, `_auscfg` y `_cfg`. Las marcas internas de la app (`_init*`, `_impdemo`, `_lastcopy`) siguen en el navegador.
+  - Rutas en `routes/gh-estado.js`, todas sin caché:
+    - `GET /api/gh/acceso`;
+    - `GET /api/gh/estado`;
+    - `PUT /api/gh/estado/:clave`, que pide `{valor, version}` y responde 409 con la versión actual si otra persona guardó antes (todo o nada en una transacción);
+    - `GET /api/gh/bitacora`, solo para el administrador.
+  - Validaciones: clave de la lista, versión entera, valor JSON (lista u objeto) de hasta 6 MB (413). El cuerpo de esa ruta usa el límite de 8 MB.
+  - **Permisos:** el administrador completo siempre. **GESTION_HUMANA solo con `GH_ROL_ACTIVO=1`**, que se agregó a `SSM_KEYS` y lo crea el usuario con su OK. Se lee en cada petición, pero desde SSM solo al arrancar: después de crearlo hace falta reiniciar o redesplegar. El resto de roles recibe 403.
+- **Navegador:**
+  - `public/gestion-humana/talento-humano-api.js` (a mano) define `GH_STORE`:
+    - lee todo con `GET` antes de cargar la app, que lee de forma sincrónica al arrancar;
+    - guarda cada sección 600 ms después del último cambio, y nunca la manda si no cambió;
+    - con 409 deja de guardar esa sección y avisa que hay que volver a abrir, sin pisar lo del otro;
+    - con un error de red avisa y lo intenta de nuevo con el próximo cambio o al cerrar (sin bucle).
+  - Las peticiones usan `apiRequest` de SinCo (`window.parent`): misma sesión y mismo token.
+  - El generador cambia los 22 `localStorage.` por `GH_STORE.` (falla si el conteo cambia), cambia el texto del pie («Los datos se guardan en la plataforma…») y la página carga el adaptador en vez de la app.
+- **SinCo:**
+  - Al cerrar (con «Cerrar», «⌂ Menú principal», salir de sesión o «Ver como») se manda lo pendiente y **se descarga el iframe**, para que no queden datos en memoria para la siguiente sesión.
+  - Cada apertura lee lo último del servidor.
+  - El rol GESTION_HUMANA pide `/gh/acceso` al pintar el menú y la tarjeta aparece solo si `puede:true`.
+  - El aviso de la barra dice que se guarda en la plataforma y que los soportes adjuntos siguen solo en el navegador hasta GH3.
+- **Pruebas:**
+  - Nueva `faseGH2-talento-humano-servidor` (8):
+    - permisos con el interruptor apagado, encendido (solo con el valor «1») y otra vez apagado;
+    - versiones y 409 sin pisar;
+    - validaciones y 413;
+    - bitácora sin contenido;
+    - `GH_STORE` con una API falsa: junta cambios, no gasta versión sin cambios, 409 bloquea, error de red sin bucle;
+    - lo generado, sin `localStorage`.
+  - Ajustada `faseGH1`.
+- **Revisión local** (Brave vía Playwright, base demo, datos FICTICIOS; al final se vaciaron `gh_estado` y `gh_bitacora` locales):
+  - **Sin interruptor (13/13):**
+    - el administrador guarda; los datos no quedan en el navegador;
+    - al cerrar se descarga el iframe y al reabrir lee del servidor;
+    - el conflicto entre dos sesiones avisa y no pisa;
+    - la bitácora no lleva contenido;
+    - un cambio pendiente al cerrar enseguida sí se guarda;
+    - a 768 y 375 sin scroll horizontal;
+    - GESTION_HUMANA no tiene tarjeta y recibe 403.
+  - **Con `GH_ROL_ACTIVO=1`, solo en local (6/6):** GESTION_HUMANA ve la tarjeta, abre, lee y guarda; la bitácora le responde 403; GERENCIA no tiene tarjeta y recibe 403.
+  - 0 errores de consola, salvo el 409 esperado de la prueba de conflicto.
+  - **Observación:** un empleado sin salario ni sede hace que los gráficos de Edwin muestren errores de SVG (`NaN`) en la consola. Es su código y no se tocó.
+- **Producción:** sin `GH_ROL_ACTIVO`, nadie más que el administrador entra. Encenderlo necesita el OK del usuario.
+- **Sigue:** GH3 (soportes en S3 privado), GH4, GH5 y GH6.

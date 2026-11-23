@@ -39,7 +39,7 @@ test('la app generada: sin datos con forma de persona (cédulas, celulares, corr
 test('la página: SheetJS de SinCo, sin el de Edwin, sin su «inicio» ni el aviso de vista previa', () => {
   assert.ok(pagina.includes('<script src="../js/vendor/xlsx-0.20.3.full.min.js"></script>'));
   assert.ok(fs.existsSync(path.join(PUB, 'js', 'vendor', 'xlsx-0.20.3.full.min.js')));
-  assert.ok(pagina.includes('<script src="talento-humano-app.js"></script>'));
+  assert.ok(pagina.includes('<script src="talento-humano-api.js"></script>'), 'GH2: el adaptador carga la app');
   assert.ok(pagina.includes('<link rel="stylesheet" href="talento-humano.css">'));
   for (const t of [app, pagina]) {
     assert.doesNotMatch(t, /make_xlsx_lib|SheetJS -- http/, 'sin SheetJS embebido');
@@ -77,7 +77,7 @@ test('SinCo: tarjeta solo para el administrador; ventana de módulo; se cierra a
   const index = leer('index.html');
   assert.ok(index.includes('<iframe id="th-frame" class="th-frame" title="Talento humano"></iframe>'));
   assert.ok(index.includes('<script src="js/talento-humano.js"></script>'));
-  assert.ok(index.includes('No cargues datos reales todavía.'));
+  assert.ok(index.includes('Se guarda en la plataforma.'), 'GH2: ya guarda en el servidor');
   assert.ok(leer('js', 'cerrar-ventanas.js').includes("'th-overlay': 'talentoHumanoCerrar', // Fase GH1"));
   assert.ok(leer('js', 'motion-helpers.js').includes("'activos-overlay', 'th-overlay']"));
 });

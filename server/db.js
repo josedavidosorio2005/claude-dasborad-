@@ -787,6 +787,7 @@ require('./cargas-versiones').crearTabla(db);
 require('./sura-televentas').crearTablas(db);
 // Fase 369 (E1): «Inventario de sistemas» (activos tecnológicos). Tablas vacías; solo se siembran los tipos.
 require('./activos').crearTablas(db);
+require('./gh-estado').crearTablas(db); // Fase GH2: Talento humano en el servidor
 require('./activos-actas').crearTablas(db); // Fase 371 (E3): actas
 require('./activos-formularios').crearTablas(db); // Fase 372 (E4): textos del acta editables
 require('./malla-extra').crearTablas(db); // Fase 373: novedades y horario especial en la malla

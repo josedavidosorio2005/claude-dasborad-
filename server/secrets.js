@@ -25,6 +25,7 @@ const SSM_KEYS = [
   'CORS_ORIGIN',
   'JWT_EXPIRES_IN',
   'ACTAS_S3_BUCKET', // Fase 371b: bucket privado de las actas firmadas (Inventario de sistemas)
+  'GH_ROL_ACTIVO', // Fase GH2: «1» abre Talento humano al rol GESTION_HUMANA (lo crea el usuario con su OK)
 ];
 
 function esClaveWolkvox(nombre) { return /^WOLKVOX_[A-Z0-9_]{1,60}$/.test(nombre); }

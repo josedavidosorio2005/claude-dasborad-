@@ -7,6 +7,16 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.253.0 — Noviembre 2026
+
+**Talento humano guarda en la plataforma (segunda parte).**
+
+- Lo que se registra en Talento humano (empleados, vacaciones, novedades, ausentismo y su configuración) ahora se guarda en la plataforma, no en el navegador. Se ve igual desde cualquier computador.
+- Si dos personas lo tienen abierto y una guarda primero, a la otra le sale un aviso para volver a abrirlo. Así nunca se borra lo que guardó la otra persona.
+- Queda registro de quién guardó y cuándo, sin copiar los datos.
+- Los soportes adjuntos (PDF, imágenes) siguen quedando solo en el navegador hasta la próxima parte.
+- Ya está lista para el rol de Gestión humana, pero **todavía no se le abre**: por ahora la ve solo el administrador.
+
 ## v1.252.0 — Noviembre 2026
 
 **Talento humano: la app de Gestión humana de Edwin, dentro de SinCo (primera parte, de prueba).**

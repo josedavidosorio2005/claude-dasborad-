@@ -51,6 +51,7 @@ ahí (`path.join(SERVER_DIR, 'node_modules', ...)`), nunca con un
 - **`generar-talento-humano.js`** — regenera `public/gestion-humana/` (`talento-humano.html`, `.css` y `-app.js`) desde el HTML de Edwin (`Plataforma_InConexion.html`).
   - Ese HTML está en `.gitignore`: su inventario trae datos reales. Solo lee la app de Gestión humana (`app-gh`).
   - Quita su inicio, el SheetJS embebido y los datos de prueba.
+  - Fase GH2: cambia todo `localStorage` por `GH_STORE`, que vive en `public/gestion-humana/talento-humano-api.js`. Ese archivo se escribe a mano y no lo toca el generador; guarda en `/api/gh/estado`.
   - Falla si el HTML cambió donde hay un reemplazo.
   - Después, correr `server/tests/faseGH1-talento-humano.test.js`.
 

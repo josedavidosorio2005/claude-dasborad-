@@ -16,7 +16,8 @@
 //   - SIN datos de prueba: los generadores (empleados, vacaciones y novedades, ausentismo e
 //     indicadores de impacto «ficticios») quedan vacíos y salen los botones «Cargar datos de prueba»;
 //   - «⌂ Menú principal» cierra la ventana y vuelve al menú de SinCo.
-// En GH1 sigue guardando en el navegador (localStorage); GH2 lo pasa al servidor.
+//   - GH2: todo localStorage pasa a GH_STORE (public/gestion-humana/talento-humano-api.js, a mano), que
+//     guarda en el servidor (/api/gh/estado); las marcas internas de la app siguen en el navegador.
 // Corre en un iframe del mismo origen (sus 135 onclick en línea llaman funciones globales: en un
 // Shadow DOM habría que reescribirlos). Falla si un reemplazo no encuentra su texto exacto (el HTML
 // cambió): revisar el reemplazo antes de forzarlo. No imprime datos, solo tamaños.
@@ -58,8 +59,11 @@ const css = entre(gh, '</script>\n<style>\n', '\n</style>\n</head>');
 if (!css.startsWith(':root{\n  color-scheme:dark;')) throw new Error('la hoja no empieza como se esperaba');
 
 // ── Marcado ──
-const markup = entre(gh, '</style>\n</head>\n<body>\n', '\n\n<script>\n/* ===================== CATÁLOGOS');
+let markup = entre(gh, '</style>\n</head>\n<body>\n', '\n\n<script>\n/* ===================== CATÁLOGOS');
 if (!markup.includes('<button class="home-btn" onclick="volverMenu()"')) throw new Error('no encontré «⌂ Menú principal»');
+// Fase GH2: los datos ya no quedan en el navegador (los soportes adjuntos sí, hasta GH3).
+markup = una(markup, 'Los datos se guardan en este navegador. Descarga una copia de respaldo con frecuencia.',
+  'Los datos se guardan en la plataforma (SinCo). Los soportes adjuntos, por ahora, solo en este navegador. Descarga una copia de respaldo con frecuencia.');
 
 // ── Lógica ──
 let js = entre(gh, '</defs></svg>\n\n<script>', '</script>\n<script>window.volverMenu=');
@@ -76,6 +80,14 @@ js = tramo(js, 'function impDemo(){', '\n/* ===================== EMPLEADOS ====
 // 2) Sin botones para cargar datos de prueba.
 js = una(js, '<button class="btn big" style="box-shadow:none" onclick="ausCargarDemo()">🧪 Cargar datos de prueba</button>', '');
 js = una(js, '${AUS.some(r=>r.demo&&!r.anulado)?`<button class="btn dan" onclick="ausQuitarDemo()">Quitar datos de prueba</button>`:`<button class="btn" onclick="ausCargarDemo()">🧪 Cargar datos de prueba</button>`}', '');
+// 3) Fase GH2: guarda en el servidor. Todo `localStorage.` pasa a GH_STORE (talento-humano-api.js, a
+//    mano): las secciones de datos van a /api/gh/estado; las marcas internas siguen en el navegador.
+{
+  const n = js.split('localStorage.').length - 1;
+  if (n !== 22) throw new Error(`localStorage aparece ${n} veces (se esperaban 22): revisar el HTML`);
+  js = js.split('localStorage.').join('GH_STORE.');
+  if (/localStorage/.test(js)) throw new Error('quedó un localStorage sin pasar a GH_STORE');
+}
 for (const k of ['demoData()', 'ausDemo()', 'demoVN()']) {
   const def = js.indexOf('function ' + k.replace('()', '(){return'));
   if (def < 0) throw new Error('quedó sin vaciar ' + k);
@@ -96,7 +108,8 @@ const pagina = `<!DOCTYPE html>
 ${markup}
 
 <script src="../js/vendor/xlsx-0.20.3.full.min.js"></script>
-<script src="talento-humano-app.js"></script>
+<!-- Fase GH2: lee los datos del servidor y después carga talento-humano-app.js -->
+<script src="talento-humano-api.js"></script>
 </body>
 </html>
 `;
