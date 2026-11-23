@@ -168,6 +168,8 @@ function createApp() {
   // leer el cuerpo).
   const RUTA_SURA_BASE = /^\/api\/sura-televentas\/[^/]+\/bases\/[^/]+\/[^/]+$/;
   const jsonLimiteSura = express.json({ limit: '40mb' });
+  // Fase GH3: un soporte de Talento humano de hasta 8 MB llega en base64 (≈10,7 MB).
+  const jsonLimiteSoportes = express.json({ limit: '12mb' });
   // Fase 154: el login es la unica ruta que lee un cuerpo sin sesion; su
   // cuerpo es usuario + contrasena, nunca mas de unos pocos KB.
   const jsonLogin = express.json({ limit: '16kb' });
@@ -232,6 +234,7 @@ function createApp() {
     if (req.method === 'POST' && /^\/api\/activos\/actas\/[1-9]\d{0,9}\/firmada$/.test(rutaNormalizada(req))) return jsonLimiteMayor(req, res, next);
     // Fase GH2: cada sección de Talento humano va entera (hasta 6 MB; la revisa gh-estado.js).
     if (req.method === 'PUT' && /^\/api\/gh\/estado\/[a-z0-9_]{1,60}$/.test(rutaNormalizada(req))) return jsonLimiteMayor(req, res, next);
+    if (req.method === 'POST' && rutaNormalizada(req) === '/api/gh/archivos') return jsonLimiteSoportes(req, res, next);
     return jsonLimiteNormal(req, res, next);
   }
 

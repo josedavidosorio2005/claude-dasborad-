@@ -31,6 +31,12 @@
       "Resource": "arn:aws:s3:::inconexion-actas-2026/actas/*"
     },
     {
+      "Sid": "TalentoHumanoSoportesS3",
+      "Effect": "Allow",
+      "Action": ["s3:PutObject", "s3:GetObject"],
+      "Resource": "arn:aws:s3:::inconexion-talento-humano-2026/talento-humano/*"
+    },
+    {
       "Sid": "EnviarLogsYMetricasCloudWatch",
       "Effect": "Allow",
       "Action": [

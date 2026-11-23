@@ -439,12 +439,13 @@ function saveEmp(){
 }
 /* ===================== RETIROS ===================== */
 // Archivos adjuntos en IndexedDB (no caben en el almacenamiento normal del navegador)
-const IDB={db:null,
+const IDB_LOCAL={db:null,
   open(){return this.db?Promise.resolve(this.db):new Promise((ok,ko)=>{const r=indexedDB.open('inconexion_gh_archivos',1);r.onupgradeneeded=()=>r.result.createObjectStore('files',{keyPath:'id'});r.onsuccess=()=>{this.db=r.result;ok(this.db)};r.onerror=()=>ko(r.error)})},
   async put(o){const db=await this.open();return new Promise((ok,ko)=>{const t=db.transaction('files','readwrite');t.objectStore('files').put(o);t.oncomplete=ok;t.onerror=()=>ko(t.error)})},
   async get(id){const db=await this.open();return new Promise((ok,ko)=>{const r=db.transaction('files').objectStore('files').get(id);r.onsuccess=()=>ok(r.result);r.onerror=()=>ko(r.error)})},
   async del(id){const db=await this.open();return new Promise(ok=>{const t=db.transaction('files','readwrite');t.objectStore('files').delete(id);t.oncomplete=ok;t.onerror=ok})}
 };
+const IDB=ghArchivos(IDB_LOCAL);
 const MAXF=8*1024*1024;
 const fsize=b=>b<1024?b+' B':b<1048576?Math.round(b/1024)+' KB':(b/1048576).toFixed(1)+' MB';
 const fico=t=>/pdf/.test(t)?'📕':/image/.test(t)?'🖼':/word|document/.test(t)?'📘':'📎';
@@ -518,12 +519,12 @@ function addFiles(list){syncRet();let rech=0;[...list].forEach(f=>{if(f.size>MAX
   if(rech)toast(`${rech} archivo(s) superan 8 MB y no se agregaron`);drawRet()}
 function quitarAdj(i){syncRet();const f=RET.files.splice(i,1)[0];if(!f.nuevo)RET.quitar.push(f.id);drawRet()}
 async function verAdj(id,name){
-  try{const o=await IDB.get(id);if(!o){toast('No se encontró el archivo en este equipo');return}
+  try{const o=await IDB.get(id);if(!o){toast('No se encontró el soporte');return}
     const url=URL.createObjectURL(o.blob);
     if(/pdf|image/.test(o.type)){const w=window.open(url,'_blank');if(!w)dl(o.blob,name)}else dl(o.blob,name);
     setTimeout(()=>URL.revokeObjectURL(url),60000)}catch(e){toast('No se pudo abrir el archivo')}
 }
-async function bajarAdj(id,name){try{const o=await IDB.get(id);if(!o){toast('No se encontró el archivo en este equipo');return}dl(o.blob,name)}catch(e){toast('No se pudo descargar')}}
+async function bajarAdj(id,name){try{const o=await IDB.get(id);if(!o){toast('No se encontró el soporte');return}dl(o.blob,name)}catch(e){toast('No se pudo descargar')}}
 async function guardarRetiro(){
   syncRet();const e=DB.find(x=>x.id===RET.id),er={};
   if(!RET.fecha)er.fecha='Indique la fecha de retiro';else if(e.fInicio&&pd(RET.fecha)<pd(e.fInicio))er.fecha='No puede ser anterior al inicio del contrato';
