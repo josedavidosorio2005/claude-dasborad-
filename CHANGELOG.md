@@ -7,6 +7,14 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.249.0 — Noviembre 2026
+
+**Tickets: «Ruta de ingreso» y un archivo adjunto.**
+
+- Al crear un ticket hay un campo nuevo, «Ruta de ingreso», para decir por dónde se llegó a la pantalla donde pasó el problema (por ejemplo: Dashboard › ORLANT › Flujo). Es opcional.
+- También se puede adjuntar un archivo: una imagen (PNG o JPG) o un PDF de hasta 3 MB, como en el Inventario de sistemas. Es opcional y va uno por ticket.
+- Al abrir el ticket se ve la ruta y el adjunto: si es una imagen, se muestra ahí mismo, y también se puede descargar. Solo lo ven quien lo envió y quienes gestionan los tickets.
+
 ## v1.248.0 — Noviembre 2026
 
 **SURA: en Cumplimiento, «Ventas por mes» también se puede ver por día.**

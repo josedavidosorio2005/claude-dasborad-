@@ -21946,3 +21946,20 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
 - **Pruebas:** nueva `faseSURA-ventas-por-dia-cumplimiento` (3).
 - **Revisión visual (local, 23/11, Brave vía Playwright):** con dos bases de SURA inventadas (septiembre y octubre de 2026, una con un asesor llamado `<img src=x onerror=…>`), a 375, 768 y 1440 px: el selector de mes solo aparece con «Día»; octubre da 31 días y septiembre 30; «Todos» da una línea por asesor; el nombre con HTML se ve como texto (sin XSS); la página no se desplaza a lo ancho; volver a «Mes» oculta el selector; 0 errores de consola (27/27). Las bases de prueba se borraron al terminar.
 - **Revisión de seguridad (en línea, 23/11):** todo texto que entra en `innerHTML` pasa por `esc()` (opciones de mes, nombres de la tabla, leyenda y `<title>` de `line()`); el título va por `textContent`; días y cifras son numéricos. Sin hallazgos.
+
+## Fase TK (23/11) — Pedido 7 de Edwin: «Ruta de ingreso» y 1 adjunto en Tickets (v1.249.0, 2026-11-23)
+
+- **Pedido (usuario, 23/11):** en Tickets, el campo «Ruta de ingreso» y 1 adjunto (imagen o PDF), como en el Inventario de sistemas.
+- **Ruta de ingreso:** texto opcional de hasta 200 caracteres (columna nueva `tickets.rutaIngreso`; agregar una columna no cambia ningún dato). Se muestra en el detalle del ticket por `textContent`.
+- **Adjunto:** opcional, 1 por ticket, PNG, JPG o PDF de hasta 3 MB. El tipo se decide por el **contenido** del archivo (firma), no por la extensión: un «.png» que en realidad es HTML se rechaza, y un PDF llamado «.png» queda como PDF. El nombre se limpia (sin rutas ni caracteres raros).
+  - Se guarda en la base, en una tabla aparte (`tickets_adjuntos`; la lista nunca lee el contenido), como el Excel original del STA. No se usó S3 porque el permiso de la instancia solo cubre `actas/*`, y ampliarlo es un cambio de IAM que hace el usuario.
+  - Descarga (`GET /api/tickets/:id/adjunto`): las mismas reglas de ver (el autor y quienes gestionan; otro usuario recibe 404). Siempre como descarga, con su tipo real, `nosniff` y CSP `sandbox`. Las imágenes se ven en el detalle (vista previa `data:`, la CSP no permite `blob:`).
+  - Tope: 20 adjuntos por persona en 24 horas (429). Sin adjunto se puede seguir enviando.
+  - `/api/tickets` pasa al límite de cuerpo de 8 MB (3 MB en base64 ≈ 4 MB). Borrar un ticket borra su adjunto.
+- **Pruebas:** nueva `faseTK-ruta-adjunto` (9). `fase356-tickets-interfaz` ahora exige UN solo campo de archivo, opcional. `fase118-matriz-acceso` declara la ruta nueva.
+- **Revisión visual (local, Brave vía Playwright, datos inventados):** a 1440 (claro), 768 (oscuro) y 375 (claro):
+  - un .txt se avisa antes de enviar;
+  - la lista dice «con adjunto» y el detalle muestra la ruta, «Adjunto: nombre (13 KB)» y la imagen;
+  - la descarga trae los mismos bytes;
+  - sin desplazamiento horizontal y 0 errores de consola (22/22).
+  - Los tickets de prueba se borraron al terminar.

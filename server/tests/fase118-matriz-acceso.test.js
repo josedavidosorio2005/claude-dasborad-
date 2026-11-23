@@ -197,7 +197,7 @@ declarar(['GET /wolkvox/estado', 'POST /wolkvox/probar', 'POST /wolkvox/diagnost
 // un ajeno no vea ni conteste) se prueban rol por rol en fase356-tickets.test.js.
 // Fase STA (20/11/2026): ya no son 'open': el cliente de ORLANT no usa Tickets (403). Probado en
 // fase356-tickets.test.js (cualquier otro rol con sesión) y faseSTA-orlant-gestion-sta.test.js (el 403).
-declarar(['GET /tickets/campanas', 'GET /tickets', 'GET /tickets/:id', 'POST /tickets', 'POST /tickets/:id/respuestas'], 'skip');
+declarar(['GET /tickets/campanas', 'GET /tickets', 'GET /tickets/:id', 'POST /tickets', 'POST /tickets/:id/respuestas', 'GET /tickets/:id/adjunto'], 'skip'); // adjunto: pedido 7 (23/11), cubierto en faseTK-ruta-adjunto
 declarar(['GET /tickets/contador', 'PUT /tickets/:id/estado', 'DELETE /tickets/:id'], 'skip');
 declarar(['GET /tickets/tipos'], 'skip'); // Fase STA: antes 'open' (ver arriba) // Fase 364: tipos activos (cualquiera con sesión)
 declarar(['POST /tickets/tipos', 'PUT /tickets/tipos/:codigo'], 'admin'); // Fase 364: solo ADMIN edita los tipos

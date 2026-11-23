@@ -2253,6 +2253,11 @@
           <textarea id="tk-desc" rows="6" maxlength="2000" required aria-describedby="tk-aviso tk-desc-cont"></textarea>
           <div class="tk-ayuda"><span id="tk-aviso" class="tk-aviso"></span><span id="tk-desc-cont" class="tk-cont" aria-live="polite"></span></div>
         </div>
+        <!-- Pedido 7 de Edwin (23/11/2026): «Ruta de ingreso» y 1 adjunto (imagen o PDF), ambos opcionales. -->
+        <div class="tk-fila">
+          <div class="ig"><label for="tk-ruta">Ruta de ingreso <span class="tk-opcional">(opcional)</span></label><input type="text" id="tk-ruta" maxlength="200" autocomplete="off" placeholder="Ej.: Dashboard › ORLANT › Flujo" aria-describedby="tk-ruta-ayuda"><span id="tk-ruta-ayuda" class="tk-ayuda-txt">Por dónde entraste a la pantalla donde pasó.</span></div>
+          <div class="ig"><label for="tk-adjunto">Adjunto <span class="tk-opcional">(opcional)</span></label><input type="file" id="tk-adjunto" accept="image/png,image/jpeg,application/pdf,.png,.jpg,.jpeg,.pdf" aria-describedby="tk-adjunto-ayuda"><span id="tk-adjunto-ayuda" class="tk-ayuda-txt">Una imagen (PNG o JPG) o un PDF, hasta 3 MB.</span></div>
+        </div>
         <div class="modal-btns"><button class="btn-primary" type="submit" id="tk-enviar-btn">Enviar</button></div>
       </form>
     </section>
@@ -2278,6 +2283,12 @@
       <h4 id="tk-det-titulo" class="tk-det-titulo"></h4>
       <p class="tk-meta" id="tk-det-meta"></p>
       <p class="tk-texto tk-det-desc" id="tk-det-desc"></p>
+      <p class="tk-meta hidden" id="tk-det-ruta"></p>
+      <div class="tk-adjunto hidden" id="tk-det-adjunto">
+        <span id="tk-det-adj-nombre"></span>
+        <button type="button" class="btn-cancel" id="tk-adj-btn" onclick="ticketsDescargarAdjunto()">Descargar adjunto</button>
+        <img id="tk-det-adj-img" class="tk-adj-img hidden" alt="Imagen adjunta al ticket">
+      </div>
       <div class="tk-gestion hidden" id="tk-gestion">
         <div class="ig"><label for="tk-det-estado">Estado</label><select id="tk-det-estado"></select></div>
         <button type="button" class="btn-primary" id="tk-estado-btn" onclick="ticketsGuardarEstado()">Guardar estado</button>
