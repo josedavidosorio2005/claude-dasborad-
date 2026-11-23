@@ -13,15 +13,16 @@ after(cleanup);
 const C = 'ORLANT N1 INVENTADO';
 const t = new Date().toISOString();
 const L = db.prepare('INSERT INTO calidad_nivel_servicio_diario (campana, fecha, skillName, totalLlamadas, contestadas, serviceLevel20secPct, contestadas20sEstimado, createdAt) VALUES (?,?,?,?,?,?,?,?)');
-const W = db.prepare('INSERT INTO trafico_whatsapp (campana, colaWhatsapp, fechaInicio, fechaFin, totalWhatsapp, contestados, asaSegundos, createdAt) VALUES (?,?,?,?,?,?,?,?)');
+const W = db.prepare('INSERT INTO trafico_whatsapp (campana, colaWhatsapp, fechaInicio, fechaFin, totalWhatsapp, contestados, abandonados, asaSegundos, createdAt) VALUES (?,?,?,?,?,?,?,?,?)');
 const WT = db.prepare('INSERT INTO whatsapp_tiempos (campana, skill, fecha, hora, segundos, createdAt) VALUES (?,?,?,?,?,?)');
 const S = db.prepare('INSERT INTO salida_mensual (campana, mes, llamadas3p, llamadasGeneral, wpp3p, wppGeneral, createdAt) VALUES (?,?,?,?,?,?,?)');
 const A = db.prepare("INSERT INTO agendas (campana, asesor, sede, examen, especialidad, profesional, fechaSolicitud, tipoLinea, entidad, createdAt) VALUES (?, 'ASESORA X', 'SEDE X', 'EX', 'ESP', 'PROF', ?, ?, 'ENT', ?)");
 L.run(C, '2026-10-05', 'SKILL A', 100, 90, 80, 80, t);
 L.run(C, '2026-10-06', 'SKILL B', 50, 40, null, null, t);
 L.run(C, '2026-11-02', 'SKILL A', 60, 30, 50, 30, t);
-W.run(C, 'COLA', '2026-10-05', '2026-10-05', 40, 30, 20, t);
-W.run(C, 'COLA', '2026-11-02', '2026-11-02', 10, 10, 50, t);
+// abandonados (8 + 0) a propósito distinto de recibidos − contestados (10): manda la columna.
+W.run(C, 'COLA', '2026-10-05', '2026-10-05', 40, 30, 8, 20, t);
+W.run(C, 'COLA', '2026-11-02', '2026-11-02', 10, 10, 0, 50, t);
 [60, 170, 200, 400].forEach((s) => WT.run(C, 'COLA', '2026-10-05', 9, s, t));
 S.run(C, '2026-10', 7, 3, 2, 1, t);
 A.run(C, '2026-10-05 09:00:00', 'GENERAL', t); A.run(C, '2026-10-06 09:00:00', '3P', t); A.run(C, '2026-11-02 09:00:00', 'GENERAL', t);
@@ -40,7 +41,8 @@ test('llamadas: recibidas, NS 20 s solo con filas que lo traen, abandono y parti
 test('WhatsApp: rangos 0–3 / 3–5 / >5 min, ASA ponderado; citas y salida por línea; filtro de fechas', () => {
   const d = orlantTableroDatos(db, { gran: 'mes' }, C);
   const T = d.whatsapp.total;
-  assert.deepEqual([T.recibidos, T.contestados, T.abandonados, T.rango0a3, T.rango3a5, T.rangoMas5], [50, 40, 10, 2, 1, 1]);
+  assert.deepEqual([T.recibidos, T.contestados, T.abandonados, T.rango0a3, T.rango3a5, T.rangoMas5], [50, 40, 8, 2, 1, 1]);
+  assert.equal(T.abandono, 8 / 50, 'abandono con la columna abandonados, como la pestaña y el PDF');
   assert.equal(T.pct0a3, 0.5);
   assert.equal(T.asaSegundos, (20 * 30 + 50 * 10) / 40);
   assert.deepEqual(d.citas.total, { total: 3, general: 2, p3: 1 });
@@ -53,6 +55,36 @@ test('WhatsApp: rangos 0–3 / 3–5 / >5 min, ASA ponderado; citas y salida por
   assert.deepEqual(nov.llamadas.serie.map((s) => s.periodo), ['2026-11-02']);
   const sem = orlantTableroDatos(db, { gran: 'semana' }, C);
   assert.deepEqual(sem.llamadas.serie.map((s) => s.periodo), ['2026-10-05', '2026-11-02']);
+});
+
+// Hallazgos 1 y 2 de la revisión del 23/11.
+test('WhatsApp: una fila de un MES no se cuenta en el día 1 ni en un rango que la corta', () => {
+  const M = 'ORLANT N1 MENSUAL INVENTADO';
+  W.run(M, 'COLA', '2026-09-01', '2026-09-30', 300, 280, 15, 30, t);
+  W.run(M, 'COLA', '2026-10-07', '2026-10-07', 20, 18, 2, 10, t);
+  const mes = orlantTableroDatos(db, { gran: 'mes' }, M).whatsapp;
+  assert.deepEqual(mes.serie.map((x) => [x.periodo, x.recibidos]), [['2026-09', 300], ['2026-10', 20]]);
+  assert.equal(mes.fueraDeGrano, 0);
+  const dia = orlantTableroDatos(db, { gran: 'dia' }, M).whatsapp;
+  assert.deepEqual(dia.serie.map((x) => [x.periodo, x.recibidos]), [['2026-10-07', 20]], 'el mes no cae en 2026-09-01');
+  assert.equal(dia.fueraDeGrano, 1);
+  assert.equal(dia.total.recibidos, 320, 'sigue en el total');
+  const corte = orlantTableroDatos(db, { desde: '2026-09-15', hasta: '2026-10-31', gran: 'mes' }, M).whatsapp;
+  assert.equal(corte.total.recibidos, 20, 'la fila de septiembre cruza el borde: fuera');
+  assert.equal(corte.parciales, 1);
+  const ayer = orlantTableroDatos(db, { desde: '2026-09-10', hasta: '2026-09-10', gran: 'dia' }, M).whatsapp;
+  assert.equal(ayer.total.recibidos, 0);
+  assert.equal(ayer.parciales, 1);
+  assert.equal(mes.total.abandono, 17 / 320);
+});
+
+test('WhatsApp: sin la columna abandonados en ninguna fila, el abandono queda en «—» (null), no recibidos − contestados', () => {
+  const N = 'ORLANT N1 SIN ABANDONADOS';
+  W.run(N, 'COLA', '2026-10-05', '2026-10-05', 40, 30, null, 20, t);
+  const T = orlantTableroDatos(db, { gran: 'mes' }, N).whatsapp.total;
+  assert.equal(T.abandonados, null);
+  assert.equal(T.abandono, null);
+  assert.equal(T.atencion, 30 / 40);
 });
 
 test('fechas y granularidad: lunes de la semana, valores inválidos se ignoran, atajos', () => {
@@ -97,3 +129,44 @@ test('vista: 4 secciones, línea sin dato en la entrada, «Ver más», Excel; en
   const core = fs.readFileSync(path.join(RAIZ, 'js', 'dashboards-core.js'), 'utf8');
   assert.ok(core.includes("orlantTableroVeTarjeta(isFullAdmin())"));
 });
+
+// Hallazgo 3 (revisión del 23/11): una respuesta vieja nunca pisa a la más nueva.
+test('otCargar: si la respuesta vieja llega después de la nueva, se descarta', async () => {
+  const host = { innerHTML: '' };
+  const g = global;
+  const antes = { document: g.document, apiRequest: g.apiRequest, showToast: g.showToast };
+  const pendientes = [];
+  g.document = { getElementById: (id) => (id === 'ot-host' ? host : null) };
+  g.apiRequest = () => new Promise((ok) => pendientes.push(ok));
+  g.showToast = () => {};
+  try {
+    const p1 = front.otCargar();
+    const p2 = front.otCargar();
+    pendientes[1](Object.assign(orlantTableroDatos(db, {}, C), { marca: 'nueva' }));
+    await p2;
+    pendientes[0](Object.assign(orlantTableroDatos(db, {}, C), { marca: 'vieja' }));
+    await p1;
+    assert.equal(front._otEstado().datos.marca, 'nueva');
+  } finally {
+    Object.assign(g, antes);
+    front._otEstado().datos = null;
+  }
+});
+
+// Hallazgo 4: la línea es un grupo de botones de alternar, no pestañas sin panel.
+test('selector de línea: role="group" con aria-pressed, sin role="tab"', () => {
+  const host = { innerHTML: '' };
+  const g = global, antes = g.document;
+  g.document = { getElementById: (id) => (id === 'ot-host' ? host : null) };
+  try { front.otRender(); } finally { g.document = antes; }
+  assert.match(host.innerHTML, /class="ot-lineas" role="group" aria-label="Línea"/);
+  assert.match(host.innerHTML, /data-ot-linea="total" aria-pressed="true"/);
+  assert.doesNotMatch(host.innerHTML, /role="tab"|role="tablist"|aria-selected/);
+});
+
+test('avisos de períodos de WhatsApp: cruzan el borde / más largos que la granularidad', () => {
+  assert.equal(front.otAvisoPeriodosWpp({ parciales: 0, fueraDeGrano: 0 }, 'dia'), '');
+  assert.match(front.otAvisoPeriodosWpp({ parciales: 1, fueraDeGrano: 0 }, 'dia'), /1 período de WhatsApp cruza el borde .* no se cuenta\./);
+  assert.match(front.otAvisoPeriodosWpp({ parciales: 0, fueraDeGrano: 2 }, 'semana'), /2 períodos de WhatsApp duran más de una semana: están en el total/);
+});
+

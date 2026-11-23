@@ -21757,3 +21757,20 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
 - **Arreglo:** `.ot-acciones .aurora-close` con mínimo 44 × 44 px y sin partir el texto (`nowrap`, como pide la prueba de la Fase 144), solo en este tablero; los demás tableros no cambian. Además, «20 s», «95 s» y «78,7 %» llevan espacio que no se corta, para que la unidad no quede sola en otra línea. Repetida la revisión: 0 fallas. Suite 3413/0.
 - **Plan:** la IP 3.85.54.96 quedó agregada como permanente en el firewall del Manager de `wv0034` (usuario, 21/11). Anotado en la §7 del plan.
 
+### Fase N1 — arreglos de la revisión del 23/11 (2026-11-23, mismo PR #904, sin mergear)
+
+- **Pedido (usuario, 23/11):** corregir en #904 los 4 hallazgos de la revisión, con pruebas. El abandono de WhatsApp tiene que usar la columna `abandonados`, igual que la pestaña y el PDF. CI en verde, sin mergear.
+- **1. WhatsApp por período** (`server/orlant-tablero.js`). Cada fila de `trafico_whatsapp` es una cola por un período, de un día o de un mes.
+  - Una fila entra a un rango de fechas solo si cae completa dentro; si cruza el borde, se cuenta en `parciales`.
+  - En la serie entra solo si cabe en un período de la granularidad; si no, se cuenta en `fueraDeGrano`, pero sigue en el total.
+  - El tablero avisa en los dos casos. Un mes cargado en una fila ya no aparece entero en el día 1, y «Ayer» ya no suma el mes.
+- **2. Abandono de WhatsApp:** suma de `abandonados`, como `trafico-whatsapp.js` y `reporte-pdf-logic.js`. Si ninguna fila la trae, sale null («—», con la nota «el archivo no trae abandonados»), nunca recibidos − contestados.
+- **3. Carrera en `otCargar`:** cada carga lleva un número, y la respuesta vieja se descarta.
+- **4. Selector de línea:** pasa a `role="group"` con `aria-pressed`, igual que los canales. Ya no tiene `role="tab"` sin panel.
+- **Pruebas:** `faseN1-orlant-tablero` pasa de 5 a 10. Cubren:
+  - una fila mensual vista por día, por mes, con un rango que la corta y con «ayer»;
+  - el abandono con la columna y sin ella;
+  - la respuesta vieja descartada;
+  - el selector sin `role="tab"`;
+  - los textos de los avisos.
+

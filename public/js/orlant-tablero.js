@@ -59,6 +59,13 @@ function _otTabla(cab, filas) {
     '</tbody></table></div>';
 }
 function _otAviso(t) { return '<p class="ot-aviso">' + _otEsc(t) + '</p>'; }
+// Revisión del 23/11 (hallazgo 1): WhatsApp se carga por período (un día o un mes por fila).
+function otAvisoPeriodosWpp(w, gran) {
+  var out = '';
+  if (w && w.parciales > 0) out += _otAviso(w.parciales + (w.parciales === 1 ? ' período de WhatsApp cruza' : ' períodos de WhatsApp cruzan') + ' el borde de las fechas elegidas y no se cuenta' + (w.parciales === 1 ? '' : 'n') + '. Elige fechas que lo cubran completo.');
+  if (w && w.fueraDeGrano > 0) out += _otAviso(w.fueraDeGrano + (w.fueraDeGrano === 1 ? ' período de WhatsApp dura' : ' períodos de WhatsApp duran') + ' más de un' + (gran === 'semana' ? 'a semana' : gran === 'mes' ? ' mes' : ' día') + ': ' + (w.fueraDeGrano === 1 ? 'está' : 'están') + ' en el total, pero no en la tabla por período. Míralo con «Ver por: Mes».');
+  return out;
+}
 
 // { kpis: html, detalle: html } de la vista actual.
 function otContenido(d, s) {
@@ -82,13 +89,14 @@ function otContenido(d, s) {
     if (sinLinea) return { kpis: _otAviso(avisoLinea), detalle: '' };
     return {
       kpis: _otKpi(otNum(W.recibidos), 'WhatsApp recibidos') + _otKpi(otNum(W.contestados), 'Atendidos') + _otKpi(otPct(W.pct0a3), 'Atendidos en 0–3 min', W.conTiempo ? 'de ' + otNum(W.conTiempo) + ' con tiempo' : 'sin tiempos cargados') +
-        _otKpi(otPct(W.abandono), 'Abandono') + _otKpi(otSeg(W.asaSegundos), 'ASA', 'espera promedio'),
+        _otKpi(otPct(W.abandono), 'Abandono', W.abandonados === null ? 'el archivo no trae abandonados' : '') + _otKpi(otSeg(W.asaSegundos), 'ASA', 'espera promedio'),
       detalle: '<h3 class="ot-h3">Tiempo hasta contestar</h3>' + _otTabla(['Rango', 'Conversaciones', '%'], [
         ['0–3 min', otNum(W.rango0a3), otPct(W.conTiempo ? W.rango0a3 / W.conTiempo : null)],
         ['3–5 min', otNum(W.rango3a5), otPct(W.conTiempo ? W.rango3a5 / W.conTiempo : null)],
         ['Más de 5 min', otNum(W.rangoMas5), otPct(W.conTiempo ? W.rangoMas5 / W.conTiempo : null)]]) +
         '<h3 class="ot-h3">Por período</h3>' + _otTabla(['Período', 'Recibidos', 'Atendidos', 'Abandono', '0–3 min'],
         d.whatsapp.serie.map(function (x) { return [otPeriodoLbl(x.periodo, g), otNum(x.recibidos), otNum(x.contestados), otPct(x.abandono), otPct(x.pct0a3)]; })) +
+        otAvisoPeriodosWpp(d.whatsapp, g) +
         _otAviso('El TMO de WhatsApp llega con la API (fase N3).'),
     };
   }
@@ -114,10 +122,12 @@ function otContenido(d, s) {
   return { kpis: _otAviso('Asesores (ocupación, horas logueadas, Talk / ACW, por intervalo): llegan con la API de Wolkvox de ORLANT (fase N8).'), detalle: '' };
 }
 
-function _otBotones(lista, actual, attr, rol) {
+// Botones de alternar (aria-pressed), en un grupo. Revisión del 23/11 (hallazgo 4): antes la línea
+// decía ser pestañas (role="tab") sin panel ni flechas.
+function _otBotones(lista, actual, attr) {
   return lista.map(function (x) {
     var on = x.key === actual;
-    return '<button type="button" class="ot-seg' + (on ? ' on' : '') + '" ' + attr + '="' + x.key + '"' + (rol === 'tab' ? ' role="tab" aria-selected="' + on + '"' : ' aria-pressed="' + on + '"') + '>' + _otEsc(x.label) + '</button>';
+    return '<button type="button" class="ot-seg' + (on ? ' on' : '') + '" ' + attr + '="' + x.key + '" aria-pressed="' + on + '">' + _otEsc(x.label) + '</button>';
   }).join('');
 }
 
@@ -136,7 +146,7 @@ function otRender() {
     '<label class="ot-campo"><span>Hasta</span><input type="date" id="ot-hasta" value="' + _otEsc(s.hasta) + '"></label>' +
     '<label class="ot-campo"><span>Ver por</span><select id="ot-gran">' + [['dia', 'Día'], ['semana', 'Semana'], ['mes', 'Mes']].map(function (a) { return '<option value="' + a[0] + '"' + (a[0] === s.gran ? ' selected' : '') + '>' + a[1] + '</option>'; }).join('') + '</select></label>' +
     '</div>';
-  var lineas = '<div class="ot-lineas" role="tablist" aria-label="Línea">' + _otBotones(OT_LINEAS, s.linea, 'data-ot-linea', 'tab') + '</div>';
+  var lineas = '<div class="ot-lineas" role="group" aria-label="Línea">' + _otBotones(OT_LINEAS, s.linea, 'data-ot-linea') + '</div>';
   var canales = s.seccion === 'inbound' ? '<div class="ot-canales" role="group" aria-label="Canal">' + _otBotones(OT_CANALES, s.canal, 'data-ot-canal') + '</div>' : '';
   var cuerpo;
   if (!d) cuerpo = '<p class="ot-aviso" aria-live="polite">Cargando…</p>';
@@ -150,11 +160,18 @@ function otRender() {
   host.innerHTML = '<div class="ot-layout">' + nav + '<section class="ot-main" aria-labelledby="ot-h2"><h2 class="ot-h2" id="ot-h2">' + _otEsc(titulo) + '</h2>' + filtros + lineas + canales + '<div class="ot-cuerpo" aria-live="polite">' + cuerpo + '</div></section></div>';
 }
 
+// Revisión del 23/11 (hallazgo 3): cada carga lleva un número; una respuesta que llega después de
+// otra más nueva (filtros cambiados rápido) se descarta y nunca pisa la vista del rango elegido.
+var _otPedido = 0;
 async function otCargar() {
+  var mio = ++_otPedido;
   _ot.datos = null; otRender();
   var q = '?gran=' + encodeURIComponent(_ot.gran) + (_ot.desde ? '&desde=' + encodeURIComponent(_ot.desde) : '') + (_ot.hasta ? '&hasta=' + encodeURIComponent(_ot.hasta) : '');
-  try { _ot.datos = await apiRequest('GET', '/orlant/tablero' + q); }
-  catch (e) { _ot.datos = null; if (typeof showToast === 'function') showToast('No se pudo cargar el tablero: ' + e.message); }
+  var datos = null, error = null;
+  try { datos = await apiRequest('GET', '/orlant/tablero' + q); } catch (e) { error = e; }
+  if (mio !== _otPedido) return;
+  _ot.datos = datos;
+  if (error && typeof showToast === 'function') showToast('No se pudo cargar el tablero: ' + error.message);
   otRender();
 }
 
@@ -227,5 +244,5 @@ function otExcel() {
 function orlantTableroVeTarjeta(esFullAdmin) { return esFullAdmin === true; }
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { otContenido: otContenido, otRangoAtajo: otRangoAtajo, otOutboundLinea: otOutboundLinea, otCitasLinea: otCitasLinea, otHojasExcel: otHojasExcel, otPeriodoLbl: otPeriodoLbl, orlantTableroVeTarjeta: orlantTableroVeTarjeta, OT_SECCIONES: OT_SECCIONES };
+  module.exports = { otCargar: otCargar, otRender: otRender, _otEstado: function () { return _ot; }, otAvisoPeriodosWpp: otAvisoPeriodosWpp, otContenido: otContenido, otRangoAtajo: otRangoAtajo, otOutboundLinea: otOutboundLinea, otCitasLinea: otCitasLinea, otHojasExcel: otHojasExcel, otPeriodoLbl: otPeriodoLbl, orlantTableroVeTarjeta: orlantTableroVeTarjeta, OT_SECCIONES: OT_SECCIONES };
 }

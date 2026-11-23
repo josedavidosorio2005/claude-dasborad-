@@ -23,6 +23,10 @@ sepan que hay nuevo, que se corrigio y que falta.
   - citas: General y 3P;
   - salida: por mes.
 - Lo que falta (asesores, back office, TMO, línea de la entrada) aparece con un aviso.
+- El abandono de WhatsApp se calcula igual que en la pestaña «Tráfico de WhatsApp» y en el PDF (con los
+  abandonados del archivo).
+- WhatsApp cargado por mes ya no aparece entero en el primer día: si un período no cabe en el día, la
+  semana o las fechas elegidas, el tablero lo avisa.
 
 ## v1.240.0 — Noviembre 2026
 
