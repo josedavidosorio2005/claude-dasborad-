@@ -2726,6 +2726,13 @@ div.ca-bar-fila{cursor:default}
 .ac-check{display:flex;align-items:center;gap:8px;min-height:44px;color:var(--c-text-2)}
 .ac-check input{width:20px;height:20px}
 .ac-acciones{display:flex;flex-wrap:wrap;gap:8px}
+/* Fase GH4: «Novedades desde Gestión Humana» (solo lectura). */
+.ac-gh-sec{margin-bottom:14px}
+.ac-gh-sec summary{cursor:pointer;font-weight:600;color:var(--c-text-2);min-height:44px;display:flex;align-items:center;gap:8px}
+.ac-gh-lista{list-style:none;margin:8px 0 0;padding:0}
+.ac-gh-fila{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;padding:10px 0;border-top:1px solid var(--c-border-soft)}
+.ac-gh-txt{display:flex;flex-direction:column;gap:2px;flex:1 1 240px;min-width:0;overflow-wrap:anywhere}
+.ac-gh-estado{color:var(--c-text-2)}
 .ac-asig-form{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin:12px 0;padding:12px;border:1px solid var(--c-border-soft);border-radius:var(--r-md)}
 .ac-asig-form .ig{margin-bottom:0;flex:1 1 180px}
 .ac-form-titulo{flex-basis:100%;margin:0}
