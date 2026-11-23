@@ -104,6 +104,10 @@ M(`          <div class="fila" style="margin-bottom:12px;flex-wrap:nowrap">
           </div>
 `, '          <p class="muted" style="margin-top:0;font-size:12px">Los agentes son los usuarios ASESOR de ORLANT de la plataforma.</p>\n');
 M(`onclick="document.getElementById('archivo').click()"`, `onclick="STAapp.$('archivo').click()"`);
+// Pendiente del STA (23/11): «Descargar plantilla» en el panel de carga — un Excel vacío con los 8 encabezados
+// que pide la carga (CAMPOS, los mismos que exige server/orlant-sta.js), sin filas de ejemplo.
+M(`        <input type="file" id="archivo" accept=".xlsx,.xls,.csv" class="hidden">`, `        <div class="fila sta-plantilla" style="margin-top:10px;align-items:center"><span class="muted" style="flex:1;min-width:200px">¿Primera vez? Descarga la plantilla con las 8 columnas que pide la carga.</span><button class="btn sm" type="button" onclick="descargarPlantilla()">Descargar plantilla</button></div>
+        <input type="file" id="archivo" accept=".xlsx,.xls,.csv" class="hidden">`);
 M('<input class="inp" id="nuevaTipi" placeholder="Nueva tipificación"', '<input class="inp" id="nuevaTipi" aria-label="Nueva tipificación" placeholder="Nueva tipificación"');
 // Pedido de Edwin (23/11/2026): «Regresar a disponibles» en Gestionados (por codificación o marcados).
 M(`      <p class="muted" id="gsInfo" style="margin:0 0 10px"></p>`, `      <div class="card fila gs-regresar" style="padding:12px 16px">
@@ -205,7 +209,12 @@ funcion('borrarCarga', `async function borrarCarga(id){
   cerrarModal(); await refrescar(); pintarBase(); if(!r) return;
   $('cargaMsg').innerHTML=\`<div class="msg ok">Se eliminaron <b>\${r.eliminados}</b> casos de la carga.\${r.conservados?\` Se conservaron <b>\${r.conservados}</b> gestionados.\`:''}</div>\`;
 }
-async function descargarCarga(id){ if(!await API.descargar(id)) toast('No se pudo descargar el archivo'); }`);
+async function descargarCarga(id){ if(!await API.descargar(id)) toast('No se pudo descargar el archivo'); }
+function descargarPlantilla(){
+  if(typeof XLSX==='undefined'){ toast('No se pudo preparar el archivo de Excel'); return; }
+  const ws=XLSX.utils.aoa_to_sheet([CAMPOS.slice()]); ws['!cols']=CAMPOS.map(c=>({wch:Math.max(14,c.length+2)}));
+  const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Base STA'); XLSX.writeFile(wb,'Plantilla_base_STA.xlsx');
+}`);
 funcion('descargarRespaldo', '');
 
 // Pedido de Edwin (23/11/2026): Gestionados con casillas y «Regresar a disponibles». Misma tabla de
