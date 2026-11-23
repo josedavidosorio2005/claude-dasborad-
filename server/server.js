@@ -374,6 +374,7 @@ function createApp() {
   api.use(require('./routes/total-trafico')); // Fase 219
   api.use(require('./routes/sura-televentas')); // Fase 215
   api.use(require('./routes/orlant-sta')); // Fase STA: «Gestión STA» de ORLANT
+  api.use(require('./routes/orlant-tablero')); // Fase N1: tablero nuevo de ORLANT (solo ADMIN)
   api.use(require('./routes/dashboards'));
   api.use(require('./routes/centro-cargas')); // Fase 153: Centro de cargas
   api.use(require('./routes/inventario'));
