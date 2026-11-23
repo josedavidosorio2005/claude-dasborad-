@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.240.0` (ver `server/package.json`, expuesta en
+- **Versión**: `1.242.0` (rama; producción sigue en `1.240.0`) (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -625,6 +625,7 @@ mismo orden):
 - Fase A30 — Hueco de julio de 2026 del MOBILIZE real llenado con la API (34 consultas, igual a la réplica; agosto–noviembre intactos); nov/2025–jun/2026 Wolkvox los rechaza (v1.238.0, 2026-11-20)
 - Fase STA (parte 1) — «Gestión STA» de ORLANT, servidor: tablas sta_*, rutas /api/orlant/sta/*, permisos por rol y Tickets fuera para el cliente de ORLANT; interfaz en la parte 2 (v1.239.0, 2026-11-20)
 - Fase STA (parte 2) — «Gestión STA» en la plataforma (supervisor, asesor) y gráficas para el cliente de ORLANT en su Dashboard; base real cargada el 21/11: 1.322 casos nuevos (v1.239.0, 2026-11-21)
+- Fase N1 — ORLANT, tablero nuevo con las cargas manuales, solo ADMIN (v1.242.0, 2026-11-21, PR sin mergear)
 - Fase STA (parte 3) — Pendientes de la prueba local (devolver/pasar/quitar, filtros, búsqueda e histórico, aviso con gestión abierta, 768 px) y tema oscuro con contraste AA; guion para Edwin (v1.240.0, 2026-11-21)
 - Fase A31 — Primeras franjas del MOBILIZE real con la API (21/11 00:05 y 7:00): noviembre real = réplica día por día, respaldo del manual guardado (8/25/67/35/33), julio y octubre intactos; corrección de horas de la A28 y sondeo nov/2025–jun/2026 (solo docs, 2026-11-21)
 - Fase A32 — MOBILIZE: «mes consultado» de no conectadas (0, no «Pendiente») y julio de 2026 del real en el hueco (v1.239.1, 2026-11-21)

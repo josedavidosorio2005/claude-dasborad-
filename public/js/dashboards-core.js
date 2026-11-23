@@ -54,6 +54,12 @@ function renderDashGrid(){
     var cal = grid.querySelector('[onclick="onDashBtn(\'Calidad\')"]');
     if (cal) cal.insertAdjacentHTML('afterend', staHtml); else grid.insertAdjacentHTML('afterbegin', staHtml);
   }
+  // Fase N1: tablero nuevo de ORLANT, en prueba: SOLO el administrador completo (el servidor lo revisa).
+  if (typeof orlantTableroVeTarjeta === 'function' && orlantTableroVeTarjeta(isFullAdmin())) {
+    var otHtml = tarjetaEntrada({ key: 'orlant_tablero', label: 'ORLANT · Tablero nuevo', sub: 'En prueba: inbound, outbound, back office y asesores', icon: 'i-layout-dashboard', accion: 'openOrlantTablero' });
+    var staT = grid.querySelector('[data-entrada="sta"]');
+    if (staT) staT.insertAdjacentHTML('afterend', otHtml); else grid.insertAdjacentHTML('beforeend', otHtml);
+  }
   // Sin ningun modulo (ni tarjetas de entrada) -> mensaje claro, sin tarjetas.
   var vacio=document.getElementById('dash-grid-vacio');
   var sinNada = modulos.length===0 && extra.length===0;

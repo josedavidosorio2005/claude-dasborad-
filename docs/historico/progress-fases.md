@@ -21715,3 +21715,62 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - **No revisado en producción:** las vistas de asesora y cliente (sin su sesión). Se probaron en local y quedan para la prueba con Edwin (`docs/orlant/sta/guia-prueba-edwin.md`).
   - Las capturas, que tenían nombres de asesoras, se borraron.
 
+## Fase N1 — ORLANT, tablero nuevo con las cargas manuales, solo ADMIN (v1.242.0, 2026-11-21, PR sin mergear)
+
+- **Pedido (usuario, 21/11):**
+  - Actualizar el plan `docs/orlant/nuevo-dashboard/plan.md`: la API de ORLANT funciona (operación `inconexion-orlant`, servidor `wv0034`, `skill_1` del 20/11 con 200 y 19 skills, probado por el usuario en Postman; el token va a SSM el lunes).
+  - Empezar N1: el tablero nuevo con los datos manuales, oculto y solo para ADMIN, probado en local con datos ficticios a 1440 y 375 px, en claro y en oscuro; PR sin mergear.
+  - Además (pregunta del usuario, solo lectura): cómo se resolvió el firewall de Wolkvox con MOBILIZE y qué hacer con ORLANT. Quedó en la sección 7 del plan.
+- **Servidor:**
+  - `server/orlant-tablero.js` y `GET /api/orlant/tablero?desde&hasta&gran` (solo `isFullAdmin`; otro rol 403).
+  - Solo lectura de lo que ya existe:
+    - llamadas: `calidad_nivel_servicio_diario`, con recibidas, contestadas, NS 20 s (solo filas con el dato), nivel de atención, abandono y participación por skill;
+    - WhatsApp: `trafico_whatsapp` + `whatsapp_tiempos`, con rangos 0–3 / 3–5 / >5 min y ASA ponderado por atendidos;
+    - salida: `salidaCombinadaPorMes`, por mes y línea;
+    - citas: `agendas`, General / 3P.
+  - Granularidad día, semana (lunes) o mes. Fechas inválidas se ignoran. Sin tablas ni migraciones nuevas.
+  - Declarada en la matriz de acceso de la Fase 118 como `admin`.
+- **Pantalla:**
+  - `public/js/orlant-tablero.js`: ventana a pantalla completa desde la tarjeta «ORLANT · Tablero nuevo» (solo `isFullAdmin()`).
+  - Menú vertical de 4 secciones; Inbound con Llamadas / WhatsApp / Citas; línea Total / General / 3P.
+  - La entrada sin línea muestra un aviso hasta tener el mapa de skills (N2).
+  - Fechas con atajos y «Ver por»; «Ver más indicadores» (recordado en el navegador).
+  - Excel (5 hojas), PDF (impresión de la vista con el detalle abierto) y pantalla completa.
+  - Back office y Asesores muestran qué falta.
+  - Estilos con los tokens del sistema de diseño; objetivos de 44 px.
+- **Verificación local** (base desechable, datos ficticios; producción sin tocar):
+  - Brave a 1440 y 375 px, claro y oscuro, recorriendo las 8 vistas. La primera pasada encontró desborde lateral a 375 px (la grilla con `1fr`); se corrigió con `minmax(0,1fr)` y campos que se acomodan. Después: 0 desbordes, 0 textos con contraste bajo dentro del tablero y consola sin errores.
+  - Los botones del encabezado (los mismos `.aurora-close` de todos los tableros) se excluyeron de la medición automática porque el fondo es un degradado que el script no lee; a ojo se ven blancos sobre el azul oscuro.
+- **Pruebas:**
+  - nueva `faseN1-orlant-tablero` (5): cálculos, rangos de fechas, semanas, acceso por rol, vista y Excel;
+  - `fase118-matriz-acceso` con la ruta nueva.
+- **Versión:** 1.242.0, para no chocar con el PR #902 (B1, 1.241.0, sin mergear). Si uno entra antes, el otro ajusta su versión y su CHANGELOG.
+- **Sigue (lunes 23/11):** token en SSM, IP 3.85.54.96 para `wv0034` (plan §7), N2 (mapa de skills → línea, TMO/ASA) y N5 (motor por operación + réplica «ORLANT PRUEBAS API»).
+
+### Fase N1 — revisión de la versión final (2026-11-21)
+
+- **Pedido (usuario):** volver a mirar en local la versión final del PR #904 (después de pasar tamaños y bordes a los tokens), a 1440 y 375 px, en claro y oscuro, y corregir en la misma rama.
+- **Revisión** (Brave, base desechable, datos ficticios): 9 vistas × 4 combinaciones, más la descarga de Excel.
+  - Esta vez el contraste incluye el encabezado: el script ya lee los degradados y mezcla las transparencias.
+  - Resultado: contraste 0 fallas, sin desborde lateral, consola sin errores y Excel descargado en las 4.
+  - **Falló un punto:** a 1440 px, los botones del encabezado (Excel, PDF, pantalla completa, Cerrar) medían menos de 44 px.
+- **Arreglo:** `.ot-acciones .aurora-close` con mínimo 44 × 44 px y sin partir el texto (`nowrap`, como pide la prueba de la Fase 144), solo en este tablero; los demás tableros no cambian. Además, «20 s», «95 s» y «78,7 %» llevan espacio que no se corta, para que la unidad no quede sola en otra línea. Repetida la revisión: 0 fallas. Suite 3413/0.
+- **Plan:** la IP 3.85.54.96 quedó agregada como permanente en el firewall del Manager de `wv0034` (usuario, 21/11). Anotado en la §7 del plan.
+
+### Fase N1 — arreglos de la revisión del 23/11 (2026-11-23, mismo PR #904, sin mergear)
+
+- **Pedido (usuario, 23/11):** corregir en #904 los 4 hallazgos de la revisión, con pruebas. El abandono de WhatsApp tiene que usar la columna `abandonados`, igual que la pestaña y el PDF. CI en verde, sin mergear.
+- **1. WhatsApp por período** (`server/orlant-tablero.js`). Cada fila de `trafico_whatsapp` es una cola por un período, de un día o de un mes.
+  - Una fila entra a un rango de fechas solo si cae completa dentro; si cruza el borde, se cuenta en `parciales`.
+  - En la serie entra solo si cabe en un período de la granularidad; si no, se cuenta en `fueraDeGrano`, pero sigue en el total.
+  - El tablero avisa en los dos casos. Un mes cargado en una fila ya no aparece entero en el día 1, y «Ayer» ya no suma el mes.
+- **2. Abandono de WhatsApp:** suma de `abandonados`, como `trafico-whatsapp.js` y `reporte-pdf-logic.js`. Si ninguna fila la trae, sale null («—», con la nota «el archivo no trae abandonados»), nunca recibidos − contestados.
+- **3. Carrera en `otCargar`:** cada carga lleva un número, y la respuesta vieja se descarta.
+- **4. Selector de línea:** pasa a `role="group"` con `aria-pressed`, igual que los canales. Ya no tiene `role="tab"` sin panel.
+- **Pruebas:** `faseN1-orlant-tablero` pasa de 5 a 10. Cubren:
+  - una fila mensual vista por día, por mes, con un rango que la corta y con «ayer»;
+  - el abandono con la columna y sin ella;
+  - la respuesta vieja descartada;
+  - el selector sin `role="tab"`;
+  - los textos de los avisos.
+

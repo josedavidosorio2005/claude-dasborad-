@@ -3,6 +3,15 @@
 Escrito el 21/11/2026. **Es solo diseño:** todavía no hay código ni cambios en producción.
 La propuesta original vive fuera del repo; aquí se resume lo pedido en C1, C3–C6, E2 y E3.
 
+> **Actualización (21/11/2026, usuario):** la API de ORLANT **funciona**:
+> - operación `inconexion-orlant`, servidor `wv0034`, misma ruta `/api/v2/reports_manager.php`;
+> - `skill_1` del 20/11 respondió 200 con 19 skills (prueba del usuario en Postman, desde su PC);
+> - el token **no está en el repo**: el lunes 23/11 va a SSM como `/inconexion/prod/WOLKVOX_ORLANT_TOKEN`
+>   (SecureString), junto con `/inconexion/prod/WOLKVOX_ORLANT_SERVIDOR` (`wv0034`).
+>
+> Falta comprobar que **el servidor de producción** llega a `wv0034` (ver §7): con MOBILIZE, Postman desde
+> el PC funcionaba y el servidor no, hasta que Wolkvox autorizó su IP.
+
 **Convenciones:**
 - ✔ = sale de algo que ya tenemos probado con MOBILIZE.
 - ◐ = el reporte existe, pero falta confirmarlo con el token de ORLANT.
@@ -166,8 +175,9 @@ El plan:
 
 ## 5. Qué falta pedir
 
-- **Token de ORLANT** (Wolkvox) y nombre del servidor, cargados en SSM por quien corresponda. Nunca por
-  chat ni en el repo.
+- ~~Token de ORLANT~~ **Listo (21/11):** la operación `inconexion-orlant` en `wv0034` responde. El usuario
+  lo carga en SSM el lunes 23/11. La IP 3.85.54.96 ya quedó como permanente en el firewall del Manager de
+  `wv0034` (21/11); falta comprobarlo desde el servidor (§7).
 - **OK de Jairo** para consultar la operación de ORLANT, y del usuario para cada interruptor.
 - **Skills de 3P:** lista de skills (y colas de WhatsApp) que son 3P y las que son General.
 - **Meta de WhatsApp:** ¿«atendido a tiempo» es 0–3 min? ¿Qué % se espera? ¿Hay meta de abandono?
@@ -185,11 +195,11 @@ El plan:
 
 | Fase | Qué | Horas | Depende de |
 |---|---|---|---|
-| N1 | Tablero aparte: estructura, menú, sub-pestañas de línea, filtros (línea, fechas, granularidad), «Ver más», Excel/PDF/pantalla completa, con los datos manuales que ya hay. Oculto, solo admin | 16–20 | nada (se puede empezar) |
+| N1 | Tablero aparte: estructura, menú, sub-pestañas de línea, filtros (línea, fechas, granularidad), «Ver más», Excel/PDF/pantalla completa, con los datos manuales que ya hay. Oculto, solo admin | 16–20 | **empezada el 21/11** (rama `faseN1-orlant-tablero-nuevo`, PR sin mergear) |
 | N2 | Inbound llamadas (C3) con los datos manuales de hoy + ASA y participación por skill | 8–10 | mapa de skills para la línea |
 | N3 | WhatsApp (C4) con la carga manual (`whatsapp_tiempos`: 0–3 / 3–5 / >5, TMO, ASA) | 6–8 | meta de WhatsApp |
 | N4 | Citas (C5): General/3P ya; por canal según lo que decida Edwin | 4–10 | definición del canal |
-| N5 | Motor Wolkvox generalizado por operación (sin cambiar MOBILIZE) + réplica «ORLANT PRUEBAS API» | 12–16 | token de ORLANT + OK de Jairo |
+| N5 | Motor Wolkvox generalizado por operación (sin cambiar MOBILIZE) + réplica «ORLANT PRUEBAS API» + «Diagnóstico de red» para `wv0034` | 12–16 | token en SSM (lunes 23/11) + OK de Jairo (IP ya autorizada el 21/11, §7) |
 | N6 | Réplica ORLANT: Flujo, Flujo por hora, cdr_1, no conectadas; comparación día por día contra lo manual | 10–14 | N5 |
 | N7 | Salida (C6): realizadas, contactabilidad, intentos, citas | 8–10 | N6 + decisión del hash |
 | N8 | Asesores (E2): guardar `agent_1`/`agent_5` (ocupación, horas, Talk/ACW, por hora) | 10–12 | N6 |
@@ -200,4 +210,83 @@ El plan:
 **Total aproximado:** 82–118 horas.
 
 Lo que se puede empezar ya, sin esperar a nadie, es **N1** (con los datos manuales).
-**N5** en adelante espera el token y el OK de Jairo.
+**N5** en adelante espera el token en SSM (lunes 23/11) y el OK de Jairo; la IP ya quedó autorizada en `wv0034` (21/11, §7).
+
+## 7. IP del servidor y firewall de Wolkvox (cómo se resolvió con MOBILIZE y qué hacer con ORLANT)
+
+### Qué pasó con MOBILIZE
+
+Fuentes: Fases W2, W3, A1 y A2 de `docs/historico/progress-fases.md`, `docs/plan-api-wolkvox.md` §3 y
+§10, y `docs/pendientes.md`.
+
+1. **17/11:** los parámetros SSM de MOBILIZE ya existían, pero «Probar conexión» desde producción fallaba
+   a los ~10 s («No se pudo conectar»). No era un rechazo del token: eso daría 401 o 403.
+2. **El token no tenía lista de IP:** el usuario lo confirmó en Wolkvox Manager. Por eso **no se registró
+   ninguna IP en el Manager**; no hacía falta, porque el token no filtraba por IP.
+3. **«Diagnóstico de red» (Fase W3, sin token y sin gastar consultas):**
+   - el DNS de `wv0072.wolkvox.com` resolvía bien;
+   - **la conexión TCP al 443 no respondía** desde el servidor;
+   - la salida a internet del servidor funcionaba;
+   - desde el PC del usuario, el mismo nombre conectaba en 77 ms.
+4. **Causa:** un bloqueo de red **del lado de Wolkvox** (su firewall) hacia la IP de salida del servidor.
+5. **Solución:** el 17/11 el usuario escribió al **soporte de Wolkvox** con la IP, el puerto 443, las horas
+   de las pruebas y el síntoma, y pidió autorizar la IP. **El 18/11 Wolkvox la agregó a su firewall**: el
+   diagnóstico salió en Sí (DNS, TCP y TLS por IPv4) y desde ahí la API responde (Fase A2).
+
+   Lo hizo Wolkvox en su infraestructura, no nosotros en el Manager. El repo no dice qué pantalla usaron.
+
+**IP de salida del servidor de producción (Lightsail):** **3.85.54.96**. Es la IP estática de la
+instancia (el usuario lo confirmó en Lightsail el 17/11) y es a la que resuelve `sinco.inconexion.com.co`.
+La 100.51.93.1 de bitácoras viejas era de la cuenta anterior, ya retirada. La IP no cambia mientras la IP
+estática siga pegada a la instancia.
+
+### Qué hacer con ORLANT (`inconexion-orlant`, `wv0034`)
+
+> **Hecho (usuario, 21/11/2026):** la IP **3.85.54.96** quedó agregada **como permanente** en el
+> firewall del Manager de `wv0034`. Los pasos 1 y 2 de abajo ya no hacen falta, salvo que la comprobación
+> (diagnóstico de red) salga mal. Sigue pendiente cargar el token en SSM (paso 3) y comprobarlo después de N5.
+
+`wv0034` es **otro servidor de Wolkvox** (MOBILIZE está en `wv0072`). No sabemos si el firewall que
+autorizó 3.85.54.96 es común a todos los servidores o va por servidor. Hay que suponer que no y
+comprobarlo.
+
+Pasos (los del Manager son los mismos que hizo el usuario con MOBILIZE; el repo no guarda los nombres
+exactos de los menús del Manager, así que se describen por lo que hay que mirar):
+
+1. **Revisar el token de ORLANT en Wolkvox Manager** (operación `inconexion-orlant`):
+   - entrar con el usuario administrador de la operación;
+   - abrir la pantalla donde se creó el token de la API;
+   - mirar si tiene un campo de **IP permitidas / lista blanca**;
+   - si está vacío (como el de MOBILIZE), no se toca nada;
+   - si tiene IPs, agregar **3.85.54.96** y guardar.
+2. **Escribir al soporte de Wolkvox**, con el mismo mensaje del 17/11:
+   - «Pedimos autorizar la IP **3.85.54.96** (servidor de InConexión en AWS) para consultar la API
+     `https://wv0034.wolkvox.com/api/v2/reports_manager.php` (puerto 443, HTTPS) de la operación
+     `inconexion-orlant`, igual que ya está autorizada para `wv0072` (operación de MOBILIZE).»
+   - Nunca mandar el token por correo ni por chat.
+3. **Cargar en SSM** (lunes 23/11, consola de AWS, región de siempre):
+   - Systems Manager → Parameter Store → *Create parameter*;
+   - `/inconexion/prod/WOLKVOX_ORLANT_TOKEN`, tipo **SecureString**, valor = el token;
+   - `/inconexion/prod/WOLKVOX_ORLANT_SERVIDOR`, tipo String, valor = `wv0034`;
+   - el proceso los lee al arrancar: hace falta un deploy (o relanzar el último) después de crearlos;
+   - `server/secrets.js` ya copia todo lo que empieza por `WOLKVOX_`.
+4. **Nada más en AWS:** no hay que abrir puertos ni cambiar el Lightsail. La salida a internet ya funciona;
+   lo único que filtra es Wolkvox.
+
+### Cómo comprobarlo después (máximo 1 consulta)
+
+Hoy el «Diagnóstico de red» y «Probar» solo funcionan con la réplica de MOBILIZE: el motor está cerrado a
+esa operación (`OPERACION_DE_CAMPANA`). Para ORLANT hace falta **N5** (operación por destino y réplica
+«ORLANT PRUEBAS API»). Después:
+
+1. **«Diagnóstico de red» en «ORLANT PRUEBAS API» (0 consultas):** no manda token ni petición HTTP; solo
+   DNS, TCP 443 y TLS hacia `wv0034.wolkvox.com`.
+   - Debe salir **Sí** en DNS, TCP y TLS por IPv4.
+   - Si TCP sale «sin respuesta en 5 s», la IP no está autorizada: volver al paso 2 y **no** gastar consultas.
+2. **Solo si el diagnóstico sale en Sí, una sola «Probar» (1 consulta):** `skill_1` de un día ya cerrado
+   (por ejemplo, el 20/11, el mismo que dio 200 en Postman).
+   - Debe dar 200 con las mismas 19 skills.
+   - Un 401 o 403 es el token; un 404 «sin registros» es el día.
+   - Queda en el Historial (`WOLKVOX_PRUEBA`) y suma 1 al uso del día.
+3. Anotar el resultado en la bitácora. Antes de encender cualquier módulo de ORLANT, OK del usuario.
+

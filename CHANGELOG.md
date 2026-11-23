@@ -7,6 +7,27 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.242.0 — Noviembre 2026
+
+**ORLANT: primer borrador del tablero nuevo (solo lo ve el administrador).**
+
+- Tarjeta nueva en el inicio, «ORLANT · Tablero nuevo», con menú a la izquierda: Tráfico inbound,
+  Tráfico outbound, Back office y Asesores.
+- Filtros de línea (Total, Línea General, 3P), de fechas (con atajos: hoy, ayer, esta semana, este mes,
+  mes anterior, últimos 3 meses) y «Ver por» día, semana o mes.
+- Pocas tarjetas arriba y el botón «Ver más indicadores» para el detalle.
+- Botones de Excel, PDF y pantalla completa.
+- Por ahora usa lo que ya se carga a mano:
+  - llamadas: recibidas, nivel de atención, nivel de servicio a 20 s, abandono y participación por skill;
+  - WhatsApp: atendidos en 0–3, 3–5 y más de 5 minutos, abandono y espera;
+  - citas: General y 3P;
+  - salida: por mes.
+- Lo que falta (asesores, back office, TMO, línea de la entrada) aparece con un aviso.
+- El abandono de WhatsApp se calcula igual que en la pestaña «Tráfico de WhatsApp» y en el PDF (con los
+  abandonados del archivo).
+- WhatsApp cargado por mes ya no aparece entero en el primer día: si un período no cabe en el día, la
+  semana o las fechas elegidas, el tablero lo avisa.
+
 ## v1.240.0 — Noviembre 2026
 
 **ORLANT: «Gestión STA» con tema oscuro y colores más legibles.**

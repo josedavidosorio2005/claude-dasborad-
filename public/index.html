@@ -1046,6 +1046,28 @@
   </div>
 </div>
 
+<!-- ══ ORLANT · TABLERO NUEVO (Fase N1, solo ADMIN; orlant-tablero.js) ══ -->
+<div role="dialog" aria-modal="true" aria-labelledby="ot-title" id="ot-overlay">
+  <div id="ot-modal">
+    <div class="aurora-header">
+      <div>
+        <h2 id="ot-title">ORLANT · Tablero nuevo</h2>
+        <div class="aurora-sub" id="ot-sub">En prueba: solo lo ve el administrador. Datos de las cargas manuales.</div>
+      </div>
+      <div class="gd-header-derecha">
+        <div class="gd-header-acciones ot-acciones">
+          <button class="aurora-close" type="button" onclick="otExcel()">Excel</button>
+          <button class="aurora-close" type="button" onclick="otPdf()">PDF</button>
+          <button class="aurora-close" type="button" onclick="otPantallaCompleta()" aria-label="Pantalla completa"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-maximize"></use></svg></button>
+          <button class="aurora-close" id="ot-cerrar-btn" type="button" onclick="closeOrlantTablero()">X Cerrar</button>
+        </div>
+      </div>
+    </div>
+    <div id="ot-host"></div>
+    <span class="sr-only" tabindex="0">Fin del tablero nuevo de ORLANT</span>
+  </div>
+</div>
+
 <!-- ══ GESTIÓN STA (ORLANT, Fase STA): HTML de Edwin en un Shadow DOM (orlant-sta.js) ══ -->
 <div role="dialog" aria-modal="true" aria-labelledby="sta-title" id="sta-overlay">
   <div id="sta-modal">
@@ -2447,6 +2469,7 @@
 <script src="js/sura-televentas.js"></script>
 <script src="js/orlant-sta-app.js"></script>
 <script src="js/orlant-sta.js"></script>
+<script src="js/orlant-tablero.js"></script>
 <script src="js/orlant-sta-dashboard.js"></script>
 <script src="js/sura-alias.js"></script>
 <script src="js/aviso-pendiente-logic.js"></script>
