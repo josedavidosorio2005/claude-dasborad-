@@ -7,6 +7,19 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.255.0 — Noviembre 2026
+
+**Inventario de sistemas: «Novedades de Gestión Humana» (cuarta parte de Talento humano).**
+
+- Nueva opción en el menú del Inventario de sistemas. Muestra a los agentes que tienen equipos asignados y que, según Talento humano:
+  - **se retiraron de la empresa**: hay que recoger sus equipos, con el botón «Recibir elementos»;
+  - **están ausentes hoy** (vacaciones o novedad): el equipo sigue asignado y se puede aprovechar para mantenimiento;
+  - **se ausentarán en los próximos 7 días**.
+- También avisa qué agentes con equipos no aparecen registrados en Talento humano.
+- El número junto a la opción del menú cuenta los retirados y los ausentes de hoy.
+- Sistemas solo ve el nombre, el documento, las fechas y los equipos. Nunca ve el salario, el cargo ni el motivo de una ausencia (por ejemplo, una incapacidad).
+- Se cruza por la cédula; por el nombre, solo si el agente no tiene cédula registrada.
+
 ## v1.254.0 — Noviembre 2026
 
 **Talento humano: los soportes adjuntos también se guardan en la plataforma (tercera parte).**

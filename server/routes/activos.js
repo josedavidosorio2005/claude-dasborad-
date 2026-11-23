@@ -6,6 +6,7 @@ const db = require('../db');
 const { requireActor } = require('../auth');
 const A = require('../activos');
 const F = require('../activos-formularios'); // Fase 372 (E4)
+const NGH = require('../gh-novedades'); // Fase GH4
 const { wrap, actorLabel, logEvent } = require('./shared');
 
 const router = express.Router();
@@ -63,8 +64,17 @@ router.put('/activos/config/textos/:clave', requireActor, wrap((req, res) => {
 router.get('/activos/resumen', requireActor, wrap((req, res) => {
   if (!permitido(req, res)) return;
   const r = A.resumen(db, req.query.ambito);
-  if (A.ambitoDe(req.query.ambito) === 'sistemas') r.actasPorFirmar = ACT.resumen(db).pendientes; // Fase 379: conteo del menú
+  if (A.ambitoDe(req.query.ambito) === 'sistemas') {
+    r.actasPorFirmar = ACT.resumen(db).pendientes; // Fase 379: conteo del menú
+    const N = NGH.novedades(db); // Fase GH4: retirados y ausentes hoy con equipos (conteo del menú)
+    r.novedadesGH = { retirados: N.retirados.length, ausentes: N.ausentes.length };
+  }
   res.json(r);
+}));
+// Fase GH4: «Novedades desde Gestión Humana» (solo lectura de Talento humano; lo mínimo, sin datos de salud).
+router.get('/activos/novedades-gh', requireActor, wrap((req, res) => {
+  if (!permitido(req, res)) return;
+  res.json(NGH.novedades(db));
 }));
 router.get('/activos', requireActor, wrap((req, res) => {
   if (!permitido(req, res)) return;

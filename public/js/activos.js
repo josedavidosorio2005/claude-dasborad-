@@ -7,7 +7,7 @@ var _ac = { config: null, tab: 'panel', lista: [], sel: null, ambito: 'sistemas'
 // Fase 376 (I1, diseño de Edwin): menú lateral con el ciclo de cada elemento. «sec» = título de sección.
 var AC_MENU = {
   sistemas: [['sec', 'Menú'], ['panel', 'Panel general'], ['sec', 'Ciclo de elementos'], ['registrar', 'Registrar ingreso', '1'], ['libres', 'Libres', '2'], ['asignados', 'Asignados', '3'],
-    ['reparacion', 'En reparación', '4'], ['malos', 'Malos', '5'], ['sec', 'Gestión'], ['elementos', 'Inventario completo'], ['agentes', 'Agentes'], ['admin', 'Equipos administrables'], ['actas', 'Actas'], ['historial', 'Historial'], ['ajustes', 'Ajustes y datos']], // Fase 379: + Actas; Fase 380: + administrables; Fase 381: + Historial
+    ['reparacion', 'En reparación', '4'], ['malos', 'Malos', '5'], ['sec', 'Gestión'], ['elementos', 'Inventario completo'], ['agentes', 'Agentes'], ['novedadesgh', 'Novedades de Gestión Humana'], ['admin', 'Equipos administrables'], ['actas', 'Actas'], ['historial', 'Historial'], ['ajustes', 'Ajustes y datos']], // Fase 379: + Actas; Fase 380: + administrables; Fase 381: + Historial
   inmuebles: [['sec', 'Menú'], ['panel', 'Panel general'], ['sec', 'Ciclo de elementos'], ['registrar', 'Registrar ingreso', '1'], ['libres', 'Libres', '2'],
     ['reparacion', 'En reparación', '3'], ['malos', 'Malos', '4'], ['sec', 'Gestión'], ['elementos', 'Inventario completo'], ['historial', 'Historial'], ['ajustes', 'Ajustes y datos']], // Fase 381: + Historial
 };
@@ -22,6 +22,7 @@ var AC_VISTA_TXT = {
   malos: ['Malos', 'Elementos que no se pueden entregar.'],
   elementos: ['Inventario completo', 'Todos los elementos, con filtros por tipo, estado, sede, operación, propietario y rendimiento.'],
   agentes: ['Agentes', 'Quién tiene cada elemento: asignar, devolver y cambiar, con actas.'],
+  novedadesgh: ['Novedades de Gestión Humana', 'Agentes con elementos asignados que en Talento humano aparecen retirados, ausentes hoy o por ausentarse en los próximos 7 días. Solo lectura: los cambios se hacen en Talento humano; aquí se recogen o se revisan los equipos.'],
   admin: ['Equipos administrables', 'Red e infraestructura: servidores, switches, DVR / NVR, routers y firewalls, access points y UPS. Se registran en «Registrar ingreso»; el código se asigna solo según el tipo.'],
   historial: ['Historial', 'Todo lo que pasó en el inventario: ingresos, asignaciones, devoluciones, cambios de estado, ediciones e importaciones. Filtra por fechas, acción o código y descárgalo en Excel o PDF.'],
   actas: ['Actas', 'Cada movimiento (entrega, devolución, cambio, envío a reparación, recibo de reparación, elemento malo o baja) crea su acta. Imprímela, hazla firmar y súbela escaneada.'],
@@ -49,7 +50,8 @@ function activosAbrirInmuebles() { return activosAbrir('inmuebles'); } // Fase 3
 // Menú lateral con los conteos de cada estado (del resumen).
 function activosMenuHtml(ambito, actual, resumen) {
   var pe = (resumen && resumen.porEstado) || {};
-  var n = { libres: pe.libre, asignados: pe.en_uso, reparacion: pe.en_reparacion, malos: pe.malo, elementos: resumen ? resumen.total : null, actas: resumen && resumen.actasPorFirmar !== undefined ? resumen.actasPorFirmar : null };
+  var n = { libres: pe.libre, asignados: pe.en_uso, reparacion: pe.en_reparacion, malos: pe.malo, elementos: resumen ? resumen.total : null, actas: resumen && resumen.actasPorFirmar !== undefined ? resumen.actasPorFirmar : null,
+    novedadesgh: resumen && resumen.novedadesGH ? resumen.novedadesGH.retirados + resumen.novedadesGH.ausentes : null }; // Fase GH4
   return (AC_MENU[ambito] || AC_MENU.sistemas).map(function (x) {
     if (x[0] === 'sec') return '<p class="ac-menu-sec">' + esc(x[1]) + '</p>';
     var c = n[x[0]];
@@ -74,11 +76,11 @@ function activosCerrar() { closeModal('activos-overlay'); }
 
 function activosTab(tab) {
   if (!AC_VISTA_TXT[tab]) tab = 'panel';
-  if (_ac.ambito === 'inmuebles' && (tab === 'agentes' || tab === 'asignados' || tab === 'actas' || tab === 'admin')) tab = 'panel'; // inmuebles no se asignan a agentes
+  if (_ac.ambito === 'inmuebles' && (tab === 'agentes' || tab === 'asignados' || tab === 'actas' || tab === 'admin' || tab === 'novedadesgh')) tab = 'panel'; // inmuebles no se asignan a agentes
   _ac.tab = tab;
   _acError('');
   var seccion = AC_VISTA_ESTADO[tab] ? 'elementos' : tab; // las vistas por estado usan la lista de elementos
-  ['panel', 'elementos', 'agentes', 'registrar', 'ajustes', 'actas', 'admin', 'historial'].forEach(function (t) { _acEl('ac-p-' + t).classList.toggle('hidden', t !== seccion); });
+  ['panel', 'elementos', 'agentes', 'registrar', 'ajustes', 'actas', 'admin', 'historial', 'novedadesgh'].forEach(function (t) { _acEl('ac-p-' + t).classList.toggle('hidden', t !== seccion); });
   var txt = AC_VISTA_TXT[tab];
   _acEl('ac-vista-cab').innerHTML = '<h4 class="ac-vista-tit">' + esc(txt[0]) + '</h4><p class="vis-ayuda">' + esc(txt[1]) + '</p>' + (tab === 'panel' || tab === 'registrar' ? activosFlujoHtml(_ac.ambito) : '');
   _acRefrescarMenu();
@@ -91,6 +93,7 @@ function activosTab(tab) {
   if (tab === 'actas') activosActasBuscar(); // Fase 379
   if (tab === 'admin') { _ac.adSubtipo = ''; activosAdminBuscar(); } // Fase 380
   if (tab === 'historial') activosHistorialBuscar(); // Fase 381
+  if (tab === 'novedadesgh') activosNovedadesGH(); // Fase GH4
 }
 
 // ── Panel ──
@@ -989,3 +992,42 @@ async function activosDescargarFirmada(id) {
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { activosMenuHtml: activosMenuHtml, activosFlujoHtml: activosFlujoHtml, AC_MENU: AC_MENU, AC_VISTA_ESTADO: AC_VISTA_ESTADO, activosTiposHtml: activosTiposHtml, activosCampoEditorHtml: activosCampoEditorHtml, activosEditorTipoHtml: activosEditorTipoHtml, activosLeerCampos: activosLeerCampos, activosPanelHtml: activosPanelHtml, activosListaHtml: activosListaHtml, activosConsulta: activosConsulta, activosRendHtml: activosRendHtml, activosGestionHtml: activosGestionHtml, activosAgenteSelectHtml: activosAgenteSelectHtml, activosAgenteBody: activosAgenteBody, activosActasHtml: activosActasHtml, activosActasKpisHtml: activosActasKpisHtml, activosActasAviso: activosActasAviso, activosFilasExport: activosFilasExport, activosReportePrintHtml: activosReportePrintHtml, activosHistorialHtml: activosHistorialHtml, activosImportarColumnas: activosImportarColumnas, activosImportarResultadoHtml: activosImportarResultadoHtml, activosAdminHtml: activosAdminHtml, activosAdminKpisHtml: activosAdminKpisHtml, activosAdminSubtiposHtml: activosAdminSubtiposHtml, AC_ESTADO_ADMIN: AC_ESTADO_ADMIN, activosCampoHtml: activosCampoHtml, activosAgentesHtml: activosAgentesHtml, activosActaPrintHtml: activosActaPrintHtml };
 }
+
+// ── Fase GH4 (plan de Gestión humana): «Novedades desde Gestión Humana» (diseño de Edwin) ──
+// Solo lectura de Talento humano: el servidor (gh-novedades.js) manda lo mínimo — agente, un texto
+// con fechas y sus elementos —, nunca salario, cargo ni el tipo de novedad.
+var AC_GH_SECCIONES = [
+  ['retirados', 'vis-rojo', 'Retirados con elementos a su nombre', 'Ya no están en la empresa: pide la entrega y regístrala en «Agentes» con «Devolver» (sale el acta de devolución).'],
+  ['ausentes', 'vis-amarillo', 'Ausentes hoy con elementos asignados', 'Solo informativo: el elemento sigue asignado y no hay acta. Se puede aprovechar para mantenimiento.'],
+  ['proximos', 'vis-gris', 'Se ausentarán en los próximos 7 días', 'Para planear mantenimientos: el elemento quedará sin uso. No requiere acta.'],
+];
+function activosNovedadesGHHtml(r, config) {
+  var tipoN = function (c) { var t = ((config && config.tipos) || []).find(function (x) { return x.codigo === c; }); return t ? t.nombre : c; };
+  var fila = function (x, conBoton) {
+    var el = x.elementos.map(function (a) { return esc(tipoN(a.tipo)) + ' ' + esc(a.codigo); }).join(' · ');
+    return '<li class="ac-gh-fila"><div class="ac-gh-txt"><b>' + esc(x.agente.nombre) + '</b>' + (x.agente.documento ? ' <span class="vis-ayuda">CC ' + esc(x.agente.documento) + '</span>' : '') +
+      (x.estado ? '<span class="ac-gh-estado">' + esc(x.estado.txt) + '</span>' : '') +
+      '<span class="vis-ayuda">' + x.elementos.length + ' elemento(s): ' + el + '</span></div>' +
+      '<button type="button" class="' + (conBoton ? 'btn-primary' : 'btn-cancel') + ' ac-btn" onclick="activosNovedadesGHVer(' + Number(x.agente.id) + ')">' + (conBoton ? 'Recibir elementos' : 'Ver agente') + '</button></li>';
+  };
+  if (!r.empleadosGH) return '<p class="vis-vacio">Talento humano aún no tiene empleados registrados. Cuando los tenga, aquí aparecerán los agentes con elementos que estén retirados o ausentes.</p>';
+  var total = r.retirados.length + r.ausentes.length + r.proximos.length;
+  var html = AC_GH_SECCIONES.filter(function (s) { return r[s[0]].length; }).map(function (s) {
+    return '<section class="aurora-card ac-gh-sec"><h4 class="ac-sub"><span class="vis-pill ' + s[1] + '">' + r[s[0]].length + '</span> ' + esc(s[2]) + '</h4><p class="vis-ayuda">' + esc(s[3]) + '</p><ul class="ac-gh-lista">' +
+      r[s[0]].map(function (x) { return fila(x, s[0] === 'retirados'); }).join('') + '</ul></section>';
+  }).join('');
+  if (!total) html = '<p class="vis-vacio">Ninguna persona con elementos asignados está retirada ni ausente hoy, ni se ausentará en los próximos 7 días.</p>';
+  if (r.sinRegistro.length) {
+    html += '<details class="aurora-card ac-gh-sec"><summary><span class="vis-pill vis-gris">' + r.sinRegistro.length + '</span> Con elementos pero sin registro en Gestión Humana</summary>' +
+      '<p class="vis-ayuda">Revisa el documento del agente o pide su registro en Talento humano.</p><ul class="ac-gh-lista">' + r.sinRegistro.map(function (x) { return fila(x, false); }).join('') + '</ul></details>';
+  }
+  return html;
+}
+async function activosNovedadesGH() {
+  var c = _acEl('ac-p-novedadesgh');
+  c.innerHTML = '<p class="vis-vacio">Cargando…</p>';
+  try { c.innerHTML = activosNovedadesGHHtml(await apiRequest('GET', '/activos/novedades-gh'), _ac.config); }
+  catch (e) { c.innerHTML = ''; _acError(e.message); }
+}
+function activosNovedadesGHVer(id) { activosTab('agentes'); activosVerAgente(id); }
+if (typeof module !== 'undefined' && module.exports) module.exports.activosNovedadesGHHtml = activosNovedadesGHHtml;

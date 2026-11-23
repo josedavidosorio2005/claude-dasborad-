@@ -22160,3 +22160,43 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - el objeto `talento-humano/soportes/prueba-gh3-1795461819691-*.pdf` sigue en el bucket, porque el servidor no tiene `DeleteObject`;
   - en la base quedan una fila de `gh_archivos` marcada como borrada y 2 registros en la bitácora.
 - `GH_ROL_ACTIVO` sigue apagado.
+
+## Fase GH4 — Inventario: «Novedades de Gestión Humana» (v1.255.0, 2026-11-23)
+
+- **Pedido:** el usuario, 23/11: GH4 del plan en local, sin mergear (`docs/gestion-humana/plan.md`: «Novedades desde Gestión Humana» en el Inventario de SinCo, solo lectura entre módulos).
+- **Lógica:** la misma del HTML de Edwin (`alertasGH`, `GH.estadoHoy` y `GH.proxima`; se leyó solo el código, nunca `SEED_RAW`).
+  - Por cada agente con elementos asignados, cuatro grupos: **retirados** (`estado: 'Retirado'`), **ausentes hoy** (vacaciones de tipo «Disfrute» o novedad vigente hoy, sin anuladas), **próximos 7 días** y **sin registro**.
+  - «Hoy» es la fecha de Colombia.
+  - Dos cambios a propósito frente al HTML:
+    - el cruce va por documento normalizado y, por nombre (sin tildes ni mayúsculas), **solo si el agente no tiene documento**;
+    - a Sistemas le llega **lo mínimo**: nombre y documento del agente, un texto con fechas y sus elementos. Nunca salario, cargo, contacto ni el **tipo** de novedad (puede ser una incapacidad).
+- **Servidor:**
+  - `server/gh-novedades.js` lee `gh_estado`; con JSON dañado no se rompe.
+  - Nueva ruta `GET /api/activos/novedades-gh` (ADMIN y SISTEMAS, como el resto del Inventario; GESTION_HUMANA no entra ni con `GH_ROL_ACTIVO`).
+  - `/activos/resumen?ambito=sistemas` trae `novedadesGH {retirados, ausentes}` para el conteo del menú.
+  - Declarada en fase118.
+- **Interfaz:**
+  - Opción «Novedades de Gestión Humana» en el menú del Inventario de sistemas (no en el de inmuebles), con un conteo de retirados + ausentes hoy.
+  - Una tarjeta por grupo, con el texto de Edwin adaptado.
+  - Los retirados tienen el botón «Recibir elementos», que abre el agente en «Agentes» con «Devolver» y su acta. El resto tiene «Ver agente».
+  - «Sin registro» va plegado.
+  - Si Talento humano está vacío, lo dice en vez de listar a todos como «sin registro».
+  - Estilos solo con tokens.
+- **Pruebas:** nueva `faseGH4-novedades-gestion-humana` (5):
+  - Talento humano vacío;
+  - el cruce por documento con puntos y por nombre;
+  - los cuatro grupos;
+  - anuladas fuera;
+  - nada de salario, cargo, contacto, tipo ni diagnóstico;
+  - conteo del menú y vista (con escape);
+  - permisos;
+  - datos dañados.
+  - Suite completa: 3496/0. `npm audit`: 0.
+- **Revisión local** (Brave vía Playwright, base demo, 4 agentes y 8 elementos INVENTADOS, que se borraron al final junto con sus actas, historial y `gh_*` locales), 10/10:
+  - conteo 2 en el menú;
+  - los tres grupos con sus elementos y fechas, y «sin registro»;
+  - sin salario;
+  - «Recibir elementos» abre el agente con «Devolver»;
+  - a 768 y 375 sin scroll horizontal;
+  - 0 errores de consola.
+- **Producción:** sin cambios hasta el OK del usuario. Hoy Talento humano no tiene empleados, así que la vista diría «aún no tiene empleados».
