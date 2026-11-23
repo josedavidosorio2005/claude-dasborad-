@@ -80,8 +80,9 @@ function asesorVerAlertaNuevos(){
 // Se llama al abrir el detalle de un monitoreo (verDetalleMonitoreo, abajo).
 // Si ya estaba marcado, el servidor no hace nada (idempotente) -- igual se
 // vuelve a pedir el contador por si este era el ultimo nuevo pendiente.
-async function marcarMonitoreoVisto(id){
+async function marcarMonitoreoVisto(id, idx){
   try{ await apiRequest('PUT','/monitoreos/'+id+'/visto'); }catch(e){ return; }
+  if(idx !== undefined && typeof mrQuitarSinVer === 'function') mrQuitarSinVer(idx); // pedido de Edwin (23/11)
   await calCargarAlertaNuevos();
 }
 
@@ -150,11 +151,42 @@ async function renderMisResultados(){
     html += '<tr><td colspan="7" style="text-align:center;color:var(--c-text-muted)">'+(_mrMesFiltro?'No tienes monitoreos en '+_mrMesFiltro:'Aun no tienes monitoreos de calidad registrados')+'</td></tr>';
   } else {
     rows.forEach(function(m,i){
-      html += '<tr><td>'+esc(m.fecha||'-')+'</td><td>'+esc(m.campana)+'</td><td>'+esc(m.evaluador||'-')+'</td><td class="peak">'+m.puntaje+'</td><td>'+calEstadoHtml(m.clasificacion)+'</td><td>'+calEstadoHtml(m.nivelCritico)+'</td>'+
+      // Pedido de Edwin (23/11/2026): «Sin ver» en rojo hasta que la abra con «Ver detalle».
+      html += '<tr data-mr-i="'+i+'"'+(m.sinVer?' class="mr-fila-sin-ver"':'')+'><td>'+esc(m.fecha||'-')+(m.sinVer?' '+mrSinVerPill():'')+'</td><td>'+esc(m.campana)+'</td><td>'+esc(m.evaluador||'-')+'</td><td class="peak">'+m.puntaje+'</td><td>'+calEstadoHtml(m.clasificacion)+'</td><td>'+calEstadoHtml(m.nivelCritico)+'</td>'+
         '<td><button class="btn-sm btn-edit" onclick="verDetalleMonitoreo('+i+')">Ver Detalle</button></td></tr>';
     });
   }
   document.getElementById('mr-table').innerHTML = html;
+  mrPintarResumenSinVer();
+}
+
+// ── Pedido de Edwin (23/11/2026): monitoreos que la asesora todavía no abrió con «Ver detalle» ──
+// El servidor manda «sinVer» (mismo criterio que la alerta y la pestaña «Vistos» del supervisor).
+function mrSinVerPill(){ return '<span class="vis-pill vis-rojo mr-sin-ver-pill">Sin ver</span>'; }
+function mrContarSinVer(lista){ return (lista || []).filter(function(m){ return m && m.sinVer; }).length; }
+function mrTextoSinVer(n){
+  if(!n) return '';
+  return 'Te falta'+(n===1?'':'n')+' '+n+' por ver. Ábrelo'+(n===1?'':'s')+' con «Ver Detalle».';
+}
+function mrPintarResumenSinVer(){
+  var p = document.getElementById('mr-sin-ver');
+  if(!p) return;
+  var n = mrContarSinVer(calMisMonitoreos()); // todos los meses, no solo el filtrado
+  p.textContent = mrTextoSinVer(n);
+  p.classList.toggle('hidden', !n);
+}
+// Al abrirlo con «Ver detalle» (y solo si el servidor lo marcó), la marca se va sin recargar la lista.
+function mrQuitarSinVer(idx){
+  var m = _misMonitoreosList[idx];
+  if(!m || !m.sinVer) return;
+  m.sinVer = false;
+  var tr = document.querySelector('#mr-table tr[data-mr-i="'+idx+'"]');
+  if(tr){
+    tr.classList.remove('mr-fila-sin-ver');
+    var pill = tr.querySelector('.mr-sin-ver-pill');
+    if(pill) pill.remove();
+  }
+  mrPintarResumenSinVer();
 }
 
 // Fase 323: tarjetas de «Mis resultados» para una plantilla por descuento (SURA).
@@ -218,7 +250,7 @@ function verDetalleMonitoreo(idx){
 
   document.getElementById('detalle-monitoreo-overlay').classList.add('show');
   if (typeof motionAbrirModal === 'function') motionAbrirModal('detalle-monitoreo-modal');
-  marcarMonitoreoVisto(m.id);
+  marcarMonitoreoVisto(m.id, idx);
 }
 
 // Fase 256 (plan de Calidad B5, como "Mis resultados" del HTML de Edwin):
