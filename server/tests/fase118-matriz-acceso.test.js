@@ -167,6 +167,8 @@ declarar(['GET /users'], 'open'); // ver routes/usuarios.js: perms/lastLogin se 
 declarar(['GET /historial', 'GET /seguridad/alertas'], 'admin');
 // Fase N1 (21/11/2026): tablero nuevo de ORLANT, en prueba, solo el administrador completo.
 declarar(['GET /orlant/tablero'], 'admin');
+// Fase N6 (23/11/2026): mapa de skills de ORLANT a línea, solo el administrador completo.
+declarar(['GET /orlant/skills-linea', 'PUT /orlant/skills-linea'], 'admin');
 
 declarar(['POST /users'], 'permiso:crearUsuarios');
 declarar(['PUT /users/:id'], 'permiso:editarUsuarios');

@@ -7,6 +7,22 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.244.0 — Noviembre 2026
+
+**ORLANT: la réplica de pruebas ya puede llenarse sola con Wolkvox (todavía apagada) y mapa de skills.**
+
+- La réplica oculta «ORLANT PRUEBAS API» tiene su consulta automática, igual que la de MOBILIZE:
+  - pide el Flujo, el Flujo por hora, la Tipificación y las llamadas no conectadas;
+  - usa los mismos horarios, la clave de ORLANT y su propio límite de consultas.
+- **Está apagada:** no consulta nada hasta que se encienda en AWS con autorización. Nunca toca el ORLANT
+  real.
+- Nueva sección «Mapa de skills» en el tablero nuevo de ORLANT (solo el administrador):
+  - cada skill se marca como Línea General, 3P o «No cuenta»;
+  - la plataforma propone una línea según el nombre, pero solo cuenta lo que se guarde;
+  - se pueden agregar skills a mano;
+  - queda listo para cuando Edwin confirme.
+- MOBILIZE sigue igual.
+
 ## v1.243.0 — Noviembre 2026
 
 **ORLANT: preparación para conectar Wolkvox (todavía sin consultas).**

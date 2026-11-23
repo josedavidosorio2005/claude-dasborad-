@@ -194,6 +194,36 @@ asumir en qué quedó una fase anterior.
   día por token. La consulta automática de ORLANT (Fase N6,
   `WOLKVOX_ORLANT_AUTO_ACTIVO`) y pasar al ORLANT real necesitan
   autorización nueva por escrito.
+- **Excepción escrita (usuario, 23/11/2026, réplica de ORLANT con la API,
+  Fase N6):** la consulta automática del servidor puede pedir a Wolkvox, de
+  la operación `inconexion-orlant` (`wv0034`), y GUARDAR, **solo en la
+  réplica oculta «ORLANT PRUEBAS API»**:
+  - Flujo (`skill_1`, un día por consulta);
+  - Flujo por hora (`skill_7`);
+  - Tipificación (`cdr_1`): teléfonos, datos del cliente y comentarios se
+    descartan en memoria antes de guardar;
+  - No conectadas (`cdr_5`).
+
+  Reglas:
+  - Mismos horarios que la réplica de MOBILIZE (00:05, 7:00 y 13:00, hora
+    de Colombia).
+  - Reemplaza el mes completo: respaldo antes, todo o nada por mes, sin
+    reintentos en bucle.
+  - Tope de 2.800 consultas al día **por el token de ORLANT**, aparte del de
+    MOBILIZE.
+  - «Ejecutar ahora» también vale en esa réplica, para un mes ya cerrado de
+    los últimos 12, y solo para meses que Wolkvox acepte.
+  - Arranca **APAGADA**: solo corre con `WOLKVOX_ORLANT_AUTO_ACTIVO=1` en
+    SSM (se lee antes de cada corrida; borrarlo o ponerle `0` la apaga sin
+    redesplegar). Cada módulo se enciende aparte, en
+    `WOLKVOX_ORLANT_AUTO_MODULOS`. Crear esos parámetros necesita OK
+    explícito del usuario.
+  - Nunca escribe en el **ORLANT real** ni en otro cliente, y no toca
+    Calidad, Agendamiento, STA ni WhatsApp.
+  - El mapa de skills a línea se guarda en la plataforma (configuración), no
+    se pide a Wolkvox.
+  - Pasar al ORLANT real (N9), WhatsApp por API o asesores (`agent_*`) =
+    autorización nueva por escrito.
 - Nada de pruebas agresivas contra producción (sin límite de tasa, sin
   volumen alto, sin tocar datos que no sean los explícitamente
   autorizados). No destapar pestañas ocultas a mano, no tocar datos de

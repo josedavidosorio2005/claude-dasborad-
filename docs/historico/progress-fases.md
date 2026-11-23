@@ -21832,3 +21832,50 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - Se usaron exactamente 1 diagnóstico y 1 «Probar». No hubo otras peticiones bloqueadas ni errores de consola. La sesión se cerró con el navegador y no se guardó nada en ninguna campaña.
 - **Siguiente (N6, autorización nueva):** consulta automática de la réplica de ORLANT (`WOLKVOX_ORLANT_AUTO_ACTIVO`, apagada) y el mapa de skills a línea (General / 3P). Nada más contra Wolkvox de ORLANT sin un OK nuevo.
 
+## Fase N6 — ORLANT: consulta automática de la réplica (apagada) y mapa de skills a línea (v1.244.0, 2026-11-23)
+
+- **Pedido (usuario, 23/11):**
+  - Autorización N6 «OK tal cual, con fecha 23/11/2026»: agregarla a `CLAUDE.md`.
+  - Empezar N6 **en local**: consulta automática de la réplica de ORLANT, apagada, y el mapa de skills en la plataforma, editable para cuando Edwin responda.
+  - Sin tocar producción, sin crear parámetros en SSM y sin consultar Wolkvox.
+  - Los 19 nombres de skill no llegaron (el espacio del pedido quedó vacío): la tabla de #907 sigue con 6 conocidos y 13 por completar.
+- **Rama:** `faseN6-orlant-replica-auto` (desde `main` 16382dd). Sin push ni PR.
+- **`CLAUDE.md`:** «Excepción escrita (usuario, 23/11/2026, réplica de ORLANT con la API, Fase N6)», el texto propuesto en #907 tal cual.
+- **Motor** (`wolkvox-destinos.js`, `wolkvox-auto.js`, `wolkvox-modulos.js`, `routes/wolkvox.js`):
+  - **Destino nuevo `orlant_replica`** («ORLANT PRUEBAS API», operación ORLANT, interno):
+    - interruptor `WOLKVOX_ORLANT_AUTO_ACTIVO` y lista `WOLKVOX_ORLANT_AUTO_MODULOS`;
+    - módulos permitidos: `flujo_hora`, `cdr` y `no_conectadas`, más el Flujo. La encuesta y las abandonadas no están autorizadas para ORLANT y se rechazan.
+    - `CAMPANAS_PERMITIDAS` suma la réplica de ORLANT; el ORLANT real nunca. El agente B1 no pasa campaña, así que sigue solo en la réplica de MOBILIZE.
+  - **Programador:** después del MOBILIZE real, `correrReplicaOrlant`.
+    - Solo con el interruptor exactamente en «1», leído fresco. Si no, no consulta ni deja rastro.
+    - Primero el Flujo y después los módulos encendidos y permitidos, en el orden de MODULOS.
+    - Usa el token, el servidor y el contador de ORLANT.
+  - **«Ejecutar ahora»:**
+    - Busca la réplica por campaña (`destinoInterno`). La de ORLANT exige su interruptor para todo.
+    - Un módulo no permitido da 400 o `no_permitido`.
+    - Un destino real se rechaza sin consultar. Antes se ignoraba el destino pedido; la prueba de A24 se actualizó con esa regla, más estricta.
+  - **CDR por perfil (`PERFILES_CDR`):** ORLANT se lee como su carga manual (`public/js/cargas.js`).
+    - Sin opciones: no excluye «PRUEBA», no marca únicas y no lee ni el teléfono.
+    - Sin agrupar «sin tipificación»/TIMEOUTACW como «Otros_motivos», que fue una decisión de MOBILIZE (A22).
+  - **Cuenta de pruebas** (agent_id 12319 y su huella): es de MOBILIZE y solo se quita en sus destinos. En ORLANT ese id puede ser otra persona.
+  - **Estado:** `/wolkvox/estado` da para ORLANT su interruptor, sus módulos permitidos y su última corrida.
+- **Mapa de skills** (`server/skill-linea.js`, tabla `skill_linea`, `GET`/`PUT /api/orlant/skills-linea`, solo el administrador completo):
+  - Líneas: GENERAL, 3P o NO_CUENTA.
+  - Sin fila = «sin definir». La propuesta por nombre (`lineaDeSkill`) se muestra, pero nunca se aplica sola.
+  - La réplica usa el mapa de ORLANT (`replicaDe`). Cada guardado queda en el Historial (`SKILL_LINEA`, solo conteos).
+  - Pantalla «Mapa de skills» en el tablero nuevo de ORLANT:
+    - una tabla con la línea de cada skill para elegir, la propuesta y dónde aparece (días de carga manual y de la réplica);
+    - se pueden agregar skills a mano;
+    - «Guardar N cambios».
+- **Pruebas:**
+  - Nueva `faseN6-orlant-replica-auto` (10), que cubre:
+    - los destinos y los módulos permitidos;
+    - el programador apagado con 4 valores: ni una consulta;
+    - el programador encendido: la secuencia `skill_1` ×4, `skill_7`, `cdr_1`; siempre el token y el servidor de ORLANT; escribe solo en la réplica; ORLANT real intacto; contador de ORLANT +6 y MOBILIZE igual; sin datos sensibles guardados; la fila del agent_id 12319 se queda;
+    - «Ejecutar ahora» y su ruta;
+    - el perfil del CDR, el estado, el mapa, sus rutas y la pantalla (con escape del nombre).
+  - `faseN5-wolkvox-orlant`, `faseA24` y la matriz de acceso se ajustaron a lo nuevo.
+- **Pendiente:**
+  - Los 19 nombres (Postman del 20/11) y las respuestas de Edwin para llenar el mapa.
+  - Push y PR cuando el usuario lo pida.
+  - Después del deploy, encender `WOLKVOX_ORLANT_AUTO_ACTIVO` y los módulos solo con su OK explícito (no se creó nada en SSM).

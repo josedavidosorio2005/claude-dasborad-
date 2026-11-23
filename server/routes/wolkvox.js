@@ -39,10 +39,11 @@ router.get(
   wrap((req, res) => {
     const op = operacionPermitida(req, res, req.query.campana);
     if (!op) return;
-    // Fase N5: la consulta automática (y «Ejecutar ahora») es SOLO de la réplica de MOBILIZE.
-    // La réplica de ORLANT solo tiene «Diagnóstico de red» y «Probar».
+    // Fase N6: la consulta automática (y «Ejecutar ahora») es de las réplicas (destinos internos):
+    // MOBILIZE y, desde la Fase N6, ORLANT (apagada hasta WOLKVOX_ORLANT_AUTO_ACTIVO=1).
     const wvAuto = require('../wolkvox-auto');
-    const autoDisponible = op === wvAuto.OPERACION && req.query.campana === wvAuto.CAMPANA;
+    const dest = require('../wolkvox-destinos').destinoInterno(req.query.campana);
+    const autoDisponible = !!dest && dest.operacion === op;
     res.json({
       configurado: wv.estaConfigurado(op),
       diagnostico: wv.diagnostico(op), // solo si/no: token encontrado, servidor encontrado, servidor con formato valido
@@ -53,7 +54,7 @@ router.get(
       reportes: Object.keys(wv.REPORTES),
       reportesNombres: wv.REPORTES, // Fase A5: para la lista de «Probar»
       autoDisponible, // Fase N5
-      auto: autoDisponible ? wvAuto.estado(db) : null, // Fase A1: horarios, interruptor al arrancar, ultima corrida (sin secretos)
+      auto: autoDisponible ? wvAuto.estado(db, undefined, dest) : null, // Fase A1: horarios, interruptor al arrancar, ultima corrida (sin secretos)
       servidorEncontrado: wv.servidorDe(op) !== null, // Fase N5: basta para el «Diagnóstico de red» (sin token)
     });
   })
@@ -139,9 +140,13 @@ router.post(
     const op = operacionPermitida(req, res, b.campana);
     if (!op) return;
     const wvAuto = require('../wolkvox-auto');
-    if (op !== wvAuto.OPERACION || b.campana !== wvAuto.CAMPANA) return res.status(404).json({ error: 'Esta campaña no tiene consulta automática' });
+    const D = require('../wolkvox-destinos');
+    // Fase N6: solo una réplica (destino interno) de la misma operación; nunca un real.
+    const dest = D.destinoInterno(b.campana);
+    if (!dest || dest.operacion !== op) return res.status(404).json({ error: 'Esta campaña no tiene consulta automática' });
     const modulo = b.modulo === undefined ? 'flujo' : b.modulo;
     if (modulo !== 'flujo' && modulo !== 'todos' && !Object.prototype.hasOwnProperty.call(require('../wolkvox-modulos').MODULOS, modulo)) return res.status(400).json({ error: 'Ese módulo no existe', codigo: 'parametro' });
+    if (modulo !== 'todos' && !D.moduloPermitido(dest, modulo)) return res.status(400).json({ error: 'Ese módulo no está autorizado para esta campaña', codigo: 'parametro' });
     // Fase A20: `mes` (AAAA-MM) pide un mes pasado completo (hasta 12 atrás); «todos» exige mes.
     if (b.mes !== undefined && !wvAuto.planMes(b.mes)) return res.status(400).json({ error: 'mes debe ser AAAA-MM, un mes ya cerrado de los últimos ' + wvAuto.MESES_ATRAS_MAX, codigo: 'parametro' });
     if (modulo === 'todos' && b.mes === undefined) return res.status(400).json({ error: '«todos» necesita un mes', codigo: 'parametro' });
@@ -154,10 +159,11 @@ router.post(
     if (espera > 0) return res.status(429).json({ error: 'Espera ' + Math.ceil(espera / 60000) + ' min antes de volver a ejecutar', codigo: 'espera' });
     _ultimaEjecucion.set(op, Date.now());
     const r = await wvAuto.ejecutarAhora({
-      db, logEvent, actor: actorLabel(req.actor), maxConsultas, modulo, mes: b.mes,
+      db, logEvent, actor: actorLabel(req.actor), maxConsultas, modulo, mes: b.mes, destino: dest,
       fetchImpl: req.app.locals.wolkvoxFetch, leerInterruptor: req.app.locals.wolkvoxInterruptor, leerValor: req.app.locals.wolkvoxValor,
     });
-    if (r.estado === 'apagada') return res.status(409).json({ ok: false, codigo: 'apagada', error: modulo === 'flujo' || modulo === 'todos' ? 'La consulta automática está apagada (WOLKVOX_AUTO_ACTIVO no es 1 en SSM)' : 'El módulo ' + modulo + ' está apagado (no está en WOLKVOX_AUTO_MODULOS en SSM)' });
+    if (r.estado === 'apagada') return res.status(409).json({ ok: false, codigo: 'apagada', error: modulo === 'flujo' || modulo === 'todos' || dest !== D.DESTINOS.replica ? 'La consulta automática está apagada (' + dest.interruptor + ' no es 1 en SSM)' : 'El módulo ' + modulo + ' está apagado (no está en ' + dest.modulos + ' en SSM)' });
+    if (r.estado === 'no_permitido') return res.status(400).json({ ok: false, codigo: 'parametro', error: 'Ese módulo no está autorizado para esta campaña' });
     if (r.estado === 'ocupada') return res.status(409).json({ ok: false, codigo: 'ocupada', error: 'Ya hay una corrida en curso' });
     if (r.estado === 'sin_interruptor') return res.status(503).json({ ok: false, codigo: 'sin_interruptor', error: 'No se pudo leer el interruptor en SSM; no se consultó' });
     res.json({ ok: r.estado === 'ok', estado: r.estado, error: r.error || null, consultas: r.consultas, meses: r.meses, partes: r.partes, mes: b.mes || null, detalle: r.detalle, usoHoy: wv.usoDelDia(db, op), tope: wv.topeDiario() });

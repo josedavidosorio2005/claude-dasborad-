@@ -453,28 +453,35 @@ async function ejecutarAhora(opts) {
   _enCurso = true;
   try {
     const env = opts.env || process.env;
+    // Fase N6: el destino interno (réplica de MOBILIZE, por defecto, o de ORLANT). Nunca un real.
+    const dest = D.destino(opts.destino);
+    if (!dest.interna) return { estado: 'no_permitido' };
+    const esOrlant = dest !== D.DESTINOS.replica;
     let activo = false;
-    if (!opts.modulo || opts.modulo === 'flujo' || opts.modulo === 'todos') {
-      try { activo = await (opts.leerInterruptor || leerInterruptor)(env); } catch (e) { return { estado: 'sin_interruptor' }; }
+    // La réplica de ORLANT exige SU interruptor para todo (también para un módulo suelto).
+    if (esOrlant || !opts.modulo || opts.modulo === 'flujo' || opts.modulo === 'todos') {
+      try { activo = await (opts.leerInterruptor || leerInterruptor)(env, dest.interruptor); } catch (e) { return { estado: 'sin_interruptor' }; }
     }
+    if (esOrlant && !activo) return { estado: 'apagada' };
+    if (opts.modulo && opts.modulo !== 'todos' && !D.moduloPermitido(dest, opts.modulo)) return { estado: 'no_permitido' };
     // Fase A20: `mes` (AAAA-MM, un mes pasado completo) cambia el plan; la etiqueta lo dice.
     const etiqueta = 'Ejecutar ahora' + (opts.mes ? ' (mes ' + opts.mes + ')' : '');
     const correrFlujo = () => correrUnaVez({
       db: opts.db, env, ahora: opts.ahora, fetchImpl: opts.fetchImpl, logEvent: opts.logEvent,
-      franja: 'manual ' + new Date().toISOString(), etiqueta, actor: opts.actor, maxConsultas: opts.maxConsultas, mes: opts.mes,
+      franja: 'manual ' + new Date().toISOString() + dest.sufijoFranja, etiqueta, actor: opts.actor, maxConsultas: opts.maxConsultas, mes: opts.mes, destino: dest,
     });
     if (opts.modulo === 'todos') {
       // Fase A20: el Flujo y luego cada módulo encendido, en el orden de MODULOS (flujo_hora completa
       // el AHT del Flujo, por eso va después). Lo apagado se salta. La primera falla detiene el resto.
       const M = require('./wolkvox-modulos');
       let lista;
-      try { lista = M.modulosDe(await (opts.leerValor || leerValor)(env, 'WOLKVOX_AUTO_MODULOS')); } catch (e) { return { estado: 'sin_interruptor' }; }
+      try { lista = M.modulosDe(await (opts.leerValor || leerValor)(env, dest.modulos)); } catch (e) { return { estado: 'sin_interruptor' }; }
       const out = { estado: 'ok', consultas: 0, meses: [], partes: [] };
-      const pasos = [['flujo', activo]].concat(Object.keys(M.MODULOS).map((n) => [n, lista.includes(n)]));
+      const pasos = [['flujo', activo]].concat(Object.keys(M.MODULOS).filter((n) => D.moduloPermitido(dest, n)).map((n) => [n, lista.includes(n)]));
       for (const [nombre, encendido] of pasos) {
         if (!encendido) { out.partes.push({ modulo: nombre, estado: 'apagado' }); continue; }
         const r = nombre === 'flujo' ? await correrFlujo()
-          : await M.correrModulo(nombre, { db: opts.db, env, ahora: opts.ahora, mes: opts.mes, fetchImpl: opts.fetchImpl, logEvent: opts.logEvent, etiqueta, actor: opts.actor });
+          : await M.correrModulo(nombre, { db: opts.db, env, ahora: opts.ahora, mes: opts.mes, fetchImpl: opts.fetchImpl, logEvent: opts.logEvent, etiqueta, actor: opts.actor, destino: dest });
         out.consultas += r.consultas || 0;
         out.partes.push({ modulo: nombre, estado: r.estado, consultas: r.consultas || 0, meses: r.meses, error: r.error || null, detalle: r.detalle });
         if (r.estado !== 'ok') { out.estado = out.partes.some((p) => p.estado === 'ok') ? 'parcial' : r.estado; out.error = r.error || r.estado; break; }
@@ -486,9 +493,9 @@ async function ejecutarAhora(opts) {
       // Paso 1+ (llenar la réplica): el módulo tiene que estar en WOLKVOX_AUTO_MODULOS.
       const M = require('./wolkvox-modulos');
       let lista;
-      try { lista = M.modulosDe(await (opts.leerValor || leerValor)(env, 'WOLKVOX_AUTO_MODULOS')); } catch (e) { return { estado: 'sin_interruptor' }; }
+      try { lista = M.modulosDe(await (opts.leerValor || leerValor)(env, dest.modulos)); } catch (e) { return { estado: 'sin_interruptor' }; }
       if (!lista.includes(opts.modulo)) return { estado: 'apagada' };
-      return await M.correrModulo(opts.modulo, { db: opts.db, env, ahora: opts.ahora, mes: opts.mes, fetchImpl: opts.fetchImpl, logEvent: opts.logEvent, etiqueta, actor: opts.actor });
+      return await M.correrModulo(opts.modulo, { db: opts.db, env, ahora: opts.ahora, mes: opts.mes, fetchImpl: opts.fetchImpl, logEvent: opts.logEvent, etiqueta, actor: opts.actor, destino: dest });
     }
     if (!activo) return { estado: 'apagada' };
     return await correrFlujo();
@@ -533,6 +540,8 @@ function iniciar(db, deps) {
       for (const m of mods) await M.correrModulo(m, { db, env, ahora, franja, fetchImpl: deps.fetchImpl, logEvent: deps.logEvent });
       // Fase A24: el MOBILIZE real, con su propio interruptor (después de la réplica).
       await correrReal({ db, env, ahora, franja, deps, leer });
+      // Fase N6: la réplica de ORLANT, con SU interruptor (apagada: no deja rastro).
+      await correrReplicaOrlant({ db, env, ahora, franja, deps, leer });
       return r;
     } catch (e) {
       console.error('[wolkvox-auto] error inesperado en la corrida (' + (e && e.name ? String(e.name).slice(0, 60) : 'error') + ')');
@@ -564,6 +573,27 @@ async function correrReal({ db, env, ahora, franja, deps, leer }) {
   try { mods = M.modulosDe(await (deps.leerValor || leerValor)(env, real.modulos)); } catch (e) { mods = []; }
   for (const m of Object.keys(M.MODULOS).filter((n) => mods.includes(n))) {
     await M.correrModulo(m, { db, env, ahora, franja: fr, destino: real, fetchImpl: deps.fetchImpl, logEvent: deps.logEvent });
+  }
+  return r;
+}
+
+// ── Fase N6 (autorización escrita del usuario, 23/11/2026): la réplica «ORLANT PRUEBAS API» ──
+// Mismas franjas que MOBILIZE. SOLO si WOLKVOX_ORLANT_AUTO_ACTIVO es exactamente «1» (leído fresco);
+// sin el parámetro, con otro valor o si SSM falla, no corre ni deja rastro. Primero el Flujo y después
+// los módulos de WOLKVOX_ORLANT_AUTO_MODULOS que estén autorizados para ORLANT, en el orden de MODULOS.
+// Su propio token y su propio contador del día (operación ORLANT). Nunca el ORLANT real.
+async function correrReplicaOrlant({ db, env, ahora, franja, deps, leer }) {
+  const dest = D.DESTINOS.orlant_replica;
+  let activo = false;
+  try { activo = (await leer(env, dest.interruptor)) === true; } catch (e) { activo = false; }
+  if (!activo) return null;
+  const fr = franja + dest.sufijoFranja;
+  const r = await correrUnaVez({ db, env, ahora, franja: fr, destino: dest, fetchImpl: deps.fetchImpl, logEvent: deps.logEvent });
+  const M = require('./wolkvox-modulos');
+  let mods = [];
+  try { mods = M.modulosDe(await (deps.leerValor || leerValor)(env, dest.modulos)); } catch (e) { mods = []; }
+  for (const m of Object.keys(M.MODULOS).filter((n) => mods.includes(n) && D.moduloPermitido(dest, n))) {
+    await M.correrModulo(m, { db, env, ahora, franja: fr, destino: dest, fetchImpl: deps.fetchImpl, logEvent: deps.logEvent });
   }
   return r;
 }
@@ -615,8 +645,20 @@ async function rellenarHuecoReal(opts) {
 }
 
 // Para /wolkvox/estado (solo admin): horarios, interruptor al arrancar y la ultima corrida.
-function estado(db, env) {
+function estado(db, env, destino) {
   env = env || process.env;
+  // Fase N6: el estado de la réplica de ORLANT (su interruptor, sus módulos y SU última corrida).
+  if (destino && D.destino(destino) !== D.DESTINOS.replica) {
+    const d = D.destino(destino);
+    asegurarTablas(db);
+    const ultima = db.prepare('SELECT franja, inicio, fin, estado, consultas, detalle FROM wolkvox_auto_corridas WHERE detalle LIKE ? ORDER BY inicio DESC LIMIT 1').get('%' + d.campana + ' · %') || null;
+    return {
+      horariosColombia: HORAS_COLOMBIA.map((h) => String(h).padStart(2, '0') + (h === 0 ? ':0' + MINUTO_MEDIANOCHE : ':00')),
+      reporte: API, campana: d.campana, interruptor: d.interruptor, listaModulos: d.modulos,
+      modulosPermitidos: d.modulosPermitidos ? d.modulosPermitidos.slice() : null,
+      activoAlArrancar: _activo(env[d.interruptor]), ultimaCorrida: ultima,
+    };
+  }
   return {
     horariosColombia: HORAS_COLOMBIA.map((h) => String(h).padStart(2, '0') + (h === 0 ? ':0' + MINUTO_MEDIANOCHE : ':00')),
     reporte: API,
@@ -630,5 +672,5 @@ module.exports = {
   CAMPANA, OPERACION, API, HORAS_COLOMBIA, ARCHIVO, QUIEN, ACCION_HISTORIAL, MAX_CONSULTAS_POR_CORRIDA,
   horaColombia, franjaActual, plan, convertirFila, filasDelDia, aPorcentaje, aSegundos, aEntero,
   asegurarTablas, franjaYaCorrida, ultimaCorrida, planMes, planDe, MESES_ATRAS_MAX, leerInterruptor, correrUnaVez, iniciar, estado, ejecutarAhora, correrLogin, planLogin, API_LOGIN,
-  leerValor, SIN_REGISTROS, correrReal, rellenarHuecoReal,
+  leerValor, SIN_REGISTROS, correrReal, rellenarHuecoReal, correrReplicaOrlant,
 };

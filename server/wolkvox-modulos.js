@@ -46,7 +46,9 @@ function esCuentaPrueba(fila) {
   return !!(nombre && String(nombre).trim() && _pruebaHuellas.includes(_huella(nombre)));
 }
 // -> { data (sin las filas de prueba), quitadas, ids (agent_id vistos en esas filas, solo [A-Za-z0-9_.-]) }
-function quitarCuentasPrueba(data) {
+function quitarCuentasPrueba(data, dest) {
+  // Fase N6: la cuenta de pruebas es de MOBILIZE (su agent_id puede ser otra persona en ORLANT).
+  if (dest !== undefined && !D.destino(dest).cuentasPrueba) return { data, quitadas: 0, ids: [] };
   const out = [];
   const ids = new Set();
   let quitadas = 0;
@@ -254,13 +256,15 @@ const _SALIDA = ['outbound_ma', 'out_pre'];
 const TIPIFICACION_OTROS = 'Otros_motivos';
 const _COMO_OTROS = ['timeoutacw'];
 const _vacio = (v) => v === undefined || v === null || String(v).trim() === '';
-function hojaCdr(data) {
-  return [CDR_COLUMNAS.map((c) => c[1])].concat(data.map((r) => {
+function hojaCdr(data, perfil) {
+  const pf = perfil || PERFILES_CDR.mobilize;
+  const cols = pf.telefono ? CDR_COLUMNAS : CDR_COLUMNAS.filter((c) => c[0] !== 'telephone'); // N6: ORLANT ni lo lee
+  return [cols.map((c) => c[1])].concat(data.map((r) => {
     const salida = _SALIDA.includes(String(_v(r || {}, 'type_interaction') || '').trim().toLowerCase());
-    return CDR_COLUMNAS.map(([api]) => {
+    return cols.map(([api]) => {
       const v = _v(r || {}, api);
       if (salida && (api === 'skill_name' || api === 'skill_id') && _vacio(v)) return '-';
-      if (api === 'description_cod_act' && (_vacio(v) || _COMO_OTROS.includes(String(v).trim().toLowerCase()))) return TIPIFICACION_OTROS;
+      if (pf.otros && api === 'description_cod_act' && (_vacio(v) || _COMO_OTROS.includes(String(v).trim().toLowerCase()))) return TIPIFICACION_OTROS;
       return v === undefined || v === null ? '' : v;
     });
   }));
@@ -310,6 +314,14 @@ function conteoCdr(data) {
 function opcionesCdrMobilize() {
   return { codificacionesExcluidas: T.TIPIFICACION_CDR_EXCLUIR_POR_DEFECTO, marcarUnicasDia: true, conservarSalidaGuion: true };
 }
+// Fase N6: el CDR de cada destino se lee como la carga manual de su cliente (public/js/cargas.js).
+// ORLANT: sin opciones (no excluye «PRUEBA», no marca únicas, no lee el teléfono) y sin agrupar
+// «sin tipificación»/TIMEOUTACW como «Otros_motivos» (eso fue una decisión de MOBILIZE, Fase A22).
+const PERFILES_CDR = {
+  mobilize: { opciones: opcionesCdrMobilize, otros: true, telefono: true },
+  orlant: { opciones: () => undefined, otros: false, telefono: false },
+};
+function perfilCdr(dest) { return PERFILES_CDR[D.destino(dest).perfilCdr] || PERFILES_CDR.mobilize; }
 
 async function correrCdr(opts, partes, res) {
   const { cargarTipificaciones } = require('./tipificaciones');
@@ -326,11 +338,12 @@ async function correrCdr(opts, partes, res) {
       if (r.data.length) campos = wv.resumenSinValores(r.cuerpo).campos;
     }
     if (!data.length) { partes.push(mes + ': Wolkvox no trajo llamadas, sin cambios'); continue; }
-    const prC = quitarCuentasPrueba(data); // Fase A26
+    const prC = quitarCuentasPrueba(data, opts.destino); // Fase A26 (N6: solo MOBILIZE)
     data = prC.data;
     if (!data.length) { if (opts.huecoReal) { partes.push(mes + ': solo filas de la cuenta de prueba' + _textoPrueba(prC) + ', sin cambios'); continue; } _soloPrueba(opts, partes, res, 'tipificaciones', mes, prC); continue; }
     const conteo = conteoCdr(data); // Fase A12: solo números
-    let p = T.tipificacionParseFilas(hojaCdr(data), null, 'LLAMADAS', opcionesCdrMobilize());
+    const pf = perfilCdr(opts.destino); // Fase N6
+    let p = T.tipificacionParseFilas(hojaCdr(data, pf), null, 'LLAMADAS', pf.opciones());
     data = null; // los teléfonos y demás datos crudos no se guardan ni se quedan en memoria
     if (p.error) {
       res.estado = 'error'; res.error = 'respuesta_invalida';
@@ -419,7 +432,7 @@ async function correrNoConectadas(opts, partes, res) {
     res.consultas++;
     let { data } = await _pedir(opts, 'cdr_5', dias[0], dias[dias.length - 1]);
     if (!data.length) { marcar(mes, 0); partes.push(mes + ': Wolkvox no trajo no conectadas, sin cambios (mes consultado: 0)'); continue; }
-    const prN = quitarCuentasPrueba(data); // Fase A26
+    const prN = quitarCuentasPrueba(data, opts.destino); // Fase A26 (N6: solo MOBILIZE)
     data = prN.data;
     if (!data.length) {
       if (_huecoOcupado(opts, mes, partes, res)) continue;
@@ -517,7 +530,9 @@ async function correrModulo(nombre, opts) {
     return res;
   };
   if (!D.campanaLista(db, dest)) { res.estado = 'omitida'; partes.push(dest.clave === 'replica' ? 'la réplica no existe' : 'la campaña no existe o es interna'); return terminar(); }
-  const OPERACION = dest.operacion; // Fase N5: del destino (hoy MOBILIZE en los dos)
+  // Fase N6: cada destino solo corre sus módulos autorizados (ORLANT: flujo_hora, cdr, no_conectadas).
+  if (!D.moduloPermitido(dest, nombre)) { res.estado = 'omitida'; partes.push('módulo no autorizado para esta campaña'); return terminar(); }
+  const OPERACION = dest.operacion; // Fase N5: del destino
   const cred = opts.credenciales || wv.credenciales(OPERACION, env);
   if (!cred) { res.estado = 'omitida'; partes.push('falta el token o el servidor de Wolkvox'); return terminar(); }
   const meses = A.planDe({ mes: opts.mes, ahora, destino: dest, huecoReal: opts.huecoReal });
@@ -539,4 +554,4 @@ module.exports = {
   esCuentaPrueba, quitarCuentasPrueba, vaciarMes, PRUEBA_HUELLAS, PRUEBA_IDS,
   _configurarPruebaParaPruebas: (huellas, ids) => { _pruebaHuellas = huellas || PRUEBA_HUELLAS; _pruebaIds = ids || PRUEBA_IDS; },
   _huellaParaPruebas: _huella,
-  conteoCdr, MODULOS, modulosDe, correrModulo, hojaFlujoHora, ahtEsperaDiarios, reemplazarMesFlujoHora, actualizarAhtEspera, hojaCdr, CDR_COLUMNAS, CDR_DESCARTADAS, opcionesCdrMobilize, hojaEncuesta, ENCUESTA_DESCARTADAS, hojaNoConectadas, NC_DESCARTADAS, hojaAbandonadas, AB_DESCARTADAS };
+  conteoCdr, MODULOS, modulosDe, correrModulo, perfilCdr, PERFILES_CDR, hojaFlujoHora, ahtEsperaDiarios, reemplazarMesFlujoHora, actualizarAhtEspera, hojaCdr, CDR_COLUMNAS, CDR_DESCARTADAS, opcionesCdrMobilize, hojaEncuesta, ENCUESTA_DESCARTADAS, hojaNoConectadas, NC_DESCARTADAS, hojaAbandonadas, AB_DESCARTADAS };
