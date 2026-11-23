@@ -2195,6 +2195,8 @@
     </section>
     <section id="ac-p-actas" class="hidden" aria-label="Actas"><!-- Fase 379 (I4): todas las actas, automáticas y manuales -->
       <div id="ac-actas-kpis"></div>
+      <div class="ac-chips ac-actas-cab"><div id="ac-ac-pestanas" class="acp-chips" role="group" aria-label="Ver actas"></div><button type="button" class="btn-primary ac-btn" onclick="activosActaManual()">Generar acta manual</button></div><!-- Fase GH5d -->
+      <div id="ac-ac-zona">
       <div class="ac-filtros">
         <div class="ig"><label for="ac-ac-estado">Estado</label><select id="ac-ac-estado" onchange="activosActasBuscar()"><option value="">Todas</option><option value="pendiente">Por firmar</option><option value="atrasada">Atrasadas</option><option value="firmada">Firmadas</option><option value="anulada">Anuladas</option></select></div>
         <div class="ig"><label for="ac-ac-tipo">Tipo</label><select id="ac-ac-tipo" onchange="activosActasBuscar()"></select></div>
@@ -2203,8 +2205,9 @@
       <div class="ac-chips"><p id="ac-ac-conteo" class="vis-ayuda"></p><div class="ac-export" role="group" aria-label="Descargar"><button type="button" class="btn-cancel ac-btn" onclick="activosExportar('actas', 'xlsx')">Excel</button><button type="button" class="btn-cancel ac-btn" onclick="activosExportar('actas', 'pdf')">PDF</button></div></div>
       <div id="ac-ac-lista" aria-live="polite"></div>
       <div id="ac-ac-anular"></div>
+      </div>
+      <div id="ac-p-novedadesgh" class="hidden" aria-label="Novedades de Gestión Humana" aria-live="polite"></div><!-- Fase GH4; GH5d: dentro de Actas -->
     </section>
-    <section id="ac-p-novedadesgh" class="hidden" aria-label="Novedades de Gestión Humana" aria-live="polite"></section><!-- Fase GH4 -->
     <section id="ac-p-historial" class="hidden" aria-label="Historial"><!-- Fase 381 (I6) -->
       <div class="ac-filtros">
         <div class="ig"><label for="ac-h-desde">Desde</label><input type="date" id="ac-h-desde" onchange="activosHistorialBuscar()"></div>

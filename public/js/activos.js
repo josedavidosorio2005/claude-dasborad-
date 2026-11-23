@@ -7,7 +7,7 @@ var _ac = { config: null, tab: 'panel', lista: [], sel: null, ambito: 'sistemas'
 // Fase 376 (I1, diseño de Edwin): menú lateral con el ciclo de cada elemento. «sec» = título de sección.
 var AC_MENU = {
   sistemas: [['sec', 'Menú'], ['panel', 'Panel general'], ['sec', 'Ciclo de elementos'], ['registrar', 'Registrar ingreso', '1'], ['libres', 'Libres', '2'], ['asignados', 'Asignados', '3'],
-    ['reparacion', 'En reparación', '4'], ['malos', 'Malos', '5'], ['sec', 'Gestión'], ['elementos', 'Inventario'], ['agentes', 'Agentes'], ['novedadesgh', 'Novedades de Gestión Humana'], ['admin', 'Equipos administrables'], ['actas', 'Actas'], ['historial', 'Historial'], ['ajustes', 'Ajustes y datos']], // Fase 379: + Actas; Fase 380: + administrables; Fase 381: + Historial
+    ['reparacion', 'En reparación', '4'], ['malos', 'Malos', '5'], ['sec', 'Gestión'], ['elementos', 'Inventario'], ['agentes', 'Agentes'], ['admin', 'Equipos administrables'], ['actas', 'Actas'], ['historial', 'Historial'], ['ajustes', 'Ajustes y datos']], // Fase 379: + Actas; Fase 380: + administrables; Fase 381: + Historial
   inmuebles: [['sec', 'Menú'], ['panel', 'Panel general'], ['sec', 'Ciclo de elementos'], ['registrar', 'Registrar ingreso', '1'], ['libres', 'Libres', '2'],
     ['reparacion', 'En reparación', '3'], ['malos', 'Malos', '4'], ['sec', 'Gestión'], ['elementos', 'Inventario'], ['historial', 'Historial'], ['ajustes', 'Ajustes y datos']], // Fase 381: + Historial
 };
@@ -76,11 +76,12 @@ function activosCerrar() { closeModal('activos-overlay'); }
 
 function activosTab(tab) {
   if (!AC_VISTA_TXT[tab]) tab = 'panel';
+  if (tab === 'novedadesgh' && _ac.ambito !== 'inmuebles') { _ac.actasPestana = 'novedades'; tab = 'actas'; } // Fase GH5d: las novedades viven en Actas, como Edwin
   if (_ac.ambito === 'inmuebles' && (tab === 'agentes' || tab === 'asignados' || tab === 'actas' || tab === 'admin' || tab === 'novedadesgh')) tab = 'panel'; // inmuebles no se asignan a agentes
   _ac.tab = tab;
   _acError('');
   var seccion = AC_VISTA_ESTADO[tab] ? 'elementos' : tab; // las vistas por estado usan la lista de elementos
-  ['panel', 'elementos', 'agentes', 'registrar', 'ajustes', 'actas', 'admin', 'historial', 'novedadesgh'].forEach(function (t) { _acEl('ac-p-' + t).classList.toggle('hidden', t !== seccion); });
+  ['panel', 'elementos', 'agentes', 'registrar', 'ajustes', 'actas', 'admin', 'historial'].forEach(function (t) { _acEl('ac-p-' + t).classList.toggle('hidden', t !== seccion); });
   var txt = AC_VISTA_TXT[tab];
   _acEl('ac-vista-cab').innerHTML = '<h4 class="ac-vista-tit">' + esc(txt[0]) + '</h4><p class="vis-ayuda">' + esc(txt[1]) + '</p>' + (tab === 'registrar' ? activosFlujoHtml(_ac.ambito) : '') /* Fase GH5: el panel de Edwin no lleva el flujo */;
   _acRefrescarMenu();
@@ -90,10 +91,9 @@ function activosTab(tab) {
   if (tab === 'agentes') _acAgentes();
   if (tab === 'registrar') _acFormulario();
   if (tab === 'ajustes') _acAjustes();
-  if (tab === 'actas') activosActasBuscar(); // Fase 379
+  if (tab === 'actas') { activosActasPestana(_ac.actasPestana || 'pendiente'); _ac.actasPestana = null; } // Fase 379; GH5d: pestañas
   if (tab === 'admin') { _ac.adSubtipo = ''; activosAdminBuscar(); } // Fase 380
   if (tab === 'historial') activosHistorialBuscar(); // Fase 381
-  if (tab === 'novedadesgh') activosNovedadesGH(); // Fase GH4
 }
 
 // ── Panel ──
@@ -914,7 +914,28 @@ function activosActasHtml(lista, firmadasActivas, diasAtraso) {
         '<td><div class="ac-acciones">' + acc + '</div></td></tr>';
     }).join('') + '</tbody></table></div>';
 }
-function activosActasFiltrar(estado) { _acEl('ac-ac-estado').value = estado; activosActasBuscar(); }
+function activosActasFiltrar(estado) { _acEl('ac-ac-estado').value = estado; activosActasPestana(estado === 'pendiente' || estado === 'firmada' ? estado : 'todas', true); }
+// Fase GH5d (diseño de Edwin): pestañas «Actas pendientes», «Actas firmadas», «Todas» y «Novedades de GH».
+var AC_ACTAS_PEST = [['pendiente', 'Actas pendientes'], ['firmada', 'Actas firmadas'], ['todas', 'Todas'], ['novedades', 'Novedades de GH']];
+function activosActasPestanasHtml(actual, nNovedades) {
+  return AC_ACTAS_PEST.map(function (x) {
+    var on = x[0] === actual;
+    return '<button type="button" class="acp-chip' + (on ? ' on' : '') + '" aria-pressed="' + String(on) + '" onclick="activosActasPestana(\'' + x[0] + '\')">' + esc(x[1]) +
+      (x[0] === 'novedades' && nNovedades ? ' (' + Number(nNovedades) + ')' : '') + '</button>';
+  }).join('');
+}
+function activosActasPestana(p, sinTocarEstado) {
+  _ac.actasPest = p;
+  var res = _ac.resumen && _ac.resumen.novedadesGH, nNov = res ? res.retirados + res.ausentes : 0;
+  _acEl('ac-ac-pestanas').innerHTML = activosActasPestanasHtml(p, nNov);
+  var nov = p === 'novedades';
+  _acEl('ac-ac-zona').classList.toggle('hidden', nov);
+  _acEl('ac-p-novedadesgh').classList.toggle('hidden', !nov);
+  if (nov) { activosNovedadesGH(); return; }
+  if (!sinTocarEstado) _acEl('ac-ac-estado').value = p === 'todas' ? '' : p;
+  activosActasBuscar();
+}
+function activosActaManual() { activosTab('agentes'); _acError(''); var q = _acEl('ac-ag-q'); if (q) q.focus(); }
 async function activosActasBuscar() {
   _acError('');
   var q = [];
@@ -1240,4 +1261,4 @@ function activosVerTipo(codigo) {
 function activosEditarFormulario(codigo) { activosTab('ajustes'); activosEditarTipo(codigo); }
 function activosNuevaTecnologia() { activosTab('ajustes'); activosEditarTipo(null); }
 function activosIrImportar() { activosTab('ajustes'); var s = _acEl('ac-imp-tipo'); if (s) { try { s.scrollIntoView({ block: 'center' }); } catch (e) { /* */ } s.focus(); } }
-if (typeof module !== 'undefined' && module.exports) { module.exports.activosPanel2Html = activosPanel2Html; module.exports.activosRegistrarTarjetasHtml = activosRegistrarTarjetasHtml; module.exports.activosConteoTexto = activosConteoTexto; module.exports.activosListaHtml = activosListaHtml; module.exports.activosInvTiposHtml = activosInvTiposHtml; }
+if (typeof module !== 'undefined' && module.exports) { module.exports.activosPanel2Html = activosPanel2Html; module.exports.activosRegistrarTarjetasHtml = activosRegistrarTarjetasHtml; module.exports.activosConteoTexto = activosConteoTexto; module.exports.activosListaHtml = activosListaHtml; module.exports.activosInvTiposHtml = activosInvTiposHtml; module.exports.activosActasPestanasHtml = activosActasPestanasHtml; }

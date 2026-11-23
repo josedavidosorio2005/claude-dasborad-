@@ -29,6 +29,7 @@ sepan que hay nuevo, que se corrigio y que falta.
 - Las listas (Libres, Asignados, En reparación y Malos) tienen las columnas de Edwin: Tipo, Código, Nombre, Equipo (con el serial debajo), Procesador, RAM, Sede y Operación. En Asignados también Agente, Cédula y «Asignado desde».
 - Cada fila trae los botones «Estado» (cambiar el estado) y, en Asignados, «Recibir» (devolver el equipo). «Ver» sigue abriendo el detalle.
 - «Inventario completo» ahora se llama «Inventario»: arriba tiene una tarjeta por tipo con libres, en uso, reparación y malos; «Ver detalle» filtra la lista por ese tipo.
+- **Actas** tiene pestañas como en el diseño de Edwin: «Actas pendientes», «Actas firmadas», «Todas» y «Novedades de GH» (con cuántas hay). Las novedades de Gestión Humana ya no están en el menú: se ven dentro de Actas. El botón «Generar acta manual» lleva a Agentes, donde se elige a quién.
 - Solo cambia cómo se ve. Los elementos, agentes y actas guardados no se tocan.
 
 ## v1.257.0 — Noviembre 2026

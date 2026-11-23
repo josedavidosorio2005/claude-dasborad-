@@ -22319,4 +22319,10 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - «Inventario completo» pasa a «Inventario», con chips y una tarjeta por tipo (`activosInvTiposHtml`, `#ac-inv-tipos`); «Ver detalle» filtra la lista.
   - Pruebas: 2 nuevas en `faseGH5-inventario-panel` (API y HTML); `fase376` ajustada al nuevo nombre del menú.
   - Revisión local en Brave a 375, 768 y 1440 (base demo, 4 elementos inventados `QA-GH5C-*`): sin scroll horizontal de la página (la tabla se desplaza dentro de su caja), «Recibir» abre «Quitar asignación», «Estado» enfoca el selector, «Ver detalle» filtra el tipo, 0 errores de consola. Los elementos inventados se borraron de la base local.
-- **Sigue:** GH5d (Actas, Historial, Ajustes y menú), según la lista. **PR sin mergear** (pedido del usuario).
+- **GH5d (parte, mismo PR), diferencias 7 y 10:**
+  - Actas con pestañas (`activosActasPestanasHtml`, `activosActasPestana`): Actas pendientes, Actas firmadas, Todas y Novedades de GH (con el conteo de retirados + ausentes). Las tarjetas siguen filtrando.
+  - «Novedades de Gestión Humana» sale del menú; la vista vieja `novedadesgh` abre Actas en esa pestaña. «Generar acta manual» lleva a Agentes (el acta manual es por agente).
+  - Arreglo visual: el chip activo (`.acp-chip.on`) perdía el fondo al pasar el mouse (venía del Panel general de GH5).
+  - Pruebas: `faseGH4` ajustada (las novedades ya no están en el menú; pestañas con conteo).
+  - Revisión local a 375, 768 y 1440: sin scroll horizontal, pestañas y ruta vieja OK, 0 errores de consola. Datos inventados borrados de la base local.
+- **Sigue:** GH5d resto (Historial y Ajustes en tarjetas), según la lista. **PR sin mergear** (pedido del usuario).
