@@ -85,17 +85,17 @@ test('operación por campaña: solo las réplicas; los reales nunca', () => {
   assert.ok(Object.isFrozen(wv.OPERACION_DE_CAMPANA));
 });
 
-test('MOBILIZE sin cambios: los destinos siguen siendo dos, de MOBILIZE, y la consulta automática es solo suya', () => {
-  assert.deepEqual(Object.keys(D.DESTINOS), ['replica', 'real']);
+// Fase N6 (23/11): la réplica de ORLANT pasa a ser un destino (apagado); MOBILIZE sigue igual.
+test('MOBILIZE sin cambios: sus dos destinos siguen de MOBILIZE; ORLANT solo como réplica', () => {
+  assert.deepEqual(Object.keys(D.DESTINOS), ['replica', 'real', 'orlant_replica']);
   assert.equal(D.operacionDe(), 'MOBILIZE');
   assert.equal(D.operacionDe('replica'), 'MOBILIZE');
   assert.equal(D.operacionDe('real'), 'MOBILIZE');
-  assert.deepEqual([...D.CAMPANAS_PERMITIDAS], ['MOBILIZE PRUEBAS API', 'MOBILIZE']);
+  assert.equal(D.operacionDe('orlant_replica'), 'ORLANT');
   assert.equal(wvAuto.OPERACION, 'MOBILIZE');
   assert.equal(wvAuto.CAMPANA, 'MOBILIZE PRUEBAS API');
   assert.throws(() => D.destino('orlant'), /no permitido/);
-  // La réplica de ORLANT no es un destino: nunca recibe la consulta automática.
-  assert.ok(!D.CAMPANAS_PERMITIDAS.includes(R));
+  assert.ok(!D.CAMPANAS_PERMITIDAS.includes('ORLANT'), 'nunca el ORLANT real');
 });
 
 test('contador del día por operación: gastar de ORLANT no toca el de MOBILIZE', () => {
@@ -108,15 +108,16 @@ test('contador del día por operación: gastar de ORLANT no toca el de MOBILIZE'
   db.prepare('UPDATE wolkvox_uso SET consultas = consultas - 1 WHERE operacion = ? AND dia = ?').run('ORLANT', '2026-11-23');
 });
 
-test('estado de la réplica de ORLANT: sin token, sin consulta automática, servidor encontrado', async () => {
+test('estado de la réplica de ORLANT: sin token, consulta automática apagada, servidor encontrado', async () => {
   const r = await request(app).get('/api/wolkvox/estado').query({ campana: R }).set(H(admin));
   assert.equal(r.status, 200);
   assert.equal(r.body.configurado, false);
   assert.equal(r.body.diagnostico.tokenEncontrado, false);
   assert.equal(r.body.diagnostico.servidorEncontrado, true);
   assert.equal(r.body.servidorEncontrado, true);
-  assert.equal(r.body.autoDisponible, false);
-  assert.equal(r.body.auto, null);
+  assert.equal(r.body.autoDisponible, true); // Fase N6
+  assert.equal(r.body.auto.interruptor, 'WOLKVOX_ORLANT_AUTO_ACTIVO');
+  assert.equal(r.body.auto.activoAlArrancar, false);
   assert.ok(!JSON.stringify(r.body).includes(SERVIDOR), 'nunca el servidor');
   // La de MOBILIZE sigue con su consulta automática.
   const m = await request(app).get('/api/wolkvox/estado').query({ campana: 'MOBILIZE PRUEBAS API' }).set(H(admin));
@@ -154,10 +155,13 @@ test('«Probar» de ORLANT sin token: 409 y nunca llama a Wolkvox', async () => 
   assert.equal(fetchLlamadas.length, 0);
 });
 
-test('«Ejecutar ahora» en la réplica de ORLANT: 404 (está apagada, no tiene consulta automática)', async () => {
+// Fase N6: ahora la tiene, pero APAGADA (sin WOLKVOX_ORLANT_AUTO_ACTIVO): 409 y ninguna consulta.
+test('«Ejecutar ahora» en la réplica de ORLANT apagada: 409 y ninguna consulta', async () => {
   process.env.WOLKVOX_ORLANT_TOKEN = 'TOKEN-FALSO-N5-no-es-real';
   const r = await request(app).post('/api/wolkvox/auto/ejecutar').set(H(admin)).send({ campana: R });
-  assert.equal(r.status, 404);
+  assert.equal(r.status, 409);
+  assert.equal(r.body.codigo, 'apagada');
+  assert.match(r.body.error, /WOLKVOX_ORLANT_AUTO_ACTIVO/);
   assert.equal(fetchLlamadas.length, 0);
 });
 

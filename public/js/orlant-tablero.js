@@ -10,10 +10,12 @@ var OT_SECCIONES = [
   { key: 'outbound', label: 'Tráfico outbound', icon: 'i-upload' },
   { key: 'backoffice', label: 'Back office', icon: 'i-file-text' },
   { key: 'asesores', label: 'Asesores', icon: 'i-users' },
+  // Fase N6: configuración, no indicadores (solo el administrador, como todo el tablero por ahora).
+  { key: 'skills', label: 'Mapa de skills', icon: 'i-sliders-horizontal' },
 ];
 var OT_LINEAS = [{ key: 'total', label: 'Total' }, { key: 'general', label: 'Línea General' }, { key: '3p', label: '3P' }];
 var OT_CANALES = [{ key: 'llamadas', label: 'Llamadas' }, { key: 'whatsapp', label: 'WhatsApp' }, { key: 'citas', label: 'Citas' }];
-var _ot = { seccion: 'inbound', linea: 'total', canal: 'llamadas', desde: '', hasta: '', gran: 'mes', atajo: 'todo', verMas: false, datos: null, abierto: false };
+var _ot = { skills: null, skillsCambios: {}, seccion: 'inbound', linea: 'total', canal: 'llamadas', desde: '', hasta: '', gran: 'mes', atajo: 'todo', verMas: false, datos: null, abierto: false };
 
 function _otEsc(s) { return String(s === null || s === undefined ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
 function otNum(n) { return n === null || n === undefined ? '—' : Math.round(n).toLocaleString('es-CO'); }
@@ -157,6 +159,10 @@ function otRender() {
         '<div id="ot-detalle" class="ot-detalle"' + (s.verMas ? '' : ' hidden') + '>' + c.detalle + '</div>' : '');
   }
   var titulo = (OT_SECCIONES.filter(function (x) { return x.key === s.seccion; })[0] || {}).label;
+  if (s.seccion === 'skills') {
+    host.innerHTML = '<div class="ot-layout">' + nav + '<section class="ot-main" aria-labelledby="ot-h2"><h2 class="ot-h2" id="ot-h2">' + _otEsc(titulo) + '</h2><div class="ot-cuerpo" aria-live="polite">' + otSkillsHtml(s.skills, s.skillsCambios) + '</div></section></div>';
+    return;
+  }
   host.innerHTML = '<div class="ot-layout">' + nav + '<section class="ot-main" aria-labelledby="ot-h2"><h2 class="ot-h2" id="ot-h2">' + _otEsc(titulo) + '</h2>' + filtros + lineas + canales + '<div class="ot-cuerpo" aria-live="polite">' + cuerpo + '</div></section></div>';
 }
 
@@ -178,13 +184,16 @@ async function otCargar() {
 function _otEventos(host) {
   host.addEventListener('click', function (ev) {
     var b = ev.target.closest('button'); if (!b) return;
-    if (b.dataset.otSeccion) { _ot.seccion = b.dataset.otSeccion; otRender(); }
+    if (b.dataset.otSeccion) { _ot.seccion = b.dataset.otSeccion; otRender(); if (_ot.seccion === 'skills' && !_ot.skills) otSkillsCargar(); }
+    else if (b.id === 'ot-skills-guardar') { otSkillsGuardar(); }
+    else if (b.id === 'ot-skills-agregar') { var inp = document.getElementById('ot-skills-nuevo'); otSkillsAgregar(inp ? inp.value : ''); }
     else if (b.dataset.otLinea) { _ot.linea = b.dataset.otLinea; otRender(); }
     else if (b.dataset.otCanal) { _ot.canal = b.dataset.otCanal; otRender(); }
     else if (b.id === 'ot-vermas') { _ot.verMas = !_ot.verMas; try { localStorage.setItem('ot-vermas', _ot.verMas ? '1' : '0'); } catch (e) {} otRender(); }
   });
   host.addEventListener('change', function (ev) {
     var t = ev.target;
+    if (t.dataset && t.dataset.otSkill !== undefined) { otSkillsCambiar(t.dataset.otSkill, t.value); return; }
     if (t.id === 'ot-atajo') { _ot.atajo = t.value; if (t.value !== 'otro') { var r = otRangoAtajo(t.value); _ot.desde = r.desde; _ot.hasta = r.hasta; } otCargar(); }
     else if (t.id === 'ot-desde' || t.id === 'ot-hasta') { _ot[t.id === 'ot-desde' ? 'desde' : 'hasta'] = t.value; _ot.atajo = 'otro'; otCargar(); }
     else if (t.id === 'ot-gran') { _ot.gran = t.value; otCargar(); }
@@ -243,6 +252,71 @@ function otExcel() {
 }
 function orlantTableroVeTarjeta(esFullAdmin) { return esFullAdmin === true; }
 
+// ── Fase N6 (23/11/2026): mapa de skills a línea, editable mientras Edwin confirma ──
+// Solo cuenta lo que se guarda; la «propuesta» (regla del nombre: termina en 3P o GENERAL) es una
+// ayuda y nunca se aplica sola. Un skill sin guardar queda «Sin definir».
+var OT_LINEA_OPC = [['', 'Sin definir'], ['GENERAL', 'Línea General'], ['3P', '3P'], ['NO_CUENTA', 'No cuenta (salida, pruebas u otra)']];
+function otLineaLbl(v) { var o = OT_LINEA_OPC.filter(function (x) { return x[0] === (v || ''); })[0]; return o ? o[1] : 'Sin definir'; }
+// Línea efectiva de un skill en pantalla: el cambio sin guardar, o lo guardado.
+function otSkillLinea(sk, cambios) { return Object.prototype.hasOwnProperty.call(cambios || {}, sk.skill) ? cambios[sk.skill] : sk.linea; }
+function otSkillsHtml(m, cambios) {
+  if (!m) return '<p class="ot-aviso">Cargando…</p>';
+  cambios = cambios || {};
+  var pendientes = Object.keys(cambios).length;
+  var sinDefinir = m.skills.filter(function (sk) { return !otSkillLinea(sk, cambios); }).length;
+  var filas = m.skills.map(function (sk, i) {
+    var actual = otSkillLinea(sk, cambios) || '';
+    var id = 'ot-sk-' + i;
+    var opc = OT_LINEA_OPC.map(function (o) { return '<option value="' + o[0] + '"' + (o[0] === actual ? ' selected' : '') + '>' + _otEsc(o[1]) + '</option>'; }).join('');
+    var usos = (sk.diasManual ? sk.diasManual + ' días (carga manual)' : '') + (sk.diasManual && sk.diasApi ? ' · ' : '') + (sk.diasApi ? sk.diasApi + ' días (réplica API)' : '');
+    return '<tr' + (Object.prototype.hasOwnProperty.call(cambios, sk.skill) ? ' class="ot-sk-cambiado"' : '') + '><th scope="row"><label for="' + id + '">' + _otEsc(sk.skill) + '</label></th>' +
+      '<td data-et="Propuesta">' + _otEsc(sk.propuesta ? otLineaLbl(sk.propuesta) : 'no sé') + '</td>' +
+      '<td class="ot-sk-linea"><select id="' + id + '" data-ot-skill="' + _otEsc(sk.skill) + '">' + opc + '</select></td>' +
+      '<td data-et="Dónde aparece">' + _otEsc(usos || 'agregado a mano') + '</td></tr>';
+  }).join('');
+  return '<p class="ot-aviso">Elige la línea de cada skill. Solo cuenta lo que guardes; la propuesta sale del nombre (termina en «3P» o «GENERAL») y es solo una ayuda. ' +
+      sinDefinir + ' de ' + m.skills.length + ' sin definir.</p>' +
+    '<div class="ot-tabla-wrap"><table class="ot-tabla ot-tabla-skills"><thead><tr><th scope="col">Skill</th><th scope="col">Propuesta</th><th scope="col">Línea</th><th scope="col">Dónde aparece</th></tr></thead><tbody>' +
+      (filas || '<tr><td colspan="4">Todavía no hay skills. Agrega uno abajo.</td></tr>') + '</tbody></table></div>' +
+    '<div class="ot-skills-agregar"><label class="ot-campo"><span>Agregar un skill por nombre (tal como sale en Wolkvox)</span><input type="text" id="ot-skills-nuevo" maxlength="120" autocomplete="off"></label>' +
+      '<button type="button" class="ot-seg" id="ot-skills-agregar">Agregar</button></div>' +
+    '<p class="ot-kpi-nota">Un skill agregado se guarda cuando le eliges una línea.</p>' +
+    '<div class="ot-skills-acciones"><button type="button" class="ot-vermas" id="ot-skills-guardar"' + (pendientes ? '' : ' disabled') + '>Guardar ' + (pendientes ? pendientes + (pendientes === 1 ? ' cambio' : ' cambios') : '(sin cambios)') + '</button></div>';
+}
+// Cambiar la línea de un skill en pantalla (sin guardar). Volver al valor guardado quita el cambio.
+function otSkillsCambiar(skill, valor) {
+  var sk = (_ot.skills && _ot.skills.skills || []).filter(function (x) { return x.skill === skill; })[0];
+  var v = valor || null;
+  if (sk && (sk.linea || null) === v) delete _ot.skillsCambios[skill]; else _ot.skillsCambios[skill] = v;
+  otRender();
+}
+// Agrega un skill escrito a mano (para los que todavía no llegan en ninguna carga). Sin guardar.
+function otSkillsAgregar(nombre) {
+  var t = String(nombre || '').trim().replace(/\s+/g, ' ');
+  if (!t || t.length > 120 || !_ot.skills) return false;
+  if (_ot.skills.skills.some(function (x) { return x.skill.toUpperCase() === t.toUpperCase(); })) { if (typeof showToast === 'function') showToast('Ese skill ya está en la lista'); return false; }
+  _ot.skills.skills.push({ skill: t, linea: null, propuesta: /\s3P$/i.test(t) ? '3P' : /\sGENERAL$/i.test(t) ? 'GENERAL' : null, diasManual: 0, diasApi: 0 });
+  // Sin línea elegida: se guarda cuando el administrador le elige una (nunca se aplica la propuesta sola).
+  otRender();
+  return true;
+}
+async function otSkillsCargar() {
+  try { _ot.skills = await apiRequest('GET', '/orlant/skills-linea'); _ot.skillsCambios = {}; }
+  catch (e) { if (typeof showToast === 'function') showToast('No se pudo cargar el mapa de skills: ' + e.message); }
+  otRender();
+}
+async function otSkillsGuardar() {
+  var cambios = Object.keys(_ot.skillsCambios).map(function (k) { return { skill: k, linea: _ot.skillsCambios[k] }; });
+  if (!cambios.length) return;
+  try {
+    var r = await apiRequest('PUT', '/orlant/skills-linea', { cambios: cambios });
+    _ot.skills = { campana: r.campana, replicas: r.replicas, lineas: r.lineas, skills: r.skills };
+    _ot.skillsCambios = {};
+    if (typeof showToast === 'function') showToast('Mapa de skills guardado');
+  } catch (e) { if (typeof showToast === 'function') showToast('No se pudo guardar: ' + e.message); }
+  otRender();
+}
+
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { otCargar: otCargar, otRender: otRender, _otEstado: function () { return _ot; }, otAvisoPeriodosWpp: otAvisoPeriodosWpp, otContenido: otContenido, otRangoAtajo: otRangoAtajo, otOutboundLinea: otOutboundLinea, otCitasLinea: otCitasLinea, otHojasExcel: otHojasExcel, otPeriodoLbl: otPeriodoLbl, orlantTableroVeTarjeta: orlantTableroVeTarjeta, OT_SECCIONES: OT_SECCIONES };
+  module.exports = { otSkillsHtml: otSkillsHtml, otSkillsCambiar: otSkillsCambiar, otSkillsAgregar: otSkillsAgregar, otSkillLinea: otSkillLinea, otCargar: otCargar, otRender: otRender, _otEstado: function () { return _ot; }, otAvisoPeriodosWpp: otAvisoPeriodosWpp, otContenido: otContenido, otRangoAtajo: otRangoAtajo, otOutboundLinea: otOutboundLinea, otCitasLinea: otCitasLinea, otHojasExcel: otHojasExcel, otPeriodoLbl: otPeriodoLbl, orlantTableroVeTarjeta: orlantTableroVeTarjeta, OT_SECCIONES: OT_SECCIONES };
 }

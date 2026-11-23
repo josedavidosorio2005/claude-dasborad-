@@ -1,5 +1,5 @@
 // wolkvox-destinos.js — Fase A24 (20/11/2026): a qué campaña escribe la consulta automática de
-// Wolkvox. LISTA CERRADA de dos destinos; cualquier otro valor lanza un error (nunca se escribe en
+// Wolkvox. LISTA CERRADA de destinos (tres desde la Fase N6: + la réplica de ORLANT); cualquier otro valor lanza un error (nunca se escribe en
 // otra campaña por un parámetro mal puesto).
 //
 //  - replica: «MOBILIZE PRUEBAS API» (autorización del 18/11). Interruptores WOLKVOX_AUTO_ACTIVO y
@@ -13,19 +13,28 @@
 'use strict';
 
 const CAMPANA_REPLICA = 'MOBILIZE PRUEBAS API';
+// Fase N6 (autorización escrita del usuario, 23/11/2026, CLAUDE.md): réplica oculta de ORLANT.
+const CAMPANA_REPLICA_ORLANT = 'ORLANT PRUEBAS API';
 const CAMPANA_REAL = 'MOBILIZE';
 const DESDE_MES_REAL = '2026-11'; // Fase A29 (20/11/2026): antes '2026-12'
 
 const DESTINOS = Object.freeze({
-  replica: Object.freeze({ clave: 'replica', campana: CAMPANA_REPLICA, operacion: 'MOBILIZE', interna: true, interruptor: 'WOLKVOX_AUTO_ACTIVO', modulos: 'WOLKVOX_AUTO_MODULOS', desdeMes: null, sufijoFranja: '' }),
-  real: Object.freeze({ clave: 'real', campana: CAMPANA_REAL, operacion: 'MOBILIZE', interna: false, interruptor: 'WOLKVOX_REAL_ACTIVO', modulos: 'WOLKVOX_REAL_MODULOS', desdeMes: DESDE_MES_REAL, sufijoFranja: ' real' }),
+  // `modulosPermitidos`: null = todos los de MODULOS. `cuentasPrueba`: quitar la cuenta de pruebas de
+  // MOBILIZE (agent_id/huella, Fase A26; es de esa operación). `perfilCdr`: opciones del lector del CDR,
+  // las mismas de la carga manual de cada cliente (public/js/cargas.js).
+  replica: Object.freeze({ clave: 'replica', campana: CAMPANA_REPLICA, operacion: 'MOBILIZE', interna: true, interruptor: 'WOLKVOX_AUTO_ACTIVO', modulos: 'WOLKVOX_AUTO_MODULOS', desdeMes: null, sufijoFranja: '', modulosPermitidos: null, cuentasPrueba: true, perfilCdr: 'mobilize' }),
+  real: Object.freeze({ clave: 'real', campana: CAMPANA_REAL, operacion: 'MOBILIZE', interna: false, interruptor: 'WOLKVOX_REAL_ACTIVO', modulos: 'WOLKVOX_REAL_MODULOS', desdeMes: DESDE_MES_REAL, sufijoFranja: ' real', modulosPermitidos: null, cuentasPrueba: true, perfilCdr: 'mobilize' }),
+  // Fase N6 (23/11/2026): SOLO la réplica de ORLANT, y solo Flujo (skill_1), Flujo por hora (skill_7),
+  // Tipificación (cdr_1, sin datos sensibles) y No conectadas (cdr_5). Encuesta y abandonadas no están
+  // autorizadas para ORLANT. Interruptor y lista de módulos propios; arranca apagada.
+  orlant_replica: Object.freeze({ clave: 'orlant_replica', campana: CAMPANA_REPLICA_ORLANT, operacion: 'ORLANT', interna: true, interruptor: 'WOLKVOX_ORLANT_AUTO_ACTIVO', modulos: 'WOLKVOX_ORLANT_AUTO_MODULOS', desdeMes: null, sufijoFranja: ' orlant', modulosPermitidos: Object.freeze(['flujo_hora', 'cdr', 'no_conectadas']), cuentasPrueba: false, perfilCdr: 'orlant' }),
 });
-const CAMPANAS_PERMITIDAS = Object.freeze([CAMPANA_REPLICA, CAMPANA_REAL]);
+const CAMPANAS_PERMITIDAS = Object.freeze([CAMPANA_REPLICA, CAMPANA_REAL, CAMPANA_REPLICA_ORLANT]);
 
 // Sin destino = la réplica (lo de siempre). Acepta la clave ('replica' | 'real') o el objeto de la lista.
 function destino(d) {
   if (d === undefined || d === null) return DESTINOS.replica;
-  if (d === DESTINOS.replica || d === DESTINOS.real) return d;
+  if (Object.values(DESTINOS).includes(d)) return d;
   if (typeof d === 'string' && Object.prototype.hasOwnProperty.call(DESTINOS, d)) return DESTINOS[d];
   throw new Error('Destino de Wolkvox no permitido');
 }
@@ -39,6 +48,15 @@ function recortarPlan(dest, meses) {
 // Fase N5 (23/11/2026): la operación de Wolkvox (de quién es el token y el contador del día) sale
 // del destino, no de una constante. Hoy los dos destinos son de MOBILIZE: nada cambia para ellos.
 function operacionDe(dest) { return destino(dest).operacion; }
+// ¿El destino puede correr ese módulo? (el Flujo, 'flujo', siempre).
+function moduloPermitido(dest, modulo) {
+  const d = destino(dest);
+  return modulo === 'flujo' || !d.modulosPermitidos || d.modulosPermitidos.includes(modulo);
+}
+// Fase N6: el destino INTERNO (réplica) de una campaña, o null. Lo usan «Ejecutar ahora» y el estado.
+function destinoInterno(campana) {
+  return Object.values(DESTINOS).find((d) => d.interna && d.campana === campana) || null;
+}
 
 // ¿La campaña destino está lista para recibir datos? La réplica tiene que existir y ser INTERNA;
 // el real tiene que existir y NO ser interno (así una confusión de nombres nunca cruza los dos).
@@ -85,4 +103,4 @@ function flujoConCargaManual(db, mes, archivoApi) {
   return db.prepare("SELECT COUNT(*) n FROM calidad_nivel_servicio_diario WHERE campana = ? AND substr(fecha, 1, 7) = ? AND COALESCE(archivoNombre, '') <> ?").get(CAMPANA_REAL, mes, archivoApi).n > 0;
 }
 
-module.exports = { DESTINOS, CAMPANAS_PERMITIDAS, CAMPANA_REPLICA, CAMPANA_REAL, DESDE_MES_REAL, destino, operacionDe, recortarPlan, campanaLista, skillsMapeadas, HUECOS_REAL, huecoPermitido, filasEnHueco, flujoConCargaManual };
+module.exports = { DESTINOS, CAMPANAS_PERMITIDAS, CAMPANA_REPLICA, CAMPANA_REPLICA_ORLANT, CAMPANA_REAL, DESDE_MES_REAL, destino, operacionDe, moduloPermitido, destinoInterno, recortarPlan, campanaLista, skillsMapeadas, HUECOS_REAL, huecoPermitido, filasEnHueco, flujoConCargaManual };

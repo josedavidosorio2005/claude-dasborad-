@@ -112,8 +112,8 @@ test('ruta: solo el administrador completo; otro rol 403; sin sesión 401', asyn
   assert.equal(front.orlantTableroVeTarjeta(false), false);
 });
 
-test('vista: 4 secciones, línea sin dato en la entrada, «Ver más», Excel; enlazado en el inicio', () => {
-  assert.deepEqual(front.OT_SECCIONES.map((s) => s.label), ['Tráfico inbound', 'Tráfico outbound', 'Back office', 'Asesores']);
+test('vista: 4 secciones (+ «Mapa de skills», Fase N6), línea sin dato en la entrada, «Ver más», Excel; enlazado en el inicio', () => {
+  assert.deepEqual(front.OT_SECCIONES.map((s) => s.label), ['Tráfico inbound', 'Tráfico outbound', 'Back office', 'Asesores', 'Mapa de skills']);
   const d = orlantTableroDatos(db, { gran: 'mes' }, C);
   const base = { seccion: 'inbound', canal: 'llamadas', linea: 'total', gran: 'mes' };
   const c = front.otContenido(d, base);

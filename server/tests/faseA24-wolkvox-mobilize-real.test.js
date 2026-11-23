@@ -57,8 +57,8 @@ async function tick(ahora, deps) {
   try { return await p.tick(); } finally { p.detener(); }
 }
 
-test('lista cerrada: solo la réplica y el MOBILIZE real', () => {
-  assert.deepEqual([...D.CAMPANAS_PERMITIDAS], ['MOBILIZE PRUEBAS API', 'MOBILIZE']);
+test('lista cerrada: la réplica, el MOBILIZE real y (Fase N6) la réplica de ORLANT; nunca el ORLANT real', () => {
+  assert.deepEqual([...D.CAMPANAS_PERMITIDAS], ['MOBILIZE PRUEBAS API', 'MOBILIZE', 'ORLANT PRUEBAS API']);
   assert.equal(D.destino().campana, 'MOBILIZE PRUEBAS API');
   assert.equal(D.destino('real').campana, 'MOBILIZE');
   for (const malo of ['ORLANT', 'SURA', 'MOBILIZE', { campana: 'MOBILIZE' }, 'toString', 5]) assert.throws(() => D.destino(malo), /no permitido/, String(malo));
@@ -122,8 +122,9 @@ test('«Ejecutar ahora» nunca escribe en el MOBILIZE real, aunque se le pida', 
   const antes = huellaReal();
   const falso = crearFalso();
   const r = await auto.ejecutarAhora({ db, env: ENV_BASE, ahora: new Date('2026-12-10T15:00:00Z'), destino: 'real', campana: REAL, fetchImpl: falso.fetch, leerInterruptor: async () => true, logEvent: () => {} });
-  assert.equal(r.estado, 'ok', r.detalle);
-  assert.ok(r.detalle.includes('MOBILIZE PRUEBAS API ·'), r.detalle);
+  // Fase N6: antes ignoraba el destino y corría la réplica; ahora un destino real se rechaza sin consultar.
+  assert.equal(r.estado, 'no_permitido');
+  assert.equal(falso.urls.length, 0, 'ninguna consulta');
   assert.equal(huellaReal(), antes);
 });
 

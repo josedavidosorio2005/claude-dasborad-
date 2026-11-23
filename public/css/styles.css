@@ -2977,6 +2977,22 @@ html.ver-como-activo body{padding-bottom:84px}
 .ot-tabla th:first-child{text-align:left;}
 .ot-tabla thead th{color:var(--c-text-2);font-weight:600;}
 .ot-nav-btn:focus-visible,.ot-seg:focus-visible,.ot-vermas:focus-visible{outline:3px solid var(--c-focus);outline-offset:2px;}
+/* Fase N6: mapa de skills a línea */
+.ot-tabla select{min-height:44px;max-width:100%;padding:6px 10px;border:1px solid var(--c-border-control);border-radius:8px;background:var(--c-surface);color:var(--c-text);font:inherit;}
+.ot-tabla select:focus-visible,#ot-skills-nuevo:focus-visible{outline:3px solid var(--c-focus);outline-offset:2px;}
+.ot-tabla tr.ot-sk-cambiado th,.ot-tabla tr.ot-sk-cambiado td{background:var(--c-hover-bg);}
+.ot-skills-agregar{display:flex;flex-wrap:wrap;align-items:flex-end;gap:8px;margin-top:16px;}
+.ot-skills-agregar .ot-campo{flex:1 1 260px;}
+.ot-skills-acciones{margin-top:12px;}
+.ot-vermas:disabled{opacity:.6;cursor:not-allowed;}
+@media(max-width:820px){
+  .ot-tabla-skills,.ot-tabla-skills tbody{display:block;width:100%;min-width:0;}
+  .ot-tabla-skills thead{display:none;}
+  .ot-tabla-skills tr{display:block;padding:10px 12px;border-bottom:1px solid var(--c-border);}
+  .ot-tabla-skills th,.ot-tabla-skills td{display:block;text-align:left;padding:3px 0;border:0;white-space:normal;}
+  .ot-tabla-skills td[data-et]::before{content:attr(data-et) ": ";color:var(--c-text-2);}
+  .ot-tabla-skills select{width:100%;box-sizing:border-box;}
+}
 @media(max-width:800px){
   .ot-layout{grid-template-columns:minmax(0,1fr);padding:12px 16px;gap:12px;}
   .ot-campo{flex:1 1 140px;min-width:0;}
