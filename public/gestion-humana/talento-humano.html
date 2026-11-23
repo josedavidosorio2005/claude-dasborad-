@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<!-- GENERADO por scripts/gestion-humana/generar-talento-humano.js desde el HTML de Edwin. No editar a mano. -->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Talento humano · InConexion</title>
+<link rel="stylesheet" href="talento-humano.css">
+</head>
+<body>
+<div class="app">
+  <aside>
+    <div class="brand"><b>InConexion</b><span>Módulo de Gestión Humana</span></div>
+    <button class="home-btn" onclick="volverMenu()" title="Volver al menú principal">⌂ Menú principal</button>
+    <nav id="nav">
+      <button data-v="panel" class="on">📊 Panel</button>
+      <button data-v="empleados">👥 Empleados</button>
+      <button data-v="novedades">🏥 Incapacidades y ausentismos <span class="badge" id="nNov" hidden style="background:var(--red);color:#fff"></span></button>
+      <button data-v="ausentismo">💰 Costos de ausentismo</button>
+      <button data-v="alertas">⚠️ Alertas <span class="badge" id="nAlert" hidden></span></button>
+      <button data-v="vacaciones">🏖 Vacaciones <span class="badge" id="nVac" hidden></span></button>
+      <button data-v="cumple">🎂 Cumpleaños</button>
+      <button data-v="retirados">🚪 Retirados</button>
+      <button data-v="admin">⚙️ Administrativo</button>
+      <button data-v="datos">💾 Copias de seguridad</button>
+    </nav>
+    <div class="foot">Los datos se guardan en este navegador. Descarga una copia de respaldo con frecuencia.</div>
+  </aside>
+  <main id="main"></main>
+</div>
+
+<!-- Ficha empleado -->
+<div class="ov" id="ovEmp"><div class="modal">
+  <div class="mh"><h2 id="empTitle">Nuevo empleado</h2><button class="x" onclick="closeOv('ovEmp')">×</button></div>
+  <div class="tabs" id="tabs"></div>
+  <div class="mb" id="empBody"></div>
+  <div class="mf"><div id="empState" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"></div>
+    <div style="display:flex;gap:8px"><button class="btn" onclick="closeOv('ovEmp')">Cancelar</button><button class="btn pri" onclick="saveEmp()">Guardar</button></div></div>
+</div></div>
+
+<!-- Confirmación -->
+<div class="ov" id="ovRet"><div class="modal mid">
+  <div class="mh"><h2 id="retTitle">Registrar retiro</h2><button class="x" onclick="closeOv('ovRet')">×</button></div>
+  <div class="mb" id="retBody"></div>
+  <div class="mf" id="retFoot"></div>
+</div></div>
+<div class="ov" id="ovConf"><div class="modal small">
+  <div class="mh"><h2 id="confTitle">Confirmar</h2><button class="x" onclick="closeOv('ovConf')">×</button></div>
+  <div class="mb" id="confBody"></div>
+  <div class="mf" style="justify-content:flex-end"><button class="btn" onclick="closeOv('ovConf')">Cancelar</button><button class="btn dan" id="confOk">Confirmar</button></div>
+</div></div>
+
+<div class="toast" id="toast"></div>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <linearGradient id="gArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3CA0DC" stop-opacity=".35"/><stop offset="1" stop-color="#3CA0DC" stop-opacity="0"/></linearGradient>
+  <linearGradient id="gLine" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#3CA0DC"/><stop offset=".6" stop-color="#56BDF0"/><stop offset="1" stop-color="#64B450"/></linearGradient>
+  <linearGradient id="gIng" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8fd47a"/><stop offset="1" stop-color="#64B450"/></linearGradient>
+  <linearGradient id="gRet" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f59a9a"/><stop offset="1" stop-color="#EF7070"/></linearGradient>
+  <linearGradient id="gCol" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#56BDF0"/><stop offset="1" stop-color="#1d6f9c"/></linearGradient>
+  <filter id="glow" x="-20%" y="-50%" width="140%" height="200%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs></svg>
+
+<script src="../js/vendor/xlsx-0.20.3.full.min.js"></script>
+<script src="talento-humano-app.js"></script>
+</body>
+</html>

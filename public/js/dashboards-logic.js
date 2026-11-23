@@ -99,6 +99,9 @@ function dashTarjetasEntrada(rol, esFullAdmin, puedeCargar, sinTickets) {
   if (esFullAdmin || rol === 'SISTEMAS') t.push({ key: 'activos', label: 'Inventario de sistemas', sub: 'Equipos y elementos tecnológicos', icon: 'i-package', accion: 'activosAbrir' });
   // Fase 376 (I1, Edwin 19/11): «Inventario de inmuebles» (sillas, mesas, papeleras), mismo motor, por ahora vacío.
   if (esFullAdmin || rol === 'SISTEMAS') t.push({ key: 'inmuebles', label: 'Inventario de inmuebles', sub: 'Sillas, mesas, papeleras', icon: 'i-armchair', accion: 'activosAbrirInmuebles' });
+  // Fase GH1 (pedido de Edwin 23/11): «Talento humano» (su app de Gestión humana). Por ahora solo el
+  // administrador: guarda en el navegador hasta GH2 (servidor); ahí se abre también al rol GESTION_HUMANA.
+  if (esFullAdmin) t.push({ key: 'talento', label: 'Talento humano', sub: 'Empleados, ausentismos y vacaciones', icon: 'i-contact', accion: 'talentoHumanoAbrir' });
   // Fase 364 (pedido de Edwin 18/11, B2): «Sugerencias / Tickets» como tarjeta propia (antes en la barra superior).
   // Fase STA (usuario, 20/11/2026): el cliente de ORLANT no ve Tickets (sinTickets).
   if (!sinTickets) t.push({ key: 'tickets', label: 'Sugerencias / Tickets', sub: 'Reporta un problema, una pregunta o una idea', icon: 'i-message-circle', accion: 'ticketsAbrir' });

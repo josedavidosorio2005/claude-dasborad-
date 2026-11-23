@@ -169,6 +169,18 @@ function aplicarOffsetSeedDemoBanner() {
     gdModal.style.marginTop = topPx;
     gdModal.style.height = alto ? 'calc(100dvh - ' + alto + 'px)' : '';
   }
+  // Fase GH1: «Talento humano» también (su barra con «Cerrar» va arriba de todo). Con 'important'
+  // porque la regla de ventanas de módulo en pantalla completa (styles.css) fija margin y height así.
+  var thModal = document.querySelector('#th-overlay > .modal');
+  if (thModal) {
+    if (alto) {
+      thModal.style.setProperty('margin-top', topPx, 'important');
+      thModal.style.setProperty('height', 'calc(100dvh - ' + alto + 'px)', 'important');
+    } else {
+      thModal.style.removeProperty('margin-top');
+      thModal.style.removeProperty('height');
+    }
+  }
 }
 
 function renderSeedDemoBanner() {

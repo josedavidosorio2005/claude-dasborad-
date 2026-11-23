@@ -1554,9 +1554,9 @@ body{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;accent
 .tk-activo{display:inline-flex;align-items:center;gap:6px}
 /* Fase 364 (B3): ventanas de módulo en pantalla completa (lista en motion-helpers.js). */
 #calidad-overlay,#gd-overlay,#stv-overlay,#gerencia-overlay,#gestionhumana-overlay,#inventario-overlay,
-#modal-malla,#modal-tickets,#cargas-overlay,#centro-overlay,#dashcfg-overlay,#supervisar-lider-overlay,#activos-overlay{padding:0 !important;align-items:stretch !important;justify-content:stretch !important;}
+#modal-malla,#modal-tickets,#cargas-overlay,#centro-overlay,#dashcfg-overlay,#supervisar-lider-overlay,#activos-overlay,#th-overlay{padding:0 !important;align-items:stretch !important;justify-content:stretch !important;}
 #calidad-modal,#gd-modal,#stv-modal,#gerencia-modal,#gestionhumana-modal,#inventario-modal,
-#modal-malla > .modal,#modal-tickets > .modal,#cargas-modal,#centro-modal,#dashcfg-modal,#supervisar-lider-modal,#activos-overlay > .modal{
+#modal-malla > .modal,#modal-tickets > .modal,#cargas-modal,#centro-modal,#dashcfg-modal,#supervisar-lider-modal,#activos-overlay > .modal,#th-overlay > .modal{
   width:100% !important;max-width:none !important;height:100dvh !important;max-height:none !important;margin:0 !important;border-radius:0 !important;overflow-y:auto;box-sizing:border-box;}
 
 /* 6) Tarjetas: un filo de 1px del tono del borde suave, sumado a la
@@ -2676,6 +2676,14 @@ div.ca-bar-fila{cursor:default}
 .ml-dia-corto{display:none}
 /* Fase 369 (E1): Inventario de sistemas. */
 .modal-activos{position:relative}
+/* Fase GH1: «Talento humano» (app de Edwin en un iframe, con su propio tema oscuro). Barra de SinCo arriba. */
+#th-overlay > .modal.modal-th{display:flex;flex-direction:column;padding:0;overflow:hidden}
+.th-barra{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:8px 64px 8px 16px;position:relative;border-bottom:1px solid var(--c-border-soft);background:var(--c-surface)}
+.th-barra h3{margin:0;font-size:var(--fs-h3, 1.1rem);color:var(--c-text)}
+.th-aviso{margin:0;font-size:var(--fs-note);color:var(--c-text-2)}
+.th-barra .tk-cerrar{position:absolute;top:50%;right:10px;transform:translateY(-50%);width:44px;height:44px;border:0;border-radius:var(--r-md);background:transparent;color:var(--c-text-2);font-size:var(--fs-h2);line-height:1;cursor:pointer}
+.th-barra .tk-cerrar:hover{background:var(--c-border-soft);color:var(--c-text)}
+.th-frame{flex:1 1 auto;width:100%;min-height:0;border:0;display:block}
 /* El «Acciones» solo para lector de pantalla (sr-only, absoluto) no debe escaparse del scroll de la tabla. */
 .modal-activos .table-wrap{position:relative}
 .ac-kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin:0 0 14px}
