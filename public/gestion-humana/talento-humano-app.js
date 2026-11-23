@@ -101,7 +101,7 @@ function edad(fNac){const n=pd(fNac);if(!n)return '';const t=today();let e=t.get
 function mesNac(fNac){const n=pd(fNac);return n?MESES[n.getMonth()]:''}
 function antig(fInicio,hasta){const a=pd(fInicio);if(!a)return '';const b=hasta?pd(hasta):today();let m=(b.getFullYear()-a.getFullYear())*12+b.getMonth()-a.getMonth();if(b.getDate()<a.getDate())m--;if(m<0)return '';const y=Math.floor(m/12),r=m%12;return (y?y+' año'+(y>1?'s':'')+' ':'')+(r||!y?r+' mes'+(r!==1?'es':''):'')}
 function ini(n){return (n||'?').trim().split(/\s+/).slice(0,2).map(x=>x[0]).join('').toUpperCase()}
-function uniq(k){return [...new Set(DB.map(e=>e[k]).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'))}
+function uniq(k){return [...new Set(DB.map(e=>e[k]).filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b),'es'))/* SinCo (GH6) */}
 function nextNum(){const n=DB.map(e=>parseInt(e.num,10)).filter(x=>!isNaN(x));return String((n.length?Math.max(...n):0)+1)}
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2800)}
@@ -141,7 +141,7 @@ function pie(map){const arr=Object.entries(map).sort((a,b)=>b[1]-a[1]);if(!arr.l
 function cols(map,order,fmt,color,minW){
   let arr=Object.entries(map);arr=order?order.filter(k=>map[k]).map(k=>[k,map[k]]):arr.sort((a,b)=>b[1]-a[1]);
   if(!arr.length)return '<div class="empty">Sin datos</div>';
-  const mx=Math.max(...arr.map(x=>x[1])),W=Math.max(minW||300,arr.length*70),H=190,bw=Math.min(46,W/arr.length*.55),step=W/arr.length;
+  const mx=Math.max(...arr.map(x=>x[1]))||1/* SinCo (GH6): sin dividir por 0 */,W=Math.max(minW||300,arr.length*70),H=190,bw=Math.min(46,W/arr.length*.55),step=W/arr.length;
   return `<svg class="ch" viewBox="0 0 ${W} ${H+34}">${[0,.5,1].map(f=>`<line x1="0" x2="${W}" y1="${20+H*(1-f)*.8}" y2="${20+H*(1-f)*.8}" class="grid"/>`).join('')}
   ${arr.map(([k,v],i)=>{const h=v/mx*H*.8,x=i*step+(step-bw)/2,y=20+H*.8-h;return `<rect x="${x}" y="${y}" width="${bw}" height="${h}" rx="5" fill="${color==="grad"?"url(#gCol)":(color||PAL[(i+1)%PAL.length])}" class="colr"><title>${esc(k)}: ${fmt?fmt(v):v}</title></rect>
   <text x="${x+bw/2}" y="${y-6}" text-anchor="middle" class="val">${fmt?fmt(v).replace(/\s/g,' '):v}</text><text x="${i*step+step/2}" y="${20+H*.8+18}" text-anchor="middle" class="lab">${esc(k.length>Math.floor(step/7)?k.slice(0,Math.floor(step/7)-1)+'…':k)}</text>`}).join('')}</svg>`}
@@ -392,6 +392,9 @@ function drawState(){
 function validate(e){
   const er={};
   F.forEach(f=>{if(f[5]&&!String(e[f[0]]??'').trim())er[f[0]]='Campo obligatorio'});
+  /* SinCo (GH6): salario y sede obligatorios, con aviso claro. */
+  if(!(+e.salario>0))er.salario='El salario es obligatorio: escriba el salario mensual (mayor que 0)';
+  if(!String(e.sede??'').trim())er.sede='La sede es obligatoria: elija la sede donde trabaja';
   {const dup=e.numId&&DB.find(x=>x.id!==e.id&&String(x.numId).trim()===String(e.numId).trim());if(dup)er.numId=dup.estado==='Retirado'?`Esta persona ya existe y está retirada (${dup.nombre}). Use “Reintegrar” en la pestaña Retirados${dup.recontratable==='No'?' — marcada como NO recontratable':''}`:`Ya existe un empleado con este documento (${dup.nombre})`}
   if(e.correo&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e.correo))er.correo='Correo no válido';
   if(e.fNac){const x=edad(e.fNac);if(x<14||x>90)er.fNac='Revise la fecha (edad calculada: '+x+')'}
@@ -678,7 +681,7 @@ function loadVN(){try{VAC=JSON.parse(GH_STORE.getItem(KEY+'_vac')||'[]');NOV=JSO
 function saveVN(){try{GH_STORE.setItem(KEY+'_vac',JSON.stringify(VAC));GH_STORE.setItem(KEY+'_nov',JSON.stringify(NOV))}catch(e){toast('No se pudo guardar en el navegador')}}
 const emp=id=>DB.find(e=>e.id===id);
 const empAct=id=>{const e=emp(id);return e&&e.estado!=='Retirado'?e:null}; // solo empleados activos
-const uniqA=k=>[...new Set(activos().map(e=>e[k]).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));
+const uniqA=k=>[...new Set(activos().map(e=>e[k]).filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b),'es'))/* SinCo (GH6) */;
 
 /* ===================== CÁLCULO DE VACACIONES ===================== */
 const DXP=15; // días hábiles por año laborado

@@ -20,6 +20,8 @@
 //     guarda en el servidor (/api/gh/estado); las marcas internas de la app siguen en el navegador.
 //   - GH3: los soportes adjuntos (su IndexedDB `IDB`) pasan por ghArchivos (mismo archivo a mano): a S3
 //     privado por /api/gh/archivos cuando está encendido; si no, siguen en el navegador como antes.
+//   - GH6: salario (> 0) y sede obligatorios con aviso claro en el campo; gráficas y listas que no
+//     fallan con registros viejos sin salario o sede.
 // Corre en un iframe del mismo origen (sus 135 onclick en línea llaman funciones globales: en un
 // Shadow DOM habría que reescribirlos). Falla si un reemplazo no encuentra su texto exacto (el HTML
 // cambió): revisar el reemplazo antes de forzarlo. No imprime datos, solo tamaños.
@@ -99,6 +101,22 @@ js = una(js, '\nconst MAXF=8*1024*1024;', '\nconst IDB=ghArchivos(IDB_LOCAL);\nc
   const a = "toast('No se encontró el archivo en este equipo')";
   if (js.split(a).length - 1 !== 2) throw new Error('texto de archivo no encontrado: revisar el HTML');
   js = js.split(a).join("toast('No se encontró el soporte')");
+}
+// 5) Fase GH6 (Edwin, 23/11): salario y sede OBLIGATORIOS en la ficha del empleado, con un aviso claro
+//    en el campo (la app ya los pedía, pero un salario 0 pasaba y el aviso era «Campo obligatorio»).
+//    Y las gráficas no fallan con registros viejos que no los tengan: «Nómina mensual por cargo» con
+//    todos los salarios en 0 dividía por 0 (NaN en el SVG), y una sede o cargo guardado como número
+//    (importaciones viejas) rompía el orden de las listas (localeCompare de un número).
+js = una(js, "F.forEach(f=>{if(f[5]&&!String(e[f[0]]??'').trim())er[f[0]]='Campo obligatorio'});",
+  "F.forEach(f=>{if(f[5]&&!String(e[f[0]]??'').trim())er[f[0]]='Campo obligatorio'});\n" +
+  "  /* SinCo (GH6): salario y sede obligatorios, con aviso claro. */\n" +
+  "  if(!(+e.salario>0))er.salario='El salario es obligatorio: escriba el salario mensual (mayor que 0)';\n" +
+  "  if(!String(e.sede??'').trim())er.sede='La sede es obligatoria: elija la sede donde trabaja';");
+js = una(js, 'const mx=Math.max(...arr.map(x=>x[1])),W=', 'const mx=Math.max(...arr.map(x=>x[1]))||1/* SinCo (GH6): sin dividir por 0 */,W=');
+{
+  const a = ".sort((a,b)=>a.localeCompare(b,'es'))";
+  if (js.split(a).length - 1 !== 2) throw new Error('orden de listas (uniq/uniqA) no encontrado 2 veces: revisar el HTML');
+  js = js.split(a).join(".sort((a,b)=>String(a).localeCompare(String(b),'es'))/* SinCo (GH6) */");
 }
 for (const k of ['demoData()', 'ausDemo()', 'demoVN()']) {
   const def = js.indexOf('function ' + k.replace('()', '(){return'));

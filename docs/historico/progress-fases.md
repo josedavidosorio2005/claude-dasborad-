@@ -22267,3 +22267,16 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - sin scroll horizontal a 768 y 375 px;
   - 0 errores de consola.
 - **PR sin mergear** (pedido del usuario).
+
+## Fase GH6 — Talento humano: salario y sede obligatorios (v1.257.1, 2026-11-23)
+
+- **Pedido:** Edwin confirmó (23/11) que en Talento humano el salario y la sede son OBLIGATORIOS: la ficha no debe guardarse sin ellos, con aviso claro en el campo, y las gráficas no deben fallar con registros viejos que no los tengan.
+- **Hallazgo:** la app de Edwin ya marcaba todos los campos de la ficha como obligatorios, pero un salario `0` pasaba y el aviso era «Campo obligatorio». En las gráficas, «Nómina mensual por cargo» dividía por 0 cuando ningún activo tenía salario (NaN en el SVG), y `uniq`/`uniqA` (listas de sedes, cargos) fallaban si un registro traía un número (`localeCompare`).
+- **Cambio (en el generador, `scripts/gestion-humana/generar-talento-humano.js`, paso 5; lo generado no se edita a mano):**
+  - `validate`: salario `> 0` («El salario es obligatorio: escriba el salario mensual (mayor que 0)») y sede no vacía («La sede es obligatoria: elija la sede donde trabaja»).
+  - `cols`: máximo `||1`, sin dividir por 0.
+  - `uniq` y `uniqA`: ordenan con `String(...)`.
+  - Antes de cambiar se comprobó que el generador, con el HTML de Edwin de hoy, reproduce exactamente lo commiteado.
+- **Pruebas:** nueva `faseGH6-th-salario-sede` (4): ejecuta en una VM las funciones generadas con datos inventados (ficha con salario vacío/0/negativo/texto y sede vacía; gráfica sin salarios sin NaN; listas con una sede numérica).
+- **Revisión local** en Brave a 375, 768 y 1440 (dos empleados inventados solo en memoria): panel sin NaN y con «Sin dato», sin scroll horizontal; al guardar un registro viejo no se guarda y marca salario y sede con su aviso; 0 errores de consola. La app inicializó su estado vacío en la base local (4 claves, 0 empleados); se borró al final.
+- **PR sin mergear** (pedido del usuario). Si #927 (1.258.0) se mergea antes, esta sube a 1.258.1 al traer `main`.
