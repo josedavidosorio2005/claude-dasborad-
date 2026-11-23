@@ -7,13 +7,21 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
-## v1.250.0 — Noviembre 2026
+## v1.251.0 — Noviembre 2026
 
 **ORLANT: en «Total tráfico» se puede ver Total, solo Llamadas o solo WhatsApp.**
 
 - Arriba de las tarjetas hay tres botones: Total, Llamadas y WhatsApp. Con «Llamadas», las tarjetas y la gráfica muestran solo las llamadas (de entrada y de salida); con «WhatsApp», solo los WhatsApp.
 - «Total» muestra lo mismo de siempre.
 - Por ahora es solo para ORLANT. Ver por Línea General / 3P queda para cuando Edwin confirme cómo se sabe la línea de la entrada.
+
+## v1.250.0 — Noviembre 2026
+
+**Calidad, portal de la asesora: «Sin ver» en los monitoreos que todavía no abrió.**
+
+- En «Resultados de Calidad», cada monitoreo que la asesora no ha abierto con «Ver Detalle» se marca en rojo con la etiqueta «Sin ver».
+- Arriba de la lista sale «Te faltan N por ver». Al abrir un monitoreo con «Ver Detalle», su marca desaparece y el número baja.
+- No cambia cuándo se cuenta como visto (sigue siendo al abrir «Ver Detalle»), ni la pestaña «Vistos» del supervisor.
 
 ## v1.249.0 — Noviembre 2026
 

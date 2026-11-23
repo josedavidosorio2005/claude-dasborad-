@@ -66,6 +66,13 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 
 ## 1. Esperando una decisión tuya
 
+- **Usuario «test» y el STA de ORLANT** (pedido 4 de Edwin, 23/11/2026; lectura en producción autorizada
+  por el usuario, solo lectura): el usuario «test» (id 39, activo) es **ASESOR de MOBILIZE**, no de ORLANT.
+  Tiene **4 casos del STA, todos «gestionado», 0 pendientes**, pero no aparece en la lista de asesoras del STA
+  (solo salen las de ORLANT, 20). O sea, gestionó esos casos cuando era de ORLANT y luego lo cambiaron de
+  campaña. No se cambió nada. Falta que el usuario decida: dejarlo así, devolverlo a ORLANT o regresar esos
+  4 casos a disponibles. Cualquier escritura en producción necesita su OK.
+
 - ~~**Wolkvox: bloqueo de red del lado de Wolkvox hacia el servidor de producción**~~ — **RESUELTO** (18/11/2026): la consulta automática corre desde producción (corridas del 18 y 19/11 bien). Se deja el detalle como histórico. (17/11/2026).
   En local funciona (13/11): «Probar conexión» en la réplica «MOBILIZE PRUEBAS API» dio código 200 y 20 campos de `cdr_1`.
   En producción:
@@ -306,6 +313,20 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   (`PUT /monitoreos/:id/asesor`, solo administrador).
 
 ## 2. Esperando una respuesta de Edwin
+
+- **Pedidos de Edwin del 23/11/2026 que solo se anotan** (pedido 8 de esa reunión; ninguno tiene código aún):
+  - **Plantilla de la base STA:** un archivo de ejemplo para descargar desde Gestión STA, con las columnas
+    que espera la carga. La única obligatoria hoy es `Numero Autorizacion` (`server/orlant-sta.js`, `cargar`);
+    las que usan las gráficas son `Entidad`, `Servicio`, `Estado`, `Descripcion Cups`, `Fecha Ingreso Sta`,
+    `Fecha Autorizacion` y `Fecha Expiracion`. Falta que Edwin confirme qué columnas lleva la plantilla y en
+    qué orden, y si trae filas de ejemplo (inventadas, nunca reales).
+  - **Filtro «Servicio» en la asignación del STA:** al asignar casos, poder elegir solo los de uno o varios
+    servicios (columna `Servicio` de la base). Falta que Edwin diga si se combina con los filtros que ya hay
+    y si aplica también a «Devolver» y «Pasar».
+  - **Plataforma de Gestión humana y Sistemas:** Edwin va a mandar un HTML con la idea. Se espera el
+    archivo; no se empieza nada hasta tenerlo. Cuando llegue: se revisa fuera del repo (puede traer datos
+    reales) y se propone por fases, como se hizo con el Inventario.
+  Cómo se cierra cada uno: respuesta de Edwin → fase propia con su PR.
 
 - **Inventario (diseño de Edwin), después de la I6** (19/11/2026): las 6 fases quedaron hechas (1.227.0–1.232.0). Lo único
   del diseño que no se pasó son **vistas extra del Panel** (gráficas de estado por tipo y por sede); el Panel ya tiene

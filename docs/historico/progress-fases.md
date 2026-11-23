@@ -21964,7 +21964,22 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - sin desplazamiento horizontal y 0 errores de consola (22/22).
   - Los tickets de prueba se borraron al terminar.
 
-## Fase B3 (canal) — ORLANT: Total / Llamadas / WhatsApp en Total tráfico (v1.250.0, 2026-11-23)
+## Fase CAL (23/11) — Calidad: «Sin ver» en el portal de la asesora (v1.250.0, 2026-11-23)
+
+- **Pedido (Edwin, 23/11):** en la lista de resultados de calidad de la asesora, marcar en rojo los monitoreos que aún no abrió con «Ver detalle». La marca se va al abrirlo, y arriba sale «Te faltan N por ver». No cambia cuándo cuenta como visto, ni la pestaña «Vistos» del supervisor, ni los datos.
+- **Servidor:** `GET /monitoreos/mios` agrega `sinVer`, un campo calculado; no se guarda nada.
+  - Usa el mismo criterio que la alerta `/mios/nuevos` y la pestaña «Vistos»: sin `vistoPorAsesorAt` y con `id` posterior al corte de la Fase 95, así que los viejos y los de prueba nunca salen en rojo.
+- **Interfaz (`mis-resultados.js`):**
+  - Etiqueta «Sin ver» (`vis-pill vis-rojo`, la de «Vistos») y un borde rojo en la fila; el texto acompaña al color.
+  - Resumen `#mr-sin-ver` (`role="status"`) con el total de todos los meses.
+  - Al abrir «Ver detalle», si el PUT `/visto` responde bien, la marca se quita sin recargar. Con «Ver como» el servidor bloquea el PUT y la marca se queda, que es lo correcto.
+  - Colores: rojo del semáforo (`--c-danger*`). `paleta.css` no lleva rojo a propósito (Fase 345): el rojo es de estados.
+  - Contraste: claro 5,9:1 y oscuro 8,5:1.
+- **Pruebas:** nueva `faseCAL-sin-ver-asesora` (3); `fase357c` y `fase95-tema-c` siguen en verde.
+- **Revisión visual (local, Brave vía Playwright, base demo, `demo_asesor` con 22 sin ver):** a 1440 claro, 768 oscuro y 375 claro, 13/13 y 0 errores de consola.
+  - En cada ancho: al abrir uno, la marca se va y el resumen baja en 1; al recargar la lista se mantiene.
+  - Los 3 vistos que marcó la prueba se devolvieron a «sin ver» en la base local.
+## Fase B3 (canal) — ORLANT: Total / Llamadas / WhatsApp en Total tráfico (v1.251.0, 2026-11-23)
 
 - **Pedido (usuario, 23/11):** avanzar sin Edwin lo que se pueda del plan de ORLANT (B2 asistencia mensual, B3 filtro línea/canal). B2 necesita el archivo y la definición de Edwin, y no se tocó. De B3 se hizo solo la parte **canal**: el servidor ya da cada mes separado por canal. La parte **línea** (General / 3P) espera a Edwin, porque la entrada no trae línea.
 - **Cambio (solo interfaz, `public/js/total-trafico.js`):** grupo de botones `gd-botones-resaltados` (44 px, «✓» en el activo, `aria-pressed`), solo para ORLANT.

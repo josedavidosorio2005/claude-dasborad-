@@ -2809,6 +2809,11 @@ div.ca-bar-fila{cursor:default}
 .vis-amarillo{background:var(--c-warning-bg);color:var(--c-warning-text)}
 .vis-rojo{background:var(--c-danger-bg);color:var(--c-danger-text)}
 .vis-gris{background:var(--c-border-soft);color:var(--c-text-2)}
+/* Pedido de Edwin (23/11/2026): «Sin ver» en «Mis resultados» de la asesora (rojo del semáforo: es un
+   estado; paleta.css no lleva rojo a propósito). Texto «Sin ver» + borde: el color nunca va solo. */
+.mr-sin-ver-resumen:not(.hidden){display:block;margin:0 0 10px;padding:8px 12px;border-radius:var(--r-md);border-left:4px solid var(--c-danger);background:var(--c-danger-bg);color:var(--c-danger-text);font-weight:700;font-size:var(--fs-body)}
+#mr-table tr.mr-fila-sin-ver td:first-child{box-shadow:inset 4px 0 0 var(--c-danger)}
+.mr-sin-ver-pill{margin-left:6px;vertical-align:middle}
 .vis-tabla{width:100%;border-collapse:collapse;font-size:var(--fs-body)}
 .vis-tabla th,.vis-tabla td{padding:8px 10px;border-bottom:1px solid var(--c-border-soft);text-align:left;vertical-align:middle}
 .vis-tabla th{color:var(--c-text-2);font-size:var(--fs-small)}
