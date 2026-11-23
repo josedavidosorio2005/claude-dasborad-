@@ -7,6 +7,15 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.258.1 — Noviembre 2026
+
+**Talento humano: salario y sede son obligatorios (pedido de Edwin).**
+
+- La ficha del empleado no se guarda sin salario (mayor que 0) ni sin sede. El aviso sale debajo del campo: «El salario es obligatorio…» y «La sede es obligatoria…».
+- Un empleado viejo al que le falten, al editarlo, pide completarlos antes de guardar.
+- Las gráficas del panel ya no fallan con empleados viejos sin salario o sin sede: salen como «Sin dato».
+- No cambia ningún dato guardado.
+
 ## v1.258.0 — Noviembre 2026
 
 **Inventario de sistemas: el «Panel general» ahora se ve como el diseño de Edwin.**
