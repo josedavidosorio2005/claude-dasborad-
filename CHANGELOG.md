@@ -7,6 +7,15 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.246.0 — Noviembre 2026
+
+**Gestión STA: «Regresar a disponibles» en Gestionados.**
+
+- Por codificación: eliges una (por ejemplo «No contesta» o «Agendado») y vuelven todos esos casos.
+- O marcando los casos uno a uno con las casillas.
+- Los casos vuelven a la bolsa libre para asignarlos de nuevo. La gestión que tenían no se pierde: queda en «Gestiones anteriores».
+- Queda en el Historial quién lo hizo.
+
 ## v1.245.0 — Noviembre 2026
 
 **ORLANT: la pestaña «Gestión de la base STA» del cliente se ve igual que las «Gráficas» del panel de Gestión STA.**

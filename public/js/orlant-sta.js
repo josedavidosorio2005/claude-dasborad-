@@ -45,6 +45,7 @@ function _staApi(vista) {
     },
     asignar: function (agenteId, cantidad, filtros) { return apiRequest('POST', STA_BASE + '/asignar', { agenteId: num(agenteId), cantidad: cantidad, filtros: filtros }); },
     devolver: function (agenteId, numeros) { return apiRequest('POST', STA_BASE + '/devolver', { agenteId: num(agenteId), numeros: numeros }); },
+    regresar: function (cuerpo) { return apiRequest('POST', STA_BASE + '/gestionados/regresar', cuerpo); }, // pedido de Edwin 23/11
     pasar: function (agenteId, destinoId, numeros) { return apiRequest('POST', STA_BASE + '/pasar', { agenteId: num(agenteId), destinoId: num(destinoId), numeros: numeros }); },
     tipis: function (tipis, efectivas) { return apiRequest('PUT', STA_BASE + '/config/tipis', { tipis: tipis, efectivas: efectivas }); },
     codificar: function (n, datos) { return apiRequest('POST', caso(n) + '/codificar', datos); },

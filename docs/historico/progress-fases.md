@@ -21900,3 +21900,28 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - Se ve solo «Gráficas»: 6 indicadores y 11 gráficas, con el nombre de la asesora.
   - No aparece ningún número de autorización en la página. Los filtros repintan con el panel del supervisor abierto antes.
   - Sin scroll horizontal y 0 errores de consola.
+
+## Fase STA (parte 5) — Pedido 2 de Edwin: «Regresar a disponibles» en Gestionados (v1.246.0, 2026-11-23)
+
+- **Pedido (usuario, 23/11):** en Gestionados, un botón «Regresar a disponibles»:
+  - (a) por codificación: se elige la tipificación y vuelven todos esos casos;
+  - (b) marcando casos uno a uno;
+  - para todas las codificaciones, incluida la de agenda.
+  Los casos vuelven a la bolsa libre, el historial se conserva y el Historial registra quién lo hizo.
+- **Servidor** (`STA.regresarGestionados`, `POST /api/orlant/sta/gestionados/regresar`, solo quien gestiona el STA):
+  - Recibe una codificación (`tipi`) o una lista (`numeros`), nunca las dos. Hasta 5.000 casos.
+  - Cada caso gestionado vuelve a `pendiente`, sin asesor. La gestión (codificación, observación, fecha, citas y asesora) pasa a `prev` («Gestiones anteriores»), con la fecha y quién lo regresó.
+  - Una rellamada pendiente queda «regresada».
+  - Historial `STA_REGRESAR`: cuántos casos y por qué vía, nunca números de casos.
+- **Generador:** en Gestionados, la barra «Regresar a disponibles por codificación» (con el conteo de cada una) y «Regresar marcados». La tabla de Edwin suma la columna de casillas y «marcar todos los mostrados». Las dos acciones piden confirmación.
+- **Pruebas:** nueva `faseSTA5-regresar-gestionados` (5).
+  - Permisos y validación.
+  - Por codificación: el caso queda libre, la gestión va a «Gestiones anteriores», el Historial dice quién y otra asesora recibe el caso con su gestión anterior.
+  - Marcados, incluido un Agendado con citas; los pendientes o inexistentes no cuentan.
+  - El navegador.
+  - La guardiana del generador sigue en verde.
+- **Seguridad (revisión automática del 23/11):** el número del caso viene del Excel que se sube, y dentro de un manejador en línea `esc()` no basta: el navegador decodifica `&#39;` y la comilla rompe el string de JS. Una base armada podía ejecutar código en la sesión de otro gestor.
+  - El generador agrega `jsArg()`, que pasa el valor como texto JSON y después lo escapa para HTML.
+  - Corrige el caso nuevo (`marcarGest`) y los 3 que ya venían del HTML de Edwin (`selUno`, `abrirCodificar`, `guardarCodificacion`).
+  - El generador falla si vuelve a quedar el patrón. La prueba lo verifica con un número malicioso.
+

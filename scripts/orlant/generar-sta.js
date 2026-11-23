@@ -102,6 +102,15 @@ M(`          <div class="fila" style="margin-bottom:12px;flex-wrap:nowrap">
 `, '          <p class="muted" style="margin-top:0;font-size:12px">Los agentes son los usuarios ASESOR de ORLANT de la plataforma.</p>\n');
 M(`onclick="document.getElementById('archivo').click()"`, `onclick="STAapp.$('archivo').click()"`);
 M('<input class="inp" id="nuevaTipi" placeholder="Nueva tipificación"', '<input class="inp" id="nuevaTipi" aria-label="Nueva tipificación" placeholder="Nueva tipificación"');
+// Pedido de Edwin (23/11/2026): «Regresar a disponibles» en Gestionados (por codificación o marcados).
+M(`      <p class="muted" id="gsInfo" style="margin:0 0 10px"></p>`, `      <div class="card fila gs-regresar" style="padding:12px 16px">
+        <label class="f">Regresar a disponibles por codificación<select class="inp" id="gsRegTi"></select></label>
+        <button class="btn" style="align-self:flex-end" onclick="regresarPorTipi()">Regresar todos</button>
+        <span style="flex:1"></span>
+        <button class="btn" style="align-self:flex-end" id="gsRegSelBtn" onclick="regresarSel()" disabled>Regresar marcados</button>
+      </div>
+      <p class="muted" style="margin:-4px 0 10px;font-size:12px">Los casos vuelven a la bolsa libre para reasignarlos; su gestión queda en «Gestiones anteriores».</p>
+      <p class="muted" id="gsInfo" style="margin:0 0 10px"></p>`);
 markup = `<div class="sta-app">\n${markup.trim()}\n</div>`;
 
 // ── Lógica ─────────────────────────────────────────────────────────────
@@ -193,6 +202,40 @@ funcion('borrarCarga', `async function borrarCarga(id){
 }
 async function descargarCarga(id){ if(!await API.descargar(id)) toast('No se pudo descargar el archivo'); }`);
 funcion('descargarRespaldo', '');
+
+// Pedido de Edwin (23/11/2026): Gestionados con casillas y «Regresar a disponibles». Misma tabla de
+// Edwin (últimas 20, «Descargar todas»), más una columna de casillas y «marcar todos los mostrados».
+funcion('pintarGestSup', `function pintarGestSup(){
+  const l=gestSupLista(), tot=Object.values(S.casos).filter(c=>c._estado==='gestionado').length;
+  const max=20;
+  const tis=[...new Set([...S.tipis,...Object.values(S.casos).filter(c=>c._estado==='gestionado'&&c._tipi).map(c=>c._tipi)])];
+  const vr=$('gsRegTi').value; $('gsRegTi').innerHTML='<option value="">Elige la codificación</option>'+tis.map(t=>{ const n=Object.values(S.casos).filter(c=>c._estado==='gestionado'&&c._tipi===t).length; return \`<option value="\${esc(t)}">\${esc(t)} (\${n.toLocaleString('es-CO')})</option>\`; }).join(''); $('gsRegTi').value=vr;
+  const vivos=new Set(l.map(c=>c._id)); [...selGest].forEach(id=>{ if(!vivos.has(id)) selGest.delete(id); });
+  $('gsRegSelBtn').disabled=!selGest.size; $('gsRegSelBtn').textContent=selGest.size?\`Regresar marcados (\${selGest.size})\`:'Regresar marcados';
+  $('gsInfo').innerHTML = \`\${l.length.toLocaleString('es-CO')} gestiones\${l.length!==tot?\` (de \${tot.toLocaleString('es-CO')} en total)\`:''}\`
+    + (l.length>max?\` · Se muestran las últimas \${max}. Para ver todas usa <b>Exportar a Excel</b>.\`:'');
+  if(!l.length){ $('gsTabla').innerHTML='<div class="card vacio">No hay gestiones para mostrar.</div>'; return; }
+  const vis=l.slice(0,max), todos=vis.every(c=>selGest.has(c._id));
+  $('gsTabla').innerHTML=\`<div class="tw"><table><thead><tr><th><input type="checkbox" aria-label="Marcar todos los mostrados" \${todos?'checked':''} onchange="marcarGestTodos(this.checked)"></th><th>Fecha</th><th>Hora</th><th>Numero Autorizacion</th><th>Codificación</th><th>Citas</th><th>Agente</th></tr></thead><tbody>
+    \${vis.map(c=>\`<tr><td><input type="checkbox" aria-label="Marcar \${esc(c['Numero Autorizacion'])}" \${selGest.has(c._id)?'checked':''} onchange="marcarGest(\${jsArg(c._id)},this.checked)"></td><td class="nw">\${verFecha(c._fg)}</td><td class="nw">\${c._fg.slice(11,19)}</td><td class="nw">\${esc(c['Numero Autorizacion'])}</td><td><span class="tag \${S.efectivas.includes(c._tipi)?'v':''}">\${esc(c._tipi)}</span></td><td>\${c._citas||''}</td><td>\${esc(nombreAgente(c._agente))}</td></tr>\`).join('')}
+  </tbody></table></div>\${l.length>max?\`<div class="fila" style="margin-top:10px"><span class="muted">Mostrando las últimas \${max} de \${l.length.toLocaleString('es-CO')}.</span><button class="btn pri sm" onclick="exportarGestionados()">Descargar todas (Excel)</button></div>\`:''}\`;
+}
+const selGest=new Set();
+function marcarGest(id,on){ if(on) selGest.add(id); else selGest.delete(id); pintarGestSup(); }
+function marcarGestTodos(on){ gestSupLista().slice(0,20).forEach(c=>{ if(on) selGest.add(c._id); else selGest.delete(c._id); }); pintarGestSup(); }
+async function regresarPorTipi(){
+  const t=$('gsRegTi').value; if(!t) return toast('Elige la codificación');
+  const n=Object.values(S.casos).filter(c=>c._estado==='gestionado'&&c._tipi===t).length; if(!n) return toast('No hay gestionados con esa codificación');
+  if(!await confirmar(\`¿Regresar a disponibles los \${n.toLocaleString('es-CO')} casos gestionados como «\${t}»? Vuelven a la bolsa libre para reasignarlos; su gestión queda en «Gestiones anteriores».\`,{titulo:'Regresar a disponibles',ok:'Regresar'})) return;
+  const r=await accion(()=>API.regresar({tipi:t}),'No se pudo regresar');
+  await refrescar(); selGest.clear(); pintarGestSup(); if(r) toast(\`\${r.regresados} casos regresados a disponibles\`);
+}
+async function regresarSel(){
+  const ids=[...selGest]; if(!ids.length) return toast('Marca al menos un caso');
+  if(!await confirmar(\`¿Regresar a disponibles los \${ids.length} casos marcados? Vuelven a la bolsa libre para reasignarlos; su gestión queda en «Gestiones anteriores».\`,{titulo:'Regresar a disponibles',ok:'Regresar'})) return;
+  const r=await accion(()=>API.regresar({numeros:ids}),'No se pudo regresar');
+  await refrescar(); selGest.clear(); pintarGestSup(); if(r) toast(\`\${r.regresados} casos regresados a disponibles\`);
+}`);
 funcion('restaurarRespaldo', '');
 funcion('borrarTodo', '');
 
@@ -283,6 +326,18 @@ L('<input type="checkbox" ${todos?', '<input type="checkbox" aria-label="Selecci
 L('<input type="checkbox" ${sel.has(c._id)?', '<input type="checkbox" aria-label="Seleccionar ${esc(c[\'Numero Autorizacion\'])}" ${sel.has(c._id)?');
 L('<input class="inp" placeholder="Buscar…" ', '<input class="inp" aria-label="Buscar opciones" placeholder="Buscar…" ');
 L('<input class="inp" id="dlgIn" ', '<input class="inp" id="dlgIn" aria-label="${esc(titulo)}" ');
+
+// 8b) Seguridad (revisión del 23/11): el número del caso viene del Excel que se sube. Dentro de un
+// manejador en línea, esc() no basta: el navegador decodifica &#39; y la comilla rompe el string de JS.
+// Se pasa como texto JSON (comillas y barras escapadas) y después se escapa para HTML: jsArg().
+L("const esc = s => String(s??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',\"'\":'&#39;'}[c]));",
+  "const esc = s => String(s??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',\"'\":'&#39;'}[c]));\nconst jsArg = v => esc(JSON.stringify(String(v??'')));");
+js = todas(js, "'${esc(c._id)}'", '${jsArg(c._id)}', 1);
+js = todas(js, "'${esc(id)}'", '${jsArg(id)}', 1);
+{
+  const m = js.match(/on(?:click|change|input|keydown)=\\?"[^"]*'\$\{esc\(/);
+  if (m) throw new Error('quedó un valor con esc() dentro de un string de un manejador en línea: ' + m[0].slice(0, 80));
+}
 
 // 9) Manejadores en línea (onclick, onchange, oninput, onkeydown): sus llamadas pasan a STAapp.<función>.
 const nombres = [...new Set([...js.matchAll(/(?:^|\n)(?:async )?function (\w+)\(/g)].map((m) => m[1]))];

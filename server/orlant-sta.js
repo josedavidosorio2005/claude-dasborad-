@@ -311,6 +311,43 @@ function pasar(db, { agenteId, destinoId, cantidad, numeros }) {
   return { pasados: n };
 }
 
+// ── Pedido de Edwin (23/11/2026): «Regresar a disponibles» desde Gestionados ──
+// Por codificación (todos los gestionados con esa tipificación, también las efectivas como «Agendado»)
+// o por casos marcados uno a uno. Cada caso vuelve a la bolsa libre (sin asesor, pendiente) para
+// reasignarlo; la gestión que tenía NO se pierde: pasa a «Gestiones anteriores» (prev), con la fecha y
+// quién lo regresó. Una rellamada pendiente queda cerrada («regresado»).
+const MAX_REGRESAR = 5000;
+function regresarGestionados(db, { tipi, numeros, por }) {
+  asegurarTablas(db);
+  const porTipi = tipi !== undefined && tipi !== null && tipi !== '';
+  const porLista = Array.isArray(numeros);
+  if (porTipi === porLista) throw new StaError(400, 'Elige una codificación o marca los casos');
+  let filas;
+  if (porTipi) {
+    const t = String(tipi).trim();
+    if (!t || t.length > 200) throw new StaError(400, 'Codificación inválida');
+    filas = db.prepare("SELECT * FROM sta_casos WHERE campana = ? AND estado = 'gestionado' AND tipi = ?").all(CAMPANA, t);
+  } else {
+    if (!numeros.length || numeros.length > MAX_REGRESAR) throw new StaError(400, 'Marca de 1 a ' + MAX_REGRESAR + ' casos');
+    const sel = db.prepare("SELECT * FROM sta_casos WHERE campana = ? AND numero = ? AND estado = 'gestionado'");
+    filas = [...new Set(numeros.map(normClave))].map((n) => sel.get(CAMPANA, n)).filter(Boolean);
+  }
+  const hoy = ahora();
+  const quien = String(por || '').slice(0, 120);
+  let n = 0;
+  db.transaction(() => {
+    const up = db.prepare("UPDATE sta_casos SET estado = 'pendiente', agenteId = NULL, asignado = '', tipi = '', obs = '', fg = '', citas = 0, rell = NULL, prev = ? WHERE id = ? AND estado = 'gestionado'");
+    for (const r of filas) {
+      const prev = r.prev ? JSON.parse(r.prev) : [];
+      const rell = r.rell ? JSON.parse(r.rell) : null;
+      prev.push(Object.assign({ tipi: r.tipi, obs: r.obs, fg: r.fg, citas: r.citas || 0, agente: r.agenteId, regresado: hoy, por: quien },
+        rell ? { rell: rell.cuando, rellEstado: rell.estado === 'pendiente' ? 'regresado' : rell.estado } : {}));
+      n += up.run(JSON.stringify(prev), r.id).changes;
+    }
+  })();
+  return { regresados: n, pedidos: porLista ? numeros.length : n };
+}
+
 // ── Codificar (guardarCodificacion del HTML) ── solo el asesor dueño del caso.
 function codificar(db, agenteId, numero, body, d) {
   asegurarTablas(db);
@@ -433,5 +470,5 @@ function resumen(db) {
 module.exports = {
   CAMPANA, CAMPOS, CAMPOS_FECHA, TIPIS_BASE, HIST_ASESOR, StaError, asegurarTablas, ahora, normClave, esVolver,
   config, cambiarTipis, asesores, esAsesorSta, cargar, cargas, archivoDeCarga, borrarCarga, disponiblesFiltrados,
-  asignar, devolver, pasar, codificar, avisoRellamada, estadoSupervisor, estadoAsesor, resumen, estadoCliente, CAMPOS_CLIENTE,
+  asignar, devolver, pasar, codificar, avisoRellamada, estadoSupervisor, estadoAsesor, resumen, estadoCliente, CAMPOS_CLIENTE, regresarGestionados,
 };
