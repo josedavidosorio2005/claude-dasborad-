@@ -21925,3 +21925,9 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - Corrige el caso nuevo (`marcarGest`) y los 3 que ya venían del HTML de Edwin (`selUno`, `abrirCodificar`, `guardarCodificacion`).
   - El generador falla si vuelve a quedar el patrón. La prueba lo verifica con un número malicioso.
 
+## Fase SURA (23/11) — Pedido 5 de Edwin: ventas por día en Cumplimiento (v1.248.0, 2026-11-23)
+
+- **Pedido (usuario, 23/11):** filtro «por día» por fecha de venta en las ventas del dashboard del cliente SURA. Ya existía «📅 Ventas por día» en Agentes (Fase 375). El usuario eligió agregar «Por día» en Cumplimiento › «📅 Ventas por mes».
+- **Cambio (por el generador, regla de la Fase 360):** selector «Ver por: Mes / Día». Con «Día» se elige el mes y se usa `draw4dia()`: la serie día a día por `fecha_venta` (`r[1]`), con los mismos filtros de la sección. Usa el mismo gráfico de líneas y la misma tabla de Edwin. El CSS no cambió (guarda de la Fase 345). La guardiana del generador reproduce lo publicado byte a byte.
+- **Pruebas:** nueva `faseSURA-ventas-por-dia-cumplimiento` (3).
+- **Sin revisión visual con datos:** la base local no tiene ventas de SURA. Queda pendiente revisarlo con datos antes de la reunión con el cliente.
