@@ -61,6 +61,11 @@ router.put('/activos/config/textos/:clave', requireActor, wrap((req, res) => {
   logEvent('ACTIVO_TEXTO', { nombre: F.TEXTOS[r.clave].nombre, user: '-', rol: 'activos' }, actorLabel(req.actor), r.valor.length + ' caracteres');
   res.json(r);
 }));
+// Fase GH5: «Panel general» igual al diseño de Edwin (tarjetas y gráficas); ?tipo= para los chips «Ver gráficas de».
+router.get('/activos/panel', requireActor, wrap((req, res) => {
+  if (!permitido(req, res)) return;
+  res.json(require('../activos-panel').panel(db, req.query.ambito, String(req.query.tipo || '')));
+}));
 router.get('/activos/resumen', requireActor, wrap((req, res) => {
   if (!permitido(req, res)) return;
   const r = A.resumen(db, req.query.ambito);
