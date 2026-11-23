@@ -22200,3 +22200,35 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - a 768 y 375 sin scroll horizontal;
   - 0 errores de consola.
 - **Producción:** sin cambios hasta el OK del usuario. Hoy Talento humano no tiene empleados, así que la vista diría «aún no tiene empleados».
+
+## Ticket #3 de SURA — Calidad: «ID de agente» automático en «Calificar» (v1.256.0, 2026-11-23)
+
+- **Pedido:** ticket #3 de SURA (supervisora, 23/11): en «Calificar», al elegir el asesor, el campo «ID de agente» debe llenarse solo (hoy se busca a mano). El usuario pidió revisar primero si ya se enlazaba y, si no, llenarlo editable en todas las campañas donde exista el campo y avisar cuando no haya dato.
+- **Qué había:**
+  - El campo es `idAgente` (`calidad-campos.js`, «ID de agente», en `extras`). Según `docs/calidad-plan-edwin-nov.md`, está en las plantillas de SURA, Mobilize, Clínica Aurora y Hospital La María.
+  - **No se enlazaba con nada:** al elegir el asesor (`_cc2AsesorElegido`) solo se mostraban la campaña y el usuario.
+  - El usuario de la plataforma no guarda un ID de agente.
+  - Lo único que une un agente con un usuario es `malla_agente_enlace` (agent_id de Wolkvox ↔ usuario por campaña, para la puntualidad; lo hace una persona).
+- **Cambio:**
+  - `server/calidad-id-agente.js` busca en este orden:
+    1. el enlace con Wolkvox de esa campaña;
+    2. el último `extras.idAgente` no vacío de un monitoreo de ese asesor en esa campaña;
+    3. si no hay ninguno, `null`.
+  - Ruta `GET /api/calidad/id-agente?campana&userId`: solo quien puede calificar esa campaña (`canEvaluateCampaign`) y solo para un asesor de esa campaña (404 si es de otra). Sin caché.
+  - Formulario (`calidad-calificar.js`):
+    - si la plantilla trae el campo, al elegir el asesor lo llena y dice de dónde salió («enlace con Wolkvox» o «último monitoreo»);
+    - si no hay dato, avisa en color de advertencia («no tiene ID de agente registrado: escríbelo a mano»);
+    - sigue editable y no pisa lo que se escribió;
+    - si se cambia de asesor, quita el que se llenó solo;
+    - al editar un monitoreo guardado no se autollena.
+- **Pruebas:** nueva `faseSURA-ticket3-id-agente` (5):
+  - el orden de las fuentes, con vacíos y otra campaña;
+  - permisos: Calidad de otra campaña, Reportes, asesor de otra campaña, sin sesión;
+  - el formulario con un DOM mínimo (llena, avisa, cambia de asesor, no pisa, al editar no pide).
+  - Declarada en fase118.
+- **Revisión local** (Brave vía Playwright, base demo): la plantilla local de ORLANT recibió campos con «ID de agente» solo durante la prueba y volvió a `NULL`; el enlace inventado se borró. Resultado 8/8:
+  - sin dato: vacío y con aviso;
+  - con enlace: se llena solo y dice de dónde salió;
+  - sigue editable;
+  - a 1440, 768 y 375 sin scroll horizontal;
+  - 0 errores de consola.
