@@ -21939,3 +21939,10 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - Gestionados tiene la barra «Regresar a disponibles» con el conteo de cada codificación, y las casillas.
   - «Regresar marcados (1)» y «Regresar todos» por «Rechaza» funcionaron: quedó 1 gestionado y los 3 regresados conservan «Gestiones anteriores».
   - Sin scroll horizontal, campos con nombre accesible y 0 errores.
+## Fase SURA (23/11) — Pedido 5 de Edwin: ventas por día en Cumplimiento (v1.248.0, 2026-11-23)
+
+- **Pedido (usuario, 23/11):** filtro «por día» por fecha de venta en las ventas del dashboard del cliente SURA. Ya existía «📅 Ventas por día» en Agentes (Fase 375). El usuario eligió agregar «Por día» en Cumplimiento › «📅 Ventas por mes».
+- **Cambio (por el generador, regla de la Fase 360):** selector «Ver por: Mes / Día». Con «Día» se elige el mes y se usa `draw4dia()`: la serie día a día por `fecha_venta` (`r[1]`), con los mismos filtros de la sección. Usa el mismo gráfico de líneas y la misma tabla de Edwin. El CSS no cambió (guarda de la Fase 345). La guardiana del generador reproduce lo publicado byte a byte.
+- **Pruebas:** nueva `faseSURA-ventas-por-dia-cumplimiento` (3).
+- **Revisión visual (local, 23/11, Brave vía Playwright):** con dos bases de SURA inventadas (septiembre y octubre de 2026, una con un asesor llamado `<img src=x onerror=…>`), a 375, 768 y 1440 px: el selector de mes solo aparece con «Día»; octubre da 31 días y septiembre 30; «Todos» da una línea por asesor; el nombre con HTML se ve como texto (sin XSS); la página no se desplaza a lo ancho; volver a «Mes» oculta el selector; 0 errores de consola (27/27). Las bases de prueba se borraron al terminar.
+- **Revisión de seguridad (en línea, 23/11):** todo texto que entra en `innerHTML` pasa por `esc()` (opciones de mes, nombres de la tabla, leyenda y `<title>` de `line()`); el título va por `textContent`; días y cifras son numéricos. Sin hallazgos.

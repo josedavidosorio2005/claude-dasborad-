@@ -7,6 +7,13 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.248.0 — Noviembre 2026
+
+**SURA: en Cumplimiento, «Ventas por mes» también se puede ver por día.**
+
+- Nuevo «Ver por: Mes / Día». Con «Día» eliges el mes (por ejemplo, noviembre) y ves las ventas día a día, según la fecha de la venta.
+- Usa los mismos filtros de la sección: agente, pólizas o producción, campaña, validación, ciudades, departamentos, productos y días hábiles.
+
 ## v1.247.0 — Noviembre 2026
 
 **Gestión STA: una base eliminada se ve como «Eliminada» en el historial de cargas.**

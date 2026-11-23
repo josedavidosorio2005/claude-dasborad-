@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.247.0` (ver `server/package.json`, expuesta en
+- **Versión**: `1.248.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -634,6 +634,7 @@ mismo orden):
 - Fase STA (parte 4) — ORLANT: la pestaña STA del cliente muestra la misma visual de «Gráficas» del panel de Gestión STA, de solo lectura, con casos recortados (pedido de Edwin 23/11) (v1.245.0, 2026-11-23)
 - Fase STA (parte 5) — Gestión STA: «Regresar a disponibles» en Gestionados, por codificación o marcados, con la gestión en «Gestiones anteriores» (pedido de Edwin 23/11) (v1.246.0, 2026-11-23)
 - Fase STA (parte 6) — Gestión STA: una base eliminada queda en el historial de cargas como «Eliminada» (fecha y quién), sin su archivo (pedido de Edwin 23/11) (v1.247.0, 2026-11-23)
+- Fase SURA (23/11) — Televentas: «Ver por: Mes / Día» en Cumplimiento › Ventas por mes, por fecha de venta (pedido de Edwin 23/11) (v1.248.0, 2026-11-23)
 - Fase 309 — Revisión de seguridad: el cliente ya no recibe el nombre de los líderes en `GET /metas`; resto en `docs/revision-seguridad-2026-11-09.md` (v1.154.1, 2026-11-10)
 - Fase 308 — Revisión antes de la reunión con clientes y pendientes del supervisor (solo docs, 2026-11-10)
 - Fase 307 — Calidad para que los líderes evalúen: ORLANT conserva su Calidad y suma «Resultado de los monitoreos» al final; Aurora ya lo tenía (se muestra con el primer monitoreo) (v1.154.0, 2026-11-10)
