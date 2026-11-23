@@ -1933,6 +1933,7 @@ html[data-motion="off"] #gd-panels .aurora-kpi,html[data-motion="off"] #gd-panel
 .cc2-f input[readonly],.cc2-f input:disabled,.cc2-f select:disabled{background:var(--c-surface-alt);color:var(--c-text-muted)}
 .cc2-f .cc2-invalid,.cc2-invalid{border-color:var(--c-danger-dark)!important;box-shadow:0 0 0 2px var(--c-danger-bg)}
 .cc2-hint{font-size:var(--fs-note);color:var(--c-text-muted)}
+.cc2-hint.cc2-hint-aviso{color:var(--c-warning-text);font-weight:600} /* ticket #3 SURA: asesor sin ID de agente */
 .cc2-cat{margin:14px 0 4px;padding-bottom:6px;border-bottom:1px dashed var(--c-border);font-size:var(--fs-note);font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--c-text-link)}
 .cc2-cat:first-child{margin-top:0}
 .cc2-item{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--c-border)}

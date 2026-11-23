@@ -7,13 +7,21 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
-## v1.255.1 — Noviembre 2026
+## v1.256.1 — Noviembre 2026
 
 **Gestión STA (ORLANT): el filtro «Servicio» de la asignación ya solo muestra lo que corresponde.**
 
 - Al asignar casos, si se elegía una Entidad, la lista de «Servicio» seguía mostrando servicios de toda la base, por ejemplo Audífonos aunque esa entidad no tuviera ninguno libre. Al marcarlos no salía ningún caso.
 - Ahora cada lista (Entidad, Servicio y Descripción CUPS) muestra solo lo que queda con los otros filtros puestos, con su cantidad de casos libres.
 - Si algo ya marcado se queda sin casos, sigue apareciendo con 0 para poder quitarlo.
+## v1.256.0 — Noviembre 2026
+
+**Calidad: el «ID de agente» se llena solo al elegir el asesor (ticket #3 de SURA).**
+
+- En «Calificar», cuando la plantilla trae el campo «ID de agente», al elegir el asesor el ID aparece solo. Sale del enlace con Wolkvox de esa campaña o, si no lo hay, del último monitoreo de ese asesor.
+- Debajo del campo se ve de dónde salió. Se puede cambiar a mano.
+- Si el asesor no tiene ID registrado, el formulario lo dice en lugar de dejarlo vacío sin aviso. El ID que se escriba queda para la próxima vez.
+- Al editar un monitoreo ya guardado, su ID de agente no se cambia.
 
 ## v1.255.0 — Noviembre 2026
 

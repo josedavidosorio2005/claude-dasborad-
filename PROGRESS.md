@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.255.1` (ver `server/package.json`, expuesta en
+- **Versión**: `1.256.1` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -642,7 +642,8 @@ mismo orden):
 - Fase GH2 — «Talento humano» guarda en el servidor (`/api/gh/estado`, versión por sección, bitácora sin contenido); rol GESTION_HUMANA preparado tras `GH_ROL_ACTIVO=1` (apagado) (v1.253.0, 2026-11-23)
 - Fase GH3 — «Talento humano»: soportes adjuntos a S3 privado (`/api/gh/archivos`, tipo por contenido, bitácora sin nombre); apagado sin `GH_SOPORTES_S3_BUCKET` (v1.254.0, 2026-11-23)
 - Fase GH4 — Inventario de sistemas: «Novedades de Gestión Humana» (retirados, ausentes hoy y próximos 7 días con elementos asignados; solo lectura y lo mínimo, `/api/activos/novedades-gh`) (v1.255.0, 2026-11-23)
-- Fase STA7 — Gestión STA: filtros de la asignación (Entidad, Servicio, CUPS) en cascada; «Servicio» ya no ofrece servicios que no corresponden (v1.255.1, 2026-11-23)
+- Ticket #3 SURA — Calidad, «Calificar»: «ID de agente» se llena solo al elegir el asesor (enlace con Wolkvox o último monitoreo; editable; aviso si no hay dato) (v1.256.0, 2026-11-23)
+- Fase STA7 — Gestión STA: filtros de la asignación (Entidad, Servicio, CUPS) en cascada; «Servicio» ya no ofrece servicios que no corresponden (v1.256.1, 2026-11-23)
 - Fase 309 — Revisión de seguridad: el cliente ya no recibe el nombre de los líderes en `GET /metas`; resto en `docs/revision-seguridad-2026-11-09.md` (v1.154.1, 2026-11-10)
 - Fase 308 — Revisión antes de la reunión con clientes y pendientes del supervisor (solo docs, 2026-11-10)
 - Fase 307 — Calidad para que los líderes evalúen: ORLANT conserva su Calidad y suma «Resultado de los monitoreos» al final; Aurora ya lo tenía (se muestra con el primer monitoreo) (v1.154.0, 2026-11-10)
