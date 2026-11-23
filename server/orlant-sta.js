@@ -380,6 +380,26 @@ function estadoAsesor(db, agenteId) {
     config: config(db), ahora: ahora(), histMax: HIST_ASESOR,
   };
 }
+// Pedido de Edwin (23/11/2026): la pestaña STA del CLIENTE de ORLANT muestra la MISMA visual de
+// «Gráficas» del supervisor (el código de Edwin), de solo lectura. Para eso el navegador necesita los
+// casos, pero RECORTADOS a lo que usan las gráficas: los 7 campos de la base que se grafican y estado,
+// asesor, codificación, fecha de gestión y citas. NUNCA el número de autorización, otras columnas de
+// la base (pueden traer datos del paciente), observaciones, rellamadas ni historial; el id es un
+// consecutivo sin relación con el caso. Los nombres de las asesoras sí van (decisión del usuario,
+// 23/11/2026: como en el panel de Edwin).
+const CAMPOS_CLIENTE = ['Entidad', 'Servicio', 'Estado', 'Descripcion Cups', 'Fecha Ingreso Sta', 'Fecha Autorizacion', 'Fecha Expiracion'];
+function estadoCliente(db) {
+  asegurarTablas(db);
+  const c = config(db);
+  const casos = db.prepare('SELECT datos, agenteId, estado, tipi, fg, citas FROM sta_casos WHERE campana = ? ORDER BY id').all(CAMPANA).map((r, i) => {
+    const d = JSON.parse(r.datos);
+    const o = { _id: 'c' + (i + 1), _agente: r.agenteId, _estado: r.estado, _tipi: r.estado === 'gestionado' ? r.tipi : '', _fg: r.estado === 'gestionado' ? r.fg : '', _citas: r.estado === 'gestionado' ? r.citas || 0 : 0 };
+    for (const k of CAMPOS_CLIENTE) o[k] = d[k] === undefined ? '' : d[k];
+    return o;
+  });
+  return { casos, agentes: asesores(db, { incluirInactivos: true }), config: { tipis: c.tipis, efectivas: c.efectivas, columnas: CAMPOS_CLIENTE }, ahora: ahora() };
+}
+
 // Cliente de ORLANT (gráficas del STA en su Dashboard): SOLO agregados, sin números de
 // autorización, observaciones ni nombres de asesor.
 function resumen(db) {
@@ -413,5 +433,5 @@ function resumen(db) {
 module.exports = {
   CAMPANA, CAMPOS, CAMPOS_FECHA, TIPIS_BASE, HIST_ASESOR, StaError, asegurarTablas, ahora, normClave, esVolver,
   config, cambiarTipis, asesores, esAsesorSta, cargar, cargas, archivoDeCarga, borrarCarga, disponiblesFiltrados,
-  asignar, devolver, pasar, codificar, avisoRellamada, estadoSupervisor, estadoAsesor, resumen,
+  asignar, devolver, pasar, codificar, avisoRellamada, estadoSupervisor, estadoAsesor, resumen, estadoCliente, CAMPOS_CLIENTE,
 };

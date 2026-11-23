@@ -4,7 +4,7 @@
 //   - sin SheetJS embebido (usa js/vendor/xlsx-0.20.3.full.min.js de la plataforma);
 //   - corre dentro de un Shadow DOM (ROOT);
 //   - lo que guardaba IndexedDB va a la API /api/orlant/sta (objeto API, orlant-sta.js); la vista
-//     (supervisor o asesor) la decide el servidor;
+//     (supervisor, asesor o cliente: solo «Gráficas», de solo lectura) la decide el servidor;
 //   - sin agregar/renombrar/eliminar ni cambiar de agente (son los ASESOR de ORLANT), sin respaldo,
 //     restaurar ni borrar todo; «Descargar» el Excel de cada carga;
 //   - los manejadores en línea llaman a STAapp.<función> (un solo nombre global).
@@ -95,7 +95,7 @@ const pedirTexto=(titulo,valor='',o={})=>dialogo({titulo,input:valor,...o});
 let agenteActual = null; const TITULO=document.title;
 function mostrar(id){ ['vAgente','vSupervisor'].forEach(x=>$(x).classList.toggle('hidden',x!==id)); }
 function salir(){ CERRAR(); }
-async function iniciar(){ await cargarEstado(); if(VISTA==='supervisor'){ mostrar('vSupervisor'); tabSup('base'); } else { mostrar('vAgente'); abrirPanelAgente(); } }
+async function iniciar(){ await cargarEstado(); ROOT.querySelector('.sta-app').classList.toggle('sta-cliente', VISTA==='cliente'); if(VISTA==='cliente'){ mostrar('vSupervisor'); tabSup('graficas'); } else if(VISTA==='supervisor'){ mostrar('vSupervisor'); tabSup('base'); } else { mostrar('vAgente'); abrirPanelAgente(); } }
 
 
 /* =====================================================================
@@ -766,7 +766,7 @@ $('archivo').addEventListener('change',e=>{ const f=e.target.files[0]; if(f) pro
 
 var STAapp = { estadoVacio, cargarEstado, accion, refrescar, isoLocal, ahora, aFecha, verFecha, verValor, normClave, normHeader, nombreAgente, cerrarModal, dialogo, mostrar, salir, iniciar, abrirPanelAgente, tabAgente, misPendientes, pintarBandeja, abrirCodificar, pideCitas, esVolver, cambioTipi, guardarCodificacion, misRell, pintarRellamadas, pitar, revisarRellamadas, pintarGestionados, tabSup, pintarBase, leerArchivo, procesarCarga, casosDeCarga, pedirBorrarCarga, borrarCarga, descargarCarga, exportarExcel, contar, pintarAsignar, togglePend, pendDe, selDe, pintarPendTodos, selUno, selCantidad, selTodos, devolverSel, pasarSel, selAgente, disponibles, filtrar, opciones, msHTML, toggleMs, filtrarMs, msTodos, msNormalizar, msTexto, msRefrescarTexto, marcarMs, limpiarMs, cerrarMs, todoMs, setF, actualizarConteo, limpiarFiltros, pintarPanelAsig, asignar, avisoCantidad, aceptarExistentes, ejecutarAsignacion, quitarPendientes, tipShow, llenarSelects, limpiarGr, gestFiltradas, diasHabiles, nice, corta, leyenda, colTipi, hbarSVG, donaSVG, agrupar, lineaSVG, colSVG, pintarGraficas, gestSupLista, pintarGestSup, exportarGestionados, pintarTipis, marcarEfectiva, crearTipi, moverTipi, borrarTipi, $: $ };
 if (typeof window !== 'undefined') window.STAapp = STAapp;
-return { iniciar: iniciar, refrescar: refrescar, vista: function(){ return VISTA; } };
+return { iniciar: iniciar, refrescar: refrescar, vista: function(){ return VISTA; }, activar: function(){ if (typeof window !== 'undefined') window.STAapp = STAapp; } };
 }
 
 if (typeof module !== 'undefined' && module.exports) module.exports = { STA_MARKUP: STA_MARKUP, staCrearApp: staCrearApp };
