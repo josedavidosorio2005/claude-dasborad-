@@ -21925,9 +21925,24 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - Corrige el caso nuevo (`marcarGest`) y los 3 que ya venían del HTML de Edwin (`selUno`, `abrirCodificar`, `guardarCodificacion`).
   - El generador falla si vuelve a quedar el patrón. La prueba lo verifica con un número malicioso.
 
+## Fase STA (parte 6) — Pedido 3 de Edwin: base eliminada como «Eliminada» en el historial de cargas (v1.247.0, 2026-11-23)
+
+- **Pedido (usuario, 23/11):** cuando se elimina una base, el registro de cargas tiene que mostrarla como «Eliminada». Antes, sin gestionados desaparecía del historial y con gestionados conservados quedaba igual.
+- **Servidor** (`STA.borrarCarga`):
+  - La carga ya no se borra del registro: guarda `eliminadaAt`, `eliminadaPor` y los `eliminados` sumados. Las columnas se agregan solas a una base vieja (`ALTER TABLE` en `asegurarTablas`).
+  - El Excel original se borra (`archivoGz = NULL`), porque eliminar la base es quitar sus datos.
+  - Eliminar dos veces da 409. Los casos se quitan como antes, con «conservar gestionados» opcional.
+- **Generador:** en el historial de cargas, la fila eliminada muestra la etiqueta «Eliminada», la fecha y quién, sin botones de descargar ni eliminar, y en gris.
+- **Pruebas:** nueva `faseSTA6-base-eliminada` (3). La de eliminar carga de la Fase STA sigue en verde.
+- **Revisión visual de los pedidos 2 y 3** (local, Brave, 375, 768 y 1440 px, claro y oscuro, datos inventados):
+  - La fila «Eliminada» muestra fecha y quién, sin botones.
+  - Gestionados tiene la barra «Regresar a disponibles» con el conteo de cada codificación, y las casillas.
+  - «Regresar marcados (1)» y «Regresar todos» por «Rechaza» funcionaron: quedó 1 gestionado y los 3 regresados conservan «Gestiones anteriores».
+  - Sin scroll horizontal, campos con nombre accesible y 0 errores.
 ## Fase SURA (23/11) — Pedido 5 de Edwin: ventas por día en Cumplimiento (v1.248.0, 2026-11-23)
 
 - **Pedido (usuario, 23/11):** filtro «por día» por fecha de venta en las ventas del dashboard del cliente SURA. Ya existía «📅 Ventas por día» en Agentes (Fase 375). El usuario eligió agregar «Por día» en Cumplimiento › «📅 Ventas por mes».
 - **Cambio (por el generador, regla de la Fase 360):** selector «Ver por: Mes / Día». Con «Día» se elige el mes y se usa `draw4dia()`: la serie día a día por `fecha_venta` (`r[1]`), con los mismos filtros de la sección. Usa el mismo gráfico de líneas y la misma tabla de Edwin. El CSS no cambió (guarda de la Fase 345). La guardiana del generador reproduce lo publicado byte a byte.
 - **Pruebas:** nueva `faseSURA-ventas-por-dia-cumplimiento` (3).
-- **Sin revisión visual con datos:** la base local no tiene ventas de SURA. Queda pendiente revisarlo con datos antes de la reunión con el cliente.
+- **Revisión visual (local, 23/11, Brave vía Playwright):** con dos bases de SURA inventadas (septiembre y octubre de 2026, una con un asesor llamado `<img src=x onerror=…>`), a 375, 768 y 1440 px: el selector de mes solo aparece con «Día»; octubre da 31 días y septiembre 30; «Todos» da una línea por asesor; el nombre con HTML se ve como texto (sin XSS); la página no se desplaza a lo ancho; volver a «Mes» oculta el selector; 0 errores de consola (27/27). Las bases de prueba se borraron al terminar.
+- **Revisión de seguridad (en línea, 23/11):** todo texto que entra en `innerHTML` pasa por `esc()` (opciones de mes, nombres de la tabla, leyenda y `<title>` de `line()`); el título va por `textContent`; días y cifras son numéricos. Sin hallazgos.

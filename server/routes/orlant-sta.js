@@ -76,7 +76,7 @@ router.get(BASE + '/cargas/:id/archivo', requireActor, soloGestor, h((req, res) 
   res.send(a.contenido);
 }));
 router.delete(BASE + '/cargas/:id', requireActor, soloGestor, h((req, res) => {
-  const r = STA.borrarCarga(db, req.params.id, req.query.conservar === '1');
+  const r = STA.borrarCarga(db, req.params.id, req.query.conservar === '1', actorLabel(req.actor));
   log(req, 'STA_CARGA_ELIMINAR', `${STA.CAMPANA} · carga ${Number(req.params.id)}: ${r.eliminados} casos eliminados, ${r.conservados} gestionados conservados`);
   res.json(r);
 }));

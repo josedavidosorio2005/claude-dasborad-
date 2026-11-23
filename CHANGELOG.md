@@ -14,6 +14,13 @@ sepan que hay nuevo, que se corrigio y que falta.
 - Nuevo «Ver por: Mes / Día». Con «Día» eliges el mes (por ejemplo, noviembre) y ves las ventas día a día, según la fecha de la venta.
 - Usa los mismos filtros de la sección: agente, pólizas o producción, campaña, validación, ciudades, departamentos, productos y días hábiles.
 
+## v1.247.0 — Noviembre 2026
+
+**Gestión STA: una base eliminada se ve como «Eliminada» en el historial de cargas.**
+
+- Al eliminar una base, ya no desaparece del historial (ni se queda igual que antes): muestra «Eliminada», con la fecha y quién la eliminó.
+- Sus casos se quitan como siempre (o se conservan los gestionados, si así se elige) y también se borra el archivo original.
+
 ## v1.246.0 — Noviembre 2026
 
 **Gestión STA: «Regresar a disponibles» en Gestionados.**
