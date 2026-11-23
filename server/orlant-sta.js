@@ -65,6 +65,7 @@ function asegurarTablas(db) {
     );
     CREATE INDEX IF NOT EXISTS idx_sta_casos_agente ON sta_casos (campana, agenteId, estado);
     CREATE INDEX IF NOT EXISTS idx_sta_casos_carga ON sta_casos (cargaId);
+    -- (pedido 3 de Edwin, 23/11: eliminadaAt / eliminadaPor se agregan abajo si faltan)
     CREATE TABLE IF NOT EXISTS sta_config (
       campana TEXT PRIMARY KEY,
       tipis TEXT NOT NULL,
@@ -73,6 +74,10 @@ function asegurarTablas(db) {
       updatedAt TEXT NOT NULL
     );
   `);
+  // Pedido 3 de Edwin (23/11/2026): una carga eliminada queda en el registro como «Eliminada».
+  const cols = new Set(db.prepare('PRAGMA table_info(sta_cargas)').all().map((c) => c.name));
+  if (!cols.has('eliminadaAt')) db.exec('ALTER TABLE sta_cargas ADD COLUMN eliminadaAt TEXT');
+  if (!cols.has('eliminadaPor')) db.exec('ALTER TABLE sta_cargas ADD COLUMN eliminadaPor TEXT');
 }
 
 // ── utilidades (las del HTML) ──
@@ -209,7 +214,7 @@ function cargar(db, { archivo, filas, columnas, archivoB64, por }) {
 
 function cargas(db) {
   asegurarTablas(db);
-  return db.prepare(`SELECT c.id, c.fecha, c.archivo, c.leidas, c.nuevos, c.dup, c.sinNum, c.actEst, c.eliminados, c.cargadoPorNombre,
+  return db.prepare(`SELECT c.id, c.fecha, c.archivo, c.leidas, c.nuevos, c.dup, c.sinNum, c.actEst, c.eliminados, c.cargadoPorNombre, c.eliminadaAt, c.eliminadaPor,
                             (c.archivoGz IS NOT NULL) tieneArchivo, (SELECT COUNT(*) FROM sta_casos s WHERE s.cargaId = c.id) casosActuales,
                             (SELECT COUNT(*) FROM sta_casos s WHERE s.cargaId = c.id AND s.agenteId IS NULL) sinAsignar,
                             (SELECT COUNT(*) FROM sta_casos s WHERE s.cargaId = c.id AND s.agenteId IS NOT NULL AND s.estado = 'pendiente') pendientes,
@@ -224,11 +229,14 @@ function archivoDeCarga(db, id) {
   return { nombre: r.archivo, contenido: zlib.gunzipSync(r.archivoGz) };
 }
 // borrarCarga del HTML: se borran los casos que entraron con esa carga (también los de las bandejas);
-// con conservar=true se quedan los gestionados y la carga queda en el histórico con «eliminados».
-function borrarCarga(db, id, conservar) {
+// con conservar=true se quedan los gestionados.
+// Pedido 3 de Edwin (23/11/2026): la carga YA NO desaparece del registro: queda «Eliminada» (fecha y
+// quién), con «eliminados» sumados, y sin el Excel original (eliminar la base es quitar sus datos).
+function borrarCarga(db, id, conservar, por) {
   asegurarTablas(db);
-  const cg = db.prepare('SELECT id FROM sta_cargas WHERE campana = ? AND id = ?').get(CAMPANA, Number(id));
+  const cg = db.prepare('SELECT id, eliminadaAt FROM sta_cargas WHERE campana = ? AND id = ?').get(CAMPANA, Number(id));
   if (!cg) throw new StaError(404, 'Esa carga no existe');
+  if (cg.eliminadaAt) throw new StaError(409, 'Esa carga ya fue eliminada');
   let n = 0, k = 0;
   db.transaction(() => {
     if (conservar) {
@@ -237,8 +245,7 @@ function borrarCarga(db, id, conservar) {
     } else {
       n = db.prepare('DELETE FROM sta_casos WHERE cargaId = ?').run(cg.id).changes;
     }
-    if (!k) db.prepare('DELETE FROM sta_cargas WHERE id = ?').run(cg.id);
-    else db.prepare('UPDATE sta_cargas SET eliminados = eliminados + ? WHERE id = ?').run(n, cg.id);
+    db.prepare('UPDATE sta_cargas SET eliminados = eliminados + ?, eliminadaAt = ?, eliminadaPor = ?, archivoGz = NULL WHERE id = ?').run(n, ahora(), String(por || '').slice(0, 120), cg.id);
   })();
   return { eliminados: n, conservados: k };
 }

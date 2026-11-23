@@ -83,6 +83,9 @@ ${css.trim()}
   --muted:var(--c-text-2); color-scheme:dark;
 }
 .btn.peligro{color:var(--c-danger-text,#b02a1d)}
+/* Pedido 3 de Edwin (23/11/2026): carga eliminada en el historial */
+.tag.sta-eliminada{color:var(--c-danger-text,#b02a1d);background:var(--c-danger-bg,#fdecea)}
+.sta-fila-eliminada td{color:var(--muted)}
 :host([data-theme="dark"]) .sec-gest,:host([data-theme="dark"]) .sec-gest .card,:host([data-theme="dark"]) .kpi.dest{border-color:var(--c-border)}
 /* Pedido de Edwin (23/11/2026): vista del CLIENTE de ORLANT = solo «Gráficas» del supervisor, de solo lectura
    (sin la cabecera «Visual de supervisor» ni las demás pestañas). */
@@ -192,8 +195,10 @@ L(`  const faltan=CAMPOS.filter(c=>!mapa.some(m=>m[1]===c));
   box.innerHTML = \`<div class="msg ok">\${esc(R.mensaje)}.</div>\``);
 L(js.slice(js.indexOf("  mapa.forEach(([,c])=>{ if(!S.columnas.includes(c)) S.columnas.push(c); });"), js.indexOf("  box.innerHTML = `<div class=\"msg ok\">Se cargaron <b>${nuevos}</b> casos nuevos.</div>`\n")), '');
 L("  box.innerHTML = `<div class=\"msg ok\">Se cargaron <b>${nuevos}</b> casos nuevos.</div>`\n    + (dup?", "    + (dup?");
+// Pedido 3 de Edwin (23/11/2026): una carga eliminada queda en el registro como «Eliminada» (sin botones).
 L(`<td><button class="btn sm peligro" onclick="pedirBorrarCarga('\${c.id}')">Eliminar carga</button></td>`,
-  `<td class="nw">\${c.tieneArchivo?\`<button class="btn sm" onclick="descargarCarga('\${c.id}')">Descargar</button> \`:''}<button class="btn sm peligro" onclick="pedirBorrarCarga('\${c.id}')">Eliminar carga</button></td>`);
+  `<td class="nw">\${c.eliminadaAt?\`<span class="tag sta-eliminada">Eliminada</span> <span class="muted" style="font-size:12px">\${verFecha(c.eliminadaAt,true)}\${c.eliminadaPor?' · '+esc(c.eliminadaPor):''}</span>\`:\`\${c.tieneArchivo?\`<button class="btn sm" onclick="descargarCarga('\${c.id}')">Descargar</button> \`:''}<button class="btn sm peligro" onclick="pedirBorrarCarga('\${c.id}')">Eliminar carga</button>\`}</td>`);
+L(`\${S.cargas.slice().reverse().map(c=>\`<tr><td class="nw">`, `\${S.cargas.slice().reverse().map(c=>\`<tr\${c.eliminadaAt?' class="sta-fila-eliminada"':''}><td class="nw">`);
 funcion('borrarCarga', `async function borrarCarga(id){
   const conservar = $('conservarGes') ? $('conservarGes').checked : false;
   const r = await accion(()=>API.borrarCarga(id, conservar), 'No se pudo eliminar');

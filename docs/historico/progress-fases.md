@@ -21925,3 +21925,17 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - Corrige el caso nuevo (`marcarGest`) y los 3 que ya venían del HTML de Edwin (`selUno`, `abrirCodificar`, `guardarCodificacion`).
   - El generador falla si vuelve a quedar el patrón. La prueba lo verifica con un número malicioso.
 
+## Fase STA (parte 6) — Pedido 3 de Edwin: base eliminada como «Eliminada» en el historial de cargas (v1.247.0, 2026-11-23)
+
+- **Pedido (usuario, 23/11):** cuando se elimina una base, el registro de cargas tiene que mostrarla como «Eliminada». Antes, sin gestionados desaparecía del historial y con gestionados conservados quedaba igual.
+- **Servidor** (`STA.borrarCarga`):
+  - La carga ya no se borra del registro: guarda `eliminadaAt`, `eliminadaPor` y los `eliminados` sumados. Las columnas se agregan solas a una base vieja (`ALTER TABLE` en `asegurarTablas`).
+  - El Excel original se borra (`archivoGz = NULL`), porque eliminar la base es quitar sus datos.
+  - Eliminar dos veces da 409. Los casos se quitan como antes, con «conservar gestionados» opcional.
+- **Generador:** en el historial de cargas, la fila eliminada muestra la etiqueta «Eliminada», la fecha y quién, sin botones de descargar ni eliminar, y en gris.
+- **Pruebas:** nueva `faseSTA6-base-eliminada` (3). La de eliminar carga de la Fase STA sigue en verde.
+- **Revisión visual de los pedidos 2 y 3** (local, Brave, 375, 768 y 1440 px, claro y oscuro, datos inventados):
+  - La fila «Eliminada» muestra fecha y quién, sin botones.
+  - Gestionados tiene la barra «Regresar a disponibles» con el conteo de cada codificación, y las casillas.
+  - «Regresar marcados (1)» y «Regresar todos» por «Rechaza» funcionaron: quedó 1 gestionado y los 3 regresados conservan «Gestiones anteriores».
+  - Sin scroll horizontal, campos con nombre accesible y 0 errores.
