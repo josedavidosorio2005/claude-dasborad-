@@ -87,7 +87,8 @@ test('index.html: textos visibles con tilde; ids, for, value y nombres de campos
     assert.doesNotMatch(visible, new RegExp('(?<![\\wÀ-ÿ])' + w + '(?![\\wÀ-ÿ])'), 'queda "' + w + '" sin tilde en un texto visible');
   }
   // lo que NO se toca: ids/for/name/value con "campana", "gestion", "periodo"
-  for (const a of ['id="gh-campana"', 'for="gh-campana"', 'id="carga-periodo"', 'id="cal-campana-sel"', 'id="meta-campana-sel"']) {
+  // Fase GH8: sin 'gh-campana' (salió con el formulario de la Gestión humana anterior)
+  for (const a of ['id="carga-periodo"', 'id="cal-campana-sel"', 'id="meta-campana-sel"']) {
     assert.ok(html.includes(a), a);
   }
 });

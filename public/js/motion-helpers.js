@@ -331,7 +331,6 @@ var MOTION_DIALOGOS_SIMPLES = {
   'modal-pass': function () { if (typeof closeModal === 'function') closeModal('modal-pass'); },
   'modal-delete': function () { if (typeof closeModal === 'function') closeModal('modal-delete'); },
   'inv-item-modal': function () { if (typeof closeInvItemModal === 'function') closeInvItemModal(); },
-  'gh-person-modal': function () { if (typeof closeGhPersonModal === 'function') closeGhPersonModal(); },
   'inv-mov-modal': function () { if (typeof closeInvMovModal === 'function') closeInvMovModal(); },
   'ger-kpi-modal': function () { if (typeof closeGerKpiModal === 'function') closeGerKpiModal(); },
   // Fase 151: en modo obligatorio (primer ingreso) Escape no lo cierra.
@@ -398,7 +397,7 @@ if (typeof document !== 'undefined' && typeof document.getElementById === 'funct
 // en pantalla completa y solo se cierran con su botón «Cerrar»: ni Escape ni un clic afuera las
 // cierran. Los diálogos chicos encima de ellas (confirmaciones, formularios) siguen igual. Al salir
 // de sesión y con «Ver como» se siguen cerrando todas (cerrar-ventanas.js).
-var VENTANAS_MODULO = ['calidad-overlay', 'gd-overlay', 'stv-overlay', 'gerencia-overlay', 'gestionhumana-overlay', 'inventario-overlay',
+var VENTANAS_MODULO = ['calidad-overlay', 'gd-overlay', 'stv-overlay', 'gerencia-overlay', 'inventario-overlay',
   'modal-malla', 'modal-tickets', 'cargas-overlay', 'centro-overlay', 'dashcfg-overlay', 'supervisar-lider-overlay', 'activos-overlay', 'th-overlay']; // + Fase 369, + GH1
 function esVentanaModulo(id) { return VENTANAS_MODULO.indexOf(id) !== -1; }
 if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
