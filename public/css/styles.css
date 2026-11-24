@@ -2420,7 +2420,7 @@ div.ca-bar-fila{cursor:default}
 .cen-badge{display:inline-block;min-width:20px;margin-left:6px;padding:1px 7px;border-radius:var(--r-pill);background:var(--c-danger-dark);color:var(--c-on-brand);font-size:var(--fs-note);font-weight:700;line-height:1.5;text-align:center;vertical-align:middle}
 [data-theme="dark"] .cen-badge{background:var(--c-danger-bg);color:var(--c-danger-dark);border:1px solid var(--c-danger-dark)}
 /* Auditoría 24/11: insignia de monitoreos nuevos del Portal Asesor (antes en línea; en oscuro el blanco sobre --c-danger-dark quedaba en 2,77:1). Mismo patrón que .cen-badge. */
-.asesor-badge-nuevos{background:var(--c-danger-dark);color:var(--c-on-brand);border-radius:10px;padding:1px 7px;font-size:var(--fs-note);font-weight:700;margin-left:6px}
+.asesor-badge-nuevos{background:var(--c-danger-dark);color:var(--c-on-brand);border-radius:var(--r-md);padding:1px 7px;font-size:var(--fs-note);font-weight:700;margin-left:6px}
 [data-theme="dark"] .asesor-badge-nuevos{background:var(--c-danger-bg);color:var(--c-danger-dark);border:1px solid var(--c-danger-dark)}
 .cen-cab{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 12px;margin-bottom:8px}
 .cen-filtro{display:flex;flex-wrap:wrap;gap:6px}
