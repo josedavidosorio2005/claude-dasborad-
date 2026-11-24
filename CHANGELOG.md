@@ -22,6 +22,13 @@ sepan que hay nuevo, que se corrigio y que falta.
 - «Novedades de la semana» ya no aparece encima de Puntualidad.
 - La vista de la asesora («Mi malla») no cambia.
 
+## v1.260.2 — Noviembre 2026
+
+**SURA, Cumplimiento › «Ventas por mes»: con «Ver por = Día» ya no salen los porcentajes de crecimiento o caída (pedido de Edwin).**
+
+- Al ver las ventas día por día, la gráfica muestra solo los valores. Con «Ver por = Mes» los porcentajes se quedan igual que antes.
+- Solo cambia esa gráfica.
+
 ## v1.260.1 — Noviembre 2026
 
 **Mobilize, Calidad de encuestas: las encuestas de noviembre vuelven a traer el ID de la llamada.**

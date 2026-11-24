@@ -29,3 +29,14 @@ test('va por el generador (no a mano)', () => {
   assert.match(gen, /Pedido de Edwin \(reunión 23\/11\/2026; lo pregunta el cliente\)/);
   assert.ok(gen.includes("'function draw4(){if($(\"g4p\").value===\"d\")return draw4dia();$(\"g4ml\").hidden=true;'"));
 });
+
+// Pedido de Edwin (reunión 24/11/2026): con «Ver por = Día» la gráfica no muestra los porcentajes de
+// crecimiento/caída; con «Mes» se quedan. Solo esa gráfica.
+test('por día: la gráfica de líneas sin porcentajes (pct=false); por mes sigue con ellos', () => {
+  const dia = app.slice(app.indexOf('function draw4dia(){'), app.indexOf('["g4p","g4mes"].forEach'));
+  assert.match(dia, /\$\("gl"\)\.innerHTML=line\(S,X,f,false\);drawX4\(RM,a,med\);/);
+  assert.ok(!/S\.length===1/.test(dia), 'por día ya no decide el porcentaje por la cantidad de series');
+  const mes = app.slice(app.indexOf('function draw4(){if($("g4p").value==="d")return draw4dia();'));
+  assert.match(mes.slice(0, 4000), /\$\("gl"\)\.innerHTML=line\(S,X,f,one\);/, 'por mes sigue mostrando los porcentajes (una sola serie)');
+  assert.ok(gen.includes("'  $(\"gl\").innerHTML=line(S,X,f,false);drawX4(RM,a,med);',"));
+});

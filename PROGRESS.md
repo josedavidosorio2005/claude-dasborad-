@@ -651,6 +651,7 @@ mismo orden):
 - Fase GH8 — Limpieza: sale el HTML oculto y el JS de la Gestión humana anterior (sin cambio visible; tabla conservada) (v1.259.1, 2026-11-24)
 - Fase M1 — Malla, «casos especiales» (pedido 6 de Edwin): A tipos de excepción editables, B festivos de Colombia, C horario especial que se repite (v1.260.0, 2026-11-24)
 - Fase A33 — MOBILIZE real: la Encuesta de la API guarda el CONN_ID (solo el ID de la llamada); Calidad de encuestas enlaza por el ID limpio (v1.260.1, 2026-11-24)
+- Pedido a de Edwin (24/11) — SURA «Ventas por día» sin porcentajes con «Ver por = Día» (v1.260.2, 2026-11-24)
 - Pedido b de Edwin (24/11) — Malla del supervisor compacta; en Puntualidad, la novedad en vez de «Sin ingreso» (v1.261.0, 2026-11-24)
 - Fase 309 — Revisión de seguridad: el cliente ya no recibe el nombre de los líderes en `GET /metas`; resto en `docs/revision-seguridad-2026-11-09.md` (v1.154.1, 2026-11-10)
 - Fase 308 — Revisión antes de la reunión con clientes y pendientes del supervisor (solo docs, 2026-11-10)

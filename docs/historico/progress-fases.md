@@ -22454,6 +22454,19 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
 - **PR sin mergear** (OK del usuario).
 
 
+## Pedido a de Edwin (24/11) — SURA «Ventas por día» sin porcentajes (v1.260.2, 2026-11-24)
+
+- **Pedido:** en Cumplimiento › «Ventas por mes», con «Ver por = Día», no mostrar los porcentajes de crecimiento o caída. Con «Mes» se quedan. Solo esa gráfica.
+- **Cambio, por el generador** (`scripts/sura/generar-televentas.js`, regla de la Fase 360):
+  - `draw4dia` llama `line(S,X,f,false)`; antes era `S.length===1`, que con una sola serie mostraba ▲/▼ día a día.
+  - Por mes, `draw4` sigue con `line(S,X,f,one)`.
+  - Antes de cambiar se comprobó que el generador, con el HTML de Edwin, reproduce el tablero publicado byte a byte.
+- **Prueba:** `faseSURA-ventas-por-dia-cumplimiento` (+1 prueba). Las pruebas de SURA siguen en verde (85).
+- **Revisión local:** copia de la base demo, 2 bases de ventas SINTÉTICAS (sep y oct), Brave a 1440, 768 y 375 px.
+  - «Total equipo» por mes: 1 porcentaje. Por día: 0. «Todos» por día: 0.
+  - 0 errores de consola y sin scroll lateral.
+- **Sin cambio** (no se pidió): con valores chicos, el eje Y de esa gráfica repite etiquetas por el redondeo.
+
 ## Pedido b de Edwin (24/11) — Malla del supervisor más compacta (v1.261.0, 2026-11-24)
 
 - **Pedido:** vista del supervisor más compacta (la de la asesora queda igual). Además, en Puntualidad, la novedad del día en vez de «Sin ingreso». Con capturas antes y después.
@@ -22474,4 +22487,4 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - «Novedad: Suspensión (inventada)» en vez de «Sin ingreso».
   - 0 errores de consola y sin scroll lateral.
   - Las capturas antes y después quedan fuera del repo (regla de la Fase 112).
-- **PR sin mergear.**
+- **Merge con OK del usuario (24/11)**, después de #934 (1.260.2), trayendo main; queda en 1.261.0.
