@@ -152,7 +152,8 @@ test('navegador: ghArchivos usa el servidor si está encendido y el navegador si
   await on.del('nuevo');
   await on.del('viejo');
   assert.ok(!servidor.has('nuevo') && !local.has('viejo'));
-  assert.ok(GH_AVISO_BARRA.activos && GH_AVISO_BARRA.apagados);
+  assert.equal(GH_AVISO_BARRA.activos, '', 'pedido de Edwin 24/11: sin «Se guarda en la plataforma…»');
+  assert.ok(GH_AVISO_BARRA.apagados);
 });
 
 test('generado: el IDB de la app pasa por ghArchivos y el pie ya no dice «solo en este navegador»', () => {
@@ -164,5 +165,6 @@ test('generado: el IDB de la app pasa por ghArchivos y el pie ya no dice «solo 
   assert.ok(!/en este equipo/.test(app_));
   assert.ok(!/solo en este navegador/.test(pag + app_));
   const idx = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'index.html'), 'utf8');
-  assert.match(idx, /id="th-aviso">Se guarda en la plataforma\.</);
+  assert.match(idx, /id="th-aviso" hidden><\/p>/);
+  assert.ok(!/Se guarda en la plataforma/.test(idx), 'pedido de Edwin 24/11');
 });

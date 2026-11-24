@@ -77,7 +77,7 @@ test('SinCo: tarjeta solo para el administrador; ventana de módulo; se cierra a
   const index = leer('index.html');
   assert.ok(index.includes('<iframe id="th-frame" class="th-frame" title="Talento humano"></iframe>'));
   assert.ok(index.includes('<script src="js/talento-humano.js"></script>'));
-  assert.ok(index.includes('Se guarda en la plataforma.'), 'GH2: ya guarda en el servidor');
+  assert.ok(!index.includes('Se guarda en la plataforma'), 'pedido de Edwin 24/11: el encabezado ya no lo dice');
   assert.ok(leer('js', 'cerrar-ventanas.js').includes("'th-overlay': 'talentoHumanoCerrar', // Fase GH1"));
   assert.ok(leer('js', 'motion-helpers.js').includes("'activos-overlay', 'th-overlay']"));
 });

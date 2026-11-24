@@ -141,8 +141,10 @@ function _ghDeBase64(b64, tipo) {
   for (var i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
   return new Blob([u], { type: tipo || 'application/octet-stream' });
 }
+// Pedido de Edwin (24/11): el encabezado ya no dice «Se guarda en la plataforma…». Solo queda el aviso
+// cuando los soportes adjuntos NO se guardan en la plataforma (activos = sin texto, la barra se oculta).
 var GH_AVISO_BARRA = {
-  activos: 'Se guarda en la plataforma, también los soportes adjuntos.',
+  activos: '',
   apagados: 'Se guarda en la plataforma. Los soportes adjuntos, por ahora, quedan solo en este navegador.',
 };
 
@@ -179,7 +181,7 @@ function ghArrancar() {
     window.ghArchivos = function (idbLocal) {
       return ghCrearArchivos({ api: api, local: idbLocal, activo: activos, aBase64: _ghABase64, deBase64: _ghDeBase64 });
     };
-    try { var barra = padre.document.getElementById('th-aviso'); if (barra) barra.textContent = activos ? GH_AVISO_BARRA.activos : GH_AVISO_BARRA.apagados; } catch (e) { /* nada */ }
+    try { var barra = padre.document.getElementById('th-aviso'); if (barra) { barra.textContent = activos ? GH_AVISO_BARRA.activos : GH_AVISO_BARRA.apagados; barra.hidden = !barra.textContent; } } catch (e) { /* nada */ }
     var s = document.createElement('script');
     s.src = 'talento-humano-app.js' + (location.search || '');
     document.body.appendChild(s);
