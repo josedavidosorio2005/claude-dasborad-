@@ -370,22 +370,26 @@ async function correrCdr(opts, partes, res) {
 // Solo entran asesor, skill, fecha y hora, y Q01–Q04. NUNCA el teléfono (ANI), AGENT_DNI, CUSTOMER_ID,
 // el comentario (VOICE_MESSAGE) ni el CONN_ID: en la réplica Calidad de encuestas queda sin teléfono ni
 // comentarios (pedido del usuario, 18/11: los datos sensibles nunca se guardan). Una consulta por mes.
+// Fase A33 (autorización escrita del usuario, 24/11/2026): en el MOBILIZE REAL (destino con `encuestaConnId`)
+// también entra el CONN_ID, SOLO el ID de la llamada, para que Calidad de encuestas enlace las mal calificadas
+// con sus monitoreos. El teléfono (ANI), los comentarios y lo demás se siguen descartando. La réplica, igual que antes.
 const EN = require('../public/js/encuesta-logic.js');
 const ENCUESTA_COLUMNAS_API = [['agent_name', 'AGENT_NAME'], ['skill_name', 'SKILL_NAME'], ['q01', 'Q01'], ['q02', 'Q02'], ['q03', 'Q03'], ['q04', 'Q04']];
 const ENCUESTA_DESCARTADAS = ['ani', 'agent_dni', 'agent_id', 'customer_id', 'conn_id', 'voice_message', 'voice_message_duration', 'feeling', 'result', 'skill_id', 'type_interaction', 'q05', 'q06', 'q07', 'q08', 'q09', 'q10'];
-function hojaEncuesta(data) {
-  const cab = ['AGENT_NAME', 'SKILL_NAME', 'DATE', 'Q01', 'Q02', 'Q03', 'Q04'];
+function hojaEncuesta(data, conConnId) {
+  const cab = ['AGENT_NAME', 'SKILL_NAME', 'DATE', 'Q01', 'Q02', 'Q03', 'Q04'].concat(conConnId ? ['CONN_ID'] : []);
   return [cab].concat(data.map((r) => {
     const g = (k) => { const v = _v(r || {}, k); return v === undefined || v === null ? '' : v; };
     let fecha = String(g('date')).trim();
     const hora = String(g('time')).trim();
     if (fecha && !fecha.includes(':') && /^\d{1,2}:\d{2}/.test(hora)) fecha += ' ' + hora;
-    return [g('agent_name'), g('skill_name'), fecha, g('q01'), g('q02'), g('q03'), g('q04')];
+    return [g('agent_name'), g('skill_name'), fecha, g('q01'), g('q02'), g('q03'), g('q04')].concat(conConnId ? [String(g('conn_id')).trim()] : []);
   }));
 }
 
 async function correrEncuesta(opts, partes, res) {
   const { cargarEncuestas } = require('./encuestas');
+  const conConnId = require('./wolkvox-destinos').destino(opts.destino).encuestaConnId === true; // Fase A33: solo el real
   for (const { mes, dias } of _auto().planDe(opts)) {
     res.consultas++;
     let { data, cuerpo } = await _pedir(opts, 'diagram_4', dias[0], dias[dias.length - 1]);
@@ -394,14 +398,14 @@ async function correrEncuesta(opts, partes, res) {
     data = prE.data;
     if (!data.length) { cuerpo = null; _soloPrueba(opts, partes, res, 'encuestas', mes, prE); continue; }
     const campos = wv.resumenSinValores(cuerpo).campos;
-    let p = EN.encuestaParseFilas(hojaEncuesta(data));
+    let p = EN.encuestaParseFilas(hojaEncuesta(data, conConnId));
     data = null; cuerpo = null; // lo crudo (teléfonos, comentarios) no se queda en memoria
     if (p.error) {
       res.estado = 'error'; res.error = 'respuesta_invalida';
       partes.push(mes + ': respuesta no esperada (' + String(p.error).slice(0, 120) + '; campos: ' + campos.join(',').slice(0, 300) + '), sin cambios');
       return;
     }
-    const filas = p.filas.map((f) => { const x = f.slice(); x[7] = ''; x[8] = ''; x[10] = ''; return x; }); // sin comentario, conn_id ni teléfono
+    const filas = p.filas.map((f) => { const x = f.slice(); x[7] = ''; if (!conConnId) x[8] = ''; x[10] = ''; return x; }); // sin comentario ni teléfono; conn_id solo en el real (A33)
     const fuera = filas.filter((f) => String(f[0]).slice(0, 7) !== mes);
     if (fuera.length) { res.estado = 'error'; res.error = 'respuesta_invalida'; partes.push(mes + ': ' + fuera.length + ' encuestas fuera del mes, sin cambios'); return; }
     if (!filas.length) { partes.push(mes + ': ninguna encuesta válida, sin cambios'); continue; }

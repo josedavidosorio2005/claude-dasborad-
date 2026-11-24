@@ -78,3 +78,6 @@ AGENTS.md
 # Fase 146 (auditoria): llaves/certificados nunca al repo
 *.pem
 *.key
+
+# Plan de Gestión humana (23/11/2026): el HTML original de Edwin trae datos reales (plantilla del inventario). Nunca al repo.
+docs/gestion-humana/Plataforma_InConexion.html

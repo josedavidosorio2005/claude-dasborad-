@@ -312,6 +312,22 @@ function esDelAsesor(actor, row) {
 // los items/pesos de calificacion de las demas. Mismo criterio que
 // GET /dashboard/cargas (routes/dashboards.js): se filtra el contenido por
 // acceso, nunca se bloquea el endpoint entero (el admin sigue viendo todas).
+// Ticket #3 de SURA (23/11): «ID de agente» del asesor elegido en «Calificar» (calidad-id-agente.js).
+// Solo quien puede calificar esa campaña, y solo de un asesor de esa campaña. Solo lectura.
+router.get(
+  '/calidad/id-agente',
+  requireActor,
+  wrap((req, res) => {
+    const campana = String(req.query.campana || '');
+    const userId = Number(req.query.userId);
+    if (!campana || !Number.isInteger(userId) || userId <= 0) return res.status(400).json({ error: 'Faltan la campaña o el asesor' });
+    if (!canEvaluateCampaign(req.actor, campana)) return res.status(403).json({ error: 'No tiene permiso para evaluar esta campana' });
+    const u = db.prepare('SELECT asesorCampana FROM users WHERE id = ? AND rol = ?').get(userId, 'ASESOR');
+    if (!u || u.asesorCampana !== campana) return res.status(404).json({ error: 'Ese asesor no es de esta campaña' });
+    res.json(require('../calidad-id-agente').idAgenteDe(db, campana, userId));
+  })
+);
+
 router.get(
   '/calidad/plantillas',
   requireActor,
@@ -530,7 +546,12 @@ router.get(
       )
       .all({ id: req.actor.id || 0, nombre, campana });
     // Fase 343: el asesor nunca recibe el telefono del cliente final (antes si, en sus propios monitoreos).
-    res.json(conFechaLlamada(rows.map((r) => monitoreoPara(req.actor, r)))); // Fase 346
+    // Pedido de Edwin (23/11/2026): `sinVer` marca en su lista los que todavía no abrió con «Ver detalle».
+    // Mismo criterio que la alerta (/mios/nuevos) y la pestaña «Vistos»: sin vistoPorAsesorAt y creado
+    // después del corte de la Fase 95 (los viejos y los de prueba nunca cuentan). Solo se calcula; no
+    // cambia ningún dato.
+    const desde = alertaAsesorDesdeId();
+    res.json(conFechaLlamada(rows.map((r) => Object.assign(monitoreoPara(req.actor, r), { sinVer: !r.vistoPorAsesorAt && r.id > desde })))); // Fase 346
   })
 );
 

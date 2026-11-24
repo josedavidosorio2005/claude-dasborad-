@@ -21879,3 +21879,654 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - Los 19 nombres (Postman del 20/11) y las respuestas de Edwin para llenar el mapa.
   - Push y PR cuando el usuario lo pida.
   - Después del deploy, encender `WOLKVOX_ORLANT_AUTO_ACTIVO` y los módulos solo con su OK explícito (no se creó nada en SSM).
+
+## Fase STA (parte 4) — Pedido 1 de Edwin (reunión 23/11): la pestaña STA del cliente con la visual de «Gráficas» (v1.245.0, 2026-11-23)
+
+- **Pedido (usuario, 23/11, urgente):** en el Dashboard del cliente ORLANT, la pestaña STA tiene que mostrar la MISMA visual de «Gráficas» del panel de Gestión STA, de solo lectura. Cambios solo por `scripts/orlant/generar-sta.js`; el HTML de Edwin no se toca.
+- **Decisión del usuario (23/11):** se muestran los **nombres reales de las asesoras**, igual que en el panel de Edwin. Hasta ahora el resumen del cliente los excluía y ORLANT tiene `asesorVisibleCliente = false`; esta excepción es solo para la pestaña STA.
+- **Cambios:**
+  - Servidor: `GET /api/orlant/sta/estado?vista=cliente` (`STA.estadoCliente`). Lo pueden pedir el cliente de ORLANT y quienes gestionan el STA.
+    - Los casos van **recortados**: los 7 campos que se grafican (`CAMPOS_CLIENTE`) y estado, asesora, codificación, fecha de gestión y citas.
+    - Nunca van el número de autorización, otras columnas de la base, observaciones, rellamadas ni historial.
+    - El id es un consecutivo sin relación con el caso.
+  - Generador: vista `cliente`, que muestra solo «Gráficas» y oculta la cabecera y las demás pestañas (`.sta-cliente`).
+  - Generador: `activar()`. La instancia que recibe el clic, el foco o la tecla se vuelve la activa (`window.STAapp`), así el overlay y la pestaña no se pisan los manejadores en línea.
+  - `orlant-sta.js`: `staMontarCliente`, que monta la app de Edwin en un Shadow DOM propio dentro del panel. Todos los anfitriones siguen el tema.
+  - `orlant-sta-dashboard.js`: el panel `sta_resumen_panel` monta esa visual. El resumen de agregados sigue para destapar la pestaña y para «Exportar».
+- **Pruebas:**
+  - Nueva `faseSTA4-cliente-graficas` (4): permisos, casos recortados (con una columna de paciente inventada que no sale), solo lectura y cableado del navegador.
+  - La guardiana del generador reproduce lo publicado.
+- **Revisión visual (local, Brave, copia desechable de la base demo con una base STA inventada de 40 casos y 4 gestiones):** a 375, 768 y 1440 px, en claro y oscuro.
+  - Se ve solo «Gráficas»: 6 indicadores y 11 gráficas, con el nombre de la asesora.
+  - No aparece ningún número de autorización en la página. Los filtros repintan con el panel del supervisor abierto antes.
+  - Sin scroll horizontal y 0 errores de consola.
+
+## Fase STA (parte 5) — Pedido 2 de Edwin: «Regresar a disponibles» en Gestionados (v1.246.0, 2026-11-23)
+
+- **Pedido (usuario, 23/11):** en Gestionados, un botón «Regresar a disponibles»:
+  - (a) por codificación: se elige la tipificación y vuelven todos esos casos;
+  - (b) marcando casos uno a uno;
+  - para todas las codificaciones, incluida la de agenda.
+  Los casos vuelven a la bolsa libre, el historial se conserva y el Historial registra quién lo hizo.
+- **Servidor** (`STA.regresarGestionados`, `POST /api/orlant/sta/gestionados/regresar`, solo quien gestiona el STA):
+  - Recibe una codificación (`tipi`) o una lista (`numeros`), nunca las dos. Hasta 5.000 casos.
+  - Cada caso gestionado vuelve a `pendiente`, sin asesor. La gestión (codificación, observación, fecha, citas y asesora) pasa a `prev` («Gestiones anteriores»), con la fecha y quién lo regresó.
+  - Una rellamada pendiente queda «regresada».
+  - Historial `STA_REGRESAR`: cuántos casos y por qué vía, nunca números de casos.
+- **Generador:** en Gestionados, la barra «Regresar a disponibles por codificación» (con el conteo de cada una) y «Regresar marcados». La tabla de Edwin suma la columna de casillas y «marcar todos los mostrados». Las dos acciones piden confirmación.
+- **Pruebas:** nueva `faseSTA5-regresar-gestionados` (5).
+  - Permisos y validación.
+  - Por codificación: el caso queda libre, la gestión va a «Gestiones anteriores», el Historial dice quién y otra asesora recibe el caso con su gestión anterior.
+  - Marcados, incluido un Agendado con citas; los pendientes o inexistentes no cuentan.
+  - El navegador.
+  - La guardiana del generador sigue en verde.
+- **Seguridad (revisión automática del 23/11):** el número del caso viene del Excel que se sube, y dentro de un manejador en línea `esc()` no basta: el navegador decodifica `&#39;` y la comilla rompe el string de JS. Una base armada podía ejecutar código en la sesión de otro gestor.
+  - El generador agrega `jsArg()`, que pasa el valor como texto JSON y después lo escapa para HTML.
+  - Corrige el caso nuevo (`marcarGest`) y los 3 que ya venían del HTML de Edwin (`selUno`, `abrirCodificar`, `guardarCodificacion`).
+  - El generador falla si vuelve a quedar el patrón. La prueba lo verifica con un número malicioso.
+
+## Fase STA (parte 6) — Pedido 3 de Edwin: base eliminada como «Eliminada» en el historial de cargas (v1.247.0, 2026-11-23)
+
+- **Pedido (usuario, 23/11):** cuando se elimina una base, el registro de cargas tiene que mostrarla como «Eliminada». Antes, sin gestionados desaparecía del historial y con gestionados conservados quedaba igual.
+- **Servidor** (`STA.borrarCarga`):
+  - La carga ya no se borra del registro: guarda `eliminadaAt`, `eliminadaPor` y los `eliminados` sumados. Las columnas se agregan solas a una base vieja (`ALTER TABLE` en `asegurarTablas`).
+  - El Excel original se borra (`archivoGz = NULL`), porque eliminar la base es quitar sus datos.
+  - Eliminar dos veces da 409. Los casos se quitan como antes, con «conservar gestionados» opcional.
+- **Generador:** en el historial de cargas, la fila eliminada muestra la etiqueta «Eliminada», la fecha y quién, sin botones de descargar ni eliminar, y en gris.
+- **Pruebas:** nueva `faseSTA6-base-eliminada` (3). La de eliminar carga de la Fase STA sigue en verde.
+- **Revisión visual de los pedidos 2 y 3** (local, Brave, 375, 768 y 1440 px, claro y oscuro, datos inventados):
+  - La fila «Eliminada» muestra fecha y quién, sin botones.
+  - Gestionados tiene la barra «Regresar a disponibles» con el conteo de cada codificación, y las casillas.
+  - «Regresar marcados (1)» y «Regresar todos» por «Rechaza» funcionaron: quedó 1 gestionado y los 3 regresados conservan «Gestiones anteriores».
+  - Sin scroll horizontal, campos con nombre accesible y 0 errores.
+## Fase SURA (23/11) — Pedido 5 de Edwin: ventas por día en Cumplimiento (v1.248.0, 2026-11-23)
+
+- **Pedido (usuario, 23/11):** filtro «por día» por fecha de venta en las ventas del dashboard del cliente SURA. Ya existía «📅 Ventas por día» en Agentes (Fase 375). El usuario eligió agregar «Por día» en Cumplimiento › «📅 Ventas por mes».
+- **Cambio (por el generador, regla de la Fase 360):** selector «Ver por: Mes / Día». Con «Día» se elige el mes y se usa `draw4dia()`: la serie día a día por `fecha_venta` (`r[1]`), con los mismos filtros de la sección. Usa el mismo gráfico de líneas y la misma tabla de Edwin. El CSS no cambió (guarda de la Fase 345). La guardiana del generador reproduce lo publicado byte a byte.
+- **Pruebas:** nueva `faseSURA-ventas-por-dia-cumplimiento` (3).
+- **Revisión visual (local, 23/11, Brave vía Playwright):** con dos bases de SURA inventadas (septiembre y octubre de 2026, una con un asesor llamado `<img src=x onerror=…>`), a 375, 768 y 1440 px: el selector de mes solo aparece con «Día»; octubre da 31 días y septiembre 30; «Todos» da una línea por asesor; el nombre con HTML se ve como texto (sin XSS); la página no se desplaza a lo ancho; volver a «Mes» oculta el selector; 0 errores de consola (27/27). Las bases de prueba se borraron al terminar.
+- **Revisión de seguridad (en línea, 23/11):** todo texto que entra en `innerHTML` pasa por `esc()` (opciones de mes, nombres de la tabla, leyenda y `<title>` de `line()`); el título va por `textContent`; días y cifras son numéricos. Sin hallazgos.
+
+## Fase TK (23/11) — Pedido 7 de Edwin: «Ruta de ingreso» y 1 adjunto en Tickets (v1.249.0, 2026-11-23)
+
+- **Pedido (usuario, 23/11):** en Tickets, el campo «Ruta de ingreso» y 1 adjunto (imagen o PDF), como en el Inventario de sistemas.
+- **Ruta de ingreso:** texto opcional de hasta 200 caracteres (columna nueva `tickets.rutaIngreso`; agregar una columna no cambia ningún dato). Se muestra en el detalle del ticket por `textContent`.
+- **Adjunto:** opcional, 1 por ticket, PNG, JPG o PDF de hasta 3 MB. El tipo se decide por el **contenido** del archivo (firma), no por la extensión: un «.png» que en realidad es HTML se rechaza, y un PDF llamado «.png» queda como PDF. El nombre se limpia (sin rutas ni caracteres raros).
+  - Se guarda en la base, en una tabla aparte (`tickets_adjuntos`; la lista nunca lee el contenido), como el Excel original del STA. No se usó S3 porque el permiso de la instancia solo cubre `actas/*`, y ampliarlo es un cambio de IAM que hace el usuario.
+  - Descarga (`GET /api/tickets/:id/adjunto`): las mismas reglas de ver (el autor y quienes gestionan; otro usuario recibe 404). Siempre como descarga, con su tipo real, `nosniff` y CSP `sandbox`. Las imágenes se ven en el detalle (vista previa `data:`, la CSP no permite `blob:`).
+  - Tope: 20 adjuntos por persona en 24 horas (429). Sin adjunto se puede seguir enviando.
+  - `/api/tickets` pasa al límite de cuerpo de 8 MB (3 MB en base64 ≈ 4 MB). Borrar un ticket borra su adjunto.
+- **Pruebas:** nueva `faseTK-ruta-adjunto` (9). `fase356-tickets-interfaz` ahora exige UN solo campo de archivo, opcional. `fase118-matriz-acceso` declara la ruta nueva.
+- **Revisión visual (local, Brave vía Playwright, datos inventados):** a 1440 (claro), 768 (oscuro) y 375 (claro):
+  - un .txt se avisa antes de enviar;
+  - la lista dice «con adjunto» y el detalle muestra la ruta, «Adjunto: nombre (13 KB)» y la imagen;
+  - la descarga trae los mismos bytes;
+  - sin desplazamiento horizontal y 0 errores de consola (22/22).
+  - Los tickets de prueba se borraron al terminar.
+
+## Fase CAL (23/11) — Calidad: «Sin ver» en el portal de la asesora (v1.250.0, 2026-11-23)
+
+- **Pedido (Edwin, 23/11):** en la lista de resultados de calidad de la asesora, marcar en rojo los monitoreos que aún no abrió con «Ver detalle». La marca se va al abrirlo, y arriba sale «Te faltan N por ver». No cambia cuándo cuenta como visto, ni la pestaña «Vistos» del supervisor, ni los datos.
+- **Servidor:** `GET /monitoreos/mios` agrega `sinVer`, un campo calculado; no se guarda nada.
+  - Usa el mismo criterio que la alerta `/mios/nuevos` y la pestaña «Vistos»: sin `vistoPorAsesorAt` y con `id` posterior al corte de la Fase 95, así que los viejos y los de prueba nunca salen en rojo.
+- **Interfaz (`mis-resultados.js`):**
+  - Etiqueta «Sin ver» (`vis-pill vis-rojo`, la de «Vistos») y un borde rojo en la fila; el texto acompaña al color.
+  - Resumen `#mr-sin-ver` (`role="status"`) con el total de todos los meses.
+  - Al abrir «Ver detalle», si el PUT `/visto` responde bien, la marca se quita sin recargar. Con «Ver como» el servidor bloquea el PUT y la marca se queda, que es lo correcto.
+  - Colores: rojo del semáforo (`--c-danger*`). `paleta.css` no lleva rojo a propósito (Fase 345): el rojo es de estados.
+  - Contraste: claro 5,9:1 y oscuro 8,5:1.
+- **Pruebas:** nueva `faseCAL-sin-ver-asesora` (3); `fase357c` y `fase95-tema-c` siguen en verde.
+- **Revisión visual (local, Brave vía Playwright, base demo, `demo_asesor` con 22 sin ver):** a 1440 claro, 768 oscuro y 375 claro, 13/13 y 0 errores de consola.
+  - En cada ancho: al abrir uno, la marca se va y el resumen baja en 1; al recargar la lista se mantiene.
+  - Los 3 vistos que marcó la prueba se devolvieron a «sin ver» en la base local.
+## Fase B3 (canal) — ORLANT: Total / Llamadas / WhatsApp en Total tráfico (v1.251.0, 2026-11-23)
+
+- **Pedido (usuario, 23/11):** avanzar sin Edwin lo que se pueda del plan de ORLANT (B2 asistencia mensual, B3 filtro línea/canal). B2 necesita el archivo y la definición de Edwin, y no se tocó. De B3 se hizo solo la parte **canal**: el servidor ya da cada mes separado por canal. La parte **línea** (General / 3P) espera a Edwin, porque la entrada no trae línea.
+- **Cambio (solo interfaz, `public/js/total-trafico.js`):** grupo de botones `gd-botones-resaltados` (44 px, «✓» en el activo, `aria-pressed`), solo para ORLANT.
+  - Con «Llamadas» o «WhatsApp», cada tarjeta suma la entrada y la salida de ese canal (cada salida cuenta como contestada, Fase 219) y la gráfica deja solo esa línea.
+  - Cambiar de canal no vuelve a pedir datos al servidor.
+  - La exportación sigue con el total.
+  - No depende de B1 (#902). Si B1 entra después, hay que rebasar `total-trafico.js`, la versión y el CHANGELOG.
+- **Pruebas:** nueva `faseB3-orlant-filtro-canal` (3). `fase219-total-trafico` revisa el texto de siempre en su nuevo lugar.
+- **Revisión visual (local, Brave vía Playwright, base demo):** a 1440 claro, 768 oscuro y 375 claro, 19/19 sin errores de consola.
+  - Primera versión: el botón activo quedaba azul sobre teal con el puntero encima, porque una regla `.gd-subtab-btn:hover` posterior pisaba el color. Se corrigió usando la variante `gd-botones-resaltados`, que ya existía; medido: blanco sobre teal en reposo, con foco y con el puntero encima.
+
+## Fase GH1 — «Talento humano»: la app de Gestión humana de Edwin dentro de SinCo (v1.252.0, 2026-11-23)
+
+- **Pedido:** Edwin, reunión del 23/11. Plan aprobado por el usuario (#918, `docs/gestion-humana/plan.md`).
+  - Montar su app de Gestión humana en SinCo con su visual tal cual, usando el menú y la barra de SinCo y sin datos de prueba.
+  - GH1 corre en local y **no se mergea** sin OK.
+- **El HTML original:** el usuario lo copió de Descargas a `docs/gestion-humana/Plataforma_InConexion.html`, ruta ignorada por git (`git status --ignored` la marca `!!`).
+- **Generador `scripts/gestion-humana/generar-talento-humano.js`:** solo lee la app `app-gh`. El inventario (`app-inv`, con datos reales en `SEED_RAW`) nunca se lee. Genera `public/gestion-humana/talento-humano.{html,css}` y `talento-humano-app.js`, con estos cambios:
+  - **Sin datos de prueba.** Se cambian por funciones vacías:
+    - `demoData` (empleados de ejemplo);
+    - `demoVN` (vacaciones y novedades);
+    - `ausDemo`, `ausCargarDemo` y `ausQuitarDemo` (ausentismo);
+    - `impDemo` (indicadores de impacto).
+
+    El arranque las sigue llamando, pero con la base vacía no siembra nada. Salen los 2 botones «Cargar datos de prueba».
+  - **Sin su inicio ni el aviso de «vista previa».** Ese aviso bloqueaba las descargas dentro de un marco.
+  - **Sin SheetJS embebido:** usa el de SinCo (0.20.3).
+  - **«⌂ Menú principal»** llama a `talentoHumanoCerrar` de SinCo.
+  - Falla si un reemplazo no encuentra su texto exacto. Solo imprime tamaños.
+- **Por qué iframe y no Shadow DOM** (el plan decía Shadow DOM, como Televentas):
+  - La app tiene 135 `onclick` en línea que llaman funciones globales; en Shadow DOM habría que reescribirlos.
+  - El iframe del mismo origen aísla igual su CSS y su JS sin tocar su lógica.
+  - La CSP ya lo permite (`frame-ancestors 'self'`, `default-src 'self'`) y no hubo que cambiarla. La página generada no tiene `<script>` en línea.
+- **SinCo:**
+  - Tarjeta «Talento humano» (`i-contact`), **solo para el administrador** en GH1, porque guarda en el navegador. En GH2 pasa al servidor y se abre al rol GESTION_HUMANA.
+  - Ventana de módulo `#th-overlay` en pantalla completa:
+    - barra de SinCo con el aviso «Versión de prueba… No cargues datos reales todavía» y «Cerrar» de 44 px;
+    - el iframe carga `gestion-humana/talento-humano.html?v=<build>` una sola vez por página.
+  - Se cierra con «Cerrar», con «⌂ Menú principal», al salir y con «Ver como» (`cerrar-ventanas.js`). Escape no la cierra (`motion-helpers.js`).
+  - `state.js`: el corrimiento de la franja «DATOS DE DEMOSTRACIÓN» (solo en bases demo) también se aplica a esta ventana, con `important`, porque la regla de ventanas de módulo fija `margin` y `height`.
+- **Pruebas:**
+  - Nueva `faseGH1-talento-humano` (6), sobre lo generado. Revisa:
+    - que no queden datos ni botones de prueba;
+    - que no haya cédulas, celulares ni correos;
+    - el SheetJS de SinCo, sin scripts en línea;
+    - «⌂ Menú principal»;
+    - la tarjeta solo para ADMIN;
+    - el cierre;
+    - el `.gitignore`.
+  - Ajustada `fase357b-menu-unico` (tarjeta nueva).
+- **Revisión local** (Brave vía Playwright, base demo, navegador nuevo), a 1440 claro, 768 oscuro y 375 claro: 24/24, 0 errores de consola. En cada ancho:
+  - la app carga con 0 empleados y sin botones de prueba;
+  - sus 10 vistas abren;
+  - «Cerrar» mide 44×44, el iframe ocupa todo el ancho y no hay scroll horizontal;
+  - «⌂ Menú principal» y «Cerrar» funcionan y Escape no la cierra.
+
+  Además, su «Exportar» (indicadores de impacto) descarga el `.xlsx` desde el iframe.
+- **Sigue:** GH2 (guardar en el servidor por clave con versión, permisos por rol), GH3 (soportes en S3 privado), GH4 (Inventario: «Novedades desde Gestión Humana»), GH5 y GH6.
+
+## Fase GH2 — «Talento humano» guarda en el servidor (v1.253.0, 2026-11-23)
+
+- **Pedido:** el usuario, 23/11: GH2 en local, sin mergear. Guardar en el servidor (`gh_estado` por clave con versión, bitácora sin contenido, permisos GESTION_HUMANA + ADMIN) con el adaptador en el generador. La tarjeta queda preparada para el rol GESTION_HUMANA, pero no se abre a nadie en producción sin su OK.
+- **Servidor:**
+  - `server/gh-estado.js`, con dos tablas:
+    - `gh_estado (clave, valor, version, actualizadoPor, actualizadoAt)`;
+    - `gh_bitacora (clave, version, usuario, fecha, bytes, elementos)`, **sin el contenido**.
+  - Lista cerrada de 6 claves: `inconexion_gh_empleados_v1` y sus sufijos `_vac`, `_nov`, `_aus`, `_auscfg` y `_cfg`. Las marcas internas de la app (`_init*`, `_impdemo`, `_lastcopy`) siguen en el navegador.
+  - Rutas en `routes/gh-estado.js`, todas sin caché:
+    - `GET /api/gh/acceso`;
+    - `GET /api/gh/estado`;
+    - `PUT /api/gh/estado/:clave`, que pide `{valor, version}` y responde 409 con la versión actual si otra persona guardó antes (todo o nada en una transacción);
+    - `GET /api/gh/bitacora`, solo para el administrador.
+  - Validaciones: clave de la lista, versión entera, valor JSON (lista u objeto) de hasta 6 MB (413). El cuerpo de esa ruta usa el límite de 8 MB.
+  - **Permisos:** el administrador completo siempre. **GESTION_HUMANA solo con `GH_ROL_ACTIVO=1`**, que se agregó a `SSM_KEYS` y lo crea el usuario con su OK. Se lee en cada petición, pero desde SSM solo al arrancar: después de crearlo hace falta reiniciar o redesplegar. El resto de roles recibe 403.
+- **Navegador:**
+  - `public/gestion-humana/talento-humano-api.js` (a mano) define `GH_STORE`:
+    - lee todo con `GET` antes de cargar la app, que lee de forma sincrónica al arrancar;
+    - guarda cada sección 600 ms después del último cambio, y nunca la manda si no cambió;
+    - con 409 deja de guardar esa sección y avisa que hay que volver a abrir, sin pisar lo del otro;
+    - con un error de red avisa y lo intenta de nuevo con el próximo cambio o al cerrar (sin bucle).
+  - Las peticiones usan `apiRequest` de SinCo (`window.parent`): misma sesión y mismo token.
+  - El generador cambia los 22 `localStorage.` por `GH_STORE.` (falla si el conteo cambia), cambia el texto del pie («Los datos se guardan en la plataforma…») y la página carga el adaptador en vez de la app.
+- **SinCo:**
+  - Al cerrar (con «Cerrar», «⌂ Menú principal», salir de sesión o «Ver como») se manda lo pendiente y **se descarga el iframe**, para que no queden datos en memoria para la siguiente sesión.
+  - Cada apertura lee lo último del servidor.
+  - El rol GESTION_HUMANA pide `/gh/acceso` al pintar el menú y la tarjeta aparece solo si `puede:true`.
+  - El aviso de la barra dice que se guarda en la plataforma y que los soportes adjuntos siguen solo en el navegador hasta GH3.
+- **Pruebas:**
+  - Nueva `faseGH2-talento-humano-servidor` (8):
+    - permisos con el interruptor apagado, encendido (solo con el valor «1») y otra vez apagado;
+    - versiones y 409 sin pisar;
+    - validaciones y 413;
+    - bitácora sin contenido;
+    - `GH_STORE` con una API falsa: junta cambios, no gasta versión sin cambios, 409 bloquea, error de red sin bucle;
+    - lo generado, sin `localStorage`.
+  - Ajustada `faseGH1`.
+- **Revisión local** (Brave vía Playwright, base demo, datos FICTICIOS; al final se vaciaron `gh_estado` y `gh_bitacora` locales):
+  - **Sin interruptor (13/13):**
+    - el administrador guarda; los datos no quedan en el navegador;
+    - al cerrar se descarga el iframe y al reabrir lee del servidor;
+    - el conflicto entre dos sesiones avisa y no pisa;
+    - la bitácora no lleva contenido;
+    - un cambio pendiente al cerrar enseguida sí se guarda;
+    - a 768 y 375 sin scroll horizontal;
+    - GESTION_HUMANA no tiene tarjeta y recibe 403.
+  - **Con `GH_ROL_ACTIVO=1`, solo en local (6/6):** GESTION_HUMANA ve la tarjeta, abre, lee y guarda; la bitácora le responde 403; GERENCIA no tiene tarjeta y recibe 403.
+  - 0 errores de consola, salvo el 409 esperado de la prueba de conflicto.
+  - **Observación:** un empleado sin salario ni sede hace que los gráficos de Edwin muestren errores de SVG (`NaN`) en la consola. Es su código y no se tocó.
+- **Producción:** sin `GH_ROL_ACTIVO`, nadie más que el administrador entra. Encenderlo necesita el OK del usuario.
+- **Sigue:** GH3 (soportes en S3 privado), GH4, GH5 y GH6.
+
+## Fase GH3 — «Talento humano»: soportes adjuntos a S3 privado (v1.254.0, 2026-11-23)
+
+- **Pedido:** el usuario, 23/11: GH3 en local, sin mergear, como las actas. Antes de crear o cambiar algo en AWS, pasos clic por clic (consola en español) y esperar su «listo».
+- **Servidor:**
+  - `server/gh-archivos.js` crea la tabla `gh_archivos` (id, empId, nombre, tipo, bytes, s3Key, quién y cuándo subió y borró).
+  - Rutas en `routes/gh-estado.js`, con los mismos permisos de Talento humano:
+    - `POST /api/gh/archivos`;
+    - `GET /api/gh/archivos/:id`;
+    - `DELETE /api/gh/archivos/:id`.
+  - El tipo se revisa por el contenido: PDF, PNG, JPG, WEBP, DOC o DOCX, hasta 8 MB (el mismo tope de la app). El cuerpo de esa ruta acepta 12 MB por el base64.
+  - La clave en S3 es `talento-humano/soportes/<id>-<fecha>.<ext>`, con `AES256` y sin el nombre del archivo.
+  - Subir el mismo id otra vez no duplica; un id borrado no revive.
+  - Borrar marca la fila y deja el objeto (sin `s3:DeleteObject`).
+  - Si S3 falla, responde 502 sin detalles y no guarda la fila.
+  - La bitácora anota «soporte:subido» y «soporte:borrado», sin nombre ni contenido.
+  - `GET /api/gh/estado` devuelve también `soportesActivos`.
+  - **Apagado** sin `GH_SOPORTES_S3_BUCKET`, que se agregó a `SSM_KEYS`; subir responde 503.
+- **Navegador:**
+  - `ghCrearArchivos` en `talento-humano-api.js` reemplaza el IndexedDB de la app con la misma forma (`put`, `get` y `del`).
+  - Encendido, sube y trae del servidor. Si el servidor no tiene el soporte (404), lo busca en el navegador: son los guardados antes de encender S3.
+  - Apagado, todo sigue en el navegador, como antes.
+  - El generador deja su `IDB` como `IDB_LOCAL`, agrega `const IDB=ghArchivos(IDB_LOCAL)` y cambia «No se encontró el archivo en este equipo» por «No se encontró el soporte».
+  - El pie ya no dice «solo en este navegador»; la barra de SinCo dice según el estado si los soportes van a la plataforma o siguen en el navegador.
+- **AWS (lo hace el usuario):** guía en `docs/gestion-humana/soportes-s3.md`:
+  - bucket aparte `inconexion-talento-humano-2026` (privado, con versiones, SSE-S3);
+  - declaración `TalentoHumanoSoportesS3` en `deploy/iam-policy-instance.json`, solo `PutObject` y `GetObject` sobre `talento-humano/*`;
+  - parámetro `/inconexion/prod/GH_SOPORTES_S3_BUCKET`;
+  - después, reiniciar.
+  - No se creó nada en AWS.
+- **Pruebas:**
+  - Nueva `faseGH3-talento-humano-soportes` (7), con un S3 falso:
+    - apagado responde 503;
+    - sube, cifra, no duplica, entrega, borra y no revive;
+    - tipo por contenido, ids y 8 MB;
+    - permisos con y sin `GH_ROL_ACTIVO`;
+    - S3 caído da 502 sin fila;
+    - `ghCrearArchivos` encendido, apagado y con respaldo local;
+    - lo generado.
+  - Declaradas en fase118.
+- **Revisión local** (Brave vía Playwright, base demo, S3 falso en memoria, archivos SINTÉTICOS; al final se vaciaron las tablas `gh_*` locales):
+  - la barra dice «también los soportes adjuntos»;
+  - el soporte sube y vuelve igual, sin copia en IndexedDB;
+  - el put va cifrado a `talento-humano/soportes/`, sin el nombre;
+  - la descarga de la app trae el archivo;
+  - un soporte guardado antes en el navegador se abre y se borra;
+  - lo borrado ya no se entrega;
+  - la bitácora no lleva el nombre;
+  - un archivo que no es PDF, imagen ni Word recibe 400;
+  - a 768 y 375 sin scroll horizontal;
+  - sin errores, salvo el 400 y los 404 esperados.
+- **Producción:** 1.253.0 (#920). GH3 sin mergear; espera el OK del usuario y los pasos de AWS.
+
+### Fase GH3 — verificación en producción (2026-11-23)
+
+- **AWS:** el usuario creó, el 23/11, el bucket `inconexion-talento-humano-2026` (privado, con versiones y SSE-S3), la política insertada `TalentoHumanoSoportesS3` y el parámetro `/inconexion/prod/GH_SOPORTES_S3_BUCKET`.
+- **#921 mergeado** (`ls-remote` + `--match-head-commit`). Deploy OK a la primera, sin timeouts de SSH. `/api/health`: `ok:true`, versión 1.254.0.
+- **Prueba autorizada por el usuario**, en Brave y como administrador (él inició sesión), con 1 PDF INVENTADO, sin empleados ni datos de personas. Resultado, 11/11:
+  - `soportesActivos:true`, así que el servidor leyó el parámetro;
+  - la barra dice «también los soportes adjuntos»;
+  - subir: guardado en S3, sin copia en el navegador;
+  - abrir: vuelve igual (nombre, tipo, tamaño y contenido), y la descarga de la app funciona;
+  - borrar: ya no se entrega;
+  - la bitácora anota «subido» y «borrado», sin el nombre;
+  - sin errores de consola, salvo el 404 esperado después de borrar.
+- **Cifrado:** el servidor sube con `ServerSideEncryption: AES256` y el bucket tiene SSE-S3 por defecto. Desde este equipo no hay acceso a AWS; la propiedad del objeto la confirma el usuario en la consola.
+- **Lo que queda de la prueba:**
+  - el objeto `talento-humano/soportes/prueba-gh3-1795461819691-*.pdf` sigue en el bucket, porque el servidor no tiene `DeleteObject`;
+  - en la base quedan una fila de `gh_archivos` marcada como borrada y 2 registros en la bitácora.
+- `GH_ROL_ACTIVO` sigue apagado.
+
+## Fase GH4 — Inventario: «Novedades de Gestión Humana» (v1.255.0, 2026-11-23)
+
+- **Pedido:** el usuario, 23/11: GH4 del plan en local, sin mergear (`docs/gestion-humana/plan.md`: «Novedades desde Gestión Humana» en el Inventario de SinCo, solo lectura entre módulos).
+- **Lógica:** la misma del HTML de Edwin (`alertasGH`, `GH.estadoHoy` y `GH.proxima`; se leyó solo el código, nunca `SEED_RAW`).
+  - Por cada agente con elementos asignados, cuatro grupos: **retirados** (`estado: 'Retirado'`), **ausentes hoy** (vacaciones de tipo «Disfrute» o novedad vigente hoy, sin anuladas), **próximos 7 días** y **sin registro**.
+  - «Hoy» es la fecha de Colombia.
+  - Dos cambios a propósito frente al HTML:
+    - el cruce va por documento normalizado y, por nombre (sin tildes ni mayúsculas), **solo si el agente no tiene documento**;
+    - a Sistemas le llega **lo mínimo**: nombre y documento del agente, un texto con fechas y sus elementos. Nunca salario, cargo, contacto ni el **tipo** de novedad (puede ser una incapacidad).
+- **Servidor:**
+  - `server/gh-novedades.js` lee `gh_estado`; con JSON dañado no se rompe.
+  - Nueva ruta `GET /api/activos/novedades-gh` (ADMIN y SISTEMAS, como el resto del Inventario; GESTION_HUMANA no entra ni con `GH_ROL_ACTIVO`).
+  - `/activos/resumen?ambito=sistemas` trae `novedadesGH {retirados, ausentes}` para el conteo del menú.
+  - Declarada en fase118.
+- **Interfaz:**
+  - Opción «Novedades de Gestión Humana» en el menú del Inventario de sistemas (no en el de inmuebles), con un conteo de retirados + ausentes hoy.
+  - Una tarjeta por grupo, con el texto de Edwin adaptado.
+  - Los retirados tienen el botón «Recibir elementos», que abre el agente en «Agentes» con «Devolver» y su acta. El resto tiene «Ver agente».
+  - «Sin registro» va plegado.
+  - Si Talento humano está vacío, lo dice en vez de listar a todos como «sin registro».
+  - Estilos solo con tokens.
+- **Pruebas:** nueva `faseGH4-novedades-gestion-humana` (5):
+  - Talento humano vacío;
+  - el cruce por documento con puntos y por nombre;
+  - los cuatro grupos;
+  - anuladas fuera;
+  - nada de salario, cargo, contacto, tipo ni diagnóstico;
+  - conteo del menú y vista (con escape);
+  - permisos;
+  - datos dañados.
+  - Suite completa: 3496/0. `npm audit`: 0.
+- **Revisión local** (Brave vía Playwright, base demo, 4 agentes y 8 elementos INVENTADOS, que se borraron al final junto con sus actas, historial y `gh_*` locales), 10/10:
+  - conteo 2 en el menú;
+  - los tres grupos con sus elementos y fechas, y «sin registro»;
+  - sin salario;
+  - «Recibir elementos» abre el agente con «Devolver»;
+  - a 768 y 375 sin scroll horizontal;
+  - 0 errores de consola.
+- **Producción:** sin cambios hasta el OK del usuario. Hoy Talento humano no tiene empleados, así que la vista diría «aún no tiene empleados».
+
+## Ticket #3 de SURA — Calidad: «ID de agente» automático en «Calificar» (v1.256.0, 2026-11-23)
+
+- **Pedido:** ticket #3 de SURA (supervisora, 23/11): en «Calificar», al elegir el asesor, el campo «ID de agente» debe llenarse solo (hoy se busca a mano). El usuario pidió revisar primero si ya se enlazaba y, si no, llenarlo editable en todas las campañas donde exista el campo y avisar cuando no haya dato.
+- **Qué había:**
+  - El campo es `idAgente` (`calidad-campos.js`, «ID de agente», en `extras`). Según `docs/calidad-plan-edwin-nov.md`, está en las plantillas de SURA, Mobilize, Clínica Aurora y Hospital La María.
+  - **No se enlazaba con nada:** al elegir el asesor (`_cc2AsesorElegido`) solo se mostraban la campaña y el usuario.
+  - El usuario de la plataforma no guarda un ID de agente.
+  - Lo único que une un agente con un usuario es `malla_agente_enlace` (agent_id de Wolkvox ↔ usuario por campaña, para la puntualidad; lo hace una persona).
+- **Cambio:**
+  - `server/calidad-id-agente.js` busca en este orden:
+    1. el enlace con Wolkvox de esa campaña;
+    2. el último `extras.idAgente` no vacío de un monitoreo de ese asesor en esa campaña;
+    3. si no hay ninguno, `null`.
+  - Ruta `GET /api/calidad/id-agente?campana&userId`: solo quien puede calificar esa campaña (`canEvaluateCampaign`) y solo para un asesor de esa campaña (404 si es de otra). Sin caché.
+  - Formulario (`calidad-calificar.js`):
+    - si la plantilla trae el campo, al elegir el asesor lo llena y dice de dónde salió («enlace con Wolkvox» o «último monitoreo»);
+    - si no hay dato, avisa en color de advertencia («no tiene ID de agente registrado: escríbelo a mano»);
+    - sigue editable y no pisa lo que se escribió;
+    - si se cambia de asesor, quita el que se llenó solo;
+    - al editar un monitoreo guardado no se autollena.
+- **Pruebas:** nueva `faseSURA-ticket3-id-agente` (5):
+  - el orden de las fuentes, con vacíos y otra campaña;
+  - permisos: Calidad de otra campaña, Reportes, asesor de otra campaña, sin sesión;
+  - el formulario con un DOM mínimo (llena, avisa, cambia de asesor, no pisa, al editar no pide).
+  - Declarada en fase118.
+- **Revisión local** (Brave vía Playwright, base demo): la plantilla local de ORLANT recibió campos con «ID de agente» solo durante la prueba y volvió a `NULL`; el enlace inventado se borró. Resultado 8/8:
+  - sin dato: vacío y con aviso;
+  - con enlace: se llena solo y dice de dónde salió;
+  - sigue editable;
+  - a 1440, 768 y 375 sin scroll horizontal;
+  - 0 errores de consola.
+## Fase STA7 — Gestión STA: filtro «Servicio» de la asignación (v1.256.1, 2026-11-23)
+
+- **Pedido:** el usuario, 23/11, pendiente del STA: en la asignación, el filtro «Servicio» muestra opciones que no corresponden (Isa lo vio con Audífonos). Hay que encontrar la causa y corregirla con una prueba, por el generador y sin editar el HTML de Edwin.
+- **Causa:** en el HTML de Edwin, `opciones(campo)` contaba **todos** los casos libres sin aplicar los demás filtros. Con una Entidad elegida, «Servicio» seguía ofreciendo servicios que esa entidad no tiene libres (con conteos de toda la base), y al marcarlos el conteo de disponibles daba 0. El servidor filtra igual que la pantalla (`disponiblesFiltrados`), así que la asignación nunca tomó casos equivocados: el problema era solo de las opciones que se mostraban.
+- **Cambio** (`scripts/orlant/generar-sta.js`, paso 8c; `public/js/orlant-sta-app.js` regenerado):
+  - `filtrar(sin)` deja fuera un filtro de lista;
+  - las opciones de Entidad, Servicio y Descripción CUPS salen de los casos libres que pasan los **demás** filtros, incluidas las fechas (filtro en cascada); la lista propia no se recorta, para poder ampliar la selección;
+  - una opción marcada que se queda sin casos se muestra con 0, para poder quitarla;
+  - `msNormalizar` compara los valores y no solo el tamaño.
+- **Pruebas:** nueva `faseSTA7-filtro-servicio-asignacion` (6). Corre las funciones reales del archivo generado en un `vm`, con casos inventados:
+  - sin filtros;
+  - Entidad → Servicio y CUPS, y Servicio → Entidad;
+  - una opción marcada que queda en 0;
+  - `msNormalizar`;
+  - la guardiana del generador.
+
+## Fase STA8 — Gestión STA de ORLANT: «Descargar plantilla» (v1.257.0, 2026-11-23)
+
+- **Pedido:** pendiente (b) del STA. En el panel de carga, un botón «Descargar plantilla» que baje un Excel vacío solo con los 8 encabezados que pide la carga.
+- **Cambio:**
+  - Todo por `scripts/orlant/generar-sta.js`; el HTML de Edwin no se tocó.
+  - En la tarjeta «Cargar base de datos», debajo de la zona de arrastre, hay un botón con una línea de ayuda.
+  - La nueva función `descargarPlantilla()` arma con SheetJS (ya cargado en `index.html`) la hoja «Base STA». Lleva solo la fila de encabezados `CAMPOS`, que es la misma lista que exige `server/orlant-sta.js`, con un ancho de columna legible.
+  - El archivo se llama `Plantilla_base_STA.xlsx`.
+  - Si SheetJS no está, avisa en vez de romperse.
+- **Pruebas:** nueva `faseSTA8-plantilla-base` (3):
+  - los encabezados de la app son iguales a los del servidor, en el mismo orden;
+  - el Excel generado se vuelve a leer con SheetJS: una sola fila y la hoja correcta, más el aviso sin SheetJS;
+  - el botón está en el panel de carga y en `STAapp`.
+- **Revisión local** (Brave vía Playwright, base demo con 5 casos inventados que se borraron al final), 7/7:
+  - el botón está en el panel;
+  - descarga `Plantilla_base_STA.xlsx` con los 8 encabezados exactos y sin filas;
+  - sin scroll horizontal a 768 y 375 px;
+  - 0 errores de consola.
+- **PR sin mergear** (pedido del usuario).
+
+## Fase GH5 — Inventario de sistemas: «Panel general» como el diseño de Edwin (v1.258.0, 2026-11-23)
+
+- **Pedido (usuario, 23/11):** comparar pantalla por pantalla el Inventario del HTML de Edwin de hoy (`docs/gestion-humana/Plataforma_InConexion.html`, en `.gitignore`) con el «Inventario de sistemas» de SinCo, dar la lista de diferencias e implementarlas, conservando los datos y actas del servidor. Rama nueva, PR sin mergear.
+- **Comparación:** la app de Edwin se abrió en Brave desde una copia fuera del repo, con su plantilla real (`SEED_RAW`) reemplazada por datos INVENTADOS de la misma forma. SinCo se revisó con la base demo local y elementos inventados.
+  - La lista de 10 diferencias está en `docs/gestion-humana/inventario-diferencias.md`, sin datos reales.
+  - Dos de ellas son decisiones del usuario: el tema oscuro fijo y que los agentes salgan de Gestión Humana.
+- **Cambio de esta fase (diferencia 1, la más grande):**
+  - `server/activos-panel.js` (solo lectura) y `GET /api/activos/panel?ambito&tipo` (ADMIN y SISTEMAS, igual que el resto del inventario). Calculan:
+    - estados y tipos;
+    - RAM, sin los dados de baja;
+    - sede y operación por estado;
+    - marcas;
+    - valor de los propios: proveedor vacío o InConexión, sin baja;
+    - renta de los de proveedores;
+    - calidad de los datos y movimientos de 6 meses (del historial del inventario).
+  - `activosPanel2Html` en `public/js/activos.js` dibuja:
+    - chips «Ver gráficas de», tarjetas, donas con `conic-gradient`, barras apiladas y la línea de 6 meses en SVG;
+    - los botones abren la vista correspondiente;
+    - Excel descarga el inventario (del tipo elegido).
+  - El panel ya no muestra los pasos del ciclo; siguen en «Registrar ingreso».
+  - `activosPanelHtml` y `/activos/resumen` se quedan como estaban (los usan el menú y otras pruebas).
+  - El CSS (`.acp-*`) usa solo tokens: azul y verde de marca, aviso, peligro y gris, en claro y oscuro.
+- **Pruebas:** nueva `faseGH5-inventario-panel` (4):
+  - conteos, valor y renta, sede y operación, calidad, marcas y movimientos;
+  - chips por tipo e inmuebles;
+  - permisos (ADMIN, SISTEMAS, 403 y 401);
+  - la interfaz.
+  - Ruta declarada en fase118.
+- **Revisión local** (Brave vía Playwright, base demo, 11 elementos inventados que se borraron al final):
+  - las 12 secciones del panel;
+  - renta 90.000 y valor 12.100.000, que cuadran con lo creado;
+  - el chip «Torres» filtra;
+  - sin scroll horizontal a 1440, 768 y 375;
+  - 0 errores de consola.
+- **GH5b (mismo PR), diferencia 3, «Registrar ingreso»:**
+  - `activosRegistrarTarjetasHtml` dibuja una tarjeta por tipo activo: «N registrados · M libres» y los botones Registrar, Ver inventario (Ver equipos en administrables) y Editar formulario.
+  - Además: la tarjeta «Nueva tecnología», «Importar desde Excel» y «Últimos ingresos» (las 5 últimas acciones «Ingreso» del historial).
+  - El formulario de siempre se abre al elegir el tipo. Después de registrar se queda en ese tipo (antes `reset()` lo devolvía al primero) y refresca las tarjetas.
+  - Prueba agregada a `faseGH5-inventario-panel`.
+  - Revisión local, 11/11: tarjetas, abrir el formulario, registrar, últimos ingresos, Ver inventario filtrado, Editar formulario y sin scroll horizontal a 768 y 375. El elemento inventado se borró.
+- **GH5c (parte, mismo PR):**
+  - `activosConteoTexto` agrega a la línea de conteo de las listas el detalle por tipo, como la línea de resumen de Edwin.
+  - Prueba agregada.
+  - Revisión local OK, 0 errores; los 3 elementos inventados se borraron.
+- **GH5c (resto, mismo PR), diferencias 4 y 5:**
+  - Decisiones del usuario (23/11): tema = el de SinCo; agentes desde Gestión Humana = todavía no.
+  - `activosListaHtml(lista, config, vista)`: columnas de Edwin (Tipo, Código, Nombre, Equipo con el serial debajo, Procesador, RAM, Sede, Operación; Asignados + Agente, Cédula y «Asignado desde»; la vista completa + Estado y Agente). Acciones «Estado» y, en Asignados, «Recibir» (abren el detalle en el formulario que toca); «Ver» se conserva.
+  - Servidor: el `agente` de cada elemento trae también `documento` y `desde` (asignación abierta). Solo lectura, mismos permisos.
+  - «Inventario completo» pasa a «Inventario», con chips y una tarjeta por tipo (`activosInvTiposHtml`, `#ac-inv-tipos`); «Ver detalle» filtra la lista.
+  - Pruebas: 2 nuevas en `faseGH5-inventario-panel` (API y HTML); `fase376` ajustada al nuevo nombre del menú.
+  - Revisión local en Brave a 375, 768 y 1440 (base demo, 4 elementos inventados `QA-GH5C-*`): sin scroll horizontal de la página (la tabla se desplaza dentro de su caja), «Recibir» abre «Quitar asignación», «Estado» enfoca el selector, «Ver detalle» filtra el tipo, 0 errores de consola. Los elementos inventados se borraron de la base local.
+- **GH5d (parte, mismo PR), diferencias 7 y 10:**
+  - Actas con pestañas (`activosActasPestanasHtml`, `activosActasPestana`): Actas pendientes, Actas firmadas, Todas y Novedades de GH (con el conteo de retirados + ausentes). Las tarjetas siguen filtrando.
+  - «Novedades de Gestión Humana» sale del menú; la vista vieja `novedadesgh` abre Actas en esa pestaña. «Generar acta manual» lleva a Agentes (el acta manual es por agente).
+  - Arreglo visual: el chip activo (`.acp-chip.on`) perdía el fondo al pasar el mouse (venía del Panel general de GH5).
+  - Pruebas: `faseGH4` ajustada (las novedades ya no están en el menú; pestañas con conteo).
+  - Revisión local a 375, 768 y 1440: sin scroll horizontal, pestañas y ruta vieja OK, 0 errores de consola. Datos inventados borrados de la base local.
+- **GH5d (resto, mismo PR), diferencias 8 y 9:**
+  - Historial se queda como está, con más columnas que el de Edwin (decisión del usuario, 23/11).
+  - Ajustes en tarjetas (`.aj-grid`, `.aj-card`): Excel (nuevo «Exportar todo a Excel», `activosAjustesExcel`, archivo `inventario-de-sistemas-todo.xlsx`; la importación de antes), Sedes, Operaciones, Propietarios / proveedores, Motivos frecuentes, Estados (solo lectura, `activosAjEstadosHtml`), Formularios por tipo y Textos del acta. Mismos ids y funciones; no se traen Usuario, Copia .json ni Zona de cuidado.
+  - Prueba nueva en `faseGH5-inventario-panel` (tarjetas, ids y estados sin controles).
+  - Revisión local a 375, 768 y 1440: 8 tarjetas, sin scroll horizontal, la descarga de Excel funciona, 0 errores de consola. Elementos inventados borrados de la base local.
+- **Estado:** la lista de 10 diferencias queda cerrada salvo las decisiones 2 (tema: el de SinCo) y 6 (agentes desde Gestión Humana: todavía no). **PR sin mergear** (pedido del usuario).
+
+## Fase GH6 — Talento humano: salario y sede obligatorios (v1.258.1, 2026-11-23)
+
+- **Pedido:** Edwin confirmó (23/11) que en Talento humano el salario y la sede son OBLIGATORIOS: la ficha no debe guardarse sin ellos, con aviso claro en el campo, y las gráficas no deben fallar con registros viejos que no los tengan.
+- **Hallazgo:** la app de Edwin ya marcaba todos los campos de la ficha como obligatorios, pero un salario `0` pasaba y el aviso era «Campo obligatorio». En las gráficas, «Nómina mensual por cargo» dividía por 0 cuando ningún activo tenía salario (NaN en el SVG), y `uniq`/`uniqA` (listas de sedes, cargos) fallaban si un registro traía un número (`localeCompare`).
+- **Cambio (en el generador, `scripts/gestion-humana/generar-talento-humano.js`, paso 5; lo generado no se edita a mano):**
+  - `validate`: salario `> 0` («El salario es obligatorio: escriba el salario mensual (mayor que 0)») y sede no vacía («La sede es obligatoria: elija la sede donde trabaja»).
+  - `cols`: máximo `||1`, sin dividir por 0.
+  - `uniq` y `uniqA`: ordenan con `String(...)`.
+  - Antes de cambiar se comprobó que el generador, con el HTML de Edwin de hoy, reproduce exactamente lo commiteado.
+- **Pruebas:** nueva `faseGH6-th-salario-sede` (4): ejecuta en una VM las funciones generadas con datos inventados (ficha con salario vacío/0/negativo/texto y sede vacía; gráfica sin salarios sin NaN; listas con una sede numérica).
+- **Revisión local** en Brave a 375, 768 y 1440 (dos empleados inventados solo en memoria): panel sin NaN y con «Sin dato», sin scroll horizontal; al guardar un registro viejo no se guarda y marca salario y sede con su aviso; 0 errores de consola. La app inicializó su estado vacío en la base local (4 claves, 0 empleados); se borró al final.
+- **PR sin mergear** (pedido del usuario). Se trajo `main` con #927 (1.258.0) y subió a 1.258.1.
+
+## Fase GH7 — Retiro de la Gestión humana anterior (v1.259.0, 2026-11-23)
+
+- **OK del usuario (23/11):** retirar la Gestión humana de la Fase 10 (personal por campaña), distinta de Talento humano.
+- **Conteos en producción antes del retiro** (23/11, 17:22, solo lectura, solo GET, sesión del administrador):
+  - `gestion_humana_personal`: 0 registros;
+  - historial: 0 eventos `GH_PERSONAL*`;
+  - usuarios: 0 con el rol `GESTION_HUMANA` y 1 con el permiso `GestionHumana`, de 67;
+  - el tablero `GESTION_HUMANA` respondía 200 (vacío).
+- **Cambio:**
+  - `routes/gestion-humana.js`: `/gh/personal*` y `/gh/resumen` responden 410 con un aviso que lleva a Talento humano. Se conserva el `no-store` de `/gh`, que también usa Talento humano.
+  - `dashboard-adapters.js`: sin `GESTION_HUMANA`, así que `/dashboard/GESTION_HUMANA` da 404.
+  - Interfaz: sin la tarjeta (`DASH_MODULES`) y con la entrada del menú siempre oculta.
+  - Se conservan la tabla `gestion_humana_personal`, el rol `GESTION_HUMANA` y el permiso en la matriz.
+  - No se tocan Talento humano (`/gh/estado`, `/gh/acceso`, `/gh/bitacora`, `/gh/archivos`), los dashboards de clientes, Calidad, STA ni el Inventario.
+  - Mismo patrón que el Inventario anterior (Fase 383).
+- **Respaldo antes del merge (pendiente):**
+  - exportar `GET /api/gh/personal`, que hoy devuelve `[]`;
+  - confirmar que el último respaldo diario a S3 tiene menos de 24 h (workflow «Salud del servidor»).
+- **Pruebas:**
+  - `gestion-humana.test.js` reescrita: 410, 404, tabla y Talento humano intactos, tarjeta y menú ocultos.
+  - `fase118` y `role-matrix` ajustadas.
+  - `fase225-gh-meses` salió con el módulo.
+  - Suite local: 3502 pasan, 0 fallan.
+- **Respaldo antes de mergear (24/11, solo GET, sesión del administrador):** `GET /api/gh/personal` = 0 registros y `GET /api/gh/resumen` todo en 0, guardados FUERA del repo (`C:\Users\filid\Documents\trabajo inconexion\respaldos\gh-vieja-pr929-2026-11-24\`). «Salud del servidor» (run 45400286187): último respaldo diario hace 9 h, subida a S3 OK.
+- **Merge con OK del usuario (24/11)**, después de traer `main` (#928, 1.258.1); queda en 1.259.0.
+
+
+## Fase GH8 — Limpieza del HTML oculto de la Gestión humana anterior (v1.259.1, 2026-11-24)
+
+- **Pedido (usuario, 24/11):** PR pequeño que quite el HTML oculto del módulo retirado en la Fase GH7. Rama nueva, sin mergear.
+- **Por qué también sale el JS:** `public/js/gestion-humana.js` registraba un evento sobre `#gestionhumana-overlay` al cargar la página; sin el HTML habría fallado. Nada lo abría desde la GH7.
+- **Cambio:**
+  - `public/index.html`: sin la entrada del menú (`menu-gestionhumana-li`), la sección `section-gestionhumana`, el formulario `gh-person-modal`, la ventana `gestionhumana-overlay` y el `<script>`.
+  - Sale `public/js/gestion-humana.js`.
+  - Sin sus referencias en `session.js`, `ui-core.js`, `dashboards-core.js`, `cerrar-ventanas.js`, `motion-helpers.js` y `styles.css`.
+  - **No se tocan:** el servidor (rutas 410, tablero 404), la tabla `gestion_humana_personal`, el rol `GESTION_HUMANA`, Talento humano, Inventario, Calidad, STA ni los dashboards de clientes.
+- **Pruebas:** `gestion-humana.test.js` con una prueba nueva (sin el HTML ni el JS, Talento humano sigue); `fase144`, `fase145` y `fase152` sin los ids retirados. Suite local: 3515 pasan, 0 fallan (la única falla, `fase145`, se corrigió y pasa).
+- **Revisión local** (copia de la base demo, Brave sin ventana, 1440/768/375): login, las 9 secciones del panel, Gerencia, Inventario y Talento humano abren y cierran con Escape; sin menú ni tarjeta vieja; 0 errores de consola; sin scroll horizontal.
+- **PR sin mergear** (pedido del usuario).
+
+## Fase M1 — Malla: «casos especiales» A + B + C (v1.260.0, 2026-11-24)
+
+- **Pedido:** 6 de Edwin (reunión del 23/11), «Casos especiales» de la malla.
+- **Alcance:** A + B + C de `docs/propuesta-malla-casos-especiales.md`, aprobado por el usuario el 24/11.
+- **Forma de trabajo:** rama nueva, un commit por parte, PR sin mergear.
+- **A. Tipos de excepción editables** (`server/malla-casos.js`).
+  - Tabla nueva `malla_tipos_excepcion`, sembrada con los 3 de siempre (mismo código) y 6 nuevos: licencia, calamidad, capacitación, compensatorio, suspensión y día de la familia.
+  - Cada tipo dice si «cuenta como día trabajado»; el resumen de puntualidad trae `excepcionTrabajada`.
+  - Rutas `GET/POST/PUT /malla/tipos-excepcion`. Para leer basta con leer alguna malla; para cambiar hay que ser ADMIN completo. Todo queda en el Historial.
+  - Un tipo no se borra, se desactiva, y siempre debe quedar uno activo.
+  - `POST /malla/excepciones` solo acepta tipos activos.
+  - En la pantalla, la tarjeta «Tipos de excepción» (solo el ADMIN) pasa a tarjetas en celular.
+- **B. Festivos de Colombia.**
+  - `mallaFestivosColombia(anio)` en `malla-logic.js` calcula los fijos, los de Ley Emiliani y los de Pascua; 2026 da igual al calendario oficial (18 días).
+  - Los cambios del ADMIN (agregar o quitar) van en la tabla `malla_festivos_ajuste`; el calendario de ley no se guarda.
+  - Por grupo: clave opcional `festivo` en el horario. Sin la clave, el festivo descansa (por defecto); con ella, trabaja de HH:MM a HH:MM. Un festivo en un día que el grupo no trabaja sigue siendo descanso.
+  - Se aplica en la puntualidad, en «Mi malla» (`turnoDe` devuelve `festivos`) y en la semana de la malla (aviso).
+  - El horario especial de la asesora manda sobre el festivo. Copiar la semana conserva el horario de festivo.
+  - Rutas `GET/POST /malla/festivos` y `DELETE /malla/festivos/:fecha` (cambiar: solo ADMIN, con Historial).
+  - **Cambio de comportamiento:** antes un festivo era un día normal (salía «Sin ingreso»). Hoy la puntualidad está solo en la réplica y en SURA (por archivo).
+- **C. Horario especial que se repite.**
+  - `PUT /malla/ajustes` acepta `repetirHasta` (máximo 26 semanas). Crea los mismos días en cada semana, con una misma `serie`.
+  - La serie es una columna nueva de `malla_ajustes`; se agrega con ALTER si falta y no borra nada.
+  - Basta con que la asesora esté en un grupo la primera semana: en las siguientes se aplica cuando quede asignada.
+  - `DELETE /malla/ajustes/serie/:serie` quita toda la repetición. El Historial va resumido (primer y último día, cuántos).
+- **Pruebas:**
+  - `faseM1-malla-casos` (A, 5), `faseM1-malla-festivos` (B, 5) y `faseM1-malla-repetir` (C, 5), con personas y fechas inventadas (2031).
+  - `fase118` declara las 7 rutas nuevas.
+  - Las pruebas de la malla de antes siguen en verde.
+- **Revisión local** (copia de la base demo, asesoras inventadas, Brave a 1440, 768 y 375 px):
+  - aviso del festivo (martes 08/12, Inmaculada Concepción);
+  - fila «Festivos» del grupo;
+  - formulario «Repetir cada semana hasta» (con su mínimo y su máximo);
+  - chip «se repite» con «Quitar todas las semanas»;
+  - panel de festivos (18);
+  - puntualidad con «día trabajado: 1»;
+  - tabla de tipos (9);
+  - 0 errores de consola, sin scroll lateral de la página ni de la ventana.
+  - A 375 px la tabla de tipos desbordaba la ventana; se pasó a tarjetas y se volvió a revisar.
+- **No se tocó** producción ni otros módulos. `GH_ROL_ACTIVO` sigue apagado.
+- **Antes del merge** (24/11, lectura en producción, solo conteos): ningún grupo trabajó un festivo de 2026.
+  - La réplica no tiene malla en semanas con festivo.
+  - SURA tiene malla en las semanas del 02/11 y el 16/11, que caen en lunes, y ningún grupo trabaja los lunes.
+  - Con «festivo = descanso» no cambió ningún número.
+  - Pendiente: al armar diciembre, marcar «Festivos» a los grupos de SURA que trabajen el 08/12 o el 25/12.
+- **Merge con OK del usuario (24/11)**, después de traer `main` (#930, 1.259.1); queda en 1.260.0.
+
+
+## Fase A33 — MOBILIZE real: la Encuesta de la API guarda el CONN_ID (v1.260.1, 2026-11-24)
+
+- **Causa** (investigada el 24/11, solo lectura en producción):
+  - Calidad de encuestas de Mobilize mostraba 20 resueltas, pero había 25 monitoreos de origen «encuesta».
+  - Desde el 21/11 la consulta automática reemplaza la Encuesta de noviembre del MOBILIZE real (Fase A29), y el módulo `diagram_4` la guardaba sin CONN_ID.
+  - Noviembre quedó con 16 mal calificadas «sin ID» y 0 pendientes.
+  - Los 5 monitoreos de noviembre (calificados con el archivo manual) perdieron su encuesta. Agosto a octubre no cambiaron: 1, 1 y 18 resueltas.
+- **Autorización escrita del usuario (24/11, opción a):** el módulo de Encuesta del MOBILIZE real guarda el CONN_ID, solo el ID de la llamada. Teléfono y comentarios se siguen descartando. Anotado en `CLAUDE.md`.
+- **Cambio:**
+  - `wolkvox-destinos.js`: el destino real tiene `encuestaConnId: true`; la réplica y la réplica de ORLANT, `false`.
+  - `wolkvox-modulos.js`: `hojaEncuesta(data, conConnId)` agrega `CONN_ID` solo en el real. Pasa por el mismo lector del archivo manual (`encuestaParseFilas`).
+  - `encuesta-monitoreo.js`: el enlace compara el «ID limpio» (`claveId`: sin comillas ni espacios al inicio, criterio de la Fase 348). Así el ID del archivo (a veces con comilla) y el de la API (texto o número) son la misma llamada. Aplica en `listar`, `monitoreoDeLlamada` (tampoco se puede calificar dos veces), `fechasLlamada` e `impactoRecarga`.
+- **Confirmado en local con datos inventados:**
+  - 2 monitoreos guardados con el ID del archivo (`'A33-CONN-0001` y `900000333`) vuelven a enlazarse después de una corrida del real con la API (texto, número y con espacios): 2 resueltas, 0 sin ID.
+  - Una mal calificada nueva sale «pendiente».
+  - La réplica sigue sin CONN_ID. Nunca se guardan teléfono, documento, cliente ni comentario.
+- **Pruebas:** `faseA33-encuesta-conn-id-real` (5); `faseA11`, `fase331` y `fase344` siguen en verde.
+- **Falta, después del merge:** la próxima corrida automática del real (00:05, 7:00 o 13:00) vuelve a traer noviembre con el ID. Verificar en producción, solo lectura, que los 5 monitoreos se enlazan y cuántas pendientes aparecen.
+- **PR sin mergear** (OK del usuario).
+
+
+## Pedido a de Edwin (24/11) — SURA «Ventas por día» sin porcentajes (v1.260.2, 2026-11-24)
+
+- **Pedido:** en Cumplimiento › «Ventas por mes», con «Ver por = Día», no mostrar los porcentajes de crecimiento o caída. Con «Mes» se quedan. Solo esa gráfica.
+- **Cambio, por el generador** (`scripts/sura/generar-televentas.js`, regla de la Fase 360):
+  - `draw4dia` llama `line(S,X,f,false)`; antes era `S.length===1`, que con una sola serie mostraba ▲/▼ día a día.
+  - Por mes, `draw4` sigue con `line(S,X,f,one)`.
+  - Antes de cambiar se comprobó que el generador, con el HTML de Edwin, reproduce el tablero publicado byte a byte.
+- **Prueba:** `faseSURA-ventas-por-dia-cumplimiento` (+1 prueba). Las pruebas de SURA siguen en verde (85).
+- **Revisión local:** copia de la base demo, 2 bases de ventas SINTÉTICAS (sep y oct), Brave a 1440, 768 y 375 px.
+  - «Total equipo» por mes: 1 porcentaje. Por día: 0. «Todos» por día: 0.
+  - 0 errores de consola y sin scroll lateral.
+- **Sin cambio** (no se pidió): con valores chicos, el eje Y de esa gráfica repite etiquetas por el redondeo.
+
+## Pedido b de Edwin (24/11) — Malla del supervisor más compacta (v1.261.0, 2026-11-24)
+
+- **Pedido:** vista del supervisor más compacta (la de la asesora queda igual). Además, en Puntualidad, la novedad del día en vez de «Sin ingreso». Con capturas antes y después.
+- **Cambio:**
+  - **Filtros:** una fila con campaña, ‹ semana ›, «Ir al mes» y «Semana del mes». La semana ahora es una lista (`#ml-sem-sel`); salen las fichas `.ml-sem-btn`.
+  - **Pestañas:** «Turnos» y «Puntualidad» como pestañas (`.ml-tab`, con `aria-pressed`).
+  - **Grupo:** cabecera `.ml-grupo-cab` con el nombre y los botones. El cuerpo `.ml-grupo-cuerpo` va en 2 columnas desde 1024 px: horario y asesoras. La lista de asesoras (`.ml-asesoras-lista`) tiene scroll propio (286 px), se puede enfocar con el teclado y tiene nombre accesible.
+  - **Botones por asesora:** «+ Agregar novedad» y «Horario especial» son `.ml-btn-sm`, con `aria-label` que nombra a la asesora.
+  - **Tamaños:** en escritorio, controles de 36 px (la regla del sistema de diseño pide al menos 24). En celular (≤768 px) los principales vuelven a 44 px. A 768 px la barra queda en 2 columnas; a 375 px, en una.
+  - **Puntualidad** (`puntualidad.js`):
+    - Si el estado es «Sin ingreso» y la asesora tiene una novedad vigente ese día o de toda la semana, el estado pasa a `novedad` y la fila trae su texto. El resumen la cuenta como `novedad`.
+    - «Mi puntualidad» (la asesora) sigue viendo «Sin ingreso».
+    - «Novedades de la semana» se oculta en la vista de Puntualidad; antes tapaba el resumen.
+- **Pruebas:** `faseE2-malla-compacta` (3) y las de la malla de antes siguen en verde.
+- **Revisión local:** copia de la base demo, 12 asesoras, novedades y logins INVENTADOS, Brave a 1440, 768 y 375 px.
+  - El grupo pasó de 1574 a 1043 px de alto en 1440, y de 1752 a 1232 en 768.
+  - Las fichas de semanas pasaron de 6 a 0. La barra quedó en 1 fila en 1440 y en 2 en 768.
+  - «Novedad: Suspensión (inventada)» en vez de «Sin ingreso».
+  - 0 errores de consola y sin scroll lateral.
+  - Las capturas antes y después quedan fuera del repo (regla de la Fase 112).
+- **Merge con OK del usuario (24/11)**, después de #934 (1.260.2), trayendo main; queda en 1.261.0.
+
+## Pedido de Edwin (24/11) — Encuesta de Mobilize: monitorear si falla cualquier pregunta (solo prueba, sin cambio de versión)
+
+- **Pedido:** una encuesta sale para monitorear si se contestó mal CUALQUIER pregunta (P1 a P4), no solo la 1. Revisar el módulo automático de Encuesta del real y compararlo con la carga manual de antes.
+- **Revisión del código:** ya era así por los dos caminos.
+  - «Mal calificada» = alguna de las 4 reglas de `encuesta_monitoreo_reglas` (Fase 331: P1 de 0 a 5, P2 y P4 de 1 a 3, P3 = No). `listar` arma un OR de las 4.
+  - El módulo automático (`diagram_4`) y el archivo manual pasan por el mismo lector (`encuestaParseFilas`).
+  - Las reglas no se pueden cambiar desde la interfaz; solo las crea la migración.
+- **Prueba nueva** `faseE3-encuesta-cualquier-pregunta` (2), con datos inventados. Una corrida del real con la API (Wolkvox falso) y la misma encuesta cargada por archivo dan la misma lista: 4 pendientes (solo P1, solo P2, solo P3 y solo P4), y ninguna para «todo bien» ni «P2 sin respuesta». El botón «Monitoreo» de cada pregunta trae la suya.
+- **Causa probable de lo que vio Edwin** (por confirmar en producción, solo lectura y solo conteos): desde el 21/11, noviembre del real venía de la API sin CONN_ID. Por eso las mal calificadas caían en «sin ID» y no salían en la lista (Fase A33). Con A33 en producción (1.260.1), la siguiente corrida las trae con ID.
+
+## Pedido de Edwin (24/11, 11 a. m.) — Malla: «Novedades» y «Horario especial» en ámbar; Talento humano sin el aviso del encabezado (v1.262.0)
+
+- **Malla del supervisor:** los botones «+ Agregar novedad» y «Horario especial» (`ml-btn-ambar`), los registros guardados (`ml-chip-ambar`) y el título del bloque se ven en ámbar.
+  - Usa los mismos tokens que la pastilla «Horario especial» de la asesora (`--c-warning-bg`, `--c-warning-text`, `--c-warning`).
+  - «Mi malla» de la asesora no cambia.
+- **Talento humano:** el encabezado ya no dice «Se guarda en la plataforma, también los soportes adjuntos.».
+  - Ese texto no sale del generador: está en el marco de SinCo (`public/index.html`, `#th-aviso`, que llena `talento-humano-api.js`, escrito a mano). El generador y el HTML de Edwin no cambian.
+  - La barra queda oculta. Solo aparece el aviso «los soportes adjuntos, por ahora, quedan solo en este navegador» si los soportes estuvieran apagados.
+- **Pruebas:** se actualizaron `faseE2-malla-compacta`, `faseGH1` y `faseGH3`, y se agregó la prueba del ámbar (+1). Malla y Talento humano: 88/88.
+- **Revisión local** (Brave, página con el `styles.css` real y el HTML de `mallaGrupoHtml`, datos inventados), a 375, 768 y 1440 px, en claro y oscuro:
+  - 0 errores de consola;
+  - contraste del texto ámbar: 6,08:1 o más en claro y 8,28:1 o más en oscuro;
+  - el aviso de Talento humano no se ve (`display:none`).
+
+## Pedido de Edwin (24/11, 11 a. m.) — Malla: pausas activas, almuerzo y horas por día y semana (v1.263.0)
+
+- **Modelo** (`malla-logic.js`): cada día del horario puede traer, **opcional**, `pausa1` (15 min), `almuerzo` + `almuerzoMin` (30 o 60) y `pausa2` (10 min). Viajan dentro del mismo JSON del horario: no hay migración, y un horario guardado antes (solo entrada y salida) se valida y se guarda idéntico.
+  - Validación: cada pausa y el almuerzo deben quedar dentro del turno, en orden pausa 1 → almuerzo → pausa 2. El horario de festivos sigue solo con entrada y salida.
+  - `mallaMinutosDia` = salida − entrada − almuerzo (las pausas no se descuentan). `mallaHorasSemana` suma los 7 días (el festivo no cuenta).
+  - `mallaAvisoHoras`: si la semana no da 42 h, muestra un aviso **que no bloquea**.
+- **Supervisor:** bloque «Pausas, almuerzo y horas» debajo del horario, con las horas de cada día, el total y el aviso en ámbar.
+  - Se recalcula al escribir. Las pausas quedan deshabilitadas en los días de descanso.
+  - En el celular, cada día es una tarjeta (día y horas, las 2 pausas y el almuerzo) y los días de descanso no se muestran.
+- **Asesora («Mi malla»):** una línea discreta por día («Pausa 10:00 · Almuerzo 12:30–13:30 · Pausa 15:30»), solo si el grupo las tiene, y «Horas de la semana» al final. El total se oculta si hay un horario especial, que no trae almuerzo.
+- Puntualidad, el horario especial, copiar semana y los festivos no cambian: solo leen entrada y salida, o copian el día completo.
+- **Pruebas:** `faseE5-malla-pausas` (7). En `fase368` se agregaron las funciones nuevas que usa «Mi malla».
+- **Revisión local** (Brave, con los JS y el `styles.css` reales y datos inventados), a 375, 768 y 1440 px, en claro y oscuro:
+  - 42 h sin aviso; con el almuerzo en 30 min, 42 h 30 min y el aviso aparece;
+  - sábado de descanso deshabilitado;
+  - 0 errores de consola, sin scroll lateral, campos de 44 px en el celular y la tableta, y contraste de 5,9:1 o más.
+  - Se corrigieron durante la revisión: los campos medían menos de 44 px a 768, el selector del almuerzo se cortaba a 375 y la vista de celular quedaba larga.

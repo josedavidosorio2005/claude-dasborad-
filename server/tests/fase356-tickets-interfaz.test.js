@@ -89,7 +89,11 @@ test('página: (Fase 364) ya no está en los menús de cuenta: tarjeta del menú
   assert.doesNotMatch(dialogo, /gd-subtab/);
   assert.equal((dialogo.match(/class="tk-tab-btn[^"]*" data-tk-tab=/g) || []).length, 4); // Fase 364: + «Tipos»
   assert.match(fs.readFileSync(path.join(PUB, 'js', 'a11y-teclado.js'), 'utf8'), /SEL_TAB = '[^']*\.tk-tab-btn'/);
-  assert.doesNotMatch(INDEX.slice(INDEX.indexOf('id="modal-tickets"'), INDEX.indexOf('<!-- Fase 355: «Exportar PDF»')), /type="file"/);
+  // Pedido 7 de Edwin (23/11/2026): ahora hay UN solo campo de adjunto (imagen o PDF), opcional.
+  const archivos = INDEX.slice(INDEX.indexOf('id="modal-tickets"'), INDEX.indexOf('<!-- Fase 355: «Exportar PDF»')).match(/<input type="file"[^>]*>/g) || [];
+  assert.equal(archivos.length, 1);
+  assert.match(archivos[0], /id="tk-adjunto"/);
+  assert.doesNotMatch(archivos[0], /\brequired\b|\bmultiple\b/);
   const iL = INDEX.indexOf('js/tickets-logic.js'), iU = INDEX.indexOf('js/tickets.js');
   assert.ok(iL > 0 && iU > iL);
   const mh = fs.readFileSync(path.join(PUB, 'js', 'motion-helpers.js'), 'utf8');

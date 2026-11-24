@@ -83,7 +83,14 @@ ${css.trim()}
   --muted:var(--c-text-2); color-scheme:dark;
 }
 .btn.peligro{color:var(--c-danger-text,#b02a1d)}
+/* Pedido 3 de Edwin (23/11/2026): carga eliminada en el historial */
+.tag.sta-eliminada{color:var(--c-danger-text,#b02a1d);background:var(--c-danger-bg,#fdecea)}
+.sta-fila-eliminada td{color:var(--muted)}
 :host([data-theme="dark"]) .sec-gest,:host([data-theme="dark"]) .sec-gest .card,:host([data-theme="dark"]) .kpi.dest{border-color:var(--c-border)}
+/* Pedido de Edwin (23/11/2026): vista del CLIENTE de ORLANT = solo «Gráficas» del supervisor, de solo lectura
+   (sin la cabecera «Visual de supervisor» ni las demás pestañas). */
+.sta-app.sta-cliente #vSupervisor > header.top,.sta-app.sta-cliente #vSupervisor nav.tabs{display:none}
+.sta-app.sta-cliente #vSupervisor main{padding-top:0}
 `;
 
 // ── Marcado ────────────────────────────────────────────────────────────
@@ -97,7 +104,20 @@ M(`          <div class="fila" style="margin-bottom:12px;flex-wrap:nowrap">
           </div>
 `, '          <p class="muted" style="margin-top:0;font-size:12px">Los agentes son los usuarios ASESOR de ORLANT de la plataforma.</p>\n');
 M(`onclick="document.getElementById('archivo').click()"`, `onclick="STAapp.$('archivo').click()"`);
+// Pendiente del STA (23/11): «Descargar plantilla» en el panel de carga — un Excel vacío con los 8 encabezados
+// que pide la carga (CAMPOS, los mismos que exige server/orlant-sta.js), sin filas de ejemplo.
+M(`        <input type="file" id="archivo" accept=".xlsx,.xls,.csv" class="hidden">`, `        <div class="fila sta-plantilla" style="margin-top:10px;align-items:center"><span class="muted" style="flex:1;min-width:200px">¿Primera vez? Descarga la plantilla con las 8 columnas que pide la carga.</span><button class="btn sm" type="button" onclick="descargarPlantilla()">Descargar plantilla</button></div>
+        <input type="file" id="archivo" accept=".xlsx,.xls,.csv" class="hidden">`);
 M('<input class="inp" id="nuevaTipi" placeholder="Nueva tipificación"', '<input class="inp" id="nuevaTipi" aria-label="Nueva tipificación" placeholder="Nueva tipificación"');
+// Pedido de Edwin (23/11/2026): «Regresar a disponibles» en Gestionados (por codificación o marcados).
+M(`      <p class="muted" id="gsInfo" style="margin:0 0 10px"></p>`, `      <div class="card fila gs-regresar" style="padding:12px 16px">
+        <label class="f">Regresar a disponibles por codificación<select class="inp" id="gsRegTi"></select></label>
+        <button class="btn" style="align-self:flex-end" onclick="regresarPorTipi()">Regresar todos</button>
+        <span style="flex:1"></span>
+        <button class="btn" style="align-self:flex-end" id="gsRegSelBtn" onclick="regresarSel()" disabled>Regresar marcados</button>
+      </div>
+      <p class="muted" style="margin:-4px 0 10px;font-size:12px">Los casos vuelven a la bolsa libre para reasignarlos; su gestión queda en «Gestiones anteriores».</p>
+      <p class="muted" id="gsInfo" style="margin:0 0 10px"></p>`);
 markup = `<div class="sta-app">\n${markup.trim()}\n</div>`;
 
 // ── Lógica ─────────────────────────────────────────────────────────────
@@ -155,7 +175,7 @@ L("document.addEventListener('mousemove',e=>{", "ROOT.addEventListener('mousemov
 // 3) Navegación: sin pantalla de inicio ni «elegir agente»; la vista la da el servidor.
 L("function mostrar(id){ ['inicio','vAgente','vSupervisor'].forEach(", "function mostrar(id){ ['vAgente','vSupervisor'].forEach(");
 L("function salir(){ agenteActual=null; mostrar('inicio'); document.title=TITULO; }", 'function salir(){ CERRAR(); }');
-funcion('irAgente', 'async function iniciar(){ await cargarEstado(); if(VISTA===\'supervisor\'){ mostrar(\'vSupervisor\'); tabSup(\'base\'); } else { mostrar(\'vAgente\'); abrirPanelAgente(); } }');
+funcion('irAgente', 'async function iniciar(){ await cargarEstado(); ROOT.querySelector(\'.sta-app\').classList.toggle(\'sta-cliente\', VISTA===\'cliente\'); if(VISTA===\'cliente\'){ mostrar(\'vSupervisor\'); tabSup(\'graficas\'); } else if(VISTA===\'supervisor\'){ mostrar(\'vSupervisor\'); tabSup(\'base\'); } else { mostrar(\'vAgente\'); abrirPanelAgente(); } }');
 funcion('irSupervisor', '');
 funcion('cambiarAgente', '');
 funcion('elegirAgente', '');
@@ -179,16 +199,57 @@ L(`  const faltan=CAMPOS.filter(c=>!mapa.some(m=>m[1]===c));
   box.innerHTML = \`<div class="msg ok">\${esc(R.mensaje)}.</div>\``);
 L(js.slice(js.indexOf("  mapa.forEach(([,c])=>{ if(!S.columnas.includes(c)) S.columnas.push(c); });"), js.indexOf("  box.innerHTML = `<div class=\"msg ok\">Se cargaron <b>${nuevos}</b> casos nuevos.</div>`\n")), '');
 L("  box.innerHTML = `<div class=\"msg ok\">Se cargaron <b>${nuevos}</b> casos nuevos.</div>`\n    + (dup?", "    + (dup?");
+// Pedido 3 de Edwin (23/11/2026): una carga eliminada queda en el registro como «Eliminada» (sin botones).
 L(`<td><button class="btn sm peligro" onclick="pedirBorrarCarga('\${c.id}')">Eliminar carga</button></td>`,
-  `<td class="nw">\${c.tieneArchivo?\`<button class="btn sm" onclick="descargarCarga('\${c.id}')">Descargar</button> \`:''}<button class="btn sm peligro" onclick="pedirBorrarCarga('\${c.id}')">Eliminar carga</button></td>`);
+  `<td class="nw">\${c.eliminadaAt?\`<span class="tag sta-eliminada">Eliminada</span> <span class="muted" style="font-size:12px">\${verFecha(c.eliminadaAt,true)}\${c.eliminadaPor?' · '+esc(c.eliminadaPor):''}</span>\`:\`\${c.tieneArchivo?\`<button class="btn sm" onclick="descargarCarga('\${c.id}')">Descargar</button> \`:''}<button class="btn sm peligro" onclick="pedirBorrarCarga('\${c.id}')">Eliminar carga</button>\`}</td>`);
+L(`\${S.cargas.slice().reverse().map(c=>\`<tr><td class="nw">`, `\${S.cargas.slice().reverse().map(c=>\`<tr\${c.eliminadaAt?' class="sta-fila-eliminada"':''}><td class="nw">`);
 funcion('borrarCarga', `async function borrarCarga(id){
   const conservar = $('conservarGes') ? $('conservarGes').checked : false;
   const r = await accion(()=>API.borrarCarga(id, conservar), 'No se pudo eliminar');
   cerrarModal(); await refrescar(); pintarBase(); if(!r) return;
   $('cargaMsg').innerHTML=\`<div class="msg ok">Se eliminaron <b>\${r.eliminados}</b> casos de la carga.\${r.conservados?\` Se conservaron <b>\${r.conservados}</b> gestionados.\`:''}</div>\`;
 }
-async function descargarCarga(id){ if(!await API.descargar(id)) toast('No se pudo descargar el archivo'); }`);
+async function descargarCarga(id){ if(!await API.descargar(id)) toast('No se pudo descargar el archivo'); }
+function descargarPlantilla(){
+  if(typeof XLSX==='undefined'){ toast('No se pudo preparar el archivo de Excel'); return; }
+  const ws=XLSX.utils.aoa_to_sheet([CAMPOS.slice()]); ws['!cols']=CAMPOS.map(c=>({wch:Math.max(14,c.length+2)}));
+  const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Base STA'); XLSX.writeFile(wb,'Plantilla_base_STA.xlsx');
+}`);
 funcion('descargarRespaldo', '');
+
+// Pedido de Edwin (23/11/2026): Gestionados con casillas y «Regresar a disponibles». Misma tabla de
+// Edwin (últimas 20, «Descargar todas»), más una columna de casillas y «marcar todos los mostrados».
+funcion('pintarGestSup', `function pintarGestSup(){
+  const l=gestSupLista(), tot=Object.values(S.casos).filter(c=>c._estado==='gestionado').length;
+  const max=20;
+  const tis=[...new Set([...S.tipis,...Object.values(S.casos).filter(c=>c._estado==='gestionado'&&c._tipi).map(c=>c._tipi)])];
+  const vr=$('gsRegTi').value; $('gsRegTi').innerHTML='<option value="">Elige la codificación</option>'+tis.map(t=>{ const n=Object.values(S.casos).filter(c=>c._estado==='gestionado'&&c._tipi===t).length; return \`<option value="\${esc(t)}">\${esc(t)} (\${n.toLocaleString('es-CO')})</option>\`; }).join(''); $('gsRegTi').value=vr;
+  const vivos=new Set(l.map(c=>c._id)); [...selGest].forEach(id=>{ if(!vivos.has(id)) selGest.delete(id); });
+  $('gsRegSelBtn').disabled=!selGest.size; $('gsRegSelBtn').textContent=selGest.size?\`Regresar marcados (\${selGest.size})\`:'Regresar marcados';
+  $('gsInfo').innerHTML = \`\${l.length.toLocaleString('es-CO')} gestiones\${l.length!==tot?\` (de \${tot.toLocaleString('es-CO')} en total)\`:''}\`
+    + (l.length>max?\` · Se muestran las últimas \${max}. Para ver todas usa <b>Exportar a Excel</b>.\`:'');
+  if(!l.length){ $('gsTabla').innerHTML='<div class="card vacio">No hay gestiones para mostrar.</div>'; return; }
+  const vis=l.slice(0,max), todos=vis.every(c=>selGest.has(c._id));
+  $('gsTabla').innerHTML=\`<div class="tw"><table><thead><tr><th><input type="checkbox" aria-label="Marcar todos los mostrados" \${todos?'checked':''} onchange="marcarGestTodos(this.checked)"></th><th>Fecha</th><th>Hora</th><th>Numero Autorizacion</th><th>Codificación</th><th>Citas</th><th>Agente</th></tr></thead><tbody>
+    \${vis.map(c=>\`<tr><td><input type="checkbox" aria-label="Marcar \${esc(c['Numero Autorizacion'])}" \${selGest.has(c._id)?'checked':''} onchange="marcarGest(\${jsArg(c._id)},this.checked)"></td><td class="nw">\${verFecha(c._fg)}</td><td class="nw">\${c._fg.slice(11,19)}</td><td class="nw">\${esc(c['Numero Autorizacion'])}</td><td><span class="tag \${S.efectivas.includes(c._tipi)?'v':''}">\${esc(c._tipi)}</span></td><td>\${c._citas||''}</td><td>\${esc(nombreAgente(c._agente))}</td></tr>\`).join('')}
+  </tbody></table></div>\${l.length>max?\`<div class="fila" style="margin-top:10px"><span class="muted">Mostrando las últimas \${max} de \${l.length.toLocaleString('es-CO')}.</span><button class="btn pri sm" onclick="exportarGestionados()">Descargar todas (Excel)</button></div>\`:''}\`;
+}
+const selGest=new Set();
+function marcarGest(id,on){ if(on) selGest.add(id); else selGest.delete(id); pintarGestSup(); }
+function marcarGestTodos(on){ gestSupLista().slice(0,20).forEach(c=>{ if(on) selGest.add(c._id); else selGest.delete(c._id); }); pintarGestSup(); }
+async function regresarPorTipi(){
+  const t=$('gsRegTi').value; if(!t) return toast('Elige la codificación');
+  const n=Object.values(S.casos).filter(c=>c._estado==='gestionado'&&c._tipi===t).length; if(!n) return toast('No hay gestionados con esa codificación');
+  if(!await confirmar(\`¿Regresar a disponibles los \${n.toLocaleString('es-CO')} casos gestionados como «\${t}»? Vuelven a la bolsa libre para reasignarlos; su gestión queda en «Gestiones anteriores».\`,{titulo:'Regresar a disponibles',ok:'Regresar'})) return;
+  const r=await accion(()=>API.regresar({tipi:t}),'No se pudo regresar');
+  await refrescar(); selGest.clear(); pintarGestSup(); if(r) toast(\`\${r.regresados} casos regresados a disponibles\`);
+}
+async function regresarSel(){
+  const ids=[...selGest]; if(!ids.length) return toast('Marca al menos un caso');
+  if(!await confirmar(\`¿Regresar a disponibles los \${ids.length} casos marcados? Vuelven a la bolsa libre para reasignarlos; su gestión queda en «Gestiones anteriores».\`,{titulo:'Regresar a disponibles',ok:'Regresar'})) return;
+  const r=await accion(()=>API.regresar({numeros:ids}),'No se pudo regresar');
+  await refrescar(); selGest.clear(); pintarGestSup(); if(r) toast(\`\${r.regresados} casos regresados a disponibles\`);
+}`);
 funcion('restaurarRespaldo', '');
 funcion('borrarTodo', '');
 
@@ -280,6 +341,42 @@ L('<input type="checkbox" ${sel.has(c._id)?', '<input type="checkbox" aria-label
 L('<input class="inp" placeholder="Buscar…" ', '<input class="inp" aria-label="Buscar opciones" placeholder="Buscar…" ');
 L('<input class="inp" id="dlgIn" ', '<input class="inp" id="dlgIn" aria-label="${esc(titulo)}" ');
 
+// 8b) Seguridad (revisión del 23/11): el número del caso viene del Excel que se sube. Dentro de un
+// manejador en línea, esc() no basta: el navegador decodifica &#39; y la comilla rompe el string de JS.
+// Se pasa como texto JSON (comillas y barras escapadas) y después se escapa para HTML: jsArg().
+L("const esc = s => String(s??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',\"'\":'&#39;'}[c]));",
+  "const esc = s => String(s??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',\"'\":'&#39;'}[c]));\nconst jsArg = v => esc(JSON.stringify(String(v??'')));");
+js = todas(js, "'${esc(c._id)}'", '${jsArg(c._id)}', 1);
+js = todas(js, "'${esc(id)}'", '${jsArg(id)}', 1);
+{
+  const m = js.match(/on(?:click|change|input|keydown)=\\?"[^"]*'\$\{esc\(/);
+  if (m) throw new Error('quedó un valor con esc() dentro de un string de un manejador en línea: ' + m[0].slice(0, 80));
+}
+
+// 8c) Asignar, filtros Entidad / Servicio / Descripción CUPS (pendiente del 23/11: Isa vio en «Servicio»
+// opciones como Audífonos que no correspondían). Causa: opciones() contaba TODOS los casos libres, sin
+// los otros filtros puestos; con una Entidad elegida, «Servicio» seguía ofreciendo servicios que esa
+// entidad no tiene (y sus conteos eran de toda la base), y al marcarlos no salía ningún caso.
+// Ahora cada lista sale de los casos libres que pasan los DEMÁS filtros (los suyos no), como en un
+// filtro en cascada; una opción ya marcada que se queda sin casos se sigue mostrando (con 0) para poder
+// quitarla. msNormalizar compara los valores, no solo el tamaño.
+L(`function filtrar(){
+  const d=x=>x?x:null;
+  return disponibles().filter(c=>{
+    if(F.ent && !F.ent.has(c['Entidad']||'')) return false;
+    if(F.serv && !F.serv.has(c['Servicio']||'')) return false;
+    if(F.cups && !F.cups.has(c['Descripcion Cups']||'')) return false;`, `function filtrar(sin){ // sin: filtro de lista que no se aplica (para armar sus propias opciones)
+  return disponibles().filter(c=>{
+    if(sin!=='ent' && F.ent && !F.ent.has(c['Entidad']||'')) return false;
+    if(sin!=='serv' && F.serv && !F.serv.has(c['Servicio']||'')) return false;
+    if(sin!=='cups' && F.cups && !F.cups.has(c['Descripcion Cups']||'')) return false;`);
+L(`function opciones(campo){ const m=new Map(); disponibles().forEach(c=>{ const v=c[campo]||''; m.set(v,(m.get(v)||0)+1); });`,
+  `function opciones(campo){ const m=new Map(), k=Object.keys(MS_CAMPO).find(x=>MS_CAMPO[x]===campo);
+  filtrar(k).forEach(c=>{ const v=c[campo]||''; m.set(v,(m.get(v)||0)+1); });
+  if(k && F[k]) F[k].forEach(v=>{ if(!m.has(v)) m.set(v,0); });`);
+L(`function msNormalizar(k){ if(F[k] && F[k].size===msTodos(k).length) F[k]=null; }`,
+  `function msNormalizar(k){ const t=msTodos(k); if(F[k] && F[k].size===t.length && t.every(v=>F[k].has(v))) F[k]=null; }`);
+
 // 9) Manejadores en línea (onclick, onchange, oninput, onkeydown): sus llamadas pasan a STAapp.<función>.
 const nombres = [...new Set([...js.matchAll(/(?:^|\n)(?:async )?function (\w+)\(/g)].map((m) => m[1]))];
 const reLlamada = new RegExp('(^|[^.\\w$])(' + nombres.join('|') + ')\\(', 'g');
@@ -297,7 +394,7 @@ const app = `// orlant-sta-app.js — Fase STA: «Gestión STA» de ORLANT (HTML
 //   - sin SheetJS embebido (usa js/vendor/xlsx-0.20.3.full.min.js de la plataforma);
 //   - corre dentro de un Shadow DOM (ROOT);
 //   - lo que guardaba IndexedDB va a la API /api/orlant/sta (objeto API, orlant-sta.js); la vista
-//     (supervisor o asesor) la decide el servidor;
+//     (supervisor, asesor o cliente: solo «Gráficas», de solo lectura) la decide el servidor;
 //   - sin agregar/renombrar/eliminar ni cambiar de agente (son los ASESOR de ORLANT), sin respaldo,
 //     restaurar ni borrar todo; «Descargar» el Excel de cada carga;
 //   - los manejadores en línea llaman a STAapp.<función> (un solo nombre global).
@@ -309,7 +406,7 @@ ${js.trim()}
 
 var STAapp = { ${nombres.join(', ')}, $: $ };
 if (typeof window !== 'undefined') window.STAapp = STAapp;
-return { iniciar: iniciar, refrescar: refrescar, vista: function(){ return VISTA; } };
+return { iniciar: iniciar, refrescar: refrescar, vista: function(){ return VISTA; }, activar: function(){ if (typeof window !== 'undefined') window.STAapp = STAapp; } };
 }
 
 if (typeof module !== 'undefined' && module.exports) module.exports = { STA_MARKUP: STA_MARKUP, staCrearApp: staCrearApp };

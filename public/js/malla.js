@@ -35,19 +35,28 @@ function mallaElegirMes() {
   var mes = (_mlEl('ml-mes') || {}).value;
   if (mes) mallaPintarSemanasMes(mes);
 }
+// Pedido de Edwin (24/11): las semanas del mes en una lista compacta (antes, una ficha por semana).
 function mallaPintarSemanasMes(mes) {
-  var c = _mlEl('ml-semanas-mes');
-  if (!c) return;
-  c.textContent = '';
-  mallaSemanasDelMes(mes).forEach(function (l) {
-    var b = document.createElement('button');
-    b.type = 'button';
-    b.className = 'btn-cancel ml-sem-btn';
-    b.setAttribute('aria-pressed', String(l === _ml.semana));
-    b.textContent = mallaSemanaTexto(l).replace(/^Semana /, '') + (l === _ml.actual ? ' (esta semana)' : '');
-    b.addEventListener('click', function () { _ml.semana = l; mallaCargar(); });
-    c.appendChild(b);
+  var s = _mlEl('ml-sem-sel');
+  if (!s) return;
+  s.textContent = '';
+  var lista = mallaSemanasDelMes(mes);
+  if (lista.indexOf(_ml.semana) === -1) {
+    var o0 = document.createElement('option');
+    o0.value = ''; o0.textContent = 'Elige una semana';
+    s.appendChild(o0);
+  }
+  lista.forEach(function (l) {
+    var o = document.createElement('option');
+    o.value = l;
+    o.textContent = mallaSemanaTexto(l).replace(/^Semana /, '') + (l === _ml.actual ? ' (esta semana)' : '');
+    if (l === _ml.semana) o.selected = true;
+    s.appendChild(o);
   });
+}
+function mallaElegirSemanaMes() {
+  var v = (_mlEl('ml-sem-sel') || {}).value;
+  if (v && v !== _ml.semana) { _ml.semana = v; mallaCargar(); }
 }
 // Fase 373 (Edwin 19/11): sin botón «Esta semana»; solo las flechas y el selector de mes.
 
@@ -86,6 +95,13 @@ function mallaGrupoHtml(g, puedeEditar, asesoras, idx, datos) { // datos: la sem
       '<td><input type="time" id="' + pre + '-e' + d.n + '" value="' + (t ? esc(t.entrada) : '') + '"' + dis + ' aria-label="Entrada del ' + d.largo.toLowerCase() + '"></td>' +
       '<td><input type="time" id="' + pre + '-s' + d.n + '" value="' + (t ? esc(t.salida) : '') + '"' + dis + ' aria-label="Salida del ' + d.largo.toLowerCase() + '"></td></tr>';
   }).join('');
+  // Fase M1 (B): horario del grupo en los festivos (sin marcar: el festivo descansa, por defecto).
+  var fe = g.horario && g.horario.festivo ? g.horario.festivo : null;
+  filas += '<tr class="ml-fila-festivo"><th scope="row"><span class="ml-dia-largo">Festivos</span><span class="ml-dia-corto" aria-hidden="true">Fest.</span></th>' +
+    '<td><input type="checkbox" id="' + pre + '-tf" class="ml-trabaja"' + (fe ? ' checked' : '') + dis + ' aria-label="Trabaja los festivos (sin marcar: descansa)"></td>' +
+    '<td><input type="time" id="' + pre + '-ef" value="' + (fe ? esc(fe.entrada) : '') + '"' + dis + ' aria-label="Entrada en festivo"></td>' +
+    '<td><input type="time" id="' + pre + '-sf" value="' + (fe ? esc(fe.salida) : '') + '"' + dis + ' aria-label="Salida en festivo"></td></tr>';
+  var pausas = mallaPausasTablaHtml(g.horario, pre, dis);
   var marcadas = {};
   (g.asesoras || []).forEach(function (a) { marcadas[a.id] = true; });
   var lista = asesoras.length ? asesoras.map(function (a) {
@@ -94,19 +110,90 @@ function mallaGrupoHtml(g, puedeEditar, asesoras, idx, datos) { // datos: la sem
       (otro && !marcadas[a.id] ? ' <span class="ml-otro">(en ' + esc(otro) + ')</span>' : '') + '</label>';
   }).join('') : '<p class="vis-vacio">No hay asesoras activas en esta campaña.</p>';
   var color = g.color || ((idx % 8) + 1); // Fase 373: cada grupo con su color (serie 1 a 8)
-  return '<section class="aurora-card ml-grupo ml-color-' + color + '" data-idx="' + idx + '" data-id="' + (g.id || '') + '" aria-labelledby="' + pre + '-tit">' +
-    '<div class="ig"><label for="' + pre + '-nombre" id="' + pre + '-tit"><span class="ml-punto" aria-hidden="true"></span>Grupo</label><input type="text" id="' + pre + '-nombre" maxlength="' + MALLA_NOMBRE_MAX + '" value="' + esc(g.nombre || '') + '"' + dis + '></div>' +
-    '<div class="table-wrap"><table class="ml-tabla"><thead><tr><th scope="col">Día</th><th scope="col"><span class="ml-dia-largo">Trabaja</span><span class="ml-dia-corto" aria-hidden="true">Trab.</span></th><th scope="col">Entrada</th><th scope="col">Salida</th></tr></thead><tbody>' + filas + '</tbody></table></div>' +
-    '<fieldset class="ml-asesoras"><legend>Asesoras (' + (g.asesoras || []).length + ')</legend>' + lista + '</fieldset>' +
-    (puedeEditar ? '<div class="modal-btns"><button type="button" class="btn-cancel ml-borrar" onclick="mallaBorrarGrupo(' + idx + ')">' + (g.id ? 'Eliminar grupo' : 'Descartar') + '</button>' +
-      '<button type="button" class="btn-primary" onclick="mallaGuardarGrupo(' + idx + ')">Guardar grupo</button></div>' : '') +
+  // Pedido de Edwin (24/11): más compacto. Cabecera (nombre + botones) en una fila; el horario y la lista de
+  // asesoras lado a lado en pantallas anchas; la lista en un cuadro con su propio scroll.
+  return '<section class="aurora-card ml-grupo ml-color-' + color + '" data-idx="' + idx + '" data-id="' + (g.id || '') + '" aria-labelledby="' + pre + '-tit"' +
+    (puedeEditar ? ' oninput="mallaRecalcularHoras(' + idx + ')" onchange="mallaRecalcularHoras(' + idx + ')"' : '') + '>' +
+    '<div class="ml-grupo-cab"><div class="ig"><label for="' + pre + '-nombre" id="' + pre + '-tit"><span class="ml-punto" aria-hidden="true"></span>Grupo</label><input type="text" id="' + pre + '-nombre" maxlength="' + MALLA_NOMBRE_MAX + '" value="' + esc(g.nombre || '') + '"' + dis + '></div>' +
+    (puedeEditar ? '<div class="ml-grupo-btns"><button type="button" class="btn-cancel ml-borrar" onclick="mallaBorrarGrupo(' + idx + ')">' + (g.id ? 'Eliminar grupo' : 'Descartar') + '</button>' +
+      '<button type="button" class="btn-primary" onclick="mallaGuardarGrupo(' + idx + ')">Guardar grupo</button></div>' : '') + '</div>' +
+    '<div class="ml-grupo-cuerpo"><div class="ml-grupo-horario"><div class="table-wrap"><table class="ml-tabla" aria-describedby="' + pre + '-fest-ayuda"><thead><tr><th scope="col">Día</th><th scope="col"><span class="ml-dia-largo">Trabaja</span><span class="ml-dia-corto" aria-hidden="true">Trab.</span></th><th scope="col">Entrada</th><th scope="col">Salida</th></tr></thead><tbody>' + filas + '</tbody></table></div>' +
+    '<p class="vis-ayuda ml-fest-ayuda" id="' + pre + '-fest-ayuda">Festivos: si no se marca, el grupo descansa los festivos. Un festivo en un día que el grupo no trabaja sigue siendo descanso.</p>' + pausas + '</div>' +
+    '<fieldset class="ml-asesoras"><legend>Asesoras (' + (g.asesoras || []).length + ')</legend><div class="ml-asesoras-lista" tabindex="0" role="group" aria-label="Asesoras de la campaña (con scroll)">' + lista + '</div></fieldset></div>' +
     (g.id && (g.asesoras || []).length ? mallaCasosHtml(g, idx, puedeEditar, datos) : '') +
     '</section>';
 }
 
+// Pedido de Edwin (24/11): pausa activa 1 (mañana, 15 min), almuerzo (hora y 30 min o 1 h) y pausa activa 2
+// (tarde, 10 min) por día, con las horas del día y el total de la semana (salida − entrada − almuerzo). Si la
+// semana no suma 42 h sale un aviso, sin bloquear. Todo opcional: los horarios ya guardados siguen igual.
+function mallaPausasTablaHtml(h, pre, dis) {
+  h = h || {};
+  var filas = MALLA_DIAS.map(function (d) {
+    var t = h[d.n] || h[String(d.n)] || null;
+    var ds = t ? dis : ' disabled';
+    var am = t && t.almuerzo ? Number(t.almuerzoMin) : 60;
+    var dl = d.largo.toLowerCase();
+    return '<tr data-dia="' + d.n + '"' + (t ? '' : ' class="ml-descanso"') + '><th scope="row"><span class="ml-dia-largo">' + d.largo + '</span><span class="ml-dia-corto" aria-hidden="true">' + d.corto + '</span></th>' +
+      '<td data-etq="Pausa 1"><input type="time" id="' + pre + '-p1' + d.n + '" value="' + (t && t.pausa1 ? esc(t.pausa1) : '') + '"' + ds + ' aria-label="Pausa activa 1 del ' + dl + ' (15 min, en la mañana)"></td>' +
+      '<td data-etq="Almuerzo"><span class="ml-alm"><input type="time" id="' + pre + '-al' + d.n + '" value="' + (t && t.almuerzo ? esc(t.almuerzo) : '') + '"' + ds + ' aria-label="Hora del almuerzo del ' + dl + '">' +
+        '<select id="' + pre + '-am' + d.n + '"' + ds + ' aria-label="Duración del almuerzo del ' + dl + '">' +
+        MALLA_ALMUERZO_OPCIONES.map(function (m) { return '<option value="' + m + '"' + (m === am ? ' selected' : '') + '>' + (m === 60 ? '1 h' : m + ' min') + '</option>'; }).join('') + '</select></span></td>' +
+      '<td data-etq="Pausa 2"><input type="time" id="' + pre + '-p2' + d.n + '" value="' + (t && t.pausa2 ? esc(t.pausa2) : '') + '"' + ds + ' aria-label="Pausa activa 2 del ' + dl + ' (10 min, en la tarde)"></td>' +
+      '<td data-etq="Horas" class="ml-horas-dia" id="' + pre + '-hd' + d.n + '">' + (t ? mallaHorasTexto(mallaMinutosDia(t)) : '—') + '</td></tr>';
+  }).join('');
+  var s = mallaHorasSemana(h);
+  var aviso = mallaAvisoHoras(h);
+  return '<details class="ml-pausas" open><summary>Pausas, almuerzo y horas</summary>' +
+    '<div class="table-wrap"><table class="ml-tabla ml-tabla-pausas"><thead><tr><th scope="col">Día</th><th scope="col">Pausa activa 1 <span class="ml-dur">15 min</span></th><th scope="col">Almuerzo</th><th scope="col">Pausa activa 2 <span class="ml-dur">10 min</span></th><th scope="col">Horas</th></tr></thead><tbody>' + filas + '</tbody></table></div>' +
+    '<p class="ml-horas-semana" id="' + pre + '-hs">Total de la semana: <strong>' + mallaHorasTexto(s.minutos) + '</strong></p>' +
+    '<p class="ml-horas-aviso' + (aviso ? '' : ' hidden') + '" id="' + pre + '-ha" role="status">' + esc(aviso) + '</p></details>';
+}
+// Lee del formulario el horario del grupo (también pausas y almuerzo) sin validar.
+function _mlLeerHorario(pre) {
+  var h = {}, val = function (id) { var e = _mlEl(id); return e ? e.value : ''; };
+  MALLA_DIAS.forEach(function (d) {
+    if (!_mlEl(pre + '-t' + d.n).checked) { h[d.n] = null; return; }
+    var t = { entrada: val(pre + '-e' + d.n), salida: val(pre + '-s' + d.n) };
+    if (val(pre + '-p1' + d.n)) t.pausa1 = val(pre + '-p1' + d.n);
+    if (val(pre + '-al' + d.n)) { t.almuerzo = val(pre + '-al' + d.n); t.almuerzoMin = Number(val(pre + '-am' + d.n)) || 60; }
+    if (val(pre + '-p2' + d.n)) t.pausa2 = val(pre + '-p2' + d.n);
+    h[d.n] = t;
+  });
+  return h;
+}
+// Al escribir: horas por día, total y aviso; habilita las pausas solo en los días que se trabaja.
+function mallaRecalcularHoras(idx) {
+  var pre = 'ml-g' + idx;
+  if (!_mlEl(pre + '-hs')) return;
+  var h = _mlLeerHorario(pre);
+  MALLA_DIAS.forEach(function (d) {
+    var t = h[d.n];
+    ['-p1', '-al', '-am', '-p2'].forEach(function (k) { var e = _mlEl(pre + k + d.n); if (e) e.disabled = !t; });
+    var fila = _mlEl(pre + '-hd' + d.n);
+    if (fila) { fila.textContent = t ? mallaHorasTexto(mallaMinutosDia(t)) : '—'; fila.parentNode.classList.toggle('ml-descanso', !t); }
+  });
+  var s = mallaHorasSemana(h), aviso = mallaAvisoHoras(h);
+  _mlEl(pre + '-hs').innerHTML = 'Total de la semana: <strong>' + mallaHorasTexto(s.minutos) + '</strong>';
+  var a = _mlEl(pre + '-ha');
+  a.textContent = aviso; a.classList.toggle('hidden', !aviso);
+}
+
+// Fase M1 (B): aviso con los festivos de la semana. Puro.
+function mallaFestivosSemanaTexto(lista) {
+  if (!lista || !lista.length) return '';
+  return 'Festivo' + (lista.length > 1 ? 's' : '') + ' esta semana: ' + lista.map(function (f) { return _mlDiaTexto(f.fecha) + ' (' + f.nombre + ')'; }).join(' · ') +
+    '. Los grupos sin horario de festivo descansan ese día.';
+}
 function _mlPintar() {
   var d = _ml.datos;
   _mlEl('ml-novedades').classList.add('hidden');
+  var fs = _mlEl('ml-festivos'), ftxt = mallaFestivosSemanaTexto(d.festivos);
+  if (fs) { fs.textContent = ftxt; fs.classList.toggle('hidden', !ftxt); }
+  var fb = _mlEl('ml-festivos-btn');
+  if (fb) fb.classList.toggle('hidden', !d.puedeAdministrarFestivos);
+  var fa = _mlEl('ml-festivos-admin');
+  if (fa && !fa.classList.contains('hidden') && d.puedeAdministrarFestivos) mallaFestivosCargar();
   if (!d.grupos.length) {
     _mlEl('ml-grupos').innerHTML = '<p class="vis-vacio">Esta semana no tiene malla todavía.' + (d.puedeEditar ? ' Crea un grupo o copia otra semana.' : '') + '</p>';
     return;
@@ -124,10 +211,8 @@ function mallaNuevoGrupo() {
 }
 
 function _mlLeerGrupo(idx) {
-  var pre = 'ml-g' + idx, h = {};
-  MALLA_DIAS.forEach(function (d) {
-    h[d.n] = _mlEl(pre + '-t' + d.n).checked ? { entrada: _mlEl(pre + '-e' + d.n).value, salida: _mlEl(pre + '-s' + d.n).value } : null;
-  });
+  var pre = 'ml-g' + idx, h = _mlLeerHorario(pre); // pedido de Edwin (24/11): con pausas y almuerzo
+  if (_mlEl(pre + '-tf') && _mlEl(pre + '-tf').checked) h.festivo = { entrada: _mlEl(pre + '-ef').value, salida: _mlEl(pre + '-sf').value }; // Fase M1 (B)
   var sec = document.querySelector('.ml-grupo[data-idx="' + idx + '"]');
   var ids = Array.prototype.map.call(sec.querySelectorAll('.ml-asesoras input:checked'), function (x) { return Number(x.value); });
   return { nombre: _mlEl(pre + '-nombre').value.trim(), horario: h, asesoras: ids };
@@ -192,15 +277,18 @@ function mallaCasosHtml(g, idx, puedeEditar, datos) {
     var aj = (d.ajustes || []).filter(function (x) { return x.asesorId === a.id; });
     var nv = (d.novedades || []).filter(function (x) { return x.asesorId === a.id && !x.quitada; });
     var chips = aj.map(function (x) {
-      return '<li class="ml-chip">' + esc(_mlDiaTexto(x.fecha)) + ': ' + esc(mallaTurnoTexto(x.turno)) +
-        (puedeEditar ? ' <button type="button" class="ml-chip-x" onclick="mallaQuitarAjuste(' + Number(x.id) + ')" aria-label="Quitar el horario especial del ' + esc(_mlDiaTexto(x.fecha)) + ' de ' + esc(a.nombre) + '">×</button>' : '') + '</li>';
+      return '<li class="ml-chip ml-chip-ambar">' + esc(_mlDiaTexto(x.fecha)) + ': ' + esc(mallaTurnoTexto(x.turno)) + (x.serie ? ' <span class="ml-rep">· se repite</span>' : '') + // Fase M1 (C)
+        (puedeEditar ? ' <button type="button" class="ml-chip-x" onclick="mallaQuitarAjuste(' + Number(x.id) + ')" aria-label="Quitar el horario especial del ' + esc(_mlDiaTexto(x.fecha)) + ' de ' + esc(a.nombre) + '">×</button>' : '') +
+        (puedeEditar && x.serie ? ' <button type="button" class="btn-cancel ml-btn ml-rep-quitar" onclick="mallaQuitarSerie(\'' + esc(x.serie) + '\')" aria-label="Quitar todas las semanas de este horario especial de ' + esc(a.nombre) + '">Quitar todas las semanas</button>' : '') + '</li>';
     }).concat(nv.map(function (x) {
-      return '<li class="ml-chip ml-chip-nov">' + esc(_mlDiaTexto(x.fecha)) + ': ' + esc(x.texto) +
+      return '<li class="ml-chip ml-chip-nov ml-chip-ambar">' + esc(_mlDiaTexto(x.fecha)) + ': ' + esc(x.texto) +
         (puedeEditar ? ' <button type="button" class="ml-chip-x" onclick="mallaQuitarNovedad(' + Number(x.id) + ')" aria-label="Quitar la novedad de ' + esc(a.nombre) + '">×</button>' : '') + '</li>';
     })).join('');
     return '<li class="ml-caso"><div class="ml-caso-cab"><strong>' + esc(a.nombre) + '</strong>' +
-      (puedeEditar ? '<span class="ml-caso-btns"><button type="button" class="btn-cancel ml-btn" onclick="mallaFormCaso(' + idx + ',' + Number(a.id) + ',\'novedad\')">Novedad</button>' +
-        '<button type="button" class="btn-cancel ml-btn" onclick="mallaFormCaso(' + idx + ',' + Number(a.id) + ',\'horario\')">Horario especial</button></span>' : '') + '</div>' +
+      // Pedido de Edwin (24/11): botón pequeño «Agregar novedad» por fila. Y en ámbar, como «Horario especial»,
+      // sus registros y el título del bloque, para que resalten (pedido de Edwin, 24/11 a las 11 a. m.).
+      (puedeEditar ? '<span class="ml-caso-btns"><button type="button" class="btn-sm ml-btn-sm ml-btn-ambar" onclick="mallaFormCaso(' + idx + ',' + Number(a.id) + ',\'novedad\')" aria-label="Agregar novedad a ' + esc(a.nombre) + '">+ Agregar novedad</button>' +
+        '<button type="button" class="btn-sm ml-btn-sm ml-btn-ambar" onclick="mallaFormCaso(' + idx + ',' + Number(a.id) + ',\'horario\')" aria-label="Horario especial de ' + esc(a.nombre) + '">Horario especial</button></span>' : '') + '</div>' +
       (chips ? '<ul class="ml-chips">' + chips + '</ul>' : '') + '<div class="ml-caso-form" id="ml-g' + idx + '-caso-' + Number(a.id) + '"></div></li>';
   }).join('');
   return '<details class="ml-casos"' + (d.ajustes && d.ajustes.length || d.novedades && d.novedades.length ? ' open' : '') + '><summary>Novedades y horarios especiales</summary><ul class="ml-casos-lista">' + filas + '</ul></details>';
@@ -221,6 +309,9 @@ function mallaFormCaso(idx, asesorId, tipo) {
       '<label class="ml-asesora"><input type="checkbox" id="' + pre + '-desc" onchange="mallaDescansoCaso(this)"> Descanso</label>' +
       '<div class="ig"><label for="' + pre + '-e">Entrada</label><input type="time" id="' + pre + '-e" value="09:00"></div>' +
       '<div class="ig"><label for="' + pre + '-s">Salida</label><input type="time" id="' + pre + '-s" value="18:00"></div>' +
+      // Fase M1 (C): los mismos días, cada semana, hasta una fecha (máximo 26 semanas).
+      '<div class="ig"><label for="' + pre + '-rep">Repetir cada semana hasta (opcional)</label><input type="date" id="' + pre + '-rep" min="' + esc(mallaFechaDelDia(_ml.semana, 7)) + '" max="' + esc(mallaFechaDelDia(mallaSumarSemanas(_ml.semana, 25), 7)) + '" aria-describedby="' + pre + '-rep-ayuda"></div>' +
+      '<p class="vis-ayuda ml-rep-ayuda" id="' + pre + '-rep-ayuda">Ej.: estudia y todos los martes entra a las 10:00. Se crea en cada semana hasta esa fecha (máximo 26 semanas); se puede quitar toda la repetición de una vez.</p>' +
       '<div class="modal-btns"><button type="submit" class="btn-primary">Guardar horario especial</button><button type="button" class="btn-cancel" onclick="this.closest(\'.ml-caso-form\').innerHTML=\'\'">Cancelar</button></div></form>';
   }
   var primero = c.querySelector('select, input'); if (primero) primero.focus();
@@ -247,15 +338,24 @@ async function mallaGuardarAjuste(ev, asesorId) {
   var desc = f.querySelector('input[id$="-desc"]').checked;
   var b = { campana: _ml.campana, semana: _ml.semana, asesorId: asesorId, dias: dias, descanso: desc };
   if (!desc) { b.entrada = f.querySelector('input[id$="-e"]').value; b.salida = f.querySelector('input[id$="-s"]').value; }
+  var rep = f.querySelector('input[id$="-rep"]'); // Fase M1 (C)
+  if (rep && rep.value) b.repetirHasta = rep.value;
   try {
-    await apiRequest('PUT', '/malla/ajustes', b);
+    var r = await apiRequest('PUT', '/malla/ajustes', b);
     showToast('Horario especial guardado', 'ok');
     await mallaCargar();
+    if (r && r.serie) _mlNota('Horario especial guardado en ' + r.fechas.length + ' día(s), hasta el ' + _mlDiaTexto(r.fechas[r.fechas.length - 1]) + '.');
   } catch (e) { _mlError(e.message || 'No se pudo guardar el horario especial'); }
 }
 async function mallaQuitarAjuste(id) {
   if (!window.confirm('¿Quitar este horario especial? Ese día vuelve al horario de su grupo.')) return;
   try { await apiRequest('DELETE', '/malla/ajustes/' + id); showToast('Horario especial quitado', 'ok'); await mallaCargar(); }
+  catch (e) { _mlError(e.message || 'No se pudo quitar'); }
+}
+// Fase M1 (C): quita todos los días de una repetición (también los de otras semanas).
+async function mallaQuitarSerie(serie) {
+  if (!window.confirm('¿Quitar este horario especial en TODAS las semanas en que se repite? Esos días vuelven al horario de su grupo.')) return;
+  try { var r = await apiRequest('DELETE', '/malla/ajustes/serie/' + encodeURIComponent(serie)); showToast('Repetición quitada', 'ok'); await mallaCargar(); _mlNota('Se quitaron ' + r.quitados + ' día(s) del horario especial.'); }
   catch (e) { _mlError(e.message || 'No se pudo quitar'); }
 }
 async function mallaQuitarNovedad(id) {
@@ -287,6 +387,51 @@ function mallaMisNovedadesHtml(lista) {
   }).join('') + '</ul></div>';
 }
 
+// ── Fase M1 (B): festivos del año (solo el ADMIN agrega o quita; el resto, de ley). ──
+function mallaFestivosHtml(r) {
+  var filas = (r.festivos || []).map(function (f) {
+    var txt = _mlDiaTexto(f.fecha) + '/' + f.fecha.slice(0, 4) + ' · ' + f.nombre + (f.origen === 'manual' ? ' (agregado)' : '');
+    return '<li' + (f.quitado ? ' class="ml-fest-quitado"' : '') + '>' + (f.quitado ? '<s>' + esc(txt) + '</s> <span class="ml-otro">(quitado)</span>' : esc(txt)) +
+      (r.puedeAdministrar ? (f.quitado
+        ? ' <button type="button" class="btn-cancel ml-btn" onclick="mallaFestivoPoner(\'' + esc(f.fecha) + '\')">Volver a poner</button>'
+        : ' <button type="button" class="btn-cancel ml-btn" onclick="mallaFestivoQuitar(\'' + esc(f.fecha) + '\')" aria-label="Quitar el festivo del ' + esc(_mlDiaTexto(f.fecha)) + '">Quitar</button>') : '') + '</li>';
+  }).join('');
+  return '<h4 class="aurora-card-title" id="ml-festivos-tit">Festivos de ' + esc(String(r.anio)) + '</h4>' +
+    '<p class="vis-ayuda">Calendario de Colombia (Ley Emiliani). Quitar o agregar un festivo cambia la malla y la puntualidad de todas las campañas.</p>' +
+    '<ul class="ml-fest-lista">' + filas + '</ul>' +
+    (r.puedeAdministrar ? '<form class="ml-form-caso" onsubmit="mallaFestivoAgregar(event)"><div class="ig"><label for="ml-fest-fecha">Fecha</label><input type="date" id="ml-fest-fecha" required></div>' +
+      '<div class="ig ml-form-texto"><label for="ml-fest-nombre">Nombre</label><input type="text" id="ml-fest-nombre" maxlength="60" placeholder="Ej.: Día cívico"></div>' +
+      '<div class="modal-btns"><button type="submit" class="btn-primary">Agregar festivo</button></div></form>' : '');
+}
+async function mallaFestivosCargar() {
+  var c = _mlEl('ml-festivos-admin');
+  c.innerHTML = '<p class="vis-vacio">Cargando…</p>';
+  try { c.innerHTML = mallaFestivosHtml(await apiRequest('GET', '/malla/festivos?anio=' + encodeURIComponent(mallaFechaDelDia(_ml.semana, 4).slice(0, 4)))); }
+  catch (e) { c.innerHTML = '<p class="vis-vacio">' + esc(e.message || 'No se pudieron cargar los festivos') + '</p>'; }
+}
+function mallaFestivosAbrir() {
+  var c = _mlEl('ml-festivos-admin'), b = _mlEl('ml-festivos-btn');
+  var abrir = c.classList.contains('hidden');
+  c.classList.toggle('hidden', !abrir);
+  b.setAttribute('aria-expanded', String(abrir));
+  if (abrir) mallaFestivosCargar(); else c.innerHTML = '';
+}
+async function mallaFestivoAgregar(ev) {
+  ev.preventDefault();
+  _mlError(''); _mlNota('');
+  try { await apiRequest('POST', '/malla/festivos', { fecha: _mlEl('ml-fest-fecha').value, nombre: _mlEl('ml-fest-nombre').value }); showToast('Festivo agregado', 'ok'); await mallaCargar(); _mlNota('Festivo agregado.'); }
+  catch (e) { _mlError(e.message || 'No se pudo agregar el festivo'); }
+}
+async function mallaFestivoQuitar(fecha) {
+  if (!window.confirm('¿Quitar el festivo del ' + _mlDiaTexto(fecha) + '? Ese día vuelve a ser un día normal en la malla y la puntualidad.')) return;
+  try { await apiRequest('DELETE', '/malla/festivos/' + encodeURIComponent(fecha)); showToast('Festivo quitado', 'ok'); await mallaCargar(); }
+  catch (e) { _mlError(e.message || 'No se pudo quitar el festivo'); }
+}
+async function mallaFestivoPoner(fecha) {
+  try { await apiRequest('POST', '/malla/festivos', { fecha: fecha }); showToast('Festivo de nuevo', 'ok'); await mallaCargar(); }
+  catch (e) { _mlError(e.message || 'No se pudo volver a poner el festivo'); }
+}
+
 // ── Portal Asesor: «Mi malla» ──
 function mallaMiaHtml(r) {
   if (!r || !r.semanas || !r.semanas.length) return '<p class="vis-vacio">No tienes malla asignada.</p>';
@@ -299,10 +444,18 @@ function mallaMiaHtml(r) {
       var t = s.turno.horario[d.n] || s.turno.horario[String(d.n)] || null;
       var f = mallaFechaDelDia(s.semana, d.n);
       var especial = esp.indexOf(d.n) !== -1 ? ' <span class="vis-pill vis-amarillo ml-especial">Horario especial</span>' : '';
-      return '<tr data-fecha="' + esc(f) + '"' + (t ? '' : ' class="ml-descanso"') + '><th scope="row">' + d.largo + ' ' + esc(f.slice(8, 10) + '/' + f.slice(5, 7)) + '</th><td>' + esc(mallaTurnoTexto(t)) + especial + '</td><td class="ml-punt-celda"></td></tr>'; // Fase 368: celda de puntualidad
+      var fest = s.turno.festivos && (s.turno.festivos[d.n] || s.turno.festivos[String(d.n)]); // Fase M1 (B)
+      if (fest) especial = ' <span class="vis-pill vis-gris ml-festivo">Festivo: ' + esc(fest) + '</span>' + especial;
+      // Pedido de Edwin (24/11): pausas y almuerzo del día en una línea discreta, solo si el grupo los tiene.
+      var pz = mallaPausasTexto(t);
+      return '<tr data-fecha="' + esc(f) + '"' + (t ? '' : ' class="ml-descanso"') + '><th scope="row">' + d.largo + ' ' + esc(f.slice(8, 10) + '/' + f.slice(5, 7)) + '</th><td>' + esc(mallaTurnoTexto(t)) + especial +
+        (pz ? '<span class="ml-mia-pausas">' + esc(pz) + '</span>' : '') + '</td><td class="ml-punt-celda"></td></tr>'; // Fase 368: celda de puntualidad
     }).join('');
+    var hs = mallaHorasSemana(s.turno.horario);
     return '<section class="aurora-card ml-mia ml-color-' + (s.turno.color || 1) + '"><div class="aurora-card-title">' + esc(titulo) + '</div><p class="ml-nota"><span class="ml-punto" aria-hidden="true"></span>Grupo: <strong>' + esc(s.turno.grupo) + '</strong></p>' +
-      '<div class="table-wrap"><table class="ml-tabla ml-tabla-mia"><thead><tr><th scope="col">Día</th><th scope="col">Horario</th><th scope="col"><span class="sr-only">Puntualidad</span></th></tr></thead><tbody>' + filas + '</tbody></table></div>' + nov + '</section>';
+      '<div class="table-wrap"><table class="ml-tabla ml-tabla-mia"><thead><tr><th scope="col">Día</th><th scope="col">Horario</th><th scope="col"><span class="sr-only">Puntualidad</span></th></tr></thead><tbody>' + filas + '</tbody></table></div>' +
+      // El total solo con el horario del grupo: un horario especial no trae almuerzo y daría otra cuenta.
+      (esp.length ? '' : '<p class="ml-mia-total">Horas de la semana: <strong>' + mallaHorasTexto(hs.minutos) + '</strong></p>') + nov + '</section>';
   }).join('');
 }
 async function mallaMiaRender() {
@@ -315,5 +468,5 @@ async function mallaMiaRender() {
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { mallaMiaHtml: mallaMiaHtml, mallaGrupoHtml: mallaGrupoHtml, mallaCasosHtml: mallaCasosHtml, mallaNovedadesSemanaHtml: mallaNovedadesSemanaHtml, mallaMisNovedadesHtml: mallaMisNovedadesHtml };
+  module.exports = { mallaFestivosHtml: mallaFestivosHtml, mallaFestivosSemanaTexto: mallaFestivosSemanaTexto, mallaMiaHtml: mallaMiaHtml, mallaGrupoHtml: mallaGrupoHtml, mallaPausasTablaHtml: mallaPausasTablaHtml, mallaCasosHtml: mallaCasosHtml, mallaNovedadesSemanaHtml: mallaNovedadesSemanaHtml, mallaMisNovedadesHtml: mallaMisNovedadesHtml };
 }

@@ -60,6 +60,8 @@ function renderDashGrid(){
     var staT = grid.querySelector('[data-entrada="sta"]');
     if (staT) staT.insertAdjacentHTML('afterend', otHtml); else grid.insertAdjacentHTML('beforeend', otHtml);
   }
+  // Fase GH2: «Talento humano» para el rol GESTION_HUMANA, solo si el servidor lo deja (GH_ROL_ACTIVO).
+  if (typeof talentoHumanoTarjetaRol === 'function') talentoHumanoTarjetaRol(rolActual, isFullAdmin(), grid, tarjetaEntrada);
   // Sin ningun modulo (ni tarjetas de entrada) -> mensaje claro, sin tarjetas.
   var vacio=document.getElementById('dash-grid-vacio');
   var sinNada = modulos.length===0 && extra.length===0;
@@ -77,7 +79,6 @@ function onDashBtn(key){
   if(key==='Calidad'){openCalidad();return;}
   if(key==='Inventario'){openInventario();return;}
   if(key==='Gerencia'){openGerencia();return;}
-  if(key==='GestionHumana'){openGestionHumana();return;}
   showToast('El modulo '+(m?m.label:key)+' todavia no esta disponible.');
 }
 

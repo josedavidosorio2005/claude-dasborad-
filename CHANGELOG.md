@@ -7,6 +7,246 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.263.0 — Noviembre 2026
+
+**Malla de turnos: pausas activas, almuerzo y horas de la semana (pedido de Edwin).**
+
+- En el horario de cada grupo, por día: pausa activa 1 (en la mañana, 15 min), almuerzo (la hora y si dura 30 min o 1 h) y pausa activa 2 (en la tarde, 10 min). Todo es opcional.
+- Se ven las horas de cada día y el total de la semana: salida menos entrada menos almuerzo. Si la semana no suma 42 horas, sale un aviso en ámbar, pero se puede guardar igual.
+- La asesora ve en «Mi malla», debajo del horario de cada día, una línea corta con sus pausas y su almuerzo, y al final las horas de la semana.
+- Los horarios que ya estaban guardados siguen funcionando igual.
+
+## v1.262.0 — Noviembre 2026
+
+**Malla de turnos: «Novedades» y «Horario especial» en ámbar; Talento humano sin el aviso del encabezado (pedidos de Edwin).**
+
+- En la ventana del supervisor, los botones «+ Agregar novedad» y «Horario especial», las novedades y horarios especiales ya guardados y el título «Novedades y horarios especiales» se ven en color ámbar, para que resalten.
+- Talento humano: el encabezado ya no dice «Se guarda en la plataforma, también los soportes adjuntos.». Solo aparece un aviso si algún día los soportes adjuntos no se pudieran guardar en la plataforma.
+
+## v1.261.1 — Noviembre 2026
+
+**Seguridad: el límite de intentos para entrar ya no se puede subir en el servidor.**
+
+- Después de 10 contraseñas equivocadas seguidas para el mismo usuario desde el mismo lugar, la plataforma pide esperar unos minutos antes de volver a intentar. La configuración del servidor podía subir ese número; ahora nunca pasa de 10.
+- Para quien entra con su contraseña correcta no cambia nada.
+
+## v1.261.0 — Noviembre 2026
+
+**Malla de turnos: la ventana del supervisor es más compacta (pedido de Edwin).**
+
+- Los filtros van en una sola fila: campaña, semana con flechas, «Ir al mes» y una lista con las semanas del mes. Las fichas de semanas se quitaron.
+- Las pestañas «Turnos» y «Puntualidad» se ven como pestañas, bien marcadas.
+- Cada grupo ocupa menos espacio:
+  - el nombre y los botones van arriba, en una fila;
+  - el horario y la lista de asesoras quedan lado a lado en pantallas anchas;
+  - la lista de asesoras tiene su propio scroll.
+- Cada asesora tiene botones pequeños «+ Agregar novedad» y «Horario especial».
+- En Puntualidad, si la asesora tiene una novedad ese día (o de toda la semana) y no entró, se muestra la novedad (por ejemplo, «Novedad: Suspensión») en lugar de «Sin ingreso». El resumen la cuenta aparte, como «Con novedad».
+- «Novedades de la semana» ya no aparece encima de Puntualidad.
+- La vista de la asesora («Mi malla») no cambia.
+
+## v1.260.2 — Noviembre 2026
+
+**SURA, Cumplimiento › «Ventas por mes»: con «Ver por = Día» ya no salen los porcentajes de crecimiento o caída (pedido de Edwin).**
+
+- Al ver las ventas día por día, la gráfica muestra solo los valores. Con «Ver por = Mes» los porcentajes se quedan igual que antes.
+- Solo cambia esa gráfica.
+
+## v1.260.1 — Noviembre 2026
+
+**Mobilize, Calidad de encuestas: las encuestas de noviembre vuelven a traer el ID de la llamada.**
+
+- Desde el 21/11, las encuestas de noviembre de Mobilize llegan solas desde Wolkvox, pero llegaban sin el ID de la llamada. Por eso «Calidad de encuestas» no mostraba pendientes de noviembre (salían como «sin ID»), y 5 monitoreos de noviembre habían perdido su encuesta.
+- Ahora se guarda el ID de la llamada, y solo eso: el teléfono y los comentarios se siguen descartando.
+- En la siguiente consulta automática, esos monitoreos vuelven a enlazarse solos, y las encuestas mal calificadas de noviembre aparecen como pendientes.
+
+## v1.260.0 — Noviembre 2026
+
+**Malla de turnos: «casos especiales» (pedido de Edwin).**
+
+- **Más tipos de excepción.** Además de incapacidad, vacaciones y permiso, ahora hay licencia (maternidad, paternidad, luto), calamidad doméstica, capacitación, compensatorio, suspensión y día de la familia.
+  - El administrador puede crear tipos nuevos, cambiarles el nombre o desactivarlos, en Malla › Puntualidad › «Tipos de excepción». Un tipo no se borra: se desactiva, y lo ya registrado conserva su nombre.
+  - Cada tipo dice si «cuenta como día trabajado» (por ejemplo, una capacitación). El resumen de puntualidad lo muestra aparte.
+- **Festivos de Colombia.** La malla ya conoce los festivos del año (los fijos, los que se pasan al lunes y los de Semana Santa).
+  - **Por defecto, el festivo es descanso**: ya no sale «Sin ingreso» a quien no trabaja ese día.
+  - Si un grupo sí trabaja los festivos, se marca la fila «Festivos» en su horario, con la hora de entrada y de salida.
+  - La semana de la malla avisa qué día es festivo, y la asesora lo ve en «Mi malla».
+  - El administrador puede agregar un festivo o quitar uno, en el botón «Festivos».
+  - El horario especial de una asesora sigue mandando sobre el festivo.
+- **Horario especial que se repite.** Al guardar un horario especial se puede elegir «Repetir cada semana hasta» una fecha (hasta 26 semanas). Ejemplo: una asesora que estudia y todos los martes entra a las 10:00 ya no se carga semana por semana.
+  - Se puede quitar un solo día o «Quitar todas las semanas» de una vez.
+- No cambia nada de lo ya guardado.
+
+## v1.259.1 — Noviembre 2026
+
+**Limpieza: sale el código que quedó de la «Gestión Humana — Personal por Campaña» anterior.**
+
+- Se quitaron las pantallas ocultas que ya nadie podía abrir (la lista de personal, el formulario «Nueva persona» y su ventana). No se ve ningún cambio.
+- Talento humano, el Inventario, Gerencia, Calidad y los dashboards de los clientes siguen igual. No se borró ningún dato: la tabla vieja se conserva.
+
+## v1.259.0 — Noviembre 2026
+
+**Se retiró la «Gestión Humana — Personal por Campaña» anterior.**
+
+- Ya no aparece su tarjeta ni su entrada en el menú. La reemplaza «Talento humano», que no cambia.
+- No tenía datos en la plataforma (0 personas registradas). Su tabla se conserva por si algún día hiciera falta.
+
+## v1.258.1 — Noviembre 2026
+
+**Talento humano: salario y sede son obligatorios (pedido de Edwin).**
+
+- La ficha del empleado no se guarda sin salario (mayor que 0) ni sin sede. El aviso sale debajo del campo: «El salario es obligatorio…» y «La sede es obligatoria…».
+- Un empleado viejo al que le falten, al editarlo, pide completarlos antes de guardar.
+- Las gráficas del panel ya no fallan con empleados viejos sin salario o sin sede: salen como «Sin dato».
+- No cambia ningún dato guardado.
+
+## v1.258.0 — Noviembre 2026
+
+**Inventario de sistemas: el «Panel general» ahora se ve como el diseño de Edwin.**
+
+- Arriba están los botones «Ver gráficas de» (Todos o un solo tipo) y los botones Excel y Registrar ingreso.
+- Las tarjetas muestran equipos asignados, libres, en reparación, malos, torres, portátiles, agentes y actas pendientes. Cada una abre su vista.
+- Gráficas nuevas:
+  - una dona con el estado de los equipos y otra con el rendimiento por memoria RAM;
+  - barras por tipo, por sede y por operación, separadas por estado;
+  - marcas más comunes;
+  - valor del inventario propio y renta mensual de los equipos de proveedores;
+  - calidad de los datos: sin sede, sin operación, códigos repetidos, agentes incompletos y actas por firmar o atrasadas;
+  - movimientos de los últimos 6 meses.
+- **«Registrar ingreso»** también cambia:
+  - tiene una tarjeta por tipo, con cuántos hay registrados y cuántos libres;
+  - cada tarjeta trae los botones Registrar, Ver inventario y Editar formulario;
+  - hay una tarjeta «Nueva tecnología», un botón «Importar desde Excel» y la lista «Últimos ingresos»;
+  - el formulario se abre al elegir el tipo y queda en ese tipo para registrar el siguiente.
+- En las listas (Libres, Asignados, etc.), el conteo dice cuántos hay de cada tipo: «22 elementos con estos filtros · 4 monitor · 2 portátil».
+- Las listas (Libres, Asignados, En reparación y Malos) tienen las columnas de Edwin: Tipo, Código, Nombre, Equipo (con el serial debajo), Procesador, RAM, Sede y Operación. En Asignados también Agente, Cédula y «Asignado desde».
+- Cada fila trae los botones «Estado» (cambiar el estado) y, en Asignados, «Recibir» (devolver el equipo). «Ver» sigue abriendo el detalle.
+- «Inventario completo» ahora se llama «Inventario»: arriba tiene una tarjeta por tipo con libres, en uso, reparación y malos; «Ver detalle» filtra la lista por ese tipo.
+- **Actas** tiene pestañas como en el diseño de Edwin: «Actas pendientes», «Actas firmadas», «Todas» y «Novedades de GH» (con cuántas hay). Las novedades de Gestión Humana ya no están en el menú: se ven dentro de Actas. El botón «Generar acta manual» lleva a Agentes, donde se elige a quién.
+- **Ajustes y datos** ahora va en tarjetas, como el diseño de Edwin: Excel (exportar todo e importar), Sedes, Operaciones, Propietarios / proveedores, Motivos frecuentes, Estados (fijos, solo para ver), Formularios por tipo y Textos del acta. Todo funciona igual que antes.
+- Solo cambia cómo se ve. Los elementos, agentes y actas guardados no se tocan.
+
+## v1.257.0 — Noviembre 2026
+
+**Gestión STA de ORLANT: botón «Descargar plantilla» para la carga de la base.**
+
+- En «Cargar base de datos» hay un botón nuevo, «Descargar plantilla». Baja un Excel vacío (`Plantilla_base_STA.xlsx`) que solo trae las 8 columnas que pide la carga, en el mismo orden: Fecha Ingreso Sta, Entidad, Numero Autorizacion, Estado, Descripcion Cups, Fecha Autorizacion, Fecha Expiracion y Servicio.
+- Se llena y se sube como siempre.
+
+## v1.256.1 — Noviembre 2026
+
+**Gestión STA (ORLANT): el filtro «Servicio» de la asignación ya solo muestra lo que corresponde.**
+
+- Al asignar casos, si se elegía una Entidad, la lista de «Servicio» seguía mostrando servicios de toda la base, por ejemplo Audífonos aunque esa entidad no tuviera ninguno libre. Al marcarlos no salía ningún caso.
+- Ahora cada lista (Entidad, Servicio y Descripción CUPS) muestra solo lo que queda con los otros filtros puestos, con su cantidad de casos libres.
+- Si algo ya marcado se queda sin casos, sigue apareciendo con 0 para poder quitarlo.
+## v1.256.0 — Noviembre 2026
+
+**Calidad: el «ID de agente» se llena solo al elegir el asesor (ticket #3 de SURA).**
+
+- En «Calificar», cuando la plantilla trae el campo «ID de agente», al elegir el asesor el ID aparece solo. Sale del enlace con Wolkvox de esa campaña o, si no lo hay, del último monitoreo de ese asesor.
+- Debajo del campo se ve de dónde salió. Se puede cambiar a mano.
+- Si el asesor no tiene ID registrado, el formulario lo dice en lugar de dejarlo vacío sin aviso. El ID que se escriba queda para la próxima vez.
+- Al editar un monitoreo ya guardado, su ID de agente no se cambia.
+
+## v1.255.0 — Noviembre 2026
+
+**Inventario de sistemas: «Novedades de Gestión Humana» (cuarta parte de Talento humano).**
+
+- Nueva opción en el menú del Inventario de sistemas. Muestra a los agentes que tienen equipos asignados y que, según Talento humano:
+  - **se retiraron de la empresa**: hay que recoger sus equipos, con el botón «Recibir elementos»;
+  - **están ausentes hoy** (vacaciones o novedad): el equipo sigue asignado y se puede aprovechar para mantenimiento;
+  - **se ausentarán en los próximos 7 días**.
+- También avisa qué agentes con equipos no aparecen registrados en Talento humano.
+- El número junto a la opción del menú cuenta los retirados y los ausentes de hoy.
+- Sistemas solo ve el nombre, el documento, las fechas y los equipos. Nunca ve el salario, el cargo ni el motivo de una ausencia (por ejemplo, una incapacidad).
+- Se cruza por la cédula; por el nombre, solo si el agente no tiene cédula registrada.
+
+## v1.254.0 — Noviembre 2026
+
+**Talento humano: los soportes adjuntos también se guardan en la plataforma (tercera parte).**
+
+- Los soportes (incapacidades, licencias, cartas de retiro, en PDF, imagen o Word, hasta 8 MB) se guardan en un almacenamiento privado de la plataforma, no en el navegador. Nadie los puede abrir con un enlace: solo desde Talento humano.
+- Solo se aceptan PDF, imágenes (JPG, PNG, WEBP) y Word, revisando el archivo por dentro.
+- Queda registro de quién subió o borró un soporte y cuándo, sin copiar el archivo ni su nombre.
+- **Todavía está apagado:** hasta que se configure el almacenamiento, los soportes siguen quedando en el navegador como antes, y la barra de arriba lo dice.
+
+## v1.253.0 — Noviembre 2026
+
+**Talento humano guarda en la plataforma (segunda parte).**
+
+- Lo que se registra en Talento humano (empleados, vacaciones, novedades, ausentismo y su configuración) ahora se guarda en la plataforma, no en el navegador. Se ve igual desde cualquier computador.
+- Si dos personas lo tienen abierto y una guarda primero, a la otra le sale un aviso para volver a abrirlo. Así nunca se borra lo que guardó la otra persona.
+- Queda registro de quién guardó y cuándo, sin copiar los datos.
+- Los soportes adjuntos (PDF, imágenes) siguen quedando solo en el navegador hasta la próxima parte.
+- Ya está lista para el rol de Gestión humana, pero **todavía no se le abre**: por ahora la ve solo el administrador.
+
+## v1.252.0 — Noviembre 2026
+
+**Talento humano: la app de Gestión humana de Edwin, dentro de SinCo (primera parte, de prueba).**
+
+- En el menú hay una tarjeta nueva, «Talento humano», por ahora solo para el administrador.
+- Abre la app de Gestión humana que diseñó Edwin, tal cual se ve, con el menú y la barra de SinCo: panel, empleados, incapacidades y ausentismos, costos, alertas, vacaciones, cumpleaños, retirados, administrativo y copias de seguridad.
+- Entra **sin los datos de prueba** y sin los botones para cargarlos.
+- «⌂ Menú principal» vuelve al menú de SinCo.
+- Todavía es de prueba: lo que se registre queda solo en el navegador de quien lo use. No hay que cargar datos reales hasta la siguiente parte, que los guarda en la plataforma y la abre a Gestión humana.
+
+## v1.251.0 — Noviembre 2026
+
+**ORLANT: en «Total tráfico» se puede ver Total, solo Llamadas o solo WhatsApp.**
+
+- Arriba de las tarjetas hay tres botones: Total, Llamadas y WhatsApp. Con «Llamadas», las tarjetas y la gráfica muestran solo las llamadas (de entrada y de salida); con «WhatsApp», solo los WhatsApp.
+- «Total» muestra lo mismo de siempre.
+- Por ahora es solo para ORLANT. Ver por Línea General / 3P queda para cuando Edwin confirme cómo se sabe la línea de la entrada.
+
+## v1.250.0 — Noviembre 2026
+
+**Calidad, portal de la asesora: «Sin ver» en los monitoreos que todavía no abrió.**
+
+- En «Resultados de Calidad», cada monitoreo que la asesora no ha abierto con «Ver Detalle» se marca en rojo con la etiqueta «Sin ver».
+- Arriba de la lista sale «Te faltan N por ver». Al abrir un monitoreo con «Ver Detalle», su marca desaparece y el número baja.
+- No cambia cuándo se cuenta como visto (sigue siendo al abrir «Ver Detalle»), ni la pestaña «Vistos» del supervisor.
+
+## v1.249.0 — Noviembre 2026
+
+**Tickets: «Ruta de ingreso» y un archivo adjunto.**
+
+- Al crear un ticket hay un campo nuevo, «Ruta de ingreso», para decir por dónde se llegó a la pantalla donde pasó el problema (por ejemplo: Dashboard › ORLANT › Flujo). Es opcional.
+- También se puede adjuntar un archivo: una imagen (PNG o JPG) o un PDF de hasta 3 MB, como en el Inventario de sistemas. Es opcional y va uno por ticket.
+- Al abrir el ticket se ve la ruta y el adjunto: si es una imagen, se muestra ahí mismo, y también se puede descargar. Solo lo ven quien lo envió y quienes gestionan los tickets.
+
+## v1.248.0 — Noviembre 2026
+
+**SURA: en Cumplimiento, «Ventas por mes» también se puede ver por día.**
+
+- Nuevo «Ver por: Mes / Día». Con «Día» eliges el mes (por ejemplo, noviembre) y ves las ventas día a día, según la fecha de la venta.
+- Usa los mismos filtros de la sección: agente, pólizas o producción, campaña, validación, ciudades, departamentos, productos y días hábiles.
+
+## v1.247.0 — Noviembre 2026
+
+**Gestión STA: una base eliminada se ve como «Eliminada» en el historial de cargas.**
+
+- Al eliminar una base, ya no desaparece del historial (ni se queda igual que antes): muestra «Eliminada», con la fecha y quién la eliminó.
+- Sus casos se quitan como siempre (o se conservan los gestionados, si así se elige) y también se borra el archivo original.
+
+## v1.246.0 — Noviembre 2026
+
+**Gestión STA: «Regresar a disponibles» en Gestionados.**
+
+- Por codificación: eliges una (por ejemplo «No contesta» o «Agendado») y vuelven todos esos casos.
+- O marcando los casos uno a uno con las casillas.
+- Los casos vuelven a la bolsa libre para asignarlos de nuevo. La gestión que tenían no se pierde: queda en «Gestiones anteriores».
+- Queda en el Historial quién lo hizo.
+
+## v1.245.0 — Noviembre 2026
+
+**ORLANT: la pestaña «Gestión de la base STA» del cliente se ve igual que las «Gráficas» del panel de Gestión STA.**
+
+- Mismas gráficas que ve el supervisor: agendas por asesor, codificación general, efectividad por asesor, gestiones por día y el análisis por campos de la base.
+- Con los mismos filtros (asesor, entidad, servicio y fechas de gestión).
+- Es solo para mirar: el cliente no puede cambiar nada.
+- No se muestran números de autorización ni datos de los pacientes.
+
 ## v1.244.0 — Noviembre 2026
 
 **ORLANT: la réplica de pruebas ya puede llenarse sola con Wolkvox (todavía apagada) y mapa de skills.**

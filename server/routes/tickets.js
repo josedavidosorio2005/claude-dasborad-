@@ -80,8 +80,34 @@ router.post('/tickets', requireActor, validate(schemas.ticketCrearBody), wrap((r
   const b = req.body;
   if (!T.tipoActivo(db, b.tipo)) return res.status(400).json({ error: 'Elige el tipo' }); // Fase 364: de la lista editable
   if (!T.campanaPermitida(db, req.actor, b.campana)) return res.status(400).json({ error: 'Elige una de tus campañas o «General (plataforma)»' });
-  const t = T.crear(db, req.actor, b, ahoraIso());
+  let adj = null;
+  if (b.adjunto) { // pedido 7 (23/11): el tipo real sale del contenido
+    adj = T.leerAdjunto(b.adjunto);
+    if (adj.error) return res.status(400).json({ error: adj.error });
+    // Tope para que nadie llene la base con archivos: 20 adjuntos por persona en 24 horas.
+    if (T.adjuntosRecientes(db, req.actor, new Date(Date.now() - 24 * 3600 * 1000).toISOString()) >= T.ADJUNTOS_POR_DIA) {
+      return res.status(429).json({ error: 'Llegaste al máximo de ' + T.ADJUNTOS_POR_DIA + ' adjuntos en 24 horas. Envía el ticket sin adjunto o inténtalo mañana.' });
+    }
+  }
+  const t = T.crear(db, req.actor, b, ahoraIso(), adj);
   res.status(201).json({ ticket: T.publico(Object.assign({}, t, { respuestas: 0 }), req.actor) });
+}));
+
+// Pedido 7 de Edwin (23/11/2026): descargar el adjunto. Mismas reglas de ver (autor o gestor; ajeno 404).
+// Siempre como descarga, con su tipo real, nosniff y sandbox (un PDF o imagen nunca corre como página).
+router.get('/tickets/:id/adjunto', requireActor, wrap((req, res) => {
+  const t = ticketVisible(req, res);
+  if (!t) return;
+  const a = T.adjuntoDe(db, t.id);
+  if (!a) return res.status(404).json({ error: 'Este ticket no tiene adjunto' });
+  res.set({
+    'Content-Type': a.tipo,
+    'Content-Disposition': 'attachment; filename="ticket-' + t.id + '-adjunto.' + a.nombre.split('.').pop() + '"; filename*=UTF-8\'\'' +
+      encodeURIComponent(a.nombre).replace(/['()*]/g, (c) => '%' + c.charCodeAt(0).toString(16).toUpperCase()),
+    'X-Content-Type-Options': 'nosniff',
+    'Content-Security-Policy': "default-src 'none'; sandbox",
+  });
+  res.send(a.datos);
 }));
 
 router.post('/tickets/:id/respuestas', requireActor, validate(schemas.ticketRespuestaBody), wrap((req, res) => {

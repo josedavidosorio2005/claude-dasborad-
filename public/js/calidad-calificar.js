@@ -93,6 +93,7 @@ function _cc2Campo(c) {
   if (c.k === 'motivoTexto' || c.k === 'estrategia' || c.k === 'causa') return _cc2TextoLargo(id, lbl, 4);
   if (c.k === 'observaciones') return _cc2TextoLargo(id, lbl, 6);
   var extra = c.k === 'placa' ? ' maxlength="20" autocapitalize="characters" spellcheck="false"' : (c.k === 'telefono' ? ' inputmode="tel" maxlength="40"' : ' maxlength="60"');
+  if (c.k === 'idAgente') return '<label class="cc2-f">' + lbl + '<input type="text" id="' + id + '"' + extra + ' spellcheck="false" autocomplete="off"><small class="cc2-hint" id="cc2-idagente-info" aria-live="polite" hidden></small></label>'; // ticket #3 SURA
   return '<label class="cc2-f">' + lbl + '<input type="text" id="' + id + '"' + extra + '></label>';
 }
 
@@ -210,7 +211,7 @@ function cc2Pintar() {
 
 // Fase 270: al elegir el asesor se llenan sus datos (lo que la plataforma sabe
 // de su usuario) y se avisa que queda enlazado a "Mis resultados".
-function _cc2AsesorElegido() {
+function _cc2AsesorElegido(sinAutollenar) {
   var sel = document.getElementById('cc2-f-asesor');
   var info = document.getElementById('cc2-asesor-info');
   if (!sel || !info) return;
@@ -218,9 +219,39 @@ function _cc2AsesorElegido() {
   var uid = opt ? opt.getAttribute('data-user-id') : null;
   var u = uid ? _cc2Asesores().find(function (x) { return String(x.id) === String(uid); }) : null;
   sel.classList.remove('cc2-invalid');
-  if (!u) { info.hidden = !(opt && opt.value); info.textContent = opt && opt.value ? 'Sin usuario ASESOR: no le llega a "Mis resultados".' : ''; return; }
+  if (!u) { info.hidden = !(opt && opt.value); info.textContent = opt && opt.value ? 'Sin usuario ASESOR: no le llega a "Mis resultados".' : ''; _cc2IdAgente(null, sinAutollenar); return; }
   info.hidden = false;
   info.textContent = 'Campaña ' + (u.asesorCampana || _ccampana) + (u.user ? ' · usuario ' + u.user : '') + ' · verá esta calificación en "Mis resultados".';
+  _cc2IdAgente(u, sinAutollenar);
+}
+
+// Ticket #3 de SURA (23/11): si la plantilla trae «ID de agente», al elegir el asesor se llena solo
+// (enlace con Wolkvox de la campaña o el último monitoreo de ese asesor; calidad-id-agente.js). Sigue
+// editable. Solo reemplaza un valor vacío o el que se llenó solo con otro asesor; si no hay dato, lo dice.
+var CC2_ID_ORIGEN = { wolkvox: 'Tomado del enlace con Wolkvox de esta campaña. Puedes cambiarlo.', monitoreo: 'Tomado del último monitoreo de este asesor. Puedes cambiarlo.' };
+function cc2IdAgenteTexto(r) {
+  if (!r) return '';
+  return r.id ? (CC2_ID_ORIGEN[r.origen] || 'Puedes cambiarlo.') : 'Este asesor no tiene ID de agente registrado: escríbelo a mano.';
+}
+function _cc2IdAgente(u, sinAutollenar) {
+  var el = document.getElementById('cc2-f-idAgente');
+  if (!el) return; // la plantilla no trae el campo
+  var hint = document.getElementById('cc2-idagente-info');
+  var poner = function (txt, aviso) { if (hint) { hint.textContent = txt || ''; hint.hidden = !txt; hint.classList.toggle('cc2-hint-aviso', !!aviso); } };
+  var auto = el.getAttribute('data-auto');
+  if (auto !== null && el.value === auto) { el.value = ''; } // lo había llenado solo con otro asesor
+  el.removeAttribute('data-auto');
+  poner('');
+  if (!u || sinAutollenar) return;
+  var pedido = String(u.id);
+  el.setAttribute('data-pedido', pedido);
+  apiRequest('GET', '/calidad/id-agente?campana=' + encodeURIComponent(_ccampana) + '&userId=' + encodeURIComponent(u.id)).then(function (r) {
+    if (el.getAttribute('data-pedido') !== pedido) return; // ya eligieron otro asesor
+    if (r && r.id && !String(el.value || '').trim()) { el.value = r.id; el.setAttribute('data-auto', r.id); }
+    poner(cc2IdAgenteTexto(r), !(r && r.id));
+  }, function () {
+    if (el.getAttribute('data-pedido') === pedido) poner('No se pudo buscar el ID de agente: escríbelo a mano.', true);
+  });
 }
 
 function _cc2Val(k) { var el = document.getElementById('cc2-f-' + k); return el ? String(el.value || '').trim() : ''; }
@@ -365,7 +396,7 @@ function cc2Editar(m) {
     var o = document.createElement('option'); o.value = m.asesor; o.textContent = textoFormatoNombre(m.asesor) + ' (sin usuario)';
     selA.appendChild(o); selA.disabled = false;
   }
-  set('asesor', m.asesor); _cc2AsesorElegido(); set('fecha', m.fecha); set('idLlamada', m.idLlamada); set('telefono', m.telefono); // Fase 343
+  set('asesor', m.asesor); _cc2AsesorElegido(true); set('fecha', m.fecha); set('idLlamada', m.idLlamada); set('telefono', m.telefono); // Fase 343
   set('codificacion', m.codificacion); set('observaciones', m.observaciones); set('evaluador', m.evaluador);
   set('canal', m.canal || 'LLAMADA'); // Fase 318
   var ex = m.extras || {};

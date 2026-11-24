@@ -56,10 +56,11 @@ test('textos y colores para la asesora (verde «Puntual», rojo «Llegaste tarde
 test('la tabla de «Mi malla» trae la fecha y la celda donde se pinta la puntualidad', () => {
   global.esc = (s) => String(s);
   global.MALLA_DIAS = L.MALLA_DIAS; global.mallaFechaDelDia = L.mallaFechaDelDia; global.mallaSemanaTexto = L.mallaSemanaTexto; global.mallaTurnoTexto = L.mallaTurnoTexto;
+  global.mallaPausasTexto = L.mallaPausasTexto; global.mallaHorasSemana = L.mallaHorasSemana; global.mallaHorasTexto = L.mallaHorasTexto; // pedido de Edwin 24/11
   try {
     const M = require(path.join(__dirname, '..', '..', 'public', 'js', 'malla.js'));
     const html = M.mallaMiaHtml({ semanas: [{ semana: LUNES, turno: { grupo: 'Lunes', horario: HOR } }] });
     assert.match(html, new RegExp('<tr data-fecha="' + LUNES + '"><th scope="row">'));
     assert.equal((html.match(/class="ml-punt-celda"/g) || []).length, 7);
-  } finally { for (const k of ['esc', 'MALLA_DIAS', 'mallaFechaDelDia', 'mallaSemanaTexto', 'mallaTurnoTexto']) delete global[k]; }
+  } finally { for (const k of ['esc', 'MALLA_DIAS', 'mallaFechaDelDia', 'mallaSemanaTexto', 'mallaTurnoTexto', 'mallaPausasTexto', 'mallaHorasSemana', 'mallaHorasTexto']) delete global[k]; }
 });

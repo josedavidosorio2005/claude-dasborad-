@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.243.0` en producción; `1.244.0` en la rama local de la Fase N6 (sin push ni PR); `1.241.0` queda para #902, sin mergear (ver `server/package.json`, expuesta en
+- **Versión**: `1.261.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -630,7 +630,29 @@ mismo orden):
 - Fase A31 — Primeras franjas del MOBILIZE real con la API (21/11 00:05 y 7:00): noviembre real = réplica día por día, respaldo del manual guardado (8/25/67/35/33), julio y octubre intactos; corrección de horas de la A28 y sondeo nov/2025–jun/2026 (solo docs, 2026-11-21)
 - Fase A32 — MOBILIZE: «mes consultado» de no conectadas (0, no «Pendiente») y julio de 2026 del real en el hueco (v1.239.1, 2026-11-21)
 - Fase N5 — ORLANT y Wolkvox: motor por operación (MOBILIZE igual), réplica oculta «ORLANT PRUEBAS API» apagada y «Diagnóstico de red» sin token; en producción, diagnóstico y «Probar» de wv0034 en Sí (v1.243.0, 2026-11-23, PR #905)
-- Fase N6 — ORLANT: consulta automática de la réplica «ORLANT PRUEBAS API» (apagada; Flujo, Flujo por hora, Tipificación y No conectadas) y «Mapa de skills» editable; solo en local (v1.244.0, 2026-11-23)
+- Fase N6 — ORLANT: consulta automática de la réplica «ORLANT PRUEBAS API» (apagada; Flujo, Flujo por hora, Tipificación y No conectadas) y «Mapa de skills» editable; en producción el 23/11, PR #908 (v1.244.0, 2026-11-23)
+- Fase STA (parte 4) — ORLANT: la pestaña STA del cliente muestra la misma visual de «Gráficas» del panel de Gestión STA, de solo lectura, con casos recortados (pedido de Edwin 23/11) (v1.245.0, 2026-11-23)
+- Fase STA (parte 5) — Gestión STA: «Regresar a disponibles» en Gestionados, por codificación o marcados, con la gestión en «Gestiones anteriores» (pedido de Edwin 23/11) (v1.246.0, 2026-11-23)
+- Fase STA (parte 6) — Gestión STA: una base eliminada queda en el historial de cargas como «Eliminada» (fecha y quién), sin su archivo (pedido de Edwin 23/11) (v1.247.0, 2026-11-23)
+- Fase SURA (23/11) — Televentas: «Ver por: Mes / Día» en Cumplimiento › Ventas por mes, por fecha de venta (pedido de Edwin 23/11) (v1.248.0, 2026-11-23)
+- Fase TK (23/11) — Tickets: «Ruta de ingreso» y 1 adjunto (imagen o PDF, hasta 3 MB) (pedido 7 de Edwin 23/11) (v1.249.0, 2026-11-23)
+- Fase CAL (23/11) — Calidad, portal de la asesora: «Sin ver» en rojo y «Te faltan N por ver» (pedido de Edwin 23/11) (v1.250.0, 2026-11-23)
+- Fase B3 (canal) — ORLANT, Total tráfico: botones Total / Llamadas / WhatsApp (plan de acción ORLANT; la parte General / 3P espera a Edwin) (v1.251.0, 2026-11-23)
+- Fase GH1 — «Talento humano»: la app de Gestión humana de Edwin dentro de SinCo, sin datos de prueba, de prueba solo para ADMIN (plan en `docs/gestion-humana/plan.md`) (v1.252.0, 2026-11-23)
+- Fase GH2 — «Talento humano» guarda en el servidor (`/api/gh/estado`, versión por sección, bitácora sin contenido); rol GESTION_HUMANA preparado tras `GH_ROL_ACTIVO=1` (apagado) (v1.253.0, 2026-11-23)
+- Fase GH3 — «Talento humano»: soportes adjuntos a S3 privado (`/api/gh/archivos`, tipo por contenido, bitácora sin nombre); apagado sin `GH_SOPORTES_S3_BUCKET` (v1.254.0, 2026-11-23)
+- Fase GH4 — Inventario de sistemas: «Novedades de Gestión Humana» (retirados, ausentes hoy y próximos 7 días con elementos asignados; solo lectura y lo mínimo, `/api/activos/novedades-gh`) (v1.255.0, 2026-11-23)
+- Ticket #3 SURA — Calidad, «Calificar»: «ID de agente» se llena solo al elegir el asesor (enlace con Wolkvox o último monitoreo; editable; aviso si no hay dato) (v1.256.0, 2026-11-23)
+- Fase STA7 — Gestión STA: filtros de la asignación (Entidad, Servicio, CUPS) en cascada; «Servicio» ya no ofrece servicios que no corresponden (v1.256.1, 2026-11-23)
+- Fase STA8 — Gestión STA de ORLANT: «Descargar plantilla» en la carga (Excel vacío con las 8 columnas) (v1.257.0, 2026-11-23)
+- Fase GH5 — Inventario de sistemas: «Panel general», «Registrar ingreso», listas, «Inventario» por tipo, Actas con pestañas y Ajustes en tarjetas como el diseño de Edwin; lista de diferencias en `docs/gestion-humana/inventario-diferencias.md` (v1.258.0, 2026-11-23)
+- Fase GH6 — Talento humano: salario y sede obligatorios en la ficha; gráficas sin fallar con registros viejos (v1.258.1, 2026-11-23)
+- Fase GH7 — Retiro de la Gestión humana anterior (personal por campaña): rutas 410, tablero 404, tabla y rol conservados (v1.259.0, 2026-11-23)
+- Fase GH8 — Limpieza: sale el HTML oculto y el JS de la Gestión humana anterior (sin cambio visible; tabla conservada) (v1.259.1, 2026-11-24)
+- Fase M1 — Malla, «casos especiales» (pedido 6 de Edwin): A tipos de excepción editables, B festivos de Colombia, C horario especial que se repite (v1.260.0, 2026-11-24)
+- Fase A33 — MOBILIZE real: la Encuesta de la API guarda el CONN_ID (solo el ID de la llamada); Calidad de encuestas enlaza por el ID limpio (v1.260.1, 2026-11-24)
+- Pedido a de Edwin (24/11) — SURA «Ventas por día» sin porcentajes con «Ver por = Día» (v1.260.2, 2026-11-24)
+- Pedido b de Edwin (24/11) — Malla del supervisor compacta; en Puntualidad, la novedad en vez de «Sin ingreso» (v1.261.0, 2026-11-24)
 - Fase 309 — Revisión de seguridad: el cliente ya no recibe el nombre de los líderes en `GET /metas`; resto en `docs/revision-seguridad-2026-11-09.md` (v1.154.1, 2026-11-10)
 - Fase 308 — Revisión antes de la reunión con clientes y pendientes del supervisor (solo docs, 2026-11-10)
 - Fase 307 — Calidad para que los líderes evalúen: ORLANT conserva su Calidad y suma «Resultado de los monitoreos» al final; Aurora ya lo tenía (se muestra con el primer monitoreo) (v1.154.0, 2026-11-10)

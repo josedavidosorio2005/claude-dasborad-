@@ -307,6 +307,35 @@ X('function draw8(){', [
   'function draw8(){drawVPD(); // Fase 375: el recuadro de ventas por día sigue los filtros de la página',
 ].join('\n'), 1);
 
+// ── Pedido de Edwin (reunión 23/11/2026; lo pregunta el cliente): en Cumplimiento › «📅 Ventas por mes»,
+// «Ver por: Mes / Día». Con «Día» se elige un mes y se ven las ventas día a día por fecha_venta («Fecha
+// evento», la misma fecha de la Fase 375), con los MISMOS filtros de la sección (agente, medida,
+// campaña, validación, ciudades/departamentos/productos y días hábiles). Mismo gráfico de líneas de Edwin.
+M('<div class="row fx" style="--fc:#1f6feb;margin:0;padding:6px 10px"><label>Agente<select id="ga"></select></label>',
+  '<div class="row fx" style="--fc:#1f6feb;margin:0;padding:6px 10px"><label>Ver por<select id="g4p"><option value="m">Mes</option><option value="d">Día</option></select></label><label id="g4ml" hidden>Mes<select id="g4mes"></select></label><label>Agente<select id="ga"></select></label>');
+X('function draw4(){', [
+  '/* ---------- Pedido de Edwin (23/11): Ventas por día en Cumplimiento (fecha_venta) ---------- */',
+  'function draw4dia(){const a=$("ga").value||"__total",med=$("gm").value,R=rows(true).filter(geoOK),f=med==="p"?fmon:fmt,fl=med==="p"?money:fmt;',
+  '  const ks=MKF().filter(k=>DB[k]&&DB[k].rows),sm=$("g4mes"),cur=ks.includes(sm.value)?sm.value:ks[ks.length-1];',
+  '  $("g4ml").hidden=false;sm.innerHTML=ks.map(k=>`<option value="${esc(k)}" ${k===cur?"selected":""}>${esc(mname(k)+" "+k.slice(0,4))}</option>`).join("");',
+  '  $("g4t").textContent=(med==="p"?"Producción":"Ventas")+" por día"+(cur?" · "+mname(cur)+" "+cur.slice(0,4):"");$("g4s").innerHTML="";',
+  '  const RM=cur?R.filter(r=>String(r[1]||"").startsWith(cur)):[];',
+  '  if(!RM.length){$("gl").innerHTML=\'<div class="empty">Sin ventas con los filtros actuales en este mes.</div>\';$("gt").innerHTML="";return}',
+  '  const n=new Date(+cur.slice(0,4),+cur.slice(5,7),0).getDate(),m={};',
+  '  RM.forEach(r=>{const i=+String(r[1]).slice(8,10)-1;if(!(i>=0&&i<n))return;const o=m[r[0]]||(m[r[0]]=new Array(n).fill(0));o[i]+=(med==="p"?r[3]:r[2])});',
+  '  const names=Object.keys(m),sum=v=>v.reduce((p,q)=>p+q,0);let S;',
+  '  if(a==="__total")S=[{n:"Total equipo",v:Array.from({length:n},(_,i)=>names.reduce((s,x)=>s+m[x][i],0))}];',
+  '  else S=(a==="__all"?names:[a]).map(x=>({n:pretty(x),v:m[x]||new Array(n).fill(0)})).sort((p,q)=>sum(q.v)-sum(p.v));',
+  '  const X=Array.from({length:n},(_,i)=>String(i+1));',
+  // Pedido de Edwin (24/11): con «Ver por = Día» la gráfica NO muestra los porcentajes de crecimiento/caída
+  // (pct=false); con «Mes» se quedan (draw4 de siempre, sin cambio).
+  '  $("gl").innerHTML=line(S,X,f,false);drawX4(RM,a,med);',
+  '  $("gt").innerHTML=`<table><tr><th>Agente</th>${X.map(x=>`<th>${x}</th>`).join("")}<th>Total</th></tr>`+S.map(s=>`<tr><td>${esc(s.n)}</td>${s.v.map(v=>`<td>${fl(v)}</td>`).join("")}<td><b>${fl(sum(s.v))}</b></td></tr>`).join("")+`</table>`;',
+  '}',
+  '["g4p","g4mes"].forEach(i=>$(i).addEventListener("change",draw4));',
+  'function draw4(){if($("g4p").value==="d")return draw4dia();$("g4ml").hidden=true;',
+].join('\n'), 1);
+
 {
   // sin imprimir contexto (podria traer datos): solo cual quedo
   const m = js.match(/SEED|save\(\)|idb\(|origPut|origDel|load\(\)|document\.body\.classList/i);

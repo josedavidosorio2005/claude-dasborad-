@@ -120,8 +120,10 @@ function turnoDe(db, asesorId, campana, lunes) {
   // Fase 373: color del grupo (mismo orden que semana()) y horario especial de la asesora encima.
   const orden = db.prepare('SELECT id FROM malla_grupos WHERE campana = ? AND semana = ? ORDER BY nombre').all(campana, lunes).map((x) => x.id);
   const dias = L.MALLA_DIAS.map((d) => L.mallaFechaDelDia(lunes, d.n));
-  const aj = X.aplicarAjustes(g.horario, lunes, X.ajustesDeAsesora(db, asesorId, campana, dias[0], dias[6]));
-  return { semana: g.semana, grupo: g.nombre, horario: aj.horario, especiales: aj.especiales, color: (orden.indexOf(g.id) % COLORES) + 1 };
+  // Fase M1 (B): primero los festivos (por defecto descansa) y encima el horario especial de la asesora.
+  const fe = L.mallaAplicarFestivos(g.horario, lunes, require('./malla-casos').festivosEnRango(db, dias[0], dias[6]));
+  const aj = X.aplicarAjustes(fe.horario, lunes, X.ajustesDeAsesora(db, asesorId, campana, dias[0], dias[6]));
+  return { semana: g.semana, grupo: g.nombre, horario: aj.horario, especiales: aj.especiales, festivos: fe.festivos, color: (orden.indexOf(g.id) % COLORES) + 1 };
 }
 
 module.exports = { L, puedeEditar, puedeLeer, campanasDe, asesorasDe, semana, obtener, crear, editar, borrar, asignar, copiar, turnoDe };

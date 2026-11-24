@@ -7,6 +7,8 @@ const { requireActor } = require('../auth');
 const { fechaLimitesHoyColombia } = require('../fecha-limites');
 const M = require('../malla');
 const X = require('../malla-extra'); // Fase 373: novedades y horario especial
+const C = require('../malla-casos'); // Fase M1: casos especiales (tipos de excepción, festivos)
+const { isFullAdmin } = require('../auth');
 const { wrap, actorLabel, logEvent } = require('./shared');
 
 const router = express.Router();
@@ -37,7 +39,8 @@ router.get('/malla', requireActor, wrap((req, res) => {
   if (!campana || !L.mallaEsLunes(lunes)) return res.status(400).json({ error: 'Elige la campaña y una semana (su lunes, AAAA-MM-DD)' });
   if (!M.puedeLeer(req.actor, campana)) return res.status(403).json({ error: 'Sin acceso a la malla de esta campaña' });
   res.json({ campana, semana: lunes, grupos: M.semana(db, campana, lunes), asesoras: M.asesorasDe(db, campana), puedeEditar: M.puedeEditar(req.actor, campana),
-    novedades: X.novedadesSemana(db, campana, lunes, { incluirQuitadas: true }), ajustes: X.ajustesSemana(db, campana, lunes) }); // Fase 373
+    novedades: X.novedadesSemana(db, campana, lunes, { incluirQuitadas: true }), ajustes: X.ajustesSemana(db, campana, lunes), // Fase 373
+    festivos: C.festivosDeSemana(db, lunes), puedeAdministrarFestivos: isFullAdmin(req.actor) }); // Fase M1 (B)
 }));
 
 router.post('/malla/grupos', requireActor, wrap((req, res) => {
@@ -147,8 +150,19 @@ router.put('/malla/ajustes', requireActor, wrap((req, res) => {
   if (!M.puedeEditar(req.actor, campana)) return res.status(403).json({ error: 'Solo el supervisor de la campaña o el administrador editan la malla' });
   const r = X.guardarAjuste(db, Object.assign({}, b, { campana }), actorLabel(req.actor), ahoraIso());
   if (r.error) return res.status(400).json({ error: r.error });
-  log('MALLA_HORARIO_ESPECIAL', campana, nombreDe(b.asesorId), req, r.fechas.join(', ') + ' · ' + L.mallaTurnoTexto(r.turno));
-  res.json({ ok: true, fechas: r.fechas, turno: r.turno });
+  // Fase M1 (C): una repetición se resume (primer y último día, cuántos) para no llenar el Historial.
+  const dias = r.serie ? r.fechas[0] + ' a ' + r.fechas[r.fechas.length - 1] + ' · ' + r.fechas.length + ' día(s), se repite cada semana' : r.fechas.join(', ');
+  log('MALLA_HORARIO_ESPECIAL', campana, nombreDe(b.asesorId), req, dias + ' · ' + L.mallaTurnoTexto(r.turno));
+  res.json({ ok: true, fechas: r.fechas, turno: r.turno, serie: r.serie });
+}));
+// Fase M1 (C): quitar toda una repetición de horario especial.
+router.delete('/malla/ajustes/serie/:serie', requireActor, wrap((req, res) => {
+  const lista = X.ajustesDeSerie(db, String(req.params.serie || ''));
+  if (!lista.length || !M.puedeLeer(req.actor, lista[0].campana)) return res.status(404).json({ error: 'Horario especial no encontrado' });
+  if (!M.puedeEditar(req.actor, lista[0].campana)) return res.status(403).json({ error: 'Solo el supervisor de la campaña o el administrador editan la malla' });
+  const n = X.quitarSerie(db, lista[0].serie);
+  log('MALLA_HORARIO_ESPECIAL_QUITADO', lista[0].campana, nombreDe(lista[0].asesorId), req, lista[0].fecha + ' a ' + lista[lista.length - 1].fecha + ' · ' + n + ' día(s), toda la repetición');
+  res.json({ ok: true, quitados: n });
 }));
 router.delete('/malla/ajustes/:id', requireActor, wrap((req, res) => {
   const a = idValido(req.params.id) ? X.obtenerAjuste(db, Number(req.params.id)) : null;
@@ -180,7 +194,7 @@ router.get('/malla/puntualidad', requireActor, wrap((req, res) => {
   const r = P.calcular(db, campana, lunes, L.mallaFechaDelDia(lunes, 7), { ahora: ahoraColombia() });
   const editar = M.puedeEditar(req.actor, campana);
   if (!editar) { delete r.agentesSinEnlace; delete r.conLoginSinTurno; }
-  res.json(Object.assign(r, { semana: lunes, puedeEditar: editar, tipos: P.TIPOS_EXCEPCION }));
+  res.json(Object.assign(r, { semana: lunes, puedeEditar: editar, tipos: C.tiposMapa(db), tiposActivos: C.tipos(db), puedeAdministrarTipos: isFullAdmin(req.actor) })); // Fase M1 (A)
 }));
 
 router.get('/malla/agentes', requireActor, wrap((req, res) => {
@@ -217,14 +231,14 @@ router.post('/malla/excepciones', requireActor, wrap((req, res) => {
   if (!soloClaves(b, ['campana', 'userId', 'desde', 'hasta', 'tipo'])) return res.status(400).json({ error: 'Datos no válidos' });
   const campana = campanaDe(b.campana);
   if (!campanaPuntualidad(req, res, campana, true)) return;
-  if (!Object.prototype.hasOwnProperty.call(P.TIPOS_EXCEPCION, b.tipo)) return res.status(400).json({ error: 'Elige el tipo: incapacidad, vacaciones o permiso' });
+  if (!C.tipoActivo(db, b.tipo)) return res.status(400).json({ error: 'Elige un tipo de excepción de la lista' }); // Fase M1 (A): tipos editables
   const hasta = b.hasta === undefined || b.hasta === '' ? b.desde : b.hasta;
   if (!fechaValida(b.desde) || !fechaValida(hasta) || hasta < b.desde) return res.status(400).json({ error: 'Revisa las fechas (desde y hasta, AAAA-MM-DD)' });
   if (P.diasEntre(b.desde, hasta).length > P.MAX_DIAS_EXCEPCION) return res.status(400).json({ error: 'Máximo ' + P.MAX_DIAS_EXCEPCION + ' días por excepción' });
   const a = P.asesorasDe(db, campana).find((x) => x.id === b.userId);
   if (!Number.isInteger(b.userId) || !a) return res.status(400).json({ error: 'Elige una asesora activa de la campaña' });
   const r = db.prepare('INSERT INTO malla_excepciones (campana, userId, desde, hasta, tipo, creadoPor, createdAt) VALUES (?,?,?,?,?,?,?)').run(campana, a.id, b.desde, hasta, b.tipo, actorLabel(req.actor), ahoraIso());
-  log('MALLA_EXCEPCION', campana, a.nombre, req, P.TIPOS_EXCEPCION[b.tipo] + ' · ' + b.desde + (hasta !== b.desde ? ' a ' + hasta : ''));
+  log('MALLA_EXCEPCION', campana, a.nombre, req, C.tiposMapa(db)[b.tipo] + ' · ' + b.desde + (hasta !== b.desde ? ' a ' + hasta : ''));
   res.status(201).json({ id: Number(r.lastInsertRowid) });
 }));
 
@@ -234,7 +248,7 @@ router.delete('/malla/excepciones/:id', requireActor, wrap((req, res) => {
   if (!e || !P.config(e.campana) || !M.puedeLeer(req.actor, e.campana)) return res.status(404).json({ error: 'Excepción no encontrada' });
   if (!M.puedeEditar(req.actor, e.campana)) return res.status(403).json({ error: 'Solo el supervisor de la campaña o el administrador' });
   db.prepare('DELETE FROM malla_excepciones WHERE id = ?').run(e.id);
-  log('MALLA_EXCEPCION_QUITADA', e.campana, e.nombre || '-', req, (P.TIPOS_EXCEPCION[e.tipo] || e.tipo) + ' · ' + e.desde + (e.hasta !== e.desde ? ' a ' + e.hasta : ''));
+  log('MALLA_EXCEPCION_QUITADA', e.campana, e.nombre || '-', req, (C.tiposMapa(db)[e.tipo] || e.tipo) + ' · ' + e.desde + (e.hasta !== e.desde ? ' a ' + e.hasta : ''));
   res.json({ ok: true });
 }));
 
@@ -268,9 +282,62 @@ router.get('/malla/mi-puntualidad', requireActor, wrap((req, res) => {
   const ahora = ahoraColombia();
   const semanas = [actual, L.mallaSumarSemanas(actual, -1)].map((s) => {
     const r = P.calcular(db, campana, s, L.mallaFechaDelDia(s, 7), { ahora, soloUserId: req.actor.id });
-    return { semana: s, datosHasta: r.datosHasta, filas: r.filas.map((f) => ({ fecha: f.fecha, entrada: f.entrada, salida: f.salida, estado: f.estado, tardeSeg: f.tardeSeg, salidaAnticipadaSeg: f.salidaAnticipadaSeg, primerLogin: f.primerLogin, ultimoLogout: f.ultimoLogout, excepcion: f.excepcion ? f.excepcion.tipo : null })) };
+    // Pedido de Edwin (24/11): la vista de la asesora queda igual; la novedad que reemplaza a «Sin ingreso» es
+    // solo para el supervisor (el texto lo escribió él y la asesora ya ve sus novedades en «Mi malla»).
+    return { semana: s, datosHasta: r.datosHasta, filas: r.filas.map((f) => ({ fecha: f.fecha, entrada: f.entrada, salida: f.salida, estado: f.estado === 'novedad' ? 'sin_ingreso' : f.estado, tardeSeg: f.tardeSeg, salidaAnticipadaSeg: f.salidaAnticipadaSeg, primerLogin: f.primerLogin, ultimoLogout: f.ultimoLogout, excepcion: f.excepcion ? f.excepcion.tipo : null })) };
   });
-  res.json({ semanas, tipos: P.TIPOS_EXCEPCION });
+  res.json({ semanas, tipos: C.tiposMapa(db) });
+}));
+
+// ── Fase M1 (B): festivos de Colombia. Los lee quien lee alguna malla; agregar o quitar: solo el ADMIN
+// completo (cambia la puntualidad de todas las campañas). Todo cambio queda en el Historial.
+router.get('/malla/festivos', requireActor, wrap((req, res) => {
+  if (!M.campanasDe(db, req.actor).length) return res.status(403).json({ error: 'Sin acceso a la malla' });
+  const anio = /^\d{4}$/.test(String(req.query.anio || '')) ? Number(req.query.anio) : Number(fechaLimitesHoyColombia().slice(0, 4));
+  if (anio < 2000 || anio > 2100) return res.status(400).json({ error: 'Año no válido' });
+  const admin = isFullAdmin(req.actor);
+  res.json({ anio, festivos: C.festivosDelAnio(db, anio, { incluirQuitados: admin }), puedeAdministrar: admin });
+}));
+router.post('/malla/festivos', requireActor, wrap((req, res) => {
+  if (!isFullAdmin(req.actor)) return res.status(403).json({ error: 'Solo el administrador cambia los festivos' });
+  const r = C.agregarFestivo(db, req.body, actorLabel(req.actor), ahoraIso());
+  if (r.error) return res.status(r.status || 400).json({ error: r.error });
+  log('MALLA_FESTIVO', '-', r.festivo.nombre, req, r.festivo.fecha + (r.restaurado ? ' · vuelve el festivo de ley' : ' · agregado'));
+  res.status(201).json(r);
+}));
+router.delete('/malla/festivos/:fecha', requireActor, wrap((req, res) => {
+  if (!isFullAdmin(req.actor)) return res.status(403).json({ error: 'Solo el administrador cambia los festivos' });
+  const r = C.quitarFestivo(db, String(req.params.fecha || ''), actorLabel(req.actor), ahoraIso());
+  if (r.error) return res.status(r.status || 400).json({ error: r.error });
+  log('MALLA_FESTIVO_QUITADO', '-', r.festivo.nombre, req, r.festivo.fecha + (r.festivo.origen === 'ley' ? ' · festivo de ley quitado' : ' · agregado quitado'));
+  res.json({ ok: true });
+}));
+
+// ── Fase M1 (A): tipos de excepción. Los lee quien lee alguna malla; los crea y edita solo el ADMIN
+// completo. Un tipo no se borra: se desactiva. Todo cambio queda en el Historial.
+router.get('/malla/tipos-excepcion', requireActor, wrap((req, res) => {
+  if (!M.campanasDe(db, req.actor).length) return res.status(403).json({ error: 'Sin acceso a la malla' });
+  res.json({ tipos: C.tipos(db, { todos: true }), puedeAdministrar: isFullAdmin(req.actor) });
+}));
+router.post('/malla/tipos-excepcion', requireActor, wrap((req, res) => {
+  if (!isFullAdmin(req.actor)) return res.status(403).json({ error: 'Solo el administrador cambia los tipos de excepción' });
+  const r = C.crearTipo(db, req.body, ahoraIso());
+  if (r.error) return res.status(r.status || 400).json({ error: r.error });
+  log('MALLA_TIPO_EXCEPCION', '-', r.tipo.nombre, req, 'creado' + (r.tipo.cuentaTrabajado ? ' · cuenta como día trabajado' : ''));
+  res.status(201).json(r);
+}));
+router.put('/malla/tipos-excepcion/:codigo', requireActor, wrap((req, res) => {
+  if (!isFullAdmin(req.actor)) return res.status(403).json({ error: 'Solo el administrador cambia los tipos de excepción' });
+  const codigo = String(req.params.codigo || '');
+  if (!/^[a-z0-9_]{1,40}$/.test(codigo)) return res.status(404).json({ error: 'Tipo no encontrado' });
+  const r = C.editarTipo(db, codigo, req.body);
+  if (r.error) return res.status(r.status || 400).json({ error: r.error });
+  const cambios = [];
+  if (r.antes.nombre !== r.tipo.nombre) cambios.push('nombre: ' + r.antes.nombre + ' → ' + r.tipo.nombre);
+  if (r.antes.activo !== r.tipo.activo) cambios.push(r.tipo.activo ? 'activado' : 'desactivado');
+  if (r.antes.cuentaTrabajado !== r.tipo.cuentaTrabajado) cambios.push(r.tipo.cuentaTrabajado ? 'cuenta como día trabajado' : 'no cuenta como día trabajado');
+  log('MALLA_TIPO_EXCEPCION_EDITADO', '-', r.tipo.nombre, req, cambios.join(' · ') || 'sin cambios');
+  res.json({ tipo: r.tipo });
 }));
 
 module.exports = router;

@@ -1189,9 +1189,9 @@ td.kpi-red{background:rgba(231,76,60,.14);color:var(--c-danger-text);font-weight
 /* Overlays de los modulos Inventario / Gerencia / Gestion Humana.
    (Inventario y Gerencia no tenian regla propia — quedaban como bloque suelto
    al fondo; se corrige aqui junto con el nuevo de Gestion Humana. Fase 10.) */
-#inventario-overlay,#gerencia-overlay,#gestionhumana-overlay{display:none;position:fixed;inset:0;background:rgba(8,38,52,0.72);z-index:var(--z-panel);align-items:center;justify-content:center;backdrop-filter:blur(4px);}
-#inventario-overlay.show,#gerencia-overlay.show,#gestionhumana-overlay.show{display:flex;}
-#inventario-modal,#gerencia-modal,#gestionhumana-modal{background:var(--c-bg);border-radius:var(--r-xl);width:96vw;max-width:1180px;max-height:93vh;overflow-y:auto;box-shadow:var(--shadow-xl);display:flex;flex-direction:column;padding-bottom:18px;}
+#inventario-overlay,#gerencia-overlay{display:none;position:fixed;inset:0;background:rgba(8,38,52,0.72);z-index:var(--z-panel);align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+#inventario-overlay.show,#gerencia-overlay.show{display:flex;}
+#inventario-modal,#gerencia-modal{background:var(--c-bg);border-radius:var(--r-xl);width:96vw;max-width:1180px;max-height:93vh;overflow-y:auto;box-shadow:var(--shadow-xl);display:flex;flex-direction:column;padding-bottom:18px;}
 .dm-readonly{width:100%;padding:11px 14px;border:1.5px solid #e0eaf0;border-radius:8px;font-size:var(--fs-body-lg);color:var(--c-primary);background:#eef3f6;min-height:20px;}
 .qi-answer-badge{border-radius:var(--r-sm);padding:5px 12px;font-size:var(--fs-small);font-weight:700;min-width:60px;text-align:center;display:inline-block;}
 .qi-answer-si{background:#e8f8f1;color:var(--c-success-dark);border:1.5px solid var(--c-success);}
@@ -1553,10 +1553,10 @@ body{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;accent
 .tk-tipo-fila .btn-cancel,.tk-activo{min-height:44px}
 .tk-activo{display:inline-flex;align-items:center;gap:6px}
 /* Fase 364 (B3): ventanas de módulo en pantalla completa (lista en motion-helpers.js). */
-#calidad-overlay,#gd-overlay,#stv-overlay,#gerencia-overlay,#gestionhumana-overlay,#inventario-overlay,
-#modal-malla,#modal-tickets,#cargas-overlay,#centro-overlay,#dashcfg-overlay,#supervisar-lider-overlay,#activos-overlay{padding:0 !important;align-items:stretch !important;justify-content:stretch !important;}
-#calidad-modal,#gd-modal,#stv-modal,#gerencia-modal,#gestionhumana-modal,#inventario-modal,
-#modal-malla > .modal,#modal-tickets > .modal,#cargas-modal,#centro-modal,#dashcfg-modal,#supervisar-lider-modal,#activos-overlay > .modal{
+#calidad-overlay,#gd-overlay,#stv-overlay,#gerencia-overlay,#inventario-overlay,
+#modal-malla,#modal-tickets,#cargas-overlay,#centro-overlay,#dashcfg-overlay,#supervisar-lider-overlay,#activos-overlay,#th-overlay{padding:0 !important;align-items:stretch !important;justify-content:stretch !important;}
+#calidad-modal,#gd-modal,#stv-modal,#gerencia-modal,#inventario-modal,
+#modal-malla > .modal,#modal-tickets > .modal,#cargas-modal,#centro-modal,#dashcfg-modal,#supervisar-lider-modal,#activos-overlay > .modal,#th-overlay > .modal{
   width:100% !important;max-width:none !important;height:100dvh !important;max-height:none !important;margin:0 !important;border-radius:0 !important;overflow-y:auto;box-sizing:border-box;}
 
 /* 6) Tarjetas: un filo de 1px del tono del borde suave, sumado a la
@@ -1933,6 +1933,7 @@ html[data-motion="off"] #gd-panels .aurora-kpi,html[data-motion="off"] #gd-panel
 .cc2-f input[readonly],.cc2-f input:disabled,.cc2-f select:disabled{background:var(--c-surface-alt);color:var(--c-text-muted)}
 .cc2-f .cc2-invalid,.cc2-invalid{border-color:var(--c-danger-dark)!important;box-shadow:0 0 0 2px var(--c-danger-bg)}
 .cc2-hint{font-size:var(--fs-note);color:var(--c-text-muted)}
+.cc2-hint.cc2-hint-aviso{color:var(--c-warning-text);font-weight:600} /* ticket #3 SURA: asesor sin ID de agente */
 .cc2-cat{margin:14px 0 4px;padding-bottom:6px;border-bottom:1px dashed var(--c-border);font-size:var(--fs-note);font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--c-text-link)}
 .cc2-cat:first-child{margin-top:0}
 .cc2-item{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--c-border)}
@@ -2674,8 +2675,111 @@ div.ca-bar-fila{cursor:default}
   .modal-malla .table-wrap{margin:0 -4px}
 }
 .ml-dia-corto{display:none}
+/* Pedido de Edwin (24/11): ventana de la malla del supervisor más compacta. Solo .modal-malla («Mi malla» de la
+   asesora no cambia). Escritorio: controles de ≥32 px (WCAG 2.5.8 pide ≥24); en celular (≤768) los principales
+   vuelven a 44 px (docs/sistema-de-diseno.md). */
+.modal-malla{width:min(1280px,100%)}
+.modal-malla h3{margin-bottom:8px}
+.ml-barra{flex-wrap:nowrap;gap:10px;margin-bottom:8px}
+.ml-barra .ig{min-width:0;flex:0 1 auto}
+.ml-barra .ig:first-child{flex:0 1 230px}
+.ml-barra .ml-mes{flex:0 0 200px}
+.ml-barra .ml-semanas-mes{flex:1 1 220px}
+.ml-semana{flex-wrap:nowrap;gap:6px;flex:0 1 auto}
+.ml-semana span{font-size:var(--fs-body);white-space:nowrap}
+.modal-malla select,.modal-malla input[type="text"],.modal-malla input[type="time"],.modal-malla input[type="month"],.modal-malla input[type="date"]{min-height:36px;padding:5px 8px}
+.ml-semana .btn-cancel{min-height:36px;min-width:36px;padding:0 10px}
+.ml-acciones{gap:8px;margin-bottom:8px}
+.ml-acciones .btn-primary,.ml-acciones .btn-cancel,#ml-festivos-btn{min-height:36px;padding:6px 12px}
+.ml-vistas{display:flex;gap:4px;margin:4px 0 10px;border-bottom:2px solid var(--c-border-soft)}
+.ml-vistas.hidden{display:none}
+.ml-tab{min-height:40px;padding:8px 20px;border:0;border-bottom:3px solid transparent;margin-bottom:-2px;background:transparent;color:var(--c-text-2);font-size:var(--fs-body);font-weight:700;cursor:pointer;border-radius:var(--r-md) var(--r-md) 0 0}
+.ml-tab:hover{background:var(--c-hover-bg);color:var(--c-text)}
+.ml-tab[aria-pressed="true"]{color:var(--c-primary);border-bottom-color:var(--c-primary);background:var(--c-primary-soft)}
+.ml-tab:focus-visible{outline:2px solid var(--c-focus);outline-offset:2px}
+.ml-grupo{padding:12px 14px;margin-bottom:10px}
+.ml-grupo-cab{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;justify-content:space-between;margin-bottom:8px}
+.ml-grupo-cab .ig{margin-bottom:0;flex:1 1 240px;max-width:420px}
+.ml-grupo-btns{display:flex;gap:8px}
+.ml-grupo-btns button{min-height:36px;padding:6px 12px}
+.ml-grupo-cuerpo{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
+@media (min-width:1024px){.ml-grupo-cuerpo{grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);align-items:start}}
+.modal-malla .ml-tabla th,.modal-malla .ml-tabla td{padding:3px 6px}
+.modal-malla .ml-tabla input[type="checkbox"],.modal-malla .ml-asesora input{width:20px;height:20px}
+.ml-grupo .ml-fest-ayuda{margin:4px 0 0;font-size:var(--fs-small)}
+.ml-grupo .ml-asesoras{margin:0;padding:6px 10px;display:block;min-width:0}
+.ml-asesoras-lista{max-height:286px;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:0 10px;padding-right:4px}
+.ml-asesoras-lista:focus-visible{outline:2px solid var(--c-focus);outline-offset:2px}
+.modal-malla .ml-asesora{min-height:32px;font-size:var(--fs-body)}
+.ml-casos{margin-top:10px;padding:4px 10px}
+.ml-casos summary{min-height:36px}
+.ml-caso{padding:5px 0}
+.ml-caso-btns{gap:6px}
+.ml-btn-sm{min-height:30px;padding:4px 10px;border:1px solid var(--c-border);border-radius:var(--r-sm);background:var(--c-surface);color:var(--c-primary);font-size:var(--fs-small);font-weight:600;cursor:pointer}
+.ml-btn-sm:hover{background:var(--c-hover-bg)}
+.ml-btn-sm:focus-visible{outline:2px solid var(--c-focus);outline-offset:1px}
+/* Pedido de Edwin (24/11): «Novedades» y «Horario especial» en ámbar (mismos tokens que la pastilla vis-amarillo). */
+.ml-btn-sm.ml-btn-ambar{background:var(--c-warning-bg);color:var(--c-warning-text);border-color:var(--c-warning)}
+.ml-btn-sm.ml-btn-ambar:hover{background:var(--c-warning-bg);border-color:var(--c-warning-dark);box-shadow:inset 0 0 0 1px var(--c-warning)}
+.ml-chip.ml-chip-ambar{background:var(--c-warning-bg);border-color:var(--c-warning)}
+.ml-casos summary{color:var(--c-warning-text)}
+/* Pedido de Edwin (24/11): pausas activas, almuerzo y horas por día del grupo; total de la semana y aviso
+   (sin bloquear) si no suma 42 h. En el celular cada día pasa a una tarjeta de 2 columnas con su etiqueta. */
+.ml-pausas{margin-top:10px;border:1px solid var(--c-border-soft);border-radius:var(--r-md);padding:4px 10px 8px}
+.ml-pausas summary{cursor:pointer;min-height:36px;display:flex;align-items:center;font-weight:600;color:var(--c-text-2)}
+.ml-tabla-pausas select{min-height:32px;min-width:84px;padding:2px 4px;font-size:var(--fs-small)}
+.ml-alm{display:inline-flex;gap:4px;align-items:center;flex-wrap:nowrap}
+.ml-dur{display:block;font-weight:400;color:var(--c-text-muted)}
+.ml-horas-dia{white-space:nowrap;font-variant-numeric:tabular-nums;font-weight:600;color:var(--c-text)}
+.ml-descanso .ml-horas-dia{color:var(--c-text-muted);font-weight:400}
+.ml-horas-semana{margin:8px 0 0;color:var(--c-text);font-size:var(--fs-body)}
+.ml-horas-aviso{margin:6px 0 0;padding:6px 10px;border-radius:var(--r-sm);background:var(--c-warning-bg);color:var(--c-warning-text);font-size:var(--fs-small);border:1px solid var(--c-warning)}
+.ml-mia-pausas{display:block;margin-top:2px;font-size:var(--fs-small);color:var(--c-text-2)}
+.ml-mia-total{margin:8px 0 0;font-size:var(--fs-small);color:var(--c-text-2)}
+@media (max-width:600px){
+  .ml-tabla-pausas thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+  .ml-tabla-pausas tr{display:grid;grid-template-columns:1fr 1fr;grid-template-areas:"dia horas" "p1 p2" "alm alm";gap:4px 10px;padding:6px 0;border-bottom:1px solid var(--c-border-soft)}
+  .ml-tabla-pausas tr.ml-descanso{display:none}
+  .ml-tabla-pausas td[data-etq="Pausa 1"]{grid-area:p1}
+  .ml-tabla-pausas td[data-etq="Pausa 2"]{grid-area:p2}
+  .ml-tabla-pausas td[data-etq="Horas"]{grid-area:horas;text-align:right;align-self:center}
+  .ml-tabla-pausas td[data-etq="Horas"]::before{display:none}
+  .ml-tabla-pausas th,.ml-tabla-pausas td{border:0;padding:0 !important}
+  .ml-tabla-pausas th[scope="row"]{grid-area:dia;font-weight:700}
+  .ml-tabla-pausas th[scope="row"] .ml-dia-largo{position:static;width:auto;height:auto;clip:auto;overflow:visible}
+  .ml-tabla-pausas th[scope="row"] .ml-dia-corto{display:none}
+  .ml-tabla-pausas td::before{content:attr(data-etq);display:block;font-size:var(--fs-note);color:var(--c-text-2)}
+  .ml-tabla-pausas td[data-etq="Almuerzo"]{grid-area:alm}
+  .ml-tabla-pausas .ml-alm input{flex:1 1 auto}
+}
+@media (max-width:768px){.ml-tabla-pausas select,.ml-tabla-pausas input[type="time"]{min-height:44px}}
+.mp-novedad{white-space:normal;max-width:180px;min-width:96px;overflow-wrap:break-word;word-break:normal;hyphens:manual}
+@media (max-width:1100px){.ml-barra{flex-wrap:wrap}}
+@media (max-width:768px){
+  .modal-malla select,.modal-malla input[type="text"],.modal-malla input[type="month"],.ml-semana .btn-cancel,.ml-tab,.ml-acciones .btn-primary,.ml-acciones .btn-cancel,#ml-festivos-btn,.ml-grupo-btns button{min-height:44px}
+  .ml-semana .btn-cancel{min-width:44px}
+  .ml-barra .ig:first-child,.ml-barra .ml-mes,.ml-barra .ml-semanas-mes{flex:1 1 calc(50% - 10px)}
+  .ml-semana{flex:1 1 calc(50% - 10px);flex-wrap:nowrap}
+  .ml-semana span{white-space:normal;min-width:0;flex:1 1 auto;text-align:center}
+  .ml-tab{flex:1 1 0}
+}
+@media (max-width:600px){ /* las reglas compactas no deben pisar las del celular (Fase 358) */
+  .modal-malla .ml-tabla th,.modal-malla .ml-tabla td{padding:4px 2px}
+  .modal-malla input[type="time"]{padding:6px 2px;width:100%;min-width:0;font-size:var(--fs-small)}
+  .ml-grupo{padding:10px 8px}
+  .ml-barra .ig:first-child,.ml-barra .ml-mes,.ml-barra .ml-semanas-mes,.ml-semana{flex:1 1 100%}
+  .ml-semana{flex-wrap:wrap}
+}
 /* Fase 369 (E1): Inventario de sistemas. */
 .modal-activos{position:relative}
+/* Fase GH1: «Talento humano» (app de Edwin en un iframe, con su propio tema oscuro). Barra de SinCo arriba. */
+#th-overlay > .modal.modal-th{display:flex;flex-direction:column;padding:0;overflow:hidden}
+.th-barra{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:8px 64px 8px 16px;position:relative;border-bottom:1px solid var(--c-border-soft);background:var(--c-surface)}
+.th-barra h3{margin:0;font-size:var(--fs-h3, 1.1rem);color:var(--c-text)}
+.th-aviso{margin:0;font-size:var(--fs-note);color:var(--c-text-2)}
+.th-barra .tk-cerrar{position:absolute;top:50%;right:10px;transform:translateY(-50%);width:44px;height:44px;border:0;border-radius:var(--r-md);background:transparent;color:var(--c-text-2);font-size:var(--fs-h2);line-height:1;cursor:pointer}
+.th-barra .tk-cerrar:hover{background:var(--c-border-soft);color:var(--c-text)}
+.th-frame{flex:1 1 auto;width:100%;min-height:0;border:0;display:block}
 /* El «Acciones» solo para lector de pantalla (sr-only, absoluto) no debe escaparse del scroll de la tabla. */
 .modal-activos .table-wrap{position:relative}
 .ac-kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin:0 0 14px}
@@ -2709,6 +2813,101 @@ div.ca-bar-fila{cursor:default}
 .ac-import{border:1px solid var(--c-border);border-radius:12px;padding:12px 14px;margin:0 0 16px}
 .ac-link{background:none;border:0;padding:0;font:inherit;color:inherit;text-decoration:underline;cursor:pointer;min-height:24px}
 .ac-sub{margin:14px 0 6px;color:var(--c-text-2)}
+/* Fase GH5: «Panel general» del Inventario igual al diseño de Edwin (activosPanel2Html). Solo tokens. */
+#ac-p-panel{--acp-elibre:var(--c-brand-blue);--acp-een_uso:var(--c-brand-green);--acp-een_reparacion:var(--c-warning);--acp-emalo:var(--c-danger);--acp-ede_baja:var(--c-brand-gray-mid);
+  --acp-rbajo:var(--c-danger);--acp-rmedio:var(--c-warning);--acp-ralto:var(--c-brand-green);--acp-rsin:var(--c-brand-gray-mid)}
+.acp-cab{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin:0 0 12px}
+.acp-acc{display:flex;gap:8px;order:2}
+.acp-chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center;order:1;flex:1 1 420px}
+.acp-chips-t{font-size:var(--fs-note);font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--c-text-2);margin-right:4px}
+.acp-chip{min-height:36px;padding:4px 14px;border-radius:999px;border:1px solid var(--c-brand-blue);background:transparent;color:var(--c-text);font:inherit;font-size:var(--fs-note);font-weight:600;cursor:pointer}
+.acp-chip.on{background:var(--c-brand);border-color:var(--c-brand);color:var(--c-on-brand)}
+.acp-chip:focus-visible,.acp-btn:focus-visible,.acp-kpi:focus-visible{outline:var(--focus-ring, 2px solid var(--c-brand-blue));outline-offset:2px}
+.acp-btn{min-height:36px;padding:6px 14px;border-radius:var(--r-md);border:1px solid var(--c-brand-blue);background:transparent;color:var(--c-text);font:inherit;font-size:var(--fs-note);font-weight:600;cursor:pointer;white-space:nowrap}
+.acp-btn:hover,.acp-chip:hover{background:var(--c-surface-subtle)}
+.acp-chip.on:hover{background:var(--c-brand);color:var(--c-on-brand)}
+.acp-kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin:0 0 14px}
+.acp-kpi{display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;padding:12px 14px;border:1px solid var(--c-border-soft);border-radius:var(--r-md);background:var(--c-surface);color:var(--c-text);font:inherit;cursor:pointer}
+.acp-kpi span{font-size:var(--fs-note);color:var(--c-text-2)}
+.acp-kpi b{font-size:var(--fs-h2);line-height:1.1}
+.acp-kpi small{font-size:var(--fs-note);color:var(--c-text-muted)}
+.acp-kpi:hover{border-color:var(--c-brand-blue)}
+.acp-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.acp-card{border:1px solid var(--c-border-soft);border-radius:var(--r-md);background:var(--c-surface);padding:14px 16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.acp-card h4{margin:0;color:var(--c-brand-blue);font-size:var(--fs-body)}
+.acp-ancha{grid-column:1/-1}
+.acp-ayuda{margin:0;font-size:var(--fs-note);color:var(--c-text-muted)}
+.acp-pie{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin-top:auto;font-size:var(--fs-note);color:var(--c-text-2)}
+.acp-vacio{margin:8px 0;text-align:center;color:var(--c-text-muted);font-size:var(--fs-note)}
+.acp-dona-w{display:flex;flex-wrap:wrap;gap:18px;align-items:center}
+.acp-dona{width:132px;height:132px;border-radius:50%;display:grid;place-items:center;flex:none}
+.acp-dona>div{width:88px;height:88px;border-radius:50%;background:var(--c-surface);display:flex;flex-direction:column;align-items:center;justify-content:center}
+.acp-dona b{font-size:var(--fs-h2);line-height:1}
+.acp-dona span{font-size:var(--fs-note);color:var(--c-text-muted)}
+.acp-filas{list-style:none;margin:0;padding:0;flex:1 1 180px;display:flex;flex-direction:column;gap:8px}
+.acp-filas li{display:grid;grid-template-columns:12px 1fr auto 52px;gap:8px;align-items:center;font-size:var(--fs-note)}
+.acp-filas small{color:var(--c-text-muted);text-align:right}
+.acp-filas i,.acp-ley i{display:inline-block;width:10px;height:10px;border-radius:3px}
+.acp-ley{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:var(--fs-note);color:var(--c-text-2)}
+.acp-ley span{display:inline-flex;align-items:center;gap:5px}
+.acp-barras{display:flex;flex-direction:column;gap:8px}
+.acp-bar{display:grid;grid-template-columns:minmax(80px,30%) 1fr auto;gap:10px;align-items:center;font-size:var(--fs-note)}
+.acp-bar-n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.acp-bar-t{display:flex;height:12px;border-radius:var(--r-sm);background:var(--c-surface-alt);overflow:hidden}
+.acp-bar-t i{display:block;height:100%}
+.acp-c-elibre{background:var(--acp-elibre)}.acp-c-een_uso{background:var(--acp-een_uso)}.acp-c-een_reparacion{background:var(--acp-een_reparacion)}.acp-c-emalo{background:var(--acp-emalo)}.acp-c-ede_baja{background:var(--acp-ede_baja)}
+.acp-c-rbajo{background:var(--acp-rbajo)}.acp-c-rmedio{background:var(--acp-rmedio)}.acp-c-ralto{background:var(--acp-ralto)}.acp-c-rsin{background:var(--acp-rsin)}
+.acp-c-marca{background:var(--c-accent)}.acp-c-valor{background:var(--c-brand-green)}.acp-c-renta{background:var(--c-purple)}
+.acp-c-lingresos{background:var(--c-brand-blue)}.acp-c-lasignaciones{background:var(--c-brand-green)}.acp-c-ldevoluciones{background:var(--c-purple)}.acp-c-ldanos{background:var(--c-danger)}
+.acp-cal{list-style:none;margin:0;padding:0}
+.acp-cal li{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--c-border-soft);font-size:var(--fs-note)}
+.acp-cal li span{flex:1}
+.acp-cal-n{min-width:28px;text-align:center;padding:2px 8px;border-radius:999px;background:var(--c-success-bg);color:var(--c-success-text)}
+.acp-cal-n.hay{background:var(--c-warning-bg);color:var(--c-warning-text)}
+.acp-mov{width:100%;height:auto}
+.acp-eje{stroke:var(--c-border-soft);stroke-width:1}
+.acp-txt{fill:var(--c-text-muted);font-size:var(--fs-note)}
+.acp-mov polyline{stroke-width:2}
+polyline.acp-l-ingresos{stroke:var(--c-brand-blue)}polyline.acp-l-asignaciones{stroke:var(--c-brand-green)}polyline.acp-l-devoluciones{stroke:var(--c-purple)}polyline.acp-l-danos{stroke:var(--c-danger)}
+circle.acp-l-ingresos{fill:var(--c-brand-blue)}circle.acp-l-asignaciones{fill:var(--c-brand-green)}circle.acp-l-devoluciones{fill:var(--c-purple)}circle.acp-l-danos{fill:var(--c-danger)}
+/* Fase GH5b: «Registrar ingreso» por tarjetas */
+.acr-cab{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;margin:0 0 12px}
+.acr-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin:0 0 14px}
+.acr-top{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start;justify-content:space-between}
+.acr-edit{min-height:32px;padding:4px 10px;border-radius:var(--r-sm);border:1px solid var(--c-border-soft);background:transparent;color:var(--c-text-2);font:inherit;font-size:var(--fs-note);cursor:pointer}
+.acr-edit:hover{border-color:var(--c-brand-blue)}
+.acr-edit:focus-visible{outline:2px solid var(--c-brand-blue);outline-offset:2px}
+.acr-n{margin:0;font-size:var(--fs-note);font-weight:700;color:var(--c-brand-blue)}
+.acr-acc{display:flex;flex-wrap:wrap;gap:8px;margin-top:auto}
+.acr-nueva{border-style:dashed;border-color:var(--c-brand-blue)}
+.acr-ultimos{margin:0 0 14px}
+.acr-lista{list-style:none;margin:0;padding:0}
+.acr-lista li{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;padding:6px 0;border-bottom:1px solid var(--c-border-soft);font-size:var(--fs-note)}
+.acr-lista small{color:var(--c-text-muted);margin-left:auto}
+/* Fase GH5c: listas con las columnas de Edwin y vista «Inventario» por tipo */
+.acl-tipo{display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid var(--c-brand-blue);color:var(--c-text);font-size:var(--fs-note);font-weight:600;white-space:nowrap}
+.acl-serial{display:block;color:var(--c-text-muted);font-size:var(--fs-note)}
+.acl-acc{display:flex;flex-wrap:nowrap;gap:6px}
+.acl-acc .ac-btn{margin:0;white-space:nowrap}
+.acl-tabla th[scope=row]{white-space:nowrap}
+.acl-tabla td,.acl-tabla th{vertical-align:middle}
+#ac-inv-tipos .acp-chips{margin:0 0 12px}
+.aci-total{font-size:var(--fs-h2);line-height:1;color:var(--c-brand-blue)}
+.aci-est{display:grid;grid-template-columns:repeat(2,1fr);gap:6px 12px;margin:0}
+.aci-est div{display:flex;justify-content:space-between;gap:8px;font-size:var(--fs-note);border-bottom:1px solid var(--c-border-soft);padding:2px 0}
+.aci-est dt{color:var(--c-text-2)}
+.aci-est dd{margin:0;font-weight:700}
+.aci-sel{border-color:var(--c-brand-blue);box-shadow:0 0 0 1px var(--c-brand-blue)}
+/* Fase GH5d: Ajustes en tarjetas */
+.aj-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin:0 0 12px}
+.aj-ancha{grid-column:1/-1}
+#ac-p-ajustes>.aj-ancha{margin:0 0 12px}
+.aj-card .ig{margin:0}
+.aj-card .ig>label[for^="ac-l-"]{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.aj-card textarea{width:100%;box-sizing:border-box}
+.aj-estados{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px}
+@media (max-width:900px){.acp-grid{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:480px){.acp-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.acp-bar{grid-template-columns:minmax(64px,34%) 1fr auto}.acp-acc{width:100%}.acp-acc .acp-btn{flex:1}}
 .ac-sedes,.ac-hist{margin:0 0 10px 18px}
 .ac-estado-form{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin:12px 0}
 .ac-estado-form .ig{margin-bottom:0}
@@ -2718,6 +2917,13 @@ div.ca-bar-fila{cursor:default}
 .ac-check{display:flex;align-items:center;gap:8px;min-height:44px;color:var(--c-text-2)}
 .ac-check input{width:20px;height:20px}
 .ac-acciones{display:flex;flex-wrap:wrap;gap:8px}
+/* Fase GH4: «Novedades desde Gestión Humana» (solo lectura). */
+.ac-gh-sec{margin-bottom:14px}
+.ac-gh-sec summary{cursor:pointer;font-weight:600;color:var(--c-text-2);min-height:44px;display:flex;align-items:center;gap:8px}
+.ac-gh-lista{list-style:none;margin:8px 0 0;padding:0}
+.ac-gh-fila{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;padding:10px 0;border-top:1px solid var(--c-border-soft)}
+.ac-gh-txt{display:flex;flex-direction:column;gap:2px;flex:1 1 240px;min-width:0;overflow-wrap:anywhere}
+.ac-gh-estado{color:var(--c-text-2)}
 .ac-asig-form{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin:12px 0;padding:12px;border:1px solid var(--c-border-soft);border-radius:var(--r-md)}
 .ac-asig-form .ig{margin-bottom:0;flex:1 1 180px}
 .ac-form-titulo{flex-basis:100%;margin:0}
@@ -2777,9 +2983,6 @@ div.ca-bar-fila{cursor:default}
 .cc-horarios-sin{margin:6px 0 0 18px}
 /* Fase 366 (D1): selector de mes y semanas del mes en la malla. */
 .ml-mes{margin-bottom:0;min-width:180px}
-.ml-semanas-mes{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}
-.ml-sem-btn{min-height:44px}
-.ml-sem-btn[aria-pressed="true"]{background:var(--grad-btn);border-color:transparent;color:var(--c-on-brand)}
 /* Fase 363: pestaña «Puntualidad» de la malla. La tabla (asesora × 7 días) se desplaza dentro de su
    .table-wrap en el celular; la página nunca. */
 .ml-vistas{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}
@@ -2800,6 +3003,31 @@ div.ca-bar-fila{cursor:default}
 .mp-exc-form .btn-primary,.mp-quitar,#mp-agentes-btn,#mp-agentes .btn-cancel,#mp-agentes select{min-height:44px}
 .mp-exc-lista{list-style:none;padding:0;margin:10px 0 0}
 .mp-exc-lista li{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:4px 0;border-bottom:1px solid var(--c-border-soft)}
+/* Fase M1 (B): festivos */
+.ml-festivos{margin:8px 0;padding:8px 12px;border-left:4px solid var(--c-primary);background:var(--c-surface-subtle);border-radius:var(--r-md)}
+.ml-fila-festivo th,.ml-fila-festivo td{border-top:2px dashed var(--c-border-soft)}
+.ml-fest-ayuda{margin:4px 0 8px}
+#ml-festivos-btn{min-height:44px}
+.ml-fest-lista{list-style:none;padding:0;margin:6px 0 10px}
+.ml-fest-lista li{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:4px 0;border-bottom:1px solid var(--c-border-soft)}
+.ml-fest-quitado{color:var(--c-text-muted)}
+/* Fase M1 (C): horario especial que se repite */
+.ml-rep{color:var(--c-text-2);font-size:var(--fs-small)}
+.ml-rep-quitar{min-height:44px}
+.ml-rep-ayuda{flex-basis:100%;margin:0}
+/* Fase M1 (A): tipos de excepción (solo el ADMIN) */
+.mp-check{display:inline-flex;align-items:center;gap:6px;min-height:44px;cursor:pointer}
+.mp-check input{width:18px;height:18px;accent-color:var(--c-primary)}
+#mp-tipos-btn,.mp-tipos .btn-cancel,.mp-tipos .btn-primary,.mp-tipos input[type=text]{min-height:44px}
+.mp-tipos input[type=text]{width:100%;min-width:180px}
+.mp-tipo-inactivo td{color:var(--c-text-muted)}
+@media (max-width:600px){ /* en celular, cada tipo en su tarjeta: sin scroll lateral ni botones escondidos */
+  .mp-tipos thead{display:none}
+  .mp-tipos tr{display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;padding:8px 0;border-bottom:1px solid var(--c-border-soft)}
+  .mp-tipos td{display:block;border:0;padding:0}
+  .mp-tipos td:first-child,.mp-tipos td:last-child{grid-column:1 / -1}
+  .mp-tipos input[type=text]{min-width:0}
+}
 .mp-mia-tit{margin-top:18px}
 /* Fase 357 (C): pestaña «Vistos» de Calidad. */
 .vis-ayuda{font-size:var(--fs-small);color:var(--c-text-2);line-height:1.8;margin:0 0 12px}
@@ -2809,6 +3037,11 @@ div.ca-bar-fila{cursor:default}
 .vis-amarillo{background:var(--c-warning-bg);color:var(--c-warning-text)}
 .vis-rojo{background:var(--c-danger-bg);color:var(--c-danger-text)}
 .vis-gris{background:var(--c-border-soft);color:var(--c-text-2)}
+/* Pedido de Edwin (23/11/2026): «Sin ver» en «Mis resultados» de la asesora (rojo del semáforo: es un
+   estado; paleta.css no lleva rojo a propósito). Texto «Sin ver» + borde: el color nunca va solo. */
+.mr-sin-ver-resumen:not(.hidden){display:block;margin:0 0 10px;padding:8px 12px;border-radius:var(--r-md);border-left:4px solid var(--c-danger);background:var(--c-danger-bg);color:var(--c-danger-text);font-weight:700;font-size:var(--fs-body)}
+#mr-table tr.mr-fila-sin-ver td:first-child{box-shadow:inset 4px 0 0 var(--c-danger)}
+.mr-sin-ver-pill{margin-left:6px;vertical-align:middle}
 .vis-tabla{width:100%;border-collapse:collapse;font-size:var(--fs-body)}
 .vis-tabla th,.vis-tabla td{padding:8px 10px;border-bottom:1px solid var(--c-border-soft);text-align:left;vertical-align:middle}
 .vis-tabla th{color:var(--c-text-2);font-size:var(--fs-small)}
@@ -2839,6 +3072,14 @@ html.ver-como-activo body{padding-bottom:84px}
 .tk-ayuda{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:6px;font-size:var(--fs-small)}
 .tk-aviso{color:var(--c-warning-text);font-weight:600}
 .tk-cont{color:var(--c-text-muted);margin-left:auto}
+/* Pedido 7 de Edwin (23/11/2026): ruta de ingreso y adjunto */
+.tk-opcional{font-weight:400;color:var(--c-text-muted)}
+.tk-ayuda-txt{display:block;margin-top:4px;font-size:var(--fs-small);color:var(--c-text-muted)}
+#tk-adjunto{min-height:44px;width:100%;max-width:100%}
+.tk-adjunto:not(.hidden){display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:8px 0 0;font-size:var(--fs-small);color:var(--c-text)}
+.tk-adjunto span{overflow-wrap:anywhere}
+.tk-adjunto .btn-cancel{min-height:44px}
+.tk-adj-img:not(.hidden){display:block;flex-basis:100%;max-width:100%;max-height:320px;object-fit:contain;border:1px solid var(--c-border);border-radius:var(--r-md);background:var(--c-surface)}
 .tk-filtros{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0 12px}
 .tk-lista{list-style:none;margin:0;padding:0;display:grid;gap:8px}
 .tk-item{display:grid;gap:4px;width:100%;min-height:44px;text-align:left;padding:10px 12px;border:1px solid var(--c-border);border-radius:var(--r-md);background:var(--c-surface);color:var(--c-text);font:inherit;cursor:pointer}

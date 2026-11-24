@@ -158,7 +158,8 @@ declarar(['GET /health', 'POST /auth/login'], 'skip');
 // de ORLANT solo lo suyo; cliente de ORLANT solo /resumen). Probado rol por rol en faseSTA-orlant-gestion-sta.test.js.
 declarar(['GET /orlant/sta/estado', 'GET /orlant/sta/resumen', 'POST /orlant/sta/cargas', 'GET /orlant/sta/cargas', 'GET /orlant/sta/cargas/:id/archivo',
   'DELETE /orlant/sta/cargas/:id', 'POST /orlant/sta/asignar', 'POST /orlant/sta/devolver', 'POST /orlant/sta/pasar', 'PUT /orlant/sta/config/tipis',
-  'POST /orlant/sta/casos/:numero/codificar', 'POST /orlant/sta/casos/:numero/rellamada'], 'skip');
+  'POST /orlant/sta/casos/:numero/codificar', 'POST /orlant/sta/casos/:numero/rellamada',
+  'POST /orlant/sta/gestionados/regresar'], 'skip'); // pedido 2 de Edwin (23/11): soloGestor, probado en faseSTA5
 // Plan B de Wolkvox (B1): agente de la oficina, sin sesion; se protege con su propia clave
 // (X-Agente-Clave, huella en SSM) -- cubierto en faseB1-wolkvox-ingesta.test.js.
 declarar(['POST /api/wolkvox/agente/flujo'], 'skip');
@@ -179,6 +180,7 @@ declarar(['DELETE /users/:id'], 'permiso:eliminarUsuarios');
 
 // Calidad — plantillas/monitoreos/codificaciones/metas/nivel de servicio
 declarar(['GET /calidad/plantillas', 'GET /calidad/plantillas/todas'], 'open'); // filtra por campana adentro (lista), no 403 -- Fase 102 PR #225; /todas: Fase 237
+declarar(['GET /calidad/id-agente'], 'skip'); // Ticket #3 de SURA: canEvaluateCampaign + asesor de esa campaña, probado en faseSURA-ticket3-id-agente.test.js
 declarar(['GET /monitoreos/mios', 'GET /monitoreos/mios/nuevos', 'PUT /monitoreos/:id/visto'], 'open'); // auto-scoped por actor.id/nombre
 declarar(['POST /monitoreos/mios/abierto'], 'open'); // Fase 357 (C): solo registra a la propia asesora (los demás roles: no hace nada)
 declarar(['GET /calidad/vistos'], 'skip'); // Fase 357 (C): ADMIN, o REPORTES/SUPERVISOR con acceso a la campaña -- probado en fase357c-vistos.test.js
@@ -196,7 +198,7 @@ declarar(['GET /wolkvox/estado', 'POST /wolkvox/probar', 'POST /wolkvox/diagnost
 // un ajeno no vea ni conteste) se prueban rol por rol en fase356-tickets.test.js.
 // Fase STA (20/11/2026): ya no son 'open': el cliente de ORLANT no usa Tickets (403). Probado en
 // fase356-tickets.test.js (cualquier otro rol con sesión) y faseSTA-orlant-gestion-sta.test.js (el 403).
-declarar(['GET /tickets/campanas', 'GET /tickets', 'GET /tickets/:id', 'POST /tickets', 'POST /tickets/:id/respuestas'], 'skip');
+declarar(['GET /tickets/campanas', 'GET /tickets', 'GET /tickets/:id', 'POST /tickets', 'POST /tickets/:id/respuestas', 'GET /tickets/:id/adjunto'], 'skip'); // adjunto: pedido 7 (23/11), cubierto en faseTK-ruta-adjunto
 declarar(['GET /tickets/contador', 'PUT /tickets/:id/estado', 'DELETE /tickets/:id'], 'skip');
 declarar(['GET /tickets/tipos'], 'skip'); // Fase STA: antes 'open' (ver arriba) // Fase 364: tipos activos (cualquiera con sesión)
 declarar(['POST /tickets/tipos', 'PUT /tickets/tipos/:codigo'], 'admin'); // Fase 364: solo ADMIN edita los tipos
@@ -210,7 +212,10 @@ declarar(['GET /malla', 'POST /malla/grupos', 'PUT /malla/grupos/:id', 'DELETE /
   // Fase 367: «Horarios» por archivo -- probados rol por rol en fase367-horarios-archivo.test.js.
   'GET /malla/horarios', 'POST /malla/horarios/carga',
   // Fase 373: novedades y horario especial, probados rol por rol en fase373-malla-novedades.test.js.
-  'POST /malla/novedades', 'DELETE /malla/novedades/:id', 'PUT /malla/ajustes', 'DELETE /malla/ajustes/:id'], 'skip');
+  'POST /malla/novedades', 'DELETE /malla/novedades/:id', 'PUT /malla/ajustes', 'DELETE /malla/ajustes/:id',
+  // Fase M1: casos especiales (tipos de excepción, festivos, repetición), probados rol por rol en faseM1-malla-*.test.js.
+  'GET /malla/tipos-excepcion', 'POST /malla/tipos-excepcion', 'PUT /malla/tipos-excepcion/:codigo',
+  'GET /malla/festivos', 'POST /malla/festivos', 'DELETE /malla/festivos/:fecha', 'DELETE /malla/ajustes/serie/:serie'], 'skip');
 declarar(['PUT /monitoreos/:id/fecha'], 'calidadManage'); // Fase 337: quien lo califico, Reportes o admin (fase337-fecha-del-monitoreo.test.js) // Fase 333: corregir solo el asesor "Invalid Date" (fase333-sin-asesor.test.js)
 declarar(['GET /calidad/codificaciones'], 'scopedRead');
 declarar(['POST /calidad/codificaciones/bulk', 'PUT /calidad/codificaciones/:id'], 'cargaCampana'); // Fase 299
@@ -368,7 +373,7 @@ declarar(['POST /admin/ver-como/fin'], 'skip');
 // Fase 383: el Inventario anterior (/inventario/*) se retiró: ya no tiene rutas (un middleware responde 410
 // a todos), probado en inventario-gerencia.test.js y abajo.
 // Fase 369 (E1): Inventario de sistemas -- ADMIN y SISTEMAS, probado rol por rol en fase369-inventario-sistemas.test.js.
-declarar(['GET /activos/config', 'GET /activos/resumen', 'GET /activos', 'POST /activos', 'PUT /activos/:id', 'POST /activos/:id/estado', 'GET /activos/:id/historial', 'PUT /activos/listas/:lista',
+declarar(['GET /activos/config', 'GET /activos/resumen', 'GET /activos/novedades-gh' /* Fase GH4 */, 'GET /activos/panel' /* Fase GH5 */, 'GET /activos', 'POST /activos', 'PUT /activos/:id', 'POST /activos/:id/estado', 'GET /activos/:id/historial', 'PUT /activos/listas/:lista',
   // Fase 370 (E2): agentes y asignación, también probados rol por rol en fase370-inventario-agentes.test.js.
   'GET /activos/agentes', 'POST /activos/agentes', 'GET /activos/agentes/:id', 'PUT /activos/agentes/:id', 'POST /activos/:id/asignar', 'POST /activos/:id/reasignar', 'POST /activos/:id/devolver', 'POST /activos/:id/cambiar',
   // Fase 371 (E3): actas, probadas rol por rol en fase371-inventario-actas.test.js.
@@ -377,8 +382,12 @@ declarar(['GET /activos/config', 'GET /activos/resumen', 'GET /activos', 'POST /
   'POST /activos/config/tipos', 'PUT /activos/config/tipos/:codigo', 'PUT /activos/config/tipos/:codigo/activo', 'PUT /activos/config/textos/:clave'], 'skip');
 declarar(['GET /gerencia/kpis', 'GET /gerencia/periodos', 'GET /gerencia/resumen'], 'modulo:Gerencia');
 declarar(['POST /gerencia/kpis', 'PUT /gerencia/kpis/:id', 'DELETE /gerencia/kpis/:id', 'POST /gerencia/carga'], 'moduloYcarga:Gerencia');
-declarar(['GET /gh/personal', 'GET /gh/resumen'], 'modulo:GestionHumana');
-declarar(['POST /gh/personal', 'PUT /gh/personal/:id', 'DELETE /gh/personal/:id'], 'modulo:GestionHumana');
+// Fase GH2: «Talento humano» (app de Edwin) -- ADMIN; GESTION_HUMANA solo con GH_ROL_ACTIVO=1; probado
+// rol por rol (apagado y encendido) en faseGH2-talento-humano-servidor.test.js.
+declarar(['GET /gh/acceso', 'GET /gh/estado', 'PUT /gh/estado/:clave', 'GET /gh/bitacora',
+  'POST /gh/archivos', 'GET /gh/archivos/:id', 'DELETE /gh/archivos/:id'], 'skip'); // Fase GH3: en faseGH3-talento-humano-soportes.test.js
+// Fase GH7: la Gestión humana anterior (/gh/personal*, /gh/resumen) se retiró: ya no tiene rutas (un
+// middleware responde 410), probado en gestion-humana.test.js y abajo.
 
 // Query extra obligatoria por ruta (mas alla de `campana`), segun el
 // esquema Zod real de validation.js (confirmado por lectura, Fase 118).
@@ -656,13 +665,11 @@ test('Fase 118 2A: POST /gerencia/kpis exige canLoadData (cargarDatos) -- GERENC
   assert.equal(resGerencia.status, 403, 'GERENCIA (solo vista) no deberia poder cargar KPIs');
 });
 
-test('Fase 118 2A: POST /gh/personal solo rol GESTION_HUMANA o ADMIN', async () => {
+test('Fase GH7: POST /gh/personal (Gestión humana anterior, retirada) da 410 a todos los roles', async () => {
   const body = { nombre: 'Persona matriz 118', fecha_ingreso: '2026-01-15' };
   for (const rol of TODOS_LOS_ROLES) {
     const res = await request(app).post('/api/gh/personal').set(auth(rol)).send(body);
-    const deberiaPasar = rol === 'ADMIN' || rol === 'GESTION_HUMANA';
-    if (deberiaPasar) assert.notEqual(res.status, 403, `${rol}: ${JSON.stringify(res.body)}`);
-    else assert.equal(res.status, 403, `${rol} deberia dar 403, vino ${res.status}`);
+    assert.equal(res.status, 410, `${rol} deberia dar 410, vino ${res.status}`);
   }
 });
 

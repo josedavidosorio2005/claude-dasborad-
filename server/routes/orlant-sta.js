@@ -3,7 +3,8 @@
 //  - GESTOR (supervisor de ORLANT, ADMIN, GERENCIA): todo — base, histórico de cargas (descargar y
 //    eliminar), asignar / devolver / pasar, gráficas, gestiones y tipificaciones.
 //  - ASESOR de ORLANT: SOLO sus casos (bandeja, codificar, volver a llamar, histórico, indicadores).
-//  - CLIENTE de ORLANT (CLIENTES_DASH): solo /resumen (agregados para las gráficas de su Dashboard).
+//  - CLIENTE de ORLANT (CLIENTES_DASH): /resumen (agregados) y /estado?vista=cliente (la visual de
+//    «Gráficas» de Edwin, solo lectura, con los casos recortados: ver estadoCliente).
 //  - Nadie más (403).
 'use strict';
 const express = require('express');
@@ -44,6 +45,12 @@ router.use(BASE, (req, res, next) => { res.set('Cache-Control', 'no-store'); nex
 
 // Qué ve quien pregunta: el navegador decide la vista con «vista».
 router.get(BASE + '/estado', requireActor, h((req, res) => {
+  // Pedido de Edwin (23/11/2026): la pestaña STA del Dashboard pide «vista=cliente» (solo «Gráficas»,
+  // casos recortados). La ven el cliente de ORLANT y quienes gestionan el STA (mismo Dashboard).
+  if (req.query.vista === 'cliente') {
+    if (!esGestor(req.actor) && !esClienteSta(req.actor)) return res.status(403).json({ error: 'Sin acceso a las gráficas STA' });
+    return res.json(Object.assign({ vista: 'cliente' }, STA.estadoCliente(db)));
+  }
   if (esGestor(req.actor)) return res.json(Object.assign({ vista: 'supervisor' }, STA.estadoSupervisor(db)));
   if (esAsesorSta(req.actor)) return res.json(Object.assign({ vista: 'asesor', yo: { id: Number(req.actor.id), nombre: req.actor.nombre || '' } }, STA.estadoAsesor(db, req.actor.id)));
   return res.status(403).json({ error: 'Sin acceso a Gestión STA' });
@@ -69,7 +76,7 @@ router.get(BASE + '/cargas/:id/archivo', requireActor, soloGestor, h((req, res) 
   res.send(a.contenido);
 }));
 router.delete(BASE + '/cargas/:id', requireActor, soloGestor, h((req, res) => {
-  const r = STA.borrarCarga(db, req.params.id, req.query.conservar === '1');
+  const r = STA.borrarCarga(db, req.params.id, req.query.conservar === '1', actorLabel(req.actor));
   log(req, 'STA_CARGA_ELIMINAR', `${STA.CAMPANA} · carga ${Number(req.params.id)}: ${r.eliminados} casos eliminados, ${r.conservados} gestionados conservados`);
   res.json(r);
 }));
@@ -83,6 +90,13 @@ router.post(BASE + '/devolver', requireActor, soloGestor, h((req, res) => {
   const b = req.body || {};
   const r = STA.devolver(db, { agenteId: b.agenteId, cantidad: b.cantidad, numeros: b.numeros });
   log(req, 'STA_DEVOLVER', `${STA.CAMPANA} · ${r.devueltos} casos del asesor ${Number(b.agenteId)} a libres`);
+  res.json(r);
+}));
+// Pedido de Edwin (23/11/2026): regresar gestionados a disponibles (por codificación o marcados).
+router.post(BASE + '/gestionados/regresar', requireActor, soloGestor, h((req, res) => {
+  const b = req.body || {};
+  const r = STA.regresarGestionados(db, { tipi: b.tipi, numeros: b.numeros, por: actorLabel(req.actor) });
+  log(req, 'STA_REGRESAR', `${STA.CAMPANA} · ${r.regresados} gestionados regresados a disponibles · ` + (Array.isArray(b.numeros) ? 'marcados uno a uno' : 'codificación «' + String(b.tipi).slice(0, 80) + '»'));
   res.json(r);
 }));
 router.post(BASE + '/pasar', requireActor, soloGestor, h((req, res) => {

@@ -65,6 +65,7 @@ function asegurarTablas(db) {
     );
     CREATE INDEX IF NOT EXISTS idx_sta_casos_agente ON sta_casos (campana, agenteId, estado);
     CREATE INDEX IF NOT EXISTS idx_sta_casos_carga ON sta_casos (cargaId);
+    -- (pedido 3 de Edwin, 23/11: eliminadaAt / eliminadaPor se agregan abajo si faltan)
     CREATE TABLE IF NOT EXISTS sta_config (
       campana TEXT PRIMARY KEY,
       tipis TEXT NOT NULL,
@@ -73,6 +74,10 @@ function asegurarTablas(db) {
       updatedAt TEXT NOT NULL
     );
   `);
+  // Pedido 3 de Edwin (23/11/2026): una carga eliminada queda en el registro como «Eliminada».
+  const cols = new Set(db.prepare('PRAGMA table_info(sta_cargas)').all().map((c) => c.name));
+  if (!cols.has('eliminadaAt')) db.exec('ALTER TABLE sta_cargas ADD COLUMN eliminadaAt TEXT');
+  if (!cols.has('eliminadaPor')) db.exec('ALTER TABLE sta_cargas ADD COLUMN eliminadaPor TEXT');
 }
 
 // ── utilidades (las del HTML) ──
@@ -209,7 +214,7 @@ function cargar(db, { archivo, filas, columnas, archivoB64, por }) {
 
 function cargas(db) {
   asegurarTablas(db);
-  return db.prepare(`SELECT c.id, c.fecha, c.archivo, c.leidas, c.nuevos, c.dup, c.sinNum, c.actEst, c.eliminados, c.cargadoPorNombre,
+  return db.prepare(`SELECT c.id, c.fecha, c.archivo, c.leidas, c.nuevos, c.dup, c.sinNum, c.actEst, c.eliminados, c.cargadoPorNombre, c.eliminadaAt, c.eliminadaPor,
                             (c.archivoGz IS NOT NULL) tieneArchivo, (SELECT COUNT(*) FROM sta_casos s WHERE s.cargaId = c.id) casosActuales,
                             (SELECT COUNT(*) FROM sta_casos s WHERE s.cargaId = c.id AND s.agenteId IS NULL) sinAsignar,
                             (SELECT COUNT(*) FROM sta_casos s WHERE s.cargaId = c.id AND s.agenteId IS NOT NULL AND s.estado = 'pendiente') pendientes,
@@ -224,11 +229,14 @@ function archivoDeCarga(db, id) {
   return { nombre: r.archivo, contenido: zlib.gunzipSync(r.archivoGz) };
 }
 // borrarCarga del HTML: se borran los casos que entraron con esa carga (también los de las bandejas);
-// con conservar=true se quedan los gestionados y la carga queda en el histórico con «eliminados».
-function borrarCarga(db, id, conservar) {
+// con conservar=true se quedan los gestionados.
+// Pedido 3 de Edwin (23/11/2026): la carga YA NO desaparece del registro: queda «Eliminada» (fecha y
+// quién), con «eliminados» sumados, y sin el Excel original (eliminar la base es quitar sus datos).
+function borrarCarga(db, id, conservar, por) {
   asegurarTablas(db);
-  const cg = db.prepare('SELECT id FROM sta_cargas WHERE campana = ? AND id = ?').get(CAMPANA, Number(id));
+  const cg = db.prepare('SELECT id, eliminadaAt FROM sta_cargas WHERE campana = ? AND id = ?').get(CAMPANA, Number(id));
   if (!cg) throw new StaError(404, 'Esa carga no existe');
+  if (cg.eliminadaAt) throw new StaError(409, 'Esa carga ya fue eliminada');
   let n = 0, k = 0;
   db.transaction(() => {
     if (conservar) {
@@ -237,8 +245,7 @@ function borrarCarga(db, id, conservar) {
     } else {
       n = db.prepare('DELETE FROM sta_casos WHERE cargaId = ?').run(cg.id).changes;
     }
-    if (!k) db.prepare('DELETE FROM sta_cargas WHERE id = ?').run(cg.id);
-    else db.prepare('UPDATE sta_cargas SET eliminados = eliminados + ? WHERE id = ?').run(n, cg.id);
+    db.prepare('UPDATE sta_cargas SET eliminados = eliminados + ?, eliminadaAt = ?, eliminadaPor = ?, archivoGz = NULL WHERE id = ?').run(n, ahora(), String(por || '').slice(0, 120), cg.id);
   })();
   return { eliminados: n, conservados: k };
 }
@@ -311,6 +318,43 @@ function pasar(db, { agenteId, destinoId, cantidad, numeros }) {
   return { pasados: n };
 }
 
+// ── Pedido de Edwin (23/11/2026): «Regresar a disponibles» desde Gestionados ──
+// Por codificación (todos los gestionados con esa tipificación, también las efectivas como «Agendado»)
+// o por casos marcados uno a uno. Cada caso vuelve a la bolsa libre (sin asesor, pendiente) para
+// reasignarlo; la gestión que tenía NO se pierde: pasa a «Gestiones anteriores» (prev), con la fecha y
+// quién lo regresó. Una rellamada pendiente queda cerrada («regresado»).
+const MAX_REGRESAR = 5000;
+function regresarGestionados(db, { tipi, numeros, por }) {
+  asegurarTablas(db);
+  const porTipi = tipi !== undefined && tipi !== null && tipi !== '';
+  const porLista = Array.isArray(numeros);
+  if (porTipi === porLista) throw new StaError(400, 'Elige una codificación o marca los casos');
+  let filas;
+  if (porTipi) {
+    const t = String(tipi).trim();
+    if (!t || t.length > 200) throw new StaError(400, 'Codificación inválida');
+    filas = db.prepare("SELECT * FROM sta_casos WHERE campana = ? AND estado = 'gestionado' AND tipi = ?").all(CAMPANA, t);
+  } else {
+    if (!numeros.length || numeros.length > MAX_REGRESAR) throw new StaError(400, 'Marca de 1 a ' + MAX_REGRESAR + ' casos');
+    const sel = db.prepare("SELECT * FROM sta_casos WHERE campana = ? AND numero = ? AND estado = 'gestionado'");
+    filas = [...new Set(numeros.map(normClave))].map((n) => sel.get(CAMPANA, n)).filter(Boolean);
+  }
+  const hoy = ahora();
+  const quien = String(por || '').slice(0, 120);
+  let n = 0;
+  db.transaction(() => {
+    const up = db.prepare("UPDATE sta_casos SET estado = 'pendiente', agenteId = NULL, asignado = '', tipi = '', obs = '', fg = '', citas = 0, rell = NULL, prev = ? WHERE id = ? AND estado = 'gestionado'");
+    for (const r of filas) {
+      const prev = r.prev ? JSON.parse(r.prev) : [];
+      const rell = r.rell ? JSON.parse(r.rell) : null;
+      prev.push(Object.assign({ tipi: r.tipi, obs: r.obs, fg: r.fg, citas: r.citas || 0, agente: r.agenteId, regresado: hoy, por: quien },
+        rell ? { rell: rell.cuando, rellEstado: rell.estado === 'pendiente' ? 'regresado' : rell.estado } : {}));
+      n += up.run(JSON.stringify(prev), r.id).changes;
+    }
+  })();
+  return { regresados: n, pedidos: porLista ? numeros.length : n };
+}
+
 // ── Codificar (guardarCodificacion del HTML) ── solo el asesor dueño del caso.
 function codificar(db, agenteId, numero, body, d) {
   asegurarTablas(db);
@@ -380,6 +424,26 @@ function estadoAsesor(db, agenteId) {
     config: config(db), ahora: ahora(), histMax: HIST_ASESOR,
   };
 }
+// Pedido de Edwin (23/11/2026): la pestaña STA del CLIENTE de ORLANT muestra la MISMA visual de
+// «Gráficas» del supervisor (el código de Edwin), de solo lectura. Para eso el navegador necesita los
+// casos, pero RECORTADOS a lo que usan las gráficas: los 7 campos de la base que se grafican y estado,
+// asesor, codificación, fecha de gestión y citas. NUNCA el número de autorización, otras columnas de
+// la base (pueden traer datos del paciente), observaciones, rellamadas ni historial; el id es un
+// consecutivo sin relación con el caso. Los nombres de las asesoras sí van (decisión del usuario,
+// 23/11/2026: como en el panel de Edwin).
+const CAMPOS_CLIENTE = ['Entidad', 'Servicio', 'Estado', 'Descripcion Cups', 'Fecha Ingreso Sta', 'Fecha Autorizacion', 'Fecha Expiracion'];
+function estadoCliente(db) {
+  asegurarTablas(db);
+  const c = config(db);
+  const casos = db.prepare('SELECT datos, agenteId, estado, tipi, fg, citas FROM sta_casos WHERE campana = ? ORDER BY id').all(CAMPANA).map((r, i) => {
+    const d = JSON.parse(r.datos);
+    const o = { _id: 'c' + (i + 1), _agente: r.agenteId, _estado: r.estado, _tipi: r.estado === 'gestionado' ? r.tipi : '', _fg: r.estado === 'gestionado' ? r.fg : '', _citas: r.estado === 'gestionado' ? r.citas || 0 : 0 };
+    for (const k of CAMPOS_CLIENTE) o[k] = d[k] === undefined ? '' : d[k];
+    return o;
+  });
+  return { casos, agentes: asesores(db, { incluirInactivos: true }), config: { tipis: c.tipis, efectivas: c.efectivas, columnas: CAMPOS_CLIENTE }, ahora: ahora() };
+}
+
 // Cliente de ORLANT (gráficas del STA en su Dashboard): SOLO agregados, sin números de
 // autorización, observaciones ni nombres de asesor.
 function resumen(db) {
@@ -413,5 +477,5 @@ function resumen(db) {
 module.exports = {
   CAMPANA, CAMPOS, CAMPOS_FECHA, TIPIS_BASE, HIST_ASESOR, StaError, asegurarTablas, ahora, normClave, esVolver,
   config, cambiarTipis, asesores, esAsesorSta, cargar, cargas, archivoDeCarga, borrarCarga, disponiblesFiltrados,
-  asignar, devolver, pasar, codificar, avisoRellamada, estadoSupervisor, estadoAsesor, resumen,
+  asignar, devolver, pasar, codificar, avisoRellamada, estadoSupervisor, estadoAsesor, resumen, estadoCliente, CAMPOS_CLIENTE, regresarGestionados,
 };

@@ -85,7 +85,8 @@ function ticketsListaHtml(tickets, conAutor) {
       '<span class="tk-camp">' + _tkEsc(ticketsCampanaLbl(t.campana)) + '</span>' + _tkEstadoPill(t.estado) + '</span>' +
       '<span class="tk-resumen">' + _tkEsc(resumen) + '</span>' +
       '<span class="tk-meta">' + (conAutor ? _tkEsc(t.autorNombre) + ' (' + _tkEsc(t.autorRol) + ') · ' : '') +
-      _tkEsc(ticketsFecha(t.createdAt)) + ' · ' + _tkEsc(t.respuestas || 0) + (Number(t.respuestas) === 1 ? ' respuesta' : ' respuestas') + '</span>' +
+      _tkEsc(ticketsFecha(t.createdAt)) + ' · ' + _tkEsc(t.respuestas || 0) + (Number(t.respuestas) === 1 ? ' respuesta' : ' respuestas') +
+      (t.adjunto ? ' · con adjunto' : '') + '</span>' + // pedido 7 (23/11)
       '</button></li>';
   }).join('') + '</ul>';
 }
@@ -106,6 +107,25 @@ function ticketsOpcionesHtml(lista, seleccion, conTodos) {
   }).join('');
 }
 
+// ── Pedido 7 de Edwin (23/11/2026): 1 adjunto opcional (imagen PNG/JPG o PDF, hasta 3 MB) ──
+// Aviso temprano en el navegador; el servidor revisa el CONTENIDO del archivo (server/tickets.js).
+var TICKETS_ADJUNTO_MAX = 3 * 1024 * 1024;
+function ticketsAdjuntoError(f) {
+  if (!f) return '';
+  var nombre = String(f.name || '').toLowerCase();
+  var okTipo = /^(image\/png|image\/jpeg|application\/pdf)$/.test(f.type || '') || /\.(png|jpe?g|pdf)$/.test(nombre);
+  if (!okTipo) return 'El adjunto debe ser una imagen (PNG o JPG) o un PDF';
+  if (Number(f.size) > TICKETS_ADJUNTO_MAX) return 'El adjunto pesa más de 3 MB';
+  if (!(Number(f.size) > 0)) return 'El adjunto está vacío';
+  return '';
+}
+function ticketsTamano(bytes) {
+  var n = Number(bytes) || 0;
+  if (n < 1024) return n + ' B';
+  if (n < 1024 * 1024) return Math.round(n / 1024) + ' KB';
+  return (n / (1024 * 1024)).toFixed(1).replace('.', ',') + ' MB';
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     TICKETS_TEXTO_MAX: TICKETS_TEXTO_MAX, TICKETS_TIPOS: TICKETS_TIPOS, ticketsFijarTipos: ticketsFijarTipos, TICKETS_ESTADOS: TICKETS_ESTADOS, TICKETS_AVISO_PRIVACIDAD: TICKETS_AVISO_PRIVACIDAD,
@@ -114,5 +134,6 @@ if (typeof module !== 'undefined' && module.exports) {
     ticketsContador: ticketsContador, ticketsTextoValido: ticketsTextoValido, ticketsFecha: ticketsFecha,
     ticketsBadgeTexto: ticketsBadgeTexto, ticketsBotonEtiqueta: ticketsBotonEtiqueta,
     ticketsListaHtml: ticketsListaHtml, ticketsHiloHtml: ticketsHiloHtml, ticketsOpcionesHtml: ticketsOpcionesHtml,
+    TICKETS_ADJUNTO_MAX: TICKETS_ADJUNTO_MAX, ticketsAdjuntoError: ticketsAdjuntoError, ticketsTamano: ticketsTamano, // pedido 7 (23/11)
   };
 }

@@ -203,4 +203,11 @@ svg.ch .eje{stroke:var(--sta-eje,#c9d3d9);stroke-width:1}
   --muted:var(--c-text-2); color-scheme:dark;
 }
 .btn.peligro{color:var(--c-danger-text,#b02a1d)}
+/* Pedido 3 de Edwin (23/11/2026): carga eliminada en el historial */
+.tag.sta-eliminada{color:var(--c-danger-text,#b02a1d);background:var(--c-danger-bg,#fdecea)}
+.sta-fila-eliminada td{color:var(--muted)}
 :host([data-theme="dark"]) .sec-gest,:host([data-theme="dark"]) .sec-gest .card,:host([data-theme="dark"]) .kpi.dest{border-color:var(--c-border)}
+/* Pedido de Edwin (23/11/2026): vista del CLIENTE de ORLANT = solo «Gráficas» del supervisor, de solo lectura
+   (sin la cabecera «Visual de supervisor» ni las demás pestañas). */
+.sta-app.sta-cliente #vSupervisor > header.top,.sta-app.sta-cliente #vSupervisor nav.tabs{display:none}
+.sta-app.sta-cliente #vSupervisor main{padding-top:0}

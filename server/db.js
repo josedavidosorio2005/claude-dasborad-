@@ -752,6 +752,23 @@ INSERT OR IGNORE INTO ticket_tipos (codigo, nombre, activo, orden) VALUES ('SUGE
 if (!db.prepare('PRAGMA table_info(tickets)').all().some((c) => c.name === 'tipoCodigo')) {
   db.exec('ALTER TABLE tickets ADD COLUMN tipoCodigo TEXT');
 }
+// Pedido 7 de Edwin (23/11/2026): «Ruta de ingreso» (texto opcional: por dónde entró a la plataforma)
+// y 1 adjunto opcional (imagen PNG/JPG o PDF, hasta 3 MB). Agregar una columna y una tabla nueva no
+// cambia ningún dato existente. El adjunto va en su propia tabla (la lista de tickets nunca lo lee) y
+// en la base, como el Excel original del STA: no hace falta tocar permisos de S3 (solo cubren actas/*).
+if (!db.prepare('PRAGMA table_info(tickets)').all().some((c) => c.name === 'rutaIngreso')) {
+  db.exec('ALTER TABLE tickets ADD COLUMN rutaIngreso TEXT');
+}
+db.exec(`
+CREATE TABLE IF NOT EXISTS tickets_adjuntos (
+  ticketId INTEGER PRIMARY KEY REFERENCES tickets(id) ON DELETE CASCADE,
+  nombre TEXT NOT NULL,
+  tipo TEXT NOT NULL CHECK (tipo IN ('image/png','image/jpeg','application/pdf')),
+  bytes INTEGER NOT NULL,
+  datos BLOB NOT NULL,
+  createdAt TEXT NOT NULL
+);
+`);
 
 // Fase 153 (Paso 1): registro de clientes. La semilla (ORLANT y MOBILIZE tal
 // como estaban en las listas fijas) corre una sola vez; despues el registro
@@ -770,9 +787,12 @@ require('./cargas-versiones').crearTabla(db);
 require('./sura-televentas').crearTablas(db);
 // Fase 369 (E1): «Inventario de sistemas» (activos tecnológicos). Tablas vacías; solo se siembran los tipos.
 require('./activos').crearTablas(db);
+require('./gh-estado').crearTablas(db);
+require('./gh-archivos').crearTablas(db); // Fase GH3: soportes de Talento humano (el archivo va a S3) // Fase GH2: Talento humano en el servidor
 require('./activos-actas').crearTablas(db); // Fase 371 (E3): actas
 require('./activos-formularios').crearTablas(db); // Fase 372 (E4): textos del acta editables
 require('./malla-extra').crearTablas(db); // Fase 373: novedades y horario especial en la malla
+require('./malla-casos').crearTablas(db); // Fase M1: casos especiales de la malla (tipos de excepción, festivos)
 {
   const vencidas = require('./cargas-versiones').purgar(db);
   if (vencidas && !config.isTest) console.log('[db] cargas_versiones: ' + vencidas + ' version(es) vencida(s) borrada(s).');

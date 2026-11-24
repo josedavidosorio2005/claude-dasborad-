@@ -30,6 +30,10 @@ CREATE TABLE IF NOT EXISTS malla_ajustes (
   UNIQUE(campana, asesorId, fecha)
 );
 CREATE INDEX IF NOT EXISTS idx_malla_ajustes_fecha ON malla_ajustes(campana, fecha);`);
+  // Fase M1 (C): horario especial que se repite. Los días creados juntos llevan la misma `serie`, para
+  // quitarlos todos de una vez. Columna nueva (los horarios especiales de antes quedan sin serie).
+  if (!db.prepare('PRAGMA table_info(malla_ajustes)').all().some((c) => c.name === 'serie')) db.exec('ALTER TABLE malla_ajustes ADD COLUMN serie TEXT');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_malla_ajustes_serie ON malla_ajustes(serie)');
 }
 
 // ¿Está la asesora en un grupo de esa campaña y semana? -> { grupo } o null
@@ -86,7 +90,8 @@ function ajustesSemana(db, campana, semana) {
     .all(campana, dias[0], dias[6]).map(_ajuste);
 }
 function _ajuste(r) {
-  return { id: r.id, asesorId: r.asesorId, asesorNombre: r.asesorNombre, fecha: r.fecha, turno: r.entrada ? { entrada: r.entrada, salida: r.salida } : null, creadoPor: r.creadoPor, createdAt: r.createdAt };
+  return { id: r.id, asesorId: r.asesorId, asesorNombre: r.asesorNombre, fecha: r.fecha, turno: r.entrada ? { entrada: r.entrada, salida: r.salida } : null, creadoPor: r.creadoPor, createdAt: r.createdAt,
+    serie: r.serie || null }; // Fase M1 (C)
 }
 function ajustesDeAsesora(db, asesorId, campana, desde, hasta) {
   const m = new Map();
@@ -95,10 +100,15 @@ function ajustesDeAsesora(db, asesorId, campana, desde, hasta) {
   }
   return m;
 }
-// b: { campana, semana, asesorId, dias: [1..7], descanso: bool, entrada, salida }. Reemplaza el horario
-// especial de esos días (los demás días no cambian).
+// b: { campana, semana, asesorId, dias: [1..7], descanso: bool, entrada, salida, repetirHasta? }. Reemplaza
+// el horario especial de esos días (los demás días no cambian).
+// Fase M1 (C): con `repetirHasta` (AAAA-MM-DD), los mismos días de la semana se repiten cada semana hasta
+// esa fecha (máximo MAX_SEMANAS_REPETIR semanas), con una misma `serie`. Basta con que la asesora esté en
+// un grupo en la PRIMERA semana: en las semanas sin malla todavía, el horario especial se aplica cuando
+// quede asignada (la puntualidad y «Mi malla» solo lo usan si tiene turno esa semana).
+const MAX_SEMANAS_REPETIR = 26;
 function guardarAjuste(db, b, quien, ahora) {
-  if (!b || typeof b !== 'object' || Object.keys(b).some((k) => !['campana', 'semana', 'asesorId', 'dias', 'descanso', 'entrada', 'salida'].includes(k))) return { error: 'Datos no válidos' };
+  if (!b || typeof b !== 'object' || Object.keys(b).some((k) => !['campana', 'semana', 'asesorId', 'dias', 'descanso', 'entrada', 'salida', 'repetirHasta'].includes(k))) return { error: 'Datos no válidos' };
   if (!L.mallaEsLunes(b.semana)) return { error: 'Elige una semana (su lunes)' };
   if (!Number.isInteger(b.asesorId) || !grupoDeAsesora(db, b.campana, b.semana, b.asesorId)) return { error: 'La asesora no está en un grupo de esta semana' };
   if (!Array.isArray(b.dias) || !b.dias.length || b.dias.length > 7 || !b.dias.every((d) => Number.isInteger(d) && d >= 1 && d <= 7)) return { error: 'Elige uno o más días' };
@@ -108,12 +118,34 @@ function guardarAjuste(db, b, quien, ahora) {
     if (!v.ok) return { error: v.error.replace(/^Lunes: /, '') };
     turno = v.horario[1];
   }
-  const fechas = [...new Set(b.dias)].sort().map((d) => L.mallaFechaDelDia(b.semana, d));
-  const up = db.prepare(`INSERT INTO malla_ajustes (campana, asesorId, fecha, entrada, salida, creadoPor, createdAt) VALUES (?,?,?,?,?,?,?)
-                         ON CONFLICT(campana, asesorId, fecha) DO UPDATE SET entrada = excluded.entrada, salida = excluded.salida, creadoPor = excluded.creadoPor, createdAt = excluded.createdAt`);
-  db.transaction(() => { for (const f of fechas) up.run(b.campana, b.asesorId, f, turno ? turno.entrada : null, turno ? turno.salida : null, quien, ahora); })();
-  return { fechas, turno };
+  const dias = [...new Set(b.dias)].sort();
+  let fechas = dias.map((d) => L.mallaFechaDelDia(b.semana, d));
+  let serie = null;
+  if (b.repetirHasta !== undefined && b.repetirHasta !== null && b.repetirHasta !== '') {
+    const h = b.repetirHasta;
+    const limite = L.mallaFechaDelDia(L.mallaSumarSemanas(b.semana, MAX_SEMANAS_REPETIR - 1), 7);
+    if (typeof h !== 'string' || !L.mallaLunesDe(h)) return { error: 'Repetir hasta: elige una fecha (AAAA-MM-DD)' };
+    if (h < L.mallaFechaDelDia(b.semana, 7) || h <= fechas[fechas.length - 1]) return { error: 'Repetir hasta: elige una fecha de una semana siguiente' };
+    if (h > limite) return { error: 'Repetir hasta: máximo ' + MAX_SEMANAS_REPETIR + ' semanas (hasta el ' + limite + ')' };
+    fechas = [];
+    for (let w = 0; w < MAX_SEMANAS_REPETIR; w++) {
+      const lunes = L.mallaSumarSemanas(b.semana, w);
+      for (const d of dias) { const f = L.mallaFechaDelDia(lunes, d); if (f <= h) fechas.push(f); }
+    }
+    serie = 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  }
+  const up = db.prepare(`INSERT INTO malla_ajustes (campana, asesorId, fecha, entrada, salida, creadoPor, createdAt, serie) VALUES (?,?,?,?,?,?,?,?)
+                         ON CONFLICT(campana, asesorId, fecha) DO UPDATE SET entrada = excluded.entrada, salida = excluded.salida, creadoPor = excluded.creadoPor, createdAt = excluded.createdAt, serie = excluded.serie`);
+  db.transaction(() => { for (const f of fechas) up.run(b.campana, b.asesorId, f, turno ? turno.entrada : null, turno ? turno.salida : null, quien, ahora, serie); })();
+  return { fechas, turno, serie };
 }
+// Fase M1 (C): los días de una repetición (para quitarlos todos de una vez).
+function ajustesDeSerie(db, serie) {
+  if (typeof serie !== 'string' || !/^r[a-z0-9]{4,30}$/.test(serie)) return [];
+  return db.prepare('SELECT a.*, u.nombre AS asesorNombre FROM malla_ajustes a LEFT JOIN users u ON u.id = a.asesorId WHERE a.serie = ? ORDER BY a.fecha').all(serie)
+    .map((r) => Object.assign(_ajuste(r), { campana: r.campana }));
+}
+function quitarSerie(db, serie) { return db.prepare('DELETE FROM malla_ajustes WHERE serie = ?').run(serie).changes; }
 function obtenerAjuste(db, id) {
   const r = db.prepare('SELECT a.*, u.nombre AS asesorNombre FROM malla_ajustes a LEFT JOIN users u ON u.id = a.asesorId WHERE a.id = ?').get(id);
   return r ? Object.assign(_ajuste(r), { campana: r.campana }) : null;
@@ -132,4 +164,5 @@ function aplicarAjustes(horario, semana, ajustes) {
 }
 
 module.exports = { TEXTO_MAX, crearTablas, grupoDeAsesora, novedadesSemana, novedadesDeAsesora, crearNovedad, obtenerNovedad, quitarNovedad,
-  ajustesSemana, ajustesDeAsesora, guardarAjuste, obtenerAjuste, quitarAjuste, aplicarAjustes };
+  ajustesSemana, ajustesDeAsesora, guardarAjuste, obtenerAjuste, quitarAjuste, aplicarAjustes,
+  MAX_SEMANAS_REPETIR, ajustesDeSerie, quitarSerie }; // Fase M1 (C)

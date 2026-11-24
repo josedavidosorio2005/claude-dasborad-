@@ -27,6 +27,12 @@ const RENOVAR_MS = 2 * 60 * 1000;
 const PREGUNTAS = ['q1', 'q2', 'q3', 'q4'];
 const LIMITE_LISTA = 2000;
 
+// Fase A33: clave del ID de la llamada para ENLAZAR (no se guarda así): el mismo «ID limpio» de la Fase 348
+// (sin comillas ni espacios al inicio, ni espacios al final). Así una encuesta cargada por archivo (a veces
+// con una comilla adelante) y la misma llamada traída por la API se reconocen como una sola.
+const _COMILLAS = " '\u2018\u2019`\u00b4";
+function claveId(v) { return String(v == null ? '' : v).replace(/^[\s'\u2018\u2019`\u00b4]+/, '').trim(); }
+
 function reglasDe(db, campana) {
   return db
     .prepare('SELECT pregunta, min, max FROM encuesta_monitoreo_reglas WHERE campana = ? ORDER BY pregunta')
@@ -120,7 +126,7 @@ function listar(db, q, actor, opts) {
   const monPorConn = new Map();
   if (unicas.length) {
     db.prepare('SELECT * FROM monitoreos WHERE campana = ? AND encuestaConnId IS NOT NULL').all(q.campana)
-      .forEach((m) => monPorConn.set(m.encuestaConnId, m));
+      .forEach((m) => monPorConn.set(claveId(m.encuestaConnId), m)); // Fase A33: por la clave
   }
   const ahora = Date.now();
   const bloqueos = new Map();
@@ -130,7 +136,7 @@ function listar(db, q, actor, opts) {
   let resueltas = 0;
   const out = [];
   for (const f of unicas) {
-    const m = monPorConn.get(f.connId);
+    const m = monPorConn.get(claveId(f.connId));
     if (m) resueltas++; else pendientes++;
     const estado = m ? 'resuelta' : 'pendiente';
     if (q.estado === 'pendientes' && m) continue;
@@ -171,7 +177,8 @@ function llamadaMalCalificada(db, campana, connId) {
 }
 
 function monitoreoDeLlamada(db, campana, connId) {
-  return db.prepare('SELECT * FROM monitoreos WHERE campana = ? AND encuestaConnId = ?').get(campana, connId) || null;
+  // Fase A33: por la clave (el ID con o sin comilla adelante es la misma llamada).
+  return db.prepare('SELECT * FROM monitoreos WHERE campana = ? AND trim(ltrim(encuestaConnId, ?)) = ?').get(campana, _COMILLAS, claveId(connId)) || null;
 }
 
 // Toma (o renueva) el bloqueo. { ok, bloqueo, llamada } o { status, error, bloqueadoPor }.
@@ -230,15 +237,15 @@ function impactoRecarga(db, { campana, desde, hasta, filasNuevas }) {
   const antes = new Set(todas.filter(fallan).map((f) => f.connId));
   const despues = new Set(todas.filter((f) => (f.fecha < desde || f.fecha > hasta) && fallan(f)).map((f) => f.connId));
   filasNuevas.filter(fallan).forEach((f) => despues.add(f.connId));
-  const mon = new Set(db.prepare('SELECT encuestaConnId FROM monitoreos WHERE campana = ? AND encuestaConnId IS NOT NULL').all(campana).map((m) => m.encuestaConnId));
-  const cuenta = (set, conMon) => [...set].filter((c) => mon.has(c) === conMon).length;
+  const mon = new Set(db.prepare('SELECT encuestaConnId FROM monitoreos WHERE campana = ? AND encuestaConnId IS NOT NULL').all(campana).map((m) => claveId(m.encuestaConnId)));
+  const cuenta = (set, conMon) => [...set].filter((c) => mon.has(claveId(c)) === conMon).length;
   return {
     pendientesAntes: cuenta(antes, false),
     pendientesDespues: cuenta(despues, false),
     resueltasAntes: cuenta(antes, true),
     resueltasDespues: cuenta(despues, true),
     // Monitoreos que hoy tienen su llamada y despues de la carga no la tendrian (deberia ser 0).
-    monitoreosSinLlamada: [...antes].filter((c) => mon.has(c) && !despues.has(c)).length,
+    monitoreosSinLlamada: [...antes].filter((c) => mon.has(claveId(c)) && ![...despues].some((d) => claveId(d) === claveId(c))).length,
     conTelefono: filasNuevas.filter((f) => !!f.telefono).length,
   };
 }
@@ -247,12 +254,15 @@ function impactoRecarga(db, { campana, desde, hasta, filasNuevas }) {
 // el mes de la CALIFICACION (su fecha), pero las listas muestran tambien la fecha de la llamada.
 // { connId: 'AAAA-MM-DD' } de las encuestas enlazadas (la primera por fecha). No escribe nada.
 function fechasLlamada(db, campana, connIds) {
-  const ids = [...new Set((connIds || []).filter(Boolean))];
+  // Fase A33: busca por la clave y devuelve con el ID tal como lo pidieron (el del monitoreo).
+  const porClave = new Map();
+  (connIds || []).filter(Boolean).forEach((c) => { const k = claveId(c); if (k) (porClave.get(k) || porClave.set(k, []).get(k)).push(c); });
+  const claves = [...porClave.keys()];
   const out = {};
-  for (let i = 0; i < ids.length; i += 400) {
-    const parte = ids.slice(i, i + 400);
-    db.prepare(`SELECT connId, MIN(fecha) AS fecha FROM encuestas WHERE campana = ? AND connId IN (${parte.map(() => '?').join(',')}) GROUP BY connId`)
-      .all(campana, ...parte).forEach((r) => { out[r.connId] = r.fecha; });
+  for (let i = 0; i < claves.length; i += 400) {
+    const parte = claves.slice(i, i + 400);
+    db.prepare(`SELECT trim(ltrim(connId, ?)) AS k, MIN(fecha) AS fecha FROM encuestas WHERE campana = ? AND trim(ltrim(connId, ?)) IN (${parte.map(() => '?').join(',')}) GROUP BY k`)
+      .all(_COMILLAS, campana, _COMILLAS, ...parte).forEach((r) => { (porClave.get(r.k) || []).forEach((c) => { out[c] = r.fecha; }); });
   }
   return out;
 }
@@ -262,6 +272,7 @@ function borrarBloqueo(db, campana, connId) {
 }
 
 module.exports = {
+  claveId, monitoreoDeLlamada, // Fase A33
   BLOQUEO_MS,
   RENOVAR_MS,
   PREGUNTAS,

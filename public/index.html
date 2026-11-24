@@ -103,7 +103,6 @@
         <li id="menu-cargas-li" class="hidden"><a id="menu-cargas" role="button" tabindex="0" onclick="openCentroCargas()"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-upload"></use></svg></span> Cargar Datos</a></li>
         <li id="menu-dashboards-li" class="hidden"><a id="menu-dashboards" role="button" tabindex="0" onclick="showSection('dashboards')"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-layout-dashboard"></use></svg></span> Dashboards</a></li>
         <li id="menu-gerencia-li" class="hidden"><a id="menu-gerencia" role="button" tabindex="0" onclick="showSection('gerencia')"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-chart-column"></use></svg></span> Gerencia</a></li>
-        <li id="menu-gestionhumana-li" class="hidden"><a id="menu-gestionhumana" role="button" tabindex="0" onclick="showSection('gestionhumana')"><span class="s-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-contact"></use></svg></span> Gestión Humana</a></li>
       </ul>
     </aside>
     <div class="sidebar-overlay" onclick="closeSidebar()"></div>
@@ -678,29 +677,6 @@
           <div class="table-wrap">
             <table><thead><tr><th>Nombre</th><th>Categoría</th><th>Cantidad</th><th>Unidad</th><th>Estado</th><th>Costo</th><th></th></tr></thead>
             <tbody id="inv-admin-tbody"></tbody></table>
-          </div>
-        </div>
-      </div>
-
-      <!-- GESTION HUMANA SECTION -->
-      <div id="section-gestionhumana" class="hidden">
-        <div class="page-title">Gestión Humana</div>
-        <div class="page-subtitle">Registro de personal por campaña: ingresos, salidas, rotacion, costo de nomina y rentabilidad.</div>
-        <div class="stats-grid" id="gh-admin-stats"></div>
-        <div class="section-card">
-          <div class="section-header">
-            <h3>Personal</h3>
-            <div class="header-actions">
-              <button class="btn-cancel" onclick="openGenericDashboard('GESTION_HUMANA')">Ver dashboard</button>
-              <button class="btn-primary" onclick="ghNuevaPersona()">+ Nueva persona</button>
-            </div>
-          </div>
-          <div class="table-wrap">
-            <table><thead><tr>
-              <th>Nombre</th><th>Cargo</th><th>Campaña</th><th>Ingreso</th><th>Salida</th>
-              <th>Estado</th><th>Costo/mes</th><th></th>
-            </tr></thead>
-            <tbody id="gh-admin-tbody"></tbody></table>
           </div>
         </div>
       </div>
@@ -1475,40 +1451,6 @@
   </div>
 </div>
 
-<!-- MODAL: Nueva/Editar Persona (Gestion Humana) -->
-<div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="gh-modal-title" id="gh-person-modal">
-  <div class="modal" style="max-width:620px">
-    <h3 id="gh-modal-title">Nueva persona</h3>
-    <div class="form-row">
-      <div class="ig"><label for="gh-nombre">Nombre *</label><input type="text" id="gh-nombre" placeholder="Nombre completo"></div>
-      <div class="ig"><label for="gh-documento">Documento</label><input type="text" id="gh-documento" placeholder="Cédula / ID"></div>
-    </div>
-    <div class="form-row">
-      <div class="ig"><label for="gh-cargo">Cargo</label><input type="text" id="gh-cargo" placeholder="Ej: Asesor"></div>
-      <div class="ig"><label for="gh-campana">Campaña / área *</label><input type="text" id="gh-campana" placeholder="Ej: ORLANT"></div>
-      <div class="ig"><label for="gh-supervisor">Supervisor</label><input type="text" id="gh-supervisor" placeholder="Nombre del supervisor"></div>
-    </div>
-    <div class="form-row">
-      <div class="ig"><label for="gh-ingreso">Fecha de ingreso *</label><input type="date" id="gh-ingreso"></div>
-      <div class="ig"><label for="gh-salida">Fecha de salida</label><input type="date" id="gh-salida"></div>
-      <div class="ig"><label for="gh-motivo">Motivo de salida</label><input type="text" id="gh-motivo" placeholder="Solo si se retiro"></div>
-    </div>
-    <div class="form-row">
-      <div class="ig"><label for="gh-costo-hora">Costo por hora *</label><input type="number" id="gh-costo-hora" min="0" step="1" placeholder="0"></div>
-      <div class="ig"><label for="gh-horas-mes">Horas / mes</label><input type="number" id="gh-horas-mes" min="0" step="1" value="192"></div>
-      <div class="ig"><label for="gh-salario">Salario (opcional)</label><input type="number" id="gh-salario" min="0" step="1" placeholder="Informativo"></div>
-    </div>
-    <div class="form-row">
-      <div class="ig" style="flex:1"><label for="gh-observaciones">Observaciones</label><input type="text" id="gh-observaciones" placeholder="Notas"></div>
-    </div>
-    <p style="font-size:0.78rem;color:var(--c-text-muted);margin:2px 0 0">Costo mensual = costo/hora x horas/mes. Se usa para la rentabilidad por campaña del dashboard.</p>
-    <div class="modal-btns">
-      <button class="btn-cancel" onclick="closeGhPersonModal()">Cancelar</button>
-      <button class="btn-primary" onclick="ghGuardarPersona()">Guardar</button>
-    </div>
-  </div>
-</div>
-
 <!-- MODAL: Nuevo Movimiento -->
 <div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="inv-mov-modal-title" id="inv-mov-modal">
   <div class="modal" style="max-width:520px">
@@ -1598,31 +1540,6 @@
           </label>
           <button class="btn-cancel" id="ger-cargar-btn" style="display:none"></button>
         </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- OVERLAY: Gestion Humana (para roles no-admin, desde el dashboard) -->
-<div id="gestionhumana-overlay">
-  <div id="gestionhumana-modal">
-    <div class="aurora-header">
-      <div>
-        <h2>&#128101; Gestión Humana</h2>
-        <div class="aurora-sub">Personal por campaña: ingresos, salidas, rotacion y costo de nomina</div>
-      </div>
-      <div style="display:flex;gap:8px">
-        <button class="aurora-close" onclick="closeGestionHumana();openGenericDashboard('GESTION_HUMANA')">Ver dashboard</button>
-        <button class="aurora-close" onclick="closeGestionHumana()">X Cerrar</button>
-      </div>
-    </div>
-    <div class="aurora-kpis" id="gh-ov-kpis"></div>
-    <div class="aurora-card">
-      <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
-        <button class="btn-primary" onclick="ghNuevaPersona()">+ Nueva persona</button>
-      </div>
-      <div style="overflow-x:auto">
-        <table class="aurora-rank-table" id="gh-ov-table"></table>
       </div>
     </div>
   </div>
@@ -1829,6 +1746,8 @@
 
         <div class="aurora-card">
           <div class="aurora-card-title">Historial de mis Monitoreos</div>
+          <!-- Pedido de Edwin (23/11/2026): cuántos le faltan por abrir con «Ver detalle». -->
+          <p class="mr-sin-ver-resumen hidden" id="mr-sin-ver" role="status"></p>
           <div style="overflow-x:auto"><table class="aurora-rank-table" id="mr-table"></table></div>
         </div>
       </div>
@@ -2064,14 +1983,15 @@
         <span id="ml-semana-txt" aria-live="polite"></span>
         <button type="button" class="btn-cancel" onclick="mallaMoverSemana(1)" aria-label="Semana siguiente">›</button>
       </div>
-      <!-- Fase 366 (D1): elegir cualquier semana, también futura (p. ej. diciembre). -->
+      <!-- Fase 366 (D1): elegir cualquier semana, también futura (p. ej. diciembre). Pedido de Edwin (24/11): todo en
+           una fila; las semanas del mes en una lista (antes, una ficha por semana). -->
       <div class="ig ml-mes"><label for="ml-mes">Ir al mes</label><input type="month" id="ml-mes" onchange="mallaElegirMes()"></div>
+      <div class="ig ml-semanas-mes" id="ml-semanas-mes"><label for="ml-sem-sel">Semana del mes</label><select id="ml-sem-sel" onchange="mallaElegirSemanaMes()"></select></div>
     </div>
-    <div class="ml-semanas-mes" id="ml-semanas-mes" role="group" aria-label="Semanas del mes"></div>
-    <!-- Fase 363: «Turnos» / «Puntualidad» (solo en campañas con puntualidad). -->
+    <!-- Fase 363: «Turnos» / «Puntualidad» (solo en campañas con puntualidad). Pedido de Edwin (24/11): pestañas visibles. -->
     <div class="ml-vistas hidden" id="ml-vistas" role="group" aria-label="Vista">
-      <button type="button" class="btn-cancel" id="ml-vista-turnos" aria-pressed="true" onclick="mpMostrar('turnos')">Turnos</button>
-      <button type="button" class="btn-cancel" id="ml-vista-punt" aria-pressed="false" onclick="mpMostrar('puntualidad')">Puntualidad</button>
+      <button type="button" class="ml-tab" id="ml-vista-turnos" aria-pressed="true" onclick="mpMostrar('turnos')">Turnos</button>
+      <button type="button" class="ml-tab" id="ml-vista-punt" aria-pressed="false" onclick="mpMostrar('puntualidad')">Puntualidad</button>
     </div>
     <div class="ml-acciones hidden" id="ml-acciones">
       <button type="button" class="btn-primary" onclick="mallaNuevoGrupo()">Nuevo grupo</button>
@@ -2080,7 +2000,10 @@
         <select id="ml-copiar-a"></select>
         <button type="button" class="btn-cancel" id="ml-copiar-btn" onclick="mallaCopiar(false)">Copiar</button>
       </span>
+      <!-- Fase M1 (B): festivos de Colombia (solo el administrador los cambia). -->
+      <button type="button" class="btn-cancel hidden" id="ml-festivos-btn" aria-expanded="false" aria-controls="ml-festivos-admin" onclick="mallaFestivosAbrir()">Festivos</button>
     </div>
+    <section id="ml-festivos-admin" class="aurora-card hidden" aria-labelledby="ml-festivos-tit"></section>
     <div class="ml-confirmar hidden" id="ml-confirmar" role="alertdialog" aria-labelledby="ml-confirmar-txt">
       <span id="ml-confirmar-txt"></span>
       <button type="button" class="btn-danger" id="ml-reemplazar-btn" onclick="mallaCopiar(true)">Sí, reemplazar</button>
@@ -2088,9 +2011,23 @@
     </div>
     <p class="wv-error hidden" id="ml-error" role="alert"></p>
     <p class="ml-nota" id="ml-nota" role="status" aria-live="polite"></p>
+    <p id="ml-festivos" class="ml-festivos hidden"></p><!-- Fase M1 (B): festivos de la semana -->
     <div id="ml-grupos"></div>
     <section id="ml-novedades" class="aurora-card hidden" aria-labelledby="ml-novedades-tit"></section><!-- Fase 373: historial de «Novedades de la semana» -->
     <div id="ml-puntualidad" class="hidden" aria-live="polite"></div>
+  </div>
+</div>
+
+<!-- Fase GH1 (pedido de Edwin 23/11): «Talento humano», su app de Gestión humana tal cual, en un iframe del
+     mismo origen (generada por scripts/gestion-humana/generar-talento-humano.js). Pantalla completa, solo «Cerrar». -->
+<div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="th-title" id="th-overlay">
+  <div class="modal modal-th">
+    <div class="th-barra">
+      <h3 id="th-title">Talento humano</h3>
+      <p class="th-aviso" id="th-aviso" hidden></p>
+      <button class="tk-cerrar" type="button" onclick="talentoHumanoCerrar()" aria-label="Cerrar">×</button>
+    </div>
+    <iframe id="th-frame" class="th-frame" title="Talento humano"></iframe>
   </div>
 </div>
 
@@ -2108,6 +2045,7 @@
     <section id="ac-p-panel" aria-label="Panel"></section>
     <section id="ac-p-elementos" class="hidden" aria-label="Elementos">
       <div id="ac-lista-zona">
+        <div id="ac-inv-tipos" class="hidden" aria-label="Inventario por tipo"></div>
         <div class="ac-filtros">
           <div class="ig"><label for="ac-f-tipo">Tipo</label><select id="ac-f-tipo" onchange="activosBuscar()"></select></div>
           <div class="ig" id="ac-f-estado-ig"><label for="ac-f-estado">Estado</label><select id="ac-f-estado" onchange="activosBuscar()"></select></div>
@@ -2147,6 +2085,7 @@
       <div id="ac-ag-detalle" class="hidden"></div>
     </section>
     <section id="ac-p-registrar" class="hidden" aria-label="Registrar">
+      <div id="ac-r-tarjetas"></div><!-- Fase GH5b: una tarjeta por tipo, como el diseño de Edwin -->
       <form id="ac-r-form" onsubmit="activosRegistrar(event)" novalidate>
         <div class="ac-filtros">
           <div class="ig"><label for="ac-r-tipo">Tipo de elemento</label><select id="ac-r-tipo" onchange="activosCambioTipo()"></select></div>
@@ -2178,6 +2117,8 @@
     </section>
     <section id="ac-p-actas" class="hidden" aria-label="Actas"><!-- Fase 379 (I4): todas las actas, automáticas y manuales -->
       <div id="ac-actas-kpis"></div>
+      <div class="ac-chips ac-actas-cab"><div id="ac-ac-pestanas" class="acp-chips" role="group" aria-label="Ver actas"></div><button type="button" class="btn-primary ac-btn" onclick="activosActaManual()">Generar acta manual</button></div><!-- Fase GH5d -->
+      <div id="ac-ac-zona">
       <div class="ac-filtros">
         <div class="ig"><label for="ac-ac-estado">Estado</label><select id="ac-ac-estado" onchange="activosActasBuscar()"><option value="">Todas</option><option value="pendiente">Por firmar</option><option value="atrasada">Atrasadas</option><option value="firmada">Firmadas</option><option value="anulada">Anuladas</option></select></div>
         <div class="ig"><label for="ac-ac-tipo">Tipo</label><select id="ac-ac-tipo" onchange="activosActasBuscar()"></select></div>
@@ -2186,6 +2127,8 @@
       <div class="ac-chips"><p id="ac-ac-conteo" class="vis-ayuda"></p><div class="ac-export" role="group" aria-label="Descargar"><button type="button" class="btn-cancel ac-btn" onclick="activosExportar('actas', 'xlsx')">Excel</button><button type="button" class="btn-cancel ac-btn" onclick="activosExportar('actas', 'pdf')">PDF</button></div></div>
       <div id="ac-ac-lista" aria-live="polite"></div>
       <div id="ac-ac-anular"></div>
+      </div>
+      <div id="ac-p-novedadesgh" class="hidden" aria-label="Novedades de Gestión Humana" aria-live="polite"></div><!-- Fase GH4; GH5d: dentro de Actas -->
     </section>
     <section id="ac-p-historial" class="hidden" aria-label="Historial"><!-- Fase 381 (I6) -->
       <div class="ac-filtros">
@@ -2198,6 +2141,10 @@
       <div id="ac-h-lista" aria-live="polite"></div>
     </section>
     <section id="ac-p-ajustes" class="hidden" aria-label="Ajustes">
+      <!-- Fase GH5d: Ajustes en tarjetas, como el diseño de Edwin. Mismos campos y funciones de antes. -->
+      <div class="aj-grid">
+      <article class="acp-card aj-card aj-ancha"><h4>Excel</h4><p class="acp-ayuda">Descarga todo el inventario o importa elementos nuevos desde una plantilla.</p>
+        <div class="acr-acc"><button type="button" class="acp-btn" onclick="activosAjustesExcel()">Exportar todo a Excel</button></div>
       <div class="ac-import"><!-- Fase 381 (I6): importar desde Excel con vista previa -->
         <h5 class="ac-sub">Importar elementos desde Excel</h5>
         <p class="vis-ayuda" id="ac-imp-ayuda">Elige el tipo, descarga la plantilla, llénala y súbela. Primero verás una revisión fila por fila; nada se guarda hasta que confirmes. Columnas: Código, Marca, Modelo, Serial, Sede, Operación, Propietario / proveedor, Estado (Libre, En reparación o Malo), Observaciones y los campos del tipo.</p>
@@ -2208,21 +2155,35 @@
         </div>
         <div id="ac-imp-res" aria-live="polite"></div>
       </div>
-      <p class="vis-ayuda">Un valor por línea. Se usan en las listas de Registrar y en los filtros.</p>
-      <div class="ac-filtros">
+      </article>
+      <article class="acp-card aj-card"><h4>Sedes</h4><p class="acp-ayuda">Un valor por línea. Se usan al registrar y en los filtros.</p>
         <div class="ig"><label for="ac-l-sedes">Sedes</label><textarea id="ac-l-sedes" rows="6"></textarea><button type="button" class="btn-cancel ac-btn" onclick="activosGuardarLista('sedes')">Guardar sedes</button></div>
+      </article>
+      <article class="acp-card aj-card"><h4>Operaciones</h4><p class="acp-ayuda">Un valor por línea.</p>
         <div class="ig"><label for="ac-l-operaciones">Operaciones</label><textarea id="ac-l-operaciones" rows="6"></textarea><button type="button" class="btn-cancel ac-btn" onclick="activosGuardarLista('operaciones')">Guardar operaciones</button></div>
+      </article>
+      <article class="acp-card aj-card"><h4>Propietarios / proveedores</h4><p class="acp-ayuda">Un valor por línea: la empresa y los proveedores que rentan equipos.</p>
         <div class="ig"><label for="ac-l-proveedores">Proveedores</label><textarea id="ac-l-proveedores" rows="6"></textarea><button type="button" class="btn-cancel ac-btn" onclick="activosGuardarLista('proveedores')">Guardar proveedores</button></div>
+      </article>
+      <article class="acp-card aj-card"><h4>Motivos frecuentes</h4>
         <div class="ig"><label for="ac-l-motivos">Motivos frecuentes</label><textarea id="ac-l-motivos" rows="6" aria-describedby="ac-l-motivos-ayuda"></textarea><span class="vis-ayuda" id="ac-l-motivos-ayuda">Se sugieren al escribir un motivo; se puede escribir otro.</span><button type="button" class="btn-cancel ac-btn" onclick="activosGuardarLista('motivos')">Guardar motivos</button></div>
+      </article>
+      <article class="acp-card aj-card"><h4>Estados</h4><p class="acp-ayuda">Son fijos: de ellos dependen las actas (entrega, devolución, reparación, baja).</p>
+        <ul id="ac-aj-estados" class="aj-estados"></ul>
+      </article>
       </div>
+      <article class="acp-card aj-card aj-ancha">
       <!-- Fase 372 (E4): formularios editables (tipos y campos) y textos del acta. -->
       <h4 class="ac-sub">Formularios por tipo</h4>
       <p class="vis-ayuda">Un campo no se borra: se oculta y lo ya guardado se conserva. El tipo de dato de un campo no cambia. Un tipo se desactiva solo si no tiene elementos sin dar de baja.</p>
       <div id="ac-tipos"></div>
       <div id="ac-tipo-editor" class="hidden"></div>
+      </article>
+      <article class="acp-card aj-card aj-ancha">
       <h4 class="ac-sub">Textos del acta</h4>
       <p class="vis-ayuda">Cada acta guarda el texto vigente al crearla: cambiarlo no altera las actas ya creadas.</p>
       <div id="ac-textos" class="ac-filtros"></div>
+      </article>
     </section>
     <datalist id="ac-motivos-lista"></datalist>
     </div><!-- .ac-main -->
@@ -2253,6 +2214,11 @@
           <textarea id="tk-desc" rows="6" maxlength="2000" required aria-describedby="tk-aviso tk-desc-cont"></textarea>
           <div class="tk-ayuda"><span id="tk-aviso" class="tk-aviso"></span><span id="tk-desc-cont" class="tk-cont" aria-live="polite"></span></div>
         </div>
+        <!-- Pedido 7 de Edwin (23/11/2026): «Ruta de ingreso» y 1 adjunto (imagen o PDF), ambos opcionales. -->
+        <div class="tk-fila">
+          <div class="ig"><label for="tk-ruta">Ruta de ingreso <span class="tk-opcional">(opcional)</span></label><input type="text" id="tk-ruta" maxlength="200" autocomplete="off" placeholder="Ej.: Dashboard › ORLANT › Flujo" aria-describedby="tk-ruta-ayuda"><span id="tk-ruta-ayuda" class="tk-ayuda-txt">Por dónde entraste a la pantalla donde pasó.</span></div>
+          <div class="ig"><label for="tk-adjunto">Adjunto <span class="tk-opcional">(opcional)</span></label><input type="file" id="tk-adjunto" accept="image/png,image/jpeg,application/pdf,.png,.jpg,.jpeg,.pdf" aria-describedby="tk-adjunto-ayuda"><span id="tk-adjunto-ayuda" class="tk-ayuda-txt">Una imagen (PNG o JPG) o un PDF, hasta 3 MB.</span></div>
+        </div>
         <div class="modal-btns"><button class="btn-primary" type="submit" id="tk-enviar-btn">Enviar</button></div>
       </form>
     </section>
@@ -2278,6 +2244,12 @@
       <h4 id="tk-det-titulo" class="tk-det-titulo"></h4>
       <p class="tk-meta" id="tk-det-meta"></p>
       <p class="tk-texto tk-det-desc" id="tk-det-desc"></p>
+      <p class="tk-meta hidden" id="tk-det-ruta"></p>
+      <div class="tk-adjunto hidden" id="tk-det-adjunto">
+        <span id="tk-det-adj-nombre"></span>
+        <button type="button" class="btn-cancel" id="tk-adj-btn" onclick="ticketsDescargarAdjunto()">Descargar adjunto</button>
+        <img id="tk-det-adj-img" class="tk-adj-img hidden" alt="Imagen adjunta al ticket">
+      </div>
       <div class="tk-gestion hidden" id="tk-gestion">
         <div class="ig"><label for="tk-det-estado">Estado</label><select id="tk-det-estado"></select></div>
         <button type="button" class="btn-primary" id="tk-estado-btn" onclick="ticketsGuardarEstado()">Guardar estado</button>
@@ -2462,6 +2434,7 @@
 <script src="js/horarios-logic.js"></script>
 <script src="js/centro-horarios.js"></script>
 <script src="js/activos.js"></script>
+<script src="js/talento-humano.js"></script>
 <script src="js/dashboard-generic.js"></script>
 <script src="js/sura-televentas-app.js"></script>
 <script src="js/sura-televentas-paleta-logic.js"></script>
@@ -2492,7 +2465,6 @@
 <script src="js/dashboards-admin.js"></script>
 <script src="js/inventario.js"></script>
 <script src="js/gerencia.js"></script>
-<script src="js/gestion-humana.js"></script>
 <script src="js/a11y-logic.js"></script>
 <script src="js/a11y-teclado.js"></script>
 </body>

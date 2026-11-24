@@ -46,6 +46,22 @@ ahí (`path.join(SERVER_DIR, 'node_modules', ...)`), nunca con un
   cd .. && node scripts/qa/verificar-xss-sura-local.js
   ```
 
+## scripts/gestion-humana/ — «Talento humano» de Edwin (Fase GH1)
+
+- **`generar-talento-humano.js`** — regenera `public/gestion-humana/` (`talento-humano.html`, `.css` y `-app.js`) desde el HTML de Edwin (`Plataforma_InConexion.html`).
+  - Ese HTML está en `.gitignore`: su inventario trae datos reales. Solo lee la app de Gestión humana (`app-gh`).
+  - Quita su inicio, el SheetJS embebido y los datos de prueba.
+  - Fase GH2: cambia todo `localStorage` por `GH_STORE`, que vive en `public/gestion-humana/talento-humano-api.js`. Ese archivo se escribe a mano y no lo toca el generador; guarda en `/api/gh/estado`.
+  - Fase GH3: su `IDB` (IndexedDB de los soportes) queda como `IDB_LOCAL` y `IDB` pasa a `ghArchivos(IDB_LOCAL)`, del mismo archivo a mano.
+  - Falla si el HTML cambió donde hay un reemplazo.
+  - Después, correr `server/tests/faseGH1-talento-humano.test.js`.
+
+  ```
+  node scripts/gestion-humana/generar-talento-humano.js docs/gestion-humana/Plataforma_InConexion.html .
+  ```
+
+  Todo cambio a esa app se hace en el generador, nunca a mano en `public/gestion-humana/`.
+
 ## scripts/sura/ — tablero Televentas de SURA (Fase 215)
 
 - **`generar-televentas.js`** — regenera `public/js/sura-televentas-app.js`
