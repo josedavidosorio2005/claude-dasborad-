@@ -22498,3 +22498,17 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - Las reglas no se pueden cambiar desde la interfaz; solo las crea la migración.
 - **Prueba nueva** `faseE3-encuesta-cualquier-pregunta` (2), con datos inventados. Una corrida del real con la API (Wolkvox falso) y la misma encuesta cargada por archivo dan la misma lista: 4 pendientes (solo P1, solo P2, solo P3 y solo P4), y ninguna para «todo bien» ni «P2 sin respuesta». El botón «Monitoreo» de cada pregunta trae la suya.
 - **Causa probable de lo que vio Edwin** (por confirmar en producción, solo lectura y solo conteos): desde el 21/11, noviembre del real venía de la API sin CONN_ID. Por eso las mal calificadas caían en «sin ID» y no salían en la lista (Fase A33). Con A33 en producción (1.260.1), la siguiente corrida las trae con ID.
+
+## Pedido de Edwin (24/11, 11 a. m.) — Malla: «Novedades» y «Horario especial» en ámbar; Talento humano sin el aviso del encabezado (v1.262.0)
+
+- **Malla del supervisor:** los botones «+ Agregar novedad» y «Horario especial» (`ml-btn-ambar`), los registros guardados (`ml-chip-ambar`) y el título del bloque se ven en ámbar.
+  - Usa los mismos tokens que la pastilla «Horario especial» de la asesora (`--c-warning-bg`, `--c-warning-text`, `--c-warning`).
+  - «Mi malla» de la asesora no cambia.
+- **Talento humano:** el encabezado ya no dice «Se guarda en la plataforma, también los soportes adjuntos.».
+  - Ese texto no sale del generador: está en el marco de SinCo (`public/index.html`, `#th-aviso`, que llena `talento-humano-api.js`, escrito a mano). El generador y el HTML de Edwin no cambian.
+  - La barra queda oculta. Solo aparece el aviso «los soportes adjuntos, por ahora, quedan solo en este navegador» si los soportes estuvieran apagados.
+- **Pruebas:** se actualizaron `faseE2-malla-compacta`, `faseGH1` y `faseGH3`, y se agregó la prueba del ámbar (+1). Malla y Talento humano: 88/88.
+- **Revisión local** (Brave, página con el `styles.css` real y el HTML de `mallaGrupoHtml`, datos inventados), a 375, 768 y 1440 px, en claro y oscuro:
+  - 0 errores de consola;
+  - contraste del texto ámbar: 6,08:1 o más en claro y 8,28:1 o más en oscuro;
+  - el aviso de Talento humano no se ve (`display:none`).

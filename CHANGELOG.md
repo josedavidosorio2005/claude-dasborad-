@@ -7,6 +7,13 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.262.0 — Noviembre 2026
+
+**Malla de turnos: «Novedades» y «Horario especial» en ámbar; Talento humano sin el aviso del encabezado (pedidos de Edwin).**
+
+- En la ventana del supervisor, los botones «+ Agregar novedad» y «Horario especial», las novedades y horarios especiales ya guardados y el título «Novedades y horarios especiales» se ven en color ámbar, para que resalten.
+- Talento humano: el encabezado ya no dice «Se guarda en la plataforma, también los soportes adjuntos.». Solo aparece un aviso si algún día los soportes adjuntos no se pudieran guardar en la plataforma.
+
 ## v1.261.1 — Noviembre 2026
 
 **Seguridad: el límite de intentos para entrar ya no se puede subir en el servidor.**

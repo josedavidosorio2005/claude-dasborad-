@@ -223,17 +223,18 @@ function mallaCasosHtml(g, idx, puedeEditar, datos) {
     var aj = (d.ajustes || []).filter(function (x) { return x.asesorId === a.id; });
     var nv = (d.novedades || []).filter(function (x) { return x.asesorId === a.id && !x.quitada; });
     var chips = aj.map(function (x) {
-      return '<li class="ml-chip">' + esc(_mlDiaTexto(x.fecha)) + ': ' + esc(mallaTurnoTexto(x.turno)) + (x.serie ? ' <span class="ml-rep">· se repite</span>' : '') + // Fase M1 (C)
+      return '<li class="ml-chip ml-chip-ambar">' + esc(_mlDiaTexto(x.fecha)) + ': ' + esc(mallaTurnoTexto(x.turno)) + (x.serie ? ' <span class="ml-rep">· se repite</span>' : '') + // Fase M1 (C)
         (puedeEditar ? ' <button type="button" class="ml-chip-x" onclick="mallaQuitarAjuste(' + Number(x.id) + ')" aria-label="Quitar el horario especial del ' + esc(_mlDiaTexto(x.fecha)) + ' de ' + esc(a.nombre) + '">×</button>' : '') +
         (puedeEditar && x.serie ? ' <button type="button" class="btn-cancel ml-btn ml-rep-quitar" onclick="mallaQuitarSerie(\'' + esc(x.serie) + '\')" aria-label="Quitar todas las semanas de este horario especial de ' + esc(a.nombre) + '">Quitar todas las semanas</button>' : '') + '</li>';
     }).concat(nv.map(function (x) {
-      return '<li class="ml-chip ml-chip-nov">' + esc(_mlDiaTexto(x.fecha)) + ': ' + esc(x.texto) +
+      return '<li class="ml-chip ml-chip-nov ml-chip-ambar">' + esc(_mlDiaTexto(x.fecha)) + ': ' + esc(x.texto) +
         (puedeEditar ? ' <button type="button" class="ml-chip-x" onclick="mallaQuitarNovedad(' + Number(x.id) + ')" aria-label="Quitar la novedad de ' + esc(a.nombre) + '">×</button>' : '') + '</li>';
     })).join('');
     return '<li class="ml-caso"><div class="ml-caso-cab"><strong>' + esc(a.nombre) + '</strong>' +
-      // Pedido de Edwin (24/11): botón pequeño «Agregar novedad» por fila.
-      (puedeEditar ? '<span class="ml-caso-btns"><button type="button" class="btn-sm ml-btn-sm" onclick="mallaFormCaso(' + idx + ',' + Number(a.id) + ',\'novedad\')" aria-label="Agregar novedad a ' + esc(a.nombre) + '">+ Agregar novedad</button>' +
-        '<button type="button" class="btn-sm ml-btn-sm" onclick="mallaFormCaso(' + idx + ',' + Number(a.id) + ',\'horario\')" aria-label="Horario especial de ' + esc(a.nombre) + '">Horario especial</button></span>' : '') + '</div>' +
+      // Pedido de Edwin (24/11): botón pequeño «Agregar novedad» por fila. Y en ámbar, como «Horario especial»,
+      // sus registros y el título del bloque, para que resalten (pedido de Edwin, 24/11 a las 11 a. m.).
+      (puedeEditar ? '<span class="ml-caso-btns"><button type="button" class="btn-sm ml-btn-sm ml-btn-ambar" onclick="mallaFormCaso(' + idx + ',' + Number(a.id) + ',\'novedad\')" aria-label="Agregar novedad a ' + esc(a.nombre) + '">+ Agregar novedad</button>' +
+        '<button type="button" class="btn-sm ml-btn-sm ml-btn-ambar" onclick="mallaFormCaso(' + idx + ',' + Number(a.id) + ',\'horario\')" aria-label="Horario especial de ' + esc(a.nombre) + '">Horario especial</button></span>' : '') + '</div>' +
       (chips ? '<ul class="ml-chips">' + chips + '</ul>' : '') + '<div class="ml-caso-form" id="ml-g' + idx + '-caso-' + Number(a.id) + '"></div></li>';
   }).join('');
   return '<details class="ml-casos"' + (d.ajustes && d.ajustes.length || d.novedades && d.novedades.length ? ' open' : '') + '><summary>Novedades y horarios especiales</summary><ul class="ml-casos-lista">' + filas + '</ul></details>';
