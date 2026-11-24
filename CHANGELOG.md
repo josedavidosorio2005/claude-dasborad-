@@ -7,6 +7,15 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.263.0 — Noviembre 2026
+
+**Malla de turnos: pausas activas, almuerzo y horas de la semana (pedido de Edwin).**
+
+- En el horario de cada grupo, por día: pausa activa 1 (en la mañana, 15 min), almuerzo (la hora y si dura 30 min o 1 h) y pausa activa 2 (en la tarde, 10 min). Todo es opcional.
+- Se ven las horas de cada día y el total de la semana: salida menos entrada menos almuerzo. Si la semana no suma 42 horas, sale un aviso en ámbar, pero se puede guardar igual.
+- La asesora ve en «Mi malla», debajo del horario de cada día, una línea corta con sus pausas y su almuerzo, y al final las horas de la semana.
+- Los horarios que ya estaban guardados siguen funcionando igual.
+
 ## v1.261.1 — Noviembre 2026
 
 **Seguridad: el límite de intentos para entrar ya no se puede subir en el servidor.**

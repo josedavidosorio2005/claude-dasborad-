@@ -2718,6 +2718,36 @@ div.ca-bar-fila{cursor:default}
 .ml-btn-sm{min-height:30px;padding:4px 10px;border:1px solid var(--c-border);border-radius:var(--r-sm);background:var(--c-surface);color:var(--c-primary);font-size:var(--fs-small);font-weight:600;cursor:pointer}
 .ml-btn-sm:hover{background:var(--c-hover-bg)}
 .ml-btn-sm:focus-visible{outline:2px solid var(--c-focus);outline-offset:1px}
+/* Pedido de Edwin (24/11): pausas activas, almuerzo y horas por día del grupo; total de la semana y aviso
+   (sin bloquear) si no suma 42 h. En el celular cada día pasa a una tarjeta de 2 columnas con su etiqueta. */
+.ml-pausas{margin-top:10px;border:1px solid var(--c-border-soft);border-radius:var(--r-md);padding:4px 10px 8px}
+.ml-pausas summary{cursor:pointer;min-height:36px;display:flex;align-items:center;font-weight:600;color:var(--c-text-2)}
+.ml-tabla-pausas select{min-height:32px;min-width:84px;padding:2px 4px;font-size:var(--fs-small)}
+.ml-alm{display:inline-flex;gap:4px;align-items:center;flex-wrap:nowrap}
+.ml-dur{display:block;font-weight:400;color:var(--c-text-muted)}
+.ml-horas-dia{white-space:nowrap;font-variant-numeric:tabular-nums;font-weight:600;color:var(--c-text)}
+.ml-descanso .ml-horas-dia{color:var(--c-text-muted);font-weight:400}
+.ml-horas-semana{margin:8px 0 0;color:var(--c-text);font-size:var(--fs-body)}
+.ml-horas-aviso{margin:6px 0 0;padding:6px 10px;border-radius:var(--r-sm);background:var(--c-warning-bg);color:var(--c-warning-text);font-size:var(--fs-small);border:1px solid var(--c-warning)}
+.ml-mia-pausas{display:block;margin-top:2px;font-size:var(--fs-small);color:var(--c-text-2)}
+.ml-mia-total{margin:8px 0 0;font-size:var(--fs-small);color:var(--c-text-2)}
+@media (max-width:600px){
+  .ml-tabla-pausas thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+  .ml-tabla-pausas tr{display:grid;grid-template-columns:1fr 1fr;grid-template-areas:"dia horas" "p1 p2" "alm alm";gap:4px 10px;padding:6px 0;border-bottom:1px solid var(--c-border-soft)}
+  .ml-tabla-pausas tr.ml-descanso{display:none}
+  .ml-tabla-pausas td[data-etq="Pausa 1"]{grid-area:p1}
+  .ml-tabla-pausas td[data-etq="Pausa 2"]{grid-area:p2}
+  .ml-tabla-pausas td[data-etq="Horas"]{grid-area:horas;text-align:right;align-self:center}
+  .ml-tabla-pausas td[data-etq="Horas"]::before{display:none}
+  .ml-tabla-pausas th,.ml-tabla-pausas td{border:0;padding:0 !important}
+  .ml-tabla-pausas th[scope="row"]{grid-area:dia;font-weight:700}
+  .ml-tabla-pausas th[scope="row"] .ml-dia-largo{position:static;width:auto;height:auto;clip:auto;overflow:visible}
+  .ml-tabla-pausas th[scope="row"] .ml-dia-corto{display:none}
+  .ml-tabla-pausas td::before{content:attr(data-etq);display:block;font-size:var(--fs-note);color:var(--c-text-2)}
+  .ml-tabla-pausas td[data-etq="Almuerzo"]{grid-area:alm}
+  .ml-tabla-pausas .ml-alm input{flex:1 1 auto}
+}
+@media (max-width:768px){.ml-tabla-pausas select,.ml-tabla-pausas input[type="time"]{min-height:44px}}
 .mp-novedad{white-space:normal;max-width:180px;min-width:96px;overflow-wrap:break-word;word-break:normal;hyphens:manual}
 @media (max-width:1100px){.ml-barra{flex-wrap:wrap}}
 @media (max-width:768px){

@@ -101,6 +101,7 @@ function mallaGrupoHtml(g, puedeEditar, asesoras, idx, datos) { // datos: la sem
     '<td><input type="checkbox" id="' + pre + '-tf" class="ml-trabaja"' + (fe ? ' checked' : '') + dis + ' aria-label="Trabaja los festivos (sin marcar: descansa)"></td>' +
     '<td><input type="time" id="' + pre + '-ef" value="' + (fe ? esc(fe.entrada) : '') + '"' + dis + ' aria-label="Entrada en festivo"></td>' +
     '<td><input type="time" id="' + pre + '-sf" value="' + (fe ? esc(fe.salida) : '') + '"' + dis + ' aria-label="Salida en festivo"></td></tr>';
+  var pausas = mallaPausasTablaHtml(g.horario, pre, dis);
   var marcadas = {};
   (g.asesoras || []).forEach(function (a) { marcadas[a.id] = true; });
   var lista = asesoras.length ? asesoras.map(function (a) {
@@ -111,15 +112,71 @@ function mallaGrupoHtml(g, puedeEditar, asesoras, idx, datos) { // datos: la sem
   var color = g.color || ((idx % 8) + 1); // Fase 373: cada grupo con su color (serie 1 a 8)
   // Pedido de Edwin (24/11): más compacto. Cabecera (nombre + botones) en una fila; el horario y la lista de
   // asesoras lado a lado en pantallas anchas; la lista en un cuadro con su propio scroll.
-  return '<section class="aurora-card ml-grupo ml-color-' + color + '" data-idx="' + idx + '" data-id="' + (g.id || '') + '" aria-labelledby="' + pre + '-tit">' +
+  return '<section class="aurora-card ml-grupo ml-color-' + color + '" data-idx="' + idx + '" data-id="' + (g.id || '') + '" aria-labelledby="' + pre + '-tit"' +
+    (puedeEditar ? ' oninput="mallaRecalcularHoras(' + idx + ')" onchange="mallaRecalcularHoras(' + idx + ')"' : '') + '>' +
     '<div class="ml-grupo-cab"><div class="ig"><label for="' + pre + '-nombre" id="' + pre + '-tit"><span class="ml-punto" aria-hidden="true"></span>Grupo</label><input type="text" id="' + pre + '-nombre" maxlength="' + MALLA_NOMBRE_MAX + '" value="' + esc(g.nombre || '') + '"' + dis + '></div>' +
     (puedeEditar ? '<div class="ml-grupo-btns"><button type="button" class="btn-cancel ml-borrar" onclick="mallaBorrarGrupo(' + idx + ')">' + (g.id ? 'Eliminar grupo' : 'Descartar') + '</button>' +
       '<button type="button" class="btn-primary" onclick="mallaGuardarGrupo(' + idx + ')">Guardar grupo</button></div>' : '') + '</div>' +
     '<div class="ml-grupo-cuerpo"><div class="ml-grupo-horario"><div class="table-wrap"><table class="ml-tabla" aria-describedby="' + pre + '-fest-ayuda"><thead><tr><th scope="col">Día</th><th scope="col"><span class="ml-dia-largo">Trabaja</span><span class="ml-dia-corto" aria-hidden="true">Trab.</span></th><th scope="col">Entrada</th><th scope="col">Salida</th></tr></thead><tbody>' + filas + '</tbody></table></div>' +
-    '<p class="vis-ayuda ml-fest-ayuda" id="' + pre + '-fest-ayuda">Festivos: si no se marca, el grupo descansa los festivos. Un festivo en un día que el grupo no trabaja sigue siendo descanso.</p></div>' +
+    '<p class="vis-ayuda ml-fest-ayuda" id="' + pre + '-fest-ayuda">Festivos: si no se marca, el grupo descansa los festivos. Un festivo en un día que el grupo no trabaja sigue siendo descanso.</p>' + pausas + '</div>' +
     '<fieldset class="ml-asesoras"><legend>Asesoras (' + (g.asesoras || []).length + ')</legend><div class="ml-asesoras-lista" tabindex="0" role="group" aria-label="Asesoras de la campaña (con scroll)">' + lista + '</div></fieldset></div>' +
     (g.id && (g.asesoras || []).length ? mallaCasosHtml(g, idx, puedeEditar, datos) : '') +
     '</section>';
+}
+
+// Pedido de Edwin (24/11): pausa activa 1 (mañana, 15 min), almuerzo (hora y 30 min o 1 h) y pausa activa 2
+// (tarde, 10 min) por día, con las horas del día y el total de la semana (salida − entrada − almuerzo). Si la
+// semana no suma 42 h sale un aviso, sin bloquear. Todo opcional: los horarios ya guardados siguen igual.
+function mallaPausasTablaHtml(h, pre, dis) {
+  h = h || {};
+  var filas = MALLA_DIAS.map(function (d) {
+    var t = h[d.n] || h[String(d.n)] || null;
+    var ds = t ? dis : ' disabled';
+    var am = t && t.almuerzo ? Number(t.almuerzoMin) : 60;
+    var dl = d.largo.toLowerCase();
+    return '<tr data-dia="' + d.n + '"' + (t ? '' : ' class="ml-descanso"') + '><th scope="row"><span class="ml-dia-largo">' + d.largo + '</span><span class="ml-dia-corto" aria-hidden="true">' + d.corto + '</span></th>' +
+      '<td data-etq="Pausa 1"><input type="time" id="' + pre + '-p1' + d.n + '" value="' + (t && t.pausa1 ? esc(t.pausa1) : '') + '"' + ds + ' aria-label="Pausa activa 1 del ' + dl + ' (15 min, en la mañana)"></td>' +
+      '<td data-etq="Almuerzo"><span class="ml-alm"><input type="time" id="' + pre + '-al' + d.n + '" value="' + (t && t.almuerzo ? esc(t.almuerzo) : '') + '"' + ds + ' aria-label="Hora del almuerzo del ' + dl + '">' +
+        '<select id="' + pre + '-am' + d.n + '"' + ds + ' aria-label="Duración del almuerzo del ' + dl + '">' +
+        MALLA_ALMUERZO_OPCIONES.map(function (m) { return '<option value="' + m + '"' + (m === am ? ' selected' : '') + '>' + (m === 60 ? '1 h' : m + ' min') + '</option>'; }).join('') + '</select></span></td>' +
+      '<td data-etq="Pausa 2"><input type="time" id="' + pre + '-p2' + d.n + '" value="' + (t && t.pausa2 ? esc(t.pausa2) : '') + '"' + ds + ' aria-label="Pausa activa 2 del ' + dl + ' (10 min, en la tarde)"></td>' +
+      '<td data-etq="Horas" class="ml-horas-dia" id="' + pre + '-hd' + d.n + '">' + (t ? mallaHorasTexto(mallaMinutosDia(t)) : '—') + '</td></tr>';
+  }).join('');
+  var s = mallaHorasSemana(h);
+  var aviso = mallaAvisoHoras(h);
+  return '<details class="ml-pausas" open><summary>Pausas, almuerzo y horas</summary>' +
+    '<div class="table-wrap"><table class="ml-tabla ml-tabla-pausas"><thead><tr><th scope="col">Día</th><th scope="col">Pausa activa 1 <span class="ml-dur">15 min</span></th><th scope="col">Almuerzo</th><th scope="col">Pausa activa 2 <span class="ml-dur">10 min</span></th><th scope="col">Horas</th></tr></thead><tbody>' + filas + '</tbody></table></div>' +
+    '<p class="ml-horas-semana" id="' + pre + '-hs">Total de la semana: <strong>' + mallaHorasTexto(s.minutos) + '</strong></p>' +
+    '<p class="ml-horas-aviso' + (aviso ? '' : ' hidden') + '" id="' + pre + '-ha" role="status">' + esc(aviso) + '</p></details>';
+}
+// Lee del formulario el horario del grupo (también pausas y almuerzo) sin validar.
+function _mlLeerHorario(pre) {
+  var h = {}, val = function (id) { var e = _mlEl(id); return e ? e.value : ''; };
+  MALLA_DIAS.forEach(function (d) {
+    if (!_mlEl(pre + '-t' + d.n).checked) { h[d.n] = null; return; }
+    var t = { entrada: val(pre + '-e' + d.n), salida: val(pre + '-s' + d.n) };
+    if (val(pre + '-p1' + d.n)) t.pausa1 = val(pre + '-p1' + d.n);
+    if (val(pre + '-al' + d.n)) { t.almuerzo = val(pre + '-al' + d.n); t.almuerzoMin = Number(val(pre + '-am' + d.n)) || 60; }
+    if (val(pre + '-p2' + d.n)) t.pausa2 = val(pre + '-p2' + d.n);
+    h[d.n] = t;
+  });
+  return h;
+}
+// Al escribir: horas por día, total y aviso; habilita las pausas solo en los días que se trabaja.
+function mallaRecalcularHoras(idx) {
+  var pre = 'ml-g' + idx;
+  if (!_mlEl(pre + '-hs')) return;
+  var h = _mlLeerHorario(pre);
+  MALLA_DIAS.forEach(function (d) {
+    var t = h[d.n];
+    ['-p1', '-al', '-am', '-p2'].forEach(function (k) { var e = _mlEl(pre + k + d.n); if (e) e.disabled = !t; });
+    var fila = _mlEl(pre + '-hd' + d.n);
+    if (fila) { fila.textContent = t ? mallaHorasTexto(mallaMinutosDia(t)) : '—'; fila.parentNode.classList.toggle('ml-descanso', !t); }
+  });
+  var s = mallaHorasSemana(h), aviso = mallaAvisoHoras(h);
+  _mlEl(pre + '-hs').innerHTML = 'Total de la semana: <strong>' + mallaHorasTexto(s.minutos) + '</strong>';
+  var a = _mlEl(pre + '-ha');
+  a.textContent = aviso; a.classList.toggle('hidden', !aviso);
 }
 
 // Fase M1 (B): aviso con los festivos de la semana. Puro.
@@ -154,10 +211,7 @@ function mallaNuevoGrupo() {
 }
 
 function _mlLeerGrupo(idx) {
-  var pre = 'ml-g' + idx, h = {};
-  MALLA_DIAS.forEach(function (d) {
-    h[d.n] = _mlEl(pre + '-t' + d.n).checked ? { entrada: _mlEl(pre + '-e' + d.n).value, salida: _mlEl(pre + '-s' + d.n).value } : null;
-  });
+  var pre = 'ml-g' + idx, h = _mlLeerHorario(pre); // pedido de Edwin (24/11): con pausas y almuerzo
   if (_mlEl(pre + '-tf') && _mlEl(pre + '-tf').checked) h.festivo = { entrada: _mlEl(pre + '-ef').value, salida: _mlEl(pre + '-sf').value }; // Fase M1 (B)
   var sec = document.querySelector('.ml-grupo[data-idx="' + idx + '"]');
   var ids = Array.prototype.map.call(sec.querySelectorAll('.ml-asesoras input:checked'), function (x) { return Number(x.value); });
@@ -391,10 +445,16 @@ function mallaMiaHtml(r) {
       var especial = esp.indexOf(d.n) !== -1 ? ' <span class="vis-pill vis-amarillo ml-especial">Horario especial</span>' : '';
       var fest = s.turno.festivos && (s.turno.festivos[d.n] || s.turno.festivos[String(d.n)]); // Fase M1 (B)
       if (fest) especial = ' <span class="vis-pill vis-gris ml-festivo">Festivo: ' + esc(fest) + '</span>' + especial;
-      return '<tr data-fecha="' + esc(f) + '"' + (t ? '' : ' class="ml-descanso"') + '><th scope="row">' + d.largo + ' ' + esc(f.slice(8, 10) + '/' + f.slice(5, 7)) + '</th><td>' + esc(mallaTurnoTexto(t)) + especial + '</td><td class="ml-punt-celda"></td></tr>'; // Fase 368: celda de puntualidad
+      // Pedido de Edwin (24/11): pausas y almuerzo del día en una línea discreta, solo si el grupo los tiene.
+      var pz = mallaPausasTexto(t);
+      return '<tr data-fecha="' + esc(f) + '"' + (t ? '' : ' class="ml-descanso"') + '><th scope="row">' + d.largo + ' ' + esc(f.slice(8, 10) + '/' + f.slice(5, 7)) + '</th><td>' + esc(mallaTurnoTexto(t)) + especial +
+        (pz ? '<span class="ml-mia-pausas">' + esc(pz) + '</span>' : '') + '</td><td class="ml-punt-celda"></td></tr>'; // Fase 368: celda de puntualidad
     }).join('');
+    var hs = mallaHorasSemana(s.turno.horario);
     return '<section class="aurora-card ml-mia ml-color-' + (s.turno.color || 1) + '"><div class="aurora-card-title">' + esc(titulo) + '</div><p class="ml-nota"><span class="ml-punto" aria-hidden="true"></span>Grupo: <strong>' + esc(s.turno.grupo) + '</strong></p>' +
-      '<div class="table-wrap"><table class="ml-tabla ml-tabla-mia"><thead><tr><th scope="col">Día</th><th scope="col">Horario</th><th scope="col"><span class="sr-only">Puntualidad</span></th></tr></thead><tbody>' + filas + '</tbody></table></div>' + nov + '</section>';
+      '<div class="table-wrap"><table class="ml-tabla ml-tabla-mia"><thead><tr><th scope="col">Día</th><th scope="col">Horario</th><th scope="col"><span class="sr-only">Puntualidad</span></th></tr></thead><tbody>' + filas + '</tbody></table></div>' +
+      // El total solo con el horario del grupo: un horario especial no trae almuerzo y daría otra cuenta.
+      (esp.length ? '' : '<p class="ml-mia-total">Horas de la semana: <strong>' + mallaHorasTexto(hs.minutos) + '</strong></p>') + nov + '</section>';
   }).join('');
 }
 async function mallaMiaRender() {
@@ -407,5 +467,5 @@ async function mallaMiaRender() {
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { mallaFestivosHtml: mallaFestivosHtml, mallaFestivosSemanaTexto: mallaFestivosSemanaTexto, mallaMiaHtml: mallaMiaHtml, mallaGrupoHtml: mallaGrupoHtml, mallaCasosHtml: mallaCasosHtml, mallaNovedadesSemanaHtml: mallaNovedadesSemanaHtml, mallaMisNovedadesHtml: mallaMisNovedadesHtml };
+  module.exports = { mallaFestivosHtml: mallaFestivosHtml, mallaFestivosSemanaTexto: mallaFestivosSemanaTexto, mallaMiaHtml: mallaMiaHtml, mallaGrupoHtml: mallaGrupoHtml, mallaPausasTablaHtml: mallaPausasTablaHtml, mallaCasosHtml: mallaCasosHtml, mallaNovedadesSemanaHtml: mallaNovedadesSemanaHtml, mallaMisNovedadesHtml: mallaMisNovedadesHtml };
 }

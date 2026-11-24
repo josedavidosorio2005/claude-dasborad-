@@ -66,6 +66,80 @@ function mallaSemanaTexto(lunes) {
 
 function _mHora(s) { return typeof s === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(s); }
 
+// Pedido de Edwin (24/11): pausas activas y almuerzo de cada día del grupo. Todo es OPCIONAL: un día sin
+// estos campos (como los horarios ya guardados) sigue igual. Horas del día = salida − entrada − almuerzo
+// (las pausas activas no se descuentan). La semana debería sumar MALLA_META_SEMANA_H; si no, solo se avisa.
+var MALLA_PAUSA1_MIN = 15; // pausa activa 1, en la mañana
+var MALLA_PAUSA2_MIN = 10; // pausa activa 2, en la tarde
+var MALLA_ALMUERZO_OPCIONES = [30, 60];
+var MALLA_META_SEMANA_H = 42;
+function _mMin(s) { return Number(s.slice(0, 2)) * 60 + Number(s.slice(3, 5)); }
+function _mVacio(v) { return v === null || v === undefined || v === ''; }
+// -> { dia } normalizado, o { error }.
+function _mValidarPausas(v, largo) {
+  var dia = { entrada: v.entrada, salida: v.salida };
+  var ini = _mMin(v.entrada), fin = _mMin(v.salida);
+  var dentro = function (hora, dur, nombre) {
+    if (!_mHora(hora)) return (largo + ': escribe la hora de ' + nombre + ' (HH:MM) o déjala vacía').replace(' de el ', ' del ');
+    if (_mMin(hora) < ini || _mMin(hora) + dur > fin) return largo + ': ' + nombre + ' debe quedar dentro del turno (' + v.entrada + ' – ' + v.salida + ')';
+    return '';
+  };
+  var e;
+  if (!_mVacio(v.pausa1)) { if ((e = dentro(v.pausa1, MALLA_PAUSA1_MIN, 'la pausa activa 1'))) return { error: e }; dia.pausa1 = v.pausa1; }
+  if (!_mVacio(v.almuerzo)) {
+    var am = Number(v.almuerzoMin);
+    if (MALLA_ALMUERZO_OPCIONES.indexOf(am) === -1) return { error: largo + ': el almuerzo dura 30 min o 1 h' };
+    if ((e = dentro(v.almuerzo, am, 'el almuerzo'))) return { error: e };
+    dia.almuerzo = v.almuerzo; dia.almuerzoMin = am;
+  }
+  if (!_mVacio(v.pausa2)) { if ((e = dentro(v.pausa2, MALLA_PAUSA2_MIN, 'la pausa activa 2'))) return { error: e }; dia.pausa2 = v.pausa2; }
+  // Orden del día: pausa 1 (mañana) → almuerzo → pausa 2 (tarde), sin cruzarse.
+  if (dia.pausa1 && dia.almuerzo && _mMin(dia.pausa1) + MALLA_PAUSA1_MIN > _mMin(dia.almuerzo)) return { error: largo + ': la pausa activa 1 va antes del almuerzo' };
+  if (dia.pausa2 && dia.almuerzo && _mMin(dia.almuerzo) + dia.almuerzoMin > _mMin(dia.pausa2)) return { error: largo + ': la pausa activa 2 va después del almuerzo' };
+  if (dia.pausa1 && dia.pausa2 && _mMin(dia.pausa1) + MALLA_PAUSA1_MIN > _mMin(dia.pausa2)) return { error: largo + ': la pausa activa 1 va antes de la pausa activa 2' };
+  return { dia: dia };
+}
+// Minutos de trabajo de un día (null = descanso): salida − entrada − almuerzo.
+function mallaMinutosDia(t) {
+  if (!t || !_mHora(t.entrada) || !_mHora(t.salida)) return 0;
+  var m = _mMin(t.salida) - _mMin(t.entrada) - (t.almuerzo ? Number(t.almuerzoMin) || 0 : 0);
+  return m > 0 ? m : 0;
+}
+// Horas de la semana del grupo (los 7 días; el horario de festivos no cuenta).
+// -> { minutos, porDia: { n: minutos }, meta, cumple }
+function mallaHorasSemana(h) {
+  var porDia = {}, total = 0;
+  for (var i = 0; i < MALLA_DIAS.length; i++) {
+    var n = MALLA_DIAS[i].n, m = mallaMinutosDia(h ? h[n] || h[String(n)] : null);
+    porDia[n] = m; total += m;
+  }
+  return { minutos: total, porDia: porDia, meta: MALLA_META_SEMANA_H, cumple: total === MALLA_META_SEMANA_H * 60 };
+}
+// 510 -> «8 h 30 min»; 480 -> «8 h»; 0 -> «0 h».
+function mallaHorasTexto(min) {
+  min = Math.max(0, Math.round(Number(min) || 0));
+  var h = Math.floor(min / 60), m = min % 60;
+  return h + ' h' + (m ? ' ' + m + ' min' : '');
+}
+// Aviso (no bloquea) si la semana no suma la meta; '' si la cumple.
+function mallaAvisoHoras(h) {
+  var s = mallaHorasSemana(h);
+  if (s.cumple) return '';
+  return 'La semana suma ' + mallaHorasTexto(s.minutos) + ' y debería sumar ' + s.meta + ' h (salida − entrada − almuerzo). Puedes guardar igual.';
+}
+// Pausas del día en texto corto (para la asesora): «Pausa 09:30 · Almuerzo 12:00–13:00 · Pausa 15:30»; '' si no hay.
+function mallaPausasTexto(t) {
+  if (!t) return '';
+  var out = [];
+  if (t.pausa1) out.push('Pausa ' + t.pausa1);
+  if (t.almuerzo) {
+    var fin = _mMin(t.almuerzo) + (Number(t.almuerzoMin) || 0);
+    out.push('Almuerzo ' + t.almuerzo + '–' + _mPad(Math.floor(fin / 60)) + ':' + _mPad(fin % 60));
+  }
+  if (t.pausa2) out.push('Pausa ' + t.pausa2);
+  return out.join(' · ');
+}
+
 // Horario de un grupo: { "1": {entrada, salida} | null, ..., "7": ... }. Devuelve { ok, horario, error }
 // con el horario normalizado (las 7 claves; null = no trabaja ese día).
 function mallaValidarHorario(h) {
@@ -76,7 +150,9 @@ function mallaValidarHorario(h) {
     if (v === null || v === undefined || v === '') { out[dia.n] = null; continue; }
     if (typeof v !== 'object' || !_mHora(v.entrada) || !_mHora(v.salida)) return { ok: false, error: dia.largo + ': escribe la hora de entrada y de salida (HH:MM)' };
     if (v.salida <= v.entrada) return { ok: false, error: dia.largo + ': la salida debe ser después de la entrada (no hay turnos nocturnos)' };
-    out[dia.n] = { entrada: v.entrada, salida: v.salida };
+    var p = _mValidarPausas(v, dia.largo);
+    if (p.error) return { ok: false, error: p.error };
+    out[dia.n] = p.dia;
     alguno = true;
   }
   if (!alguno) return { ok: false, error: 'El grupo debe trabajar al menos un día' };
@@ -148,5 +224,8 @@ if (typeof module !== 'undefined' && module.exports) {
     mallaLunesDe: mallaLunesDe, mallaEsLunes: mallaEsLunes, mallaSumarSemanas: mallaSumarSemanas, mallaFechaDelDia: mallaFechaDelDia, mallaSemanasDelMes: mallaSemanasDelMes,
     mallaSemanaTexto: mallaSemanaTexto, mallaValidarHorario: mallaValidarHorario, mallaNombreValido: mallaNombreValido, mallaTurnoTexto: mallaTurnoTexto,
     mallaFestivosColombia: mallaFestivosColombia, mallaAplicarFestivos: mallaAplicarFestivos, // Fase M1 (B)
+    // Pedido de Edwin (24/11): pausas, almuerzo y horas.
+    MALLA_PAUSA1_MIN: MALLA_PAUSA1_MIN, MALLA_PAUSA2_MIN: MALLA_PAUSA2_MIN, MALLA_ALMUERZO_OPCIONES: MALLA_ALMUERZO_OPCIONES, MALLA_META_SEMANA_H: MALLA_META_SEMANA_H,
+    mallaMinutosDia: mallaMinutosDia, mallaHorasSemana: mallaHorasSemana, mallaHorasTexto: mallaHorasTexto, mallaAvisoHoras: mallaAvisoHoras, mallaPausasTexto: mallaPausasTexto,
   };
 }
