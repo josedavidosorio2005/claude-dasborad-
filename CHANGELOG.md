@@ -7,6 +7,14 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.266.0 — Noviembre 2026
+
+**ORLANT, Equidad de agendamiento: primera pieza (todavía no se ve en la plataforma).**
+
+- Ya están listos, por dentro, la lectura de los Excel de Isa (el formato largo y el corto) y los cálculos de su tablero: citas, médicos, promedio por médico, sedes, entidades y fechas.
+- Las preguntas que Isa tiene pendientes quedaron como opciones que se cambian sin rehacer nada.
+- La pestaña y la carga en el Centro de cargas vienen después, cuando Isa responda.
+
 ## v1.264.0 — Noviembre 2026
 
 **ORLANT · Tablero nuevo (en prueba, solo el administrador): llamadas de entrada más completas.**

@@ -22582,3 +22582,17 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - «Pendiente de Edwin» sale en 3P;
   - 0 errores de consola y nada se sale de la pantalla, fuera del menú de secciones, que tiene su propio scroll lateral (así quedó en N1).
 - **PR sin mergear** (pedido del usuario).
+
+## Equidad ORLANT: EQ1 adelantado sin esperar a Isa (v1.266.0, 2026-11-24, en el PR #937, sin mergear)
+
+- **Pedido (usuario, 24/11):** adelantar en #937 lo que no dependa de las respuestas de Isa, de modo que cambiar una respuesta sea solo una opción de configuración.
+- **Hecho:** `server/equidad-agendamiento.js`:
+  - lector de los formatos completo (17 columnas) y corto (6), reconocidos por los encabezados;
+  - la observación nunca sale; el usuario que agenda y la entidad de Particulares solo si su opción lo pide;
+  - cálculos del HTML: citas, médicos, promedio, sedes, mayor participación, detalle con «vs. promedio», entidades y fechas;
+  - guardado en `equidad_citas`, todo o nada, reemplazando los meses del grupo.
+  - Cada pregunta abierta (5, 6, 7, 11, A–F) es una opción de `OPCIONES_POR_DEFECTO`, con el valor del HTML de Isa por defecto. Tabla en `docs/orlant/equidad/propuesta.md` §10.
+- **Sin ruta, pantalla ni pestaña:** dependen de las preguntas 7 y 8.
+- **Prueba en local con los 6 Excel reales** (solo conteos): noviembre suma 568, igual que el HTML de Isa.
+- **Hallazgo:** `FECHA_CITA` trae solo la fecha. Con el formato corto no se pueden detectar las repetidas; el lector lo avisa (pregunta C).
+- **Pruebas:** `faseEQ1-equidad-lector` (6), con los ejemplos inventados.

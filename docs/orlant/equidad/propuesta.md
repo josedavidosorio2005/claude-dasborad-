@@ -169,3 +169,46 @@ las sedes y las entidades, sin colores de semáforo, en tema claro y oscuro y co
 | Total | | 5 (lo del plan) |
 
 Riesgo para el 27/11: las preguntas 6, 7, A y E deben estar resueltas a más tardar el miércoles 25/11.
+
+## 10. Adelanto de EQ1 sin esperar a Isa (24/11/2026)
+
+El 24/11 el usuario pidió adelantar lo que no depende de las respuestas de Isa. Cada respuesta pendiente quedó como **una sola opción** de configuración: cuando Isa responda, se cambia un valor y nada más.
+
+**Qué quedó hecho:** `server/equidad-agendamiento.js`.
+
+| Pieza | Qué hace |
+|---|---|
+| Lector | Lee los dos formatos y los reconoce por los encabezados. |
+| Cálculos | Los de §3. |
+| Guardado | Tabla `equidad_citas`, todo o nada. |
+
+**Qué falta:** ruta, pantalla, pestaña y el Centro de cargas, con respaldo y «Deshacer». Es EQ1 con la ruta y EQ2, y depende de las preguntas 7 y 8.
+
+| Pregunta | Opción (`OPCIONES_POR_DEFECTO`) | Por defecto (como el HTML de Isa) |
+|---|---|---|
+| 5 | `margenDesequilibrioPct` | `null`: solo la línea del promedio. Con un número, cada médico queda «sobre», «bajo» o «dentro» |
+| 6 | `modoCarga` | `'reemplazar_meses'`: cada carga reemplaza los meses que trae, de ese grupo. La otra opción es `'sumar'` |
+| 7 | `visibleParaCliente` | `false` (se usará en EQ2) |
+| 11 | `mesInicial` | `null`: cualquier mes |
+| A | `guardarEntidadParticulares` | `false` |
+| B | `guardarUsuario` | `false`: `CITUSU` no se guarda |
+| C | `repetidas` | `'todas'` cuentan. La otra opción es `'una'` |
+| D, F | `especialidadesPermitidas`, `examenesPermitidos` | `null`: todas cuentan, con un aviso. Con una lista, lo demás queda fuera |
+| E | `formatosAceptados` | `'ambos'` |
+
+**Prueba con los 6 Excel reales de Isa** (en local, solo conteos, nada en el repo):
+
+- Los 6 se leen bien.
+- Octubre (completo): 305 citas en Prepagadas, 256 en Particulares y 403 en Póliza SURA.
+- Noviembre (corto): 216, 139 y 213. Suman **568**, igual que el HTML de Isa.
+- La observación nunca sale del lector.
+- Avisos: en octubre, entre 10 y 15 citas repetidas por archivo y 2 de otra especialidad; en el archivo de Póliza SURA, 1 de otro examen.
+
+**Hallazgo para Isa (pregunta C):**
+
+- En los dos formatos, `FECHA_CITA` trae **solo la fecha**, sin hora.
+- El formato corto no tiene `HORA_CITA`, así que con él **no se pueden detectar las citas repetidas**.
+- El lector lo detecta (una única hora en todo el archivo), no la usa y avisa (`sinHoraEnCorto`).
+- Si Isa quiere contar las repetidas una sola vez, tendría que subir el formato completo o agregar `HORA_CITA` al corto.
+
+Pruebas: `server/tests/faseEQ1-equidad-lector.test.js` (6), con los ejemplos inventados.
