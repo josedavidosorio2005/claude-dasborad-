@@ -120,6 +120,14 @@ ahí (`path.join(SERVER_DIR, 'node_modules', ...)`), nunca con un
 - **`generar-plantillas.js`** — genera `server/plantillas/PLANTILLA_<MODULO>.xlsx`.
 - **`generar-fichas.js`** — genera las fichas de `docs/plantillas/`.
 
+## scripts/orlant/ — propuestas de ORLANT
+
+- **`equidad-plantilla-propuesta.js`** — genera
+  `docs/orlant/equidad/PLANTILLA_EQUIDAD_PROFESIONALES_PROPUESTA.xlsx` con datos
+  inventados (Equidad de profesionales, plan de acción 20/11, A6). Es una
+  propuesta: entra al catálogo de `scripts/plantillas/` cuando el formato quede
+  cerrado con Isa (ver `docs/orlant/equidad/propuesta.md`).
+
 ## Convenciones
 
 - Nunca escriben en producción salvo que el script sea explícitamente de
