@@ -498,12 +498,104 @@ async function correrAbandonadas(opts, partes, res) {
   }
 }
 
+// ── Fase N3 (autorización escrita del usuario, 24/11/2026): chat_1 → WhatsApp de ENTRADA, solo la réplica de ORLANT ──
+// chat_1 = una fila por chat atendido por personas (32 columnas; sondeo del 24/11: 624 chats el 23/11 y 8.180
+// del 1 al 23/11 en UNA consulta). Los datos del cliente (WA_DESCARTADAS) se descartan EN MEMORIA y nunca se
+// guardan. Se arma, por día y cola (skill_id → nombre con el mapa «Skills de WhatsApp»; 0 = salida, fuera):
+//  - trafico_whatsapp: recibidos, contestados (con asesor) y ASA (promedio de first_response_time de los
+//    contestados). Abandonados: NULL — ¿Edwin? (chat_1 no trae la columna; NUNCA recibidos − contestados).
+//  - whatsapp_tiempos: una fila por chat contestado con su first_response_time (rangos 0–3 / 3–5 / >5 min).
+// Reemplaza el mes (respaldo antes, todo o nada: las dos tablas en una transacción).
+const WA_DESCARTADAS = ['customer_name', 'customer_email', 'customer_phone', 'comment', 'comments', 'extra_field'];
+const WA_SKILL_SALIDA = '0';
+// Segundos desde un número, «123.4» o «HH:MM:SS»; null si no se entiende (¿Edwin?: unidad por confirmar con datos).
+function _waSegundos(v) {
+  if (v === undefined || v === null || v === '') return null;
+  if (typeof v === 'number') return Number.isFinite(v) && v >= 0 ? Math.round(v) : null;
+  const s = String(v).trim();
+  if (/^\d+(\.\d+)?$/.test(s)) return Math.round(Number(s));
+  const h = s.match(/^(\d{1,3}):(\d{2}):(\d{2})$/);
+  return h ? Number(h[1]) * 3600 + Number(h[2]) * 60 + Number(h[3]) : null;
+}
+// «2026-11-23 08:15:02», «2026-11-23T08:15:02» o «20261123081502» → { fecha, hora } (hora local de Wolkvox).
+function _waFechaHora(v) {
+  const s = String(v == null ? '' : v).trim();
+  const m = s.match(/^(\d{4})-?(\d{2})-?(\d{2})(?:[ T]?(\d{2}):?(\d{2}))?/);
+  if (!m) return null;
+  const fecha = m[1] + '-' + m[2] + '-' + m[3];
+  const d = new Date(fecha + 'T00:00:00Z');
+  if (isNaN(d.getTime()) || d.toISOString().slice(0, 10) !== fecha) return null; // fecha real
+  const hora = m[4] !== undefined ? Number(m[4]) : 0;
+  return hora <= 23 ? { fecha, hora } : null;
+}
+const _waConAsesor = (f) => { const a = String(_v(f, 'agent_id') == null ? '' : _v(f, 'agent_id')).trim(); const n = String(_v(f, 'agent_name') == null ? '' : _v(f, 'agent_name')).trim(); return (a !== '' && a !== '0') || n !== ''; };
+// Puro (se prueba): data cruda → { trafico, tiempos, salida, sinFecha, sinTiempo }. No guarda nada crudo.
+function hojaWhatsapp(data, mapaSkills) {
+  const nombre = (id) => (mapaSkills && mapaSkills.get(id)) || ('Skill ' + id);
+  const grupos = new Map(); const tiempos = [];
+  let salida = 0, sinFecha = 0, sinTiempo = 0;
+  for (const fila of data) {
+    for (const k of Object.keys(fila)) if (WA_DESCARTADAS.includes(k.toLowerCase())) delete fila[k]; // en memoria
+    const skill = String(_v(fila, 'skill_id') == null ? '' : _v(fila, 'skill_id')).trim();
+    if (skill === WA_SKILL_SALIDA) { salida++; continue; }
+    const fh = _waFechaHora(_v(fila, 'date'));
+    if (!fh) { sinFecha++; continue; }
+    const cola = nombre(skill || '?');
+    const k = fh.fecha + '|' + cola;
+    if (!grupos.has(k)) grupos.set(k, { colaWhatsapp: cola, fecha: fh.fecha, recibidos: 0, contestados: 0, asaN: 0, asaD: 0 });
+    const g = grupos.get(k);
+    g.recibidos++;
+    if (!_waConAsesor(fila)) continue;
+    g.contestados++;
+    const seg = _waSegundos(_v(fila, 'first_response_time'));
+    if (seg === null) { sinTiempo++; continue; }
+    g.asaN += seg; g.asaD++;
+    tiempos.push([cola, fh.fecha, fh.hora, seg]);
+  }
+  const trafico = [...grupos.values()].sort((a, b) => (a.fecha + a.colaWhatsapp).localeCompare(b.fecha + b.colaWhatsapp)).map((g) => ({
+    colaWhatsapp: g.colaWhatsapp, fechaInicio: g.fecha, fechaFin: g.fecha, totalWhatsapp: g.recibidos, contestados: g.contestados,
+    abandonados: null, // ¿Edwin?: chat_1 no trae el abandono
+    serviceLevel10secPct: null, serviceLevel20secPct: null, serviceLevel30secPct: null, serviceLevel5minPct: null,
+    asaSegundos: g.asaD ? Math.round((g.asaN / g.asaD) * 10) / 10 : null, ataSegundos: null, ahtSegundos: null,
+  }));
+  return { trafico, tiempos, salida, sinFecha, sinTiempo };
+}
+async function correrWhatsapp(opts, partes, res) {
+  const { cargarTraficoWhatsapp } = require('./trafico-whatsapp');
+  const { cargarWhatsappTiempos } = require('./whatsapp-tiempos');
+  const { listarSkillsWhatsapp } = require('./skills-whatsapp');
+  const base = require('./clientes-registro').replicaDe(opts.db, opts.campana) || opts.campana; // el mapa es del cliente original
+  const mapa = new Map(listarSkillsWhatsapp(opts.db, base).map((s) => [String(s.codigo), s.nombre]));
+  const ARCHIVO = 'API Wolkvox (chat_1)';
+  for (const { mes, dias } of _auto().planDe(opts)) {
+    res.consultas++;
+    let { data } = await _pedir(opts, 'chat_1', dias[0], dias[dias.length - 1]);
+    if (!data.length) { partes.push(mes + ': Wolkvox no trajo chats, sin cambios'); continue; }
+    const llegaron = data.length;
+    let h = hojaWhatsapp(data, mapa);
+    data = null; // datos del cliente y demás datos crudos no se guardan ni se quedan en memoria
+    const fuera = h.trafico.filter((t) => t.fechaInicio.slice(0, 7) !== mes).length;
+    if (fuera) { res.estado = 'error'; res.error = 'respuesta_invalida'; partes.push(mes + ': ' + fuera + ' grupos de chats fuera del mes, sin cambios'); return; }
+    if (!h.trafico.length) { partes.push(mes + ': ' + llegaron + ' chats, ninguno de entrada con fecha (' + h.salida + ' de salida, ' + h.sinFecha + ' sin fecha), sin cambios'); continue; }
+    let wT = { insertadas: 0, borradas: 0 }, wTi = { insertadas: 0, borradas: 0 };
+    opts.db.transaction(() => {
+      wT = cargarTraficoWhatsapp(opts.db, { campana: opts.campana, archivoNombre: ARCHIVO, cargadoPorNombre: QUIEN, filas: h.trafico });
+      if (h.tiempos.length) wTi = cargarWhatsappTiempos(opts.db, { campana: opts.campana, archivoNombre: ARCHIVO, cargadoPorNombre: QUIEN, filas: h.tiempos });
+    })();
+    const recibidos = h.trafico.reduce((a, t) => a + t.totalWhatsapp, 0), contestados = h.trafico.reduce((a, t) => a + t.contestados, 0);
+    res.meses.push({ mes, filas: h.trafico.length, tiempos: h.tiempos.length });
+    partes.push(mes + ': ' + llegaron + ' chats → ' + recibidos + ' de entrada (' + contestados + ' con asesor) en ' + h.trafico.length + ' filas día-cola, ' + h.tiempos.length + ' tiempos de primera respuesta; ' + h.salida + ' de salida y ' + h.sinFecha + ' sin fecha fuera, ' + h.sinTiempo + ' sin tiempo; abandono sin dato (¿Edwin?); con respaldo');
+    h = null;
+  }
+}
+
 const MODULOS = {
   flujo_hora: { api: 'skill_7', descripcion: 'Flujo por hora + AHT y espera', correr: correrFlujoHora },
   cdr: { api: 'cdr_1', descripcion: 'Tipificación, Eficacia, únicas contestadas y conectadas de salida', correr: correrCdr },
   encuesta: { api: 'diagram_4', descripcion: 'Encuesta (HistIVR) sin teléfono ni comentarios', correr: correrEncuesta }, // Fase A11
   no_conectadas: { api: 'cdr_5', descripcion: 'Llamadas de salida no conectadas (sin teléfono)', correr: correrNoConectadas }, // Fase A15
   abandonadas: { api: 'skill_2', descripcion: 'Llamadas únicas: abandonadas (sin teléfono)', correr: correrAbandonadas }, // Fase A19
+  whatsapp: { api: 'chat_1', descripcion: 'WhatsApp de entrada (tráfico por cola y primera respuesta) sin datos del cliente', correr: correrWhatsapp }, // Fase N3: solo la réplica de ORLANT
 };
 function modulosDe(valor) {
   return String(valor == null ? '' : valor).split(',').map((s) => s.trim().toLowerCase()).filter((s) => Object.prototype.hasOwnProperty.call(MODULOS, s));
@@ -554,6 +646,7 @@ async function correrModulo(nombre, opts) {
 }
 
 module.exports = {
+  hojaWhatsapp, WA_DESCARTADAS, // Fase N3
   // Fase A26: cuentas de prueba (las listas solo se cambian en pruebas)
   esCuentaPrueba, quitarCuentasPrueba, vaciarMes, PRUEBA_HUELLAS, PRUEBA_IDS,
   _configurarPruebaParaPruebas: (huellas, ids) => { _pruebaHuellas = huellas || PRUEBA_HUELLAS; _pruebaIds = ids || PRUEBA_IDS; },

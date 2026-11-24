@@ -22596,3 +22596,59 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
 - **Prueba en local con los 6 Excel reales** (solo conteos): noviembre suma 568, igual que el HTML de Isa.
 - **Hallazgo:** `FECHA_CITA` trae solo la fecha. Con el formato corto no se pueden detectar las repetidas; el lector lo avisa (pregunta C).
 - **Pruebas:** `faseEQ1-equidad-lector` (6), con los ejemplos inventados.
+
+## Auditoría del 24/11: dos bajos arreglados (v1.264.1, 2026-11-24, PR sin mergear)
+
+- **Pedido (usuario, 24/11):** de los bajos de la auditoría, arreglar la novedad sin fecha de fin y la franja de demostración.
+- **Novedad sin fecha de fin** (`server/gh-novedades.js`):
+  - una novedad con inicio y sin fin cuenta como vigente desde su inicio;
+  - antes, `'' >= hoy` daba falso y nunca salía en «Novedades de Gestión Humana» del Inventario;
+  - el texto dice «Ausente desde el …, sin fecha de regreso»; la próxima ausencia sin fin, igual;
+  - el HTML de Edwin no se tocó.
+- **Franja de demostración** (`public/js/state.js`):
+  - el ajuste (margin-top y height con `!important`) ahora va a las 13 ventanas de pantalla completa de la regla de la Fase 364, no solo a Talento humano;
+  - el Panel de gestión ya lo tenía, pero sin `!important`, así que la regla de pantalla completa le ganaba.
+- **Pruebas:** `faseQA-bajos-24nov` (4), que compara la lista de `state.js` con la de `styles.css`; `fase103` ajustada.
+- **Verificación local** (Brave, base desechable con datos inventados, 375, 768 y 1440 px, modo demostración): en Inventario, Malla y Talento humano, el «Cerrar» queda debajo de la franja, sin desborde horizontal ni errores de página.
+- **PR sin mergear.**
+
+## Fase N3 — ORLANT, WhatsApp por API en la réplica, apagado (v1.265.0, 2026-11-24, PR sin mergear)
+
+- **Sondeo** (autorizado por escrito por el usuario el 24/11; 3 consultas desde «ORLANT PRUEBAS API», solo estado, filas y columnas):
+  - `chat_1` del 23/11: 200, 624 chats;
+  - `chat_13` del 23/11: 200, 1 fila;
+  - `chat_1` del 1 al 23/11: 200, 8.180 chats.
+  - El «Validate dates entered» de antes era por usar el token de MOBILIZE, que no tiene WhatsApp. Detalle en `docs/plan-api-wolkvox.md` 10.27.
+- **Pedido (usuario, 24/11):** preparar N3, WhatsApp por API (`chat_1`) en la réplica de ORLANT, APAGADO.
+  - Descartar en memoria `customer_name`, `customer_email`, `customer_phone`, `comment`, `comments` y `extra_field`.
+  - El abandono queda «¿Edwin?».
+  - No crear `WOLKVOX_ORLANT_AUTO_ACTIVO`.
+- **Hecho:**
+  - módulo `whatsapp` en `wolkvox-modulos.js`, con `hojaWhatsapp` como lógica pura;
+  - una consulta por mes;
+  - guarda en `trafico_whatsapp` (por día y cola: recibidos, contestados y ASA) y en `whatsapp_tiempos` (primera respuesta de cada chat contestado);
+  - reemplazo del mes con respaldo, las dos tablas en una sola transacción;
+  - la salida (`skill_id` 0) y las filas sin fecha quedan fuera.
+  - `wolkvox-destinos.js`: `whatsapp` solo en `orlant_replica`; MOBILIZE (réplica y real) pasa de «todos» a su lista cerrada de 5 módulos.
+  - La excepción escrita quedó en `CLAUDE.md`.
+- **Pruebas** (`faseN3-orlant-whatsapp-api`, 4; `faseN6` ajustada; Wolkvox falso y datos inventados):
+  - los datos del cliente se borran en memoria y no llegan ni a la base ni al Historial;
+  - MOBILIZE no tiene el módulo y no consulta a Wolkvox;
+  - apagado, no corre;
+  - el ORLANT real no cambia;
+  - volver a correr el mes lo reemplaza, sin duplicar.
+- **PR sin mergear.** Nada encendido en SSM.
+
+## Cierre del 24/11 — Estado al final del día (solo docs, 2026-11-24)
+
+- **Producción:** `1.265.0` (`/api/health`, leído al cierre).
+- **Mergeados y desplegados hoy** (uno a la vez):
+  - #934 (1.260.2), #935 (1.261.0), #936 H-08 tope de login (1.261.1), #938 prueba de la Encuesta de Mobilize (sin versión), #939 (1.262.0), #940 (1.263.0), #944 (1.263.1), #941 N2 (1.264.0), #946 (1.264.1) y #945 N3 (1.265.0).
+  - Solo docs: #942 (B6, retención de datos) y #943 (C2, ficha de fórmulas de ORLANT).
+  - Las entradas de arriba que dicen «PR sin mergear» (auditoría del 24/11, N2, auditoría de bajos y N3) quedaron mergeadas con los PR de esta lista.
+- **H-08 (#936):** en producción el login queda en máximo 10 intentos por IP y 30 por usuario, con un aviso al arrancar si `app.env` pide más. Los pasos en AWS y en el servidor (permisos, rotar la llave, sudo) siguen sin tocar: los hace el usuario, uno a la vez y con su OK.
+- **N3:** el módulo `whatsapp` está en producción pero **apagado**. No se creó `WOLKVOX_ORLANT_AUTO_ACTIVO` ni se añadió `whatsapp` a `WOLKVOX_ORLANT_AUTO_MODULOS`.
+- **Siguen abiertos:**
+  - #937, propuesta de Equidad de ORLANT (solo docs): espera la respuesta de Isa. Entrega el viernes 27/11.
+  - #902 (B1): espera las respuestas de Edwin.
+- **Pendiente para el 25/11:** leer, solo conteos, la corrida de las 00:05 de MOBILIZE (réplica y real).

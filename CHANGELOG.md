@@ -7,13 +7,20 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
-## v1.266.0 — Noviembre 2026
+## v1.265.0 — Noviembre 2026
 
-**ORLANT, Equidad de agendamiento: primera pieza (todavía no se ve en la plataforma).**
+**ORLANT, pruebas internas: WhatsApp puede llegar solo desde Wolkvox (todavía apagado).**
 
-- Ya están listos, por dentro, la lectura de los Excel de Isa (el formato largo y el corto) y los cálculos de su tablero: citas, médicos, promedio por médico, sedes, entidades y fechas.
-- Las preguntas que Isa tiene pendientes quedaron como opciones que se cambian sin rehacer nada.
-- La pestaña y la carga en el Centro de cargas vienen después, cuando Isa responda.
+- La copia de pruebas de ORLANT (no la que ve el cliente) ya puede traer de Wolkvox los chats de WhatsApp de entrada: cuántos llegaron y cuántos se contestaron por día y por cola, y en cuánto tiempo se respondió cada uno.
+- Los datos del cliente (nombre, correo, teléfono y comentarios) se descartan y nunca se guardan.
+- El abandono de WhatsApp queda pendiente de que Edwin diga cómo se cuenta.
+- Está apagado: no corre hasta que se encienda a propósito. MOBILIZE no cambia.
+## v1.264.1 — Noviembre 2026
+
+**Dos arreglos pequeños.**
+
+- Inventario de sistemas, «Novedades de Gestión Humana»: una persona con una novedad que todavía no tiene fecha de regreso ahora sí aparece como ausente, con el aviso «sin fecha de regreso».
+- En modo de demostración, la franja naranja de aviso ya no tapa la parte de arriba (ni la equis de cerrar) del Inventario, la Malla, las Cargas y las demás ventanas que ocupan toda la pantalla.
 
 ## v1.264.0 — Noviembre 2026
 
