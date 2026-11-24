@@ -648,6 +648,7 @@ mismo orden):
 - Fase GH5 — Inventario de sistemas: «Panel general», «Registrar ingreso», listas, «Inventario» por tipo, Actas con pestañas y Ajustes en tarjetas como el diseño de Edwin; lista de diferencias en `docs/gestion-humana/inventario-diferencias.md` (v1.258.0, 2026-11-23)
 - Fase GH6 — Talento humano: salario y sede obligatorios en la ficha; gráficas sin fallar con registros viejos (v1.258.1, 2026-11-23)
 - Fase GH7 — Retiro de la Gestión humana anterior (personal por campaña): rutas 410, tablero 404, tabla y rol conservados (v1.259.0, 2026-11-23)
+- Fase GH8 — Limpieza: sale el HTML oculto y el JS de la Gestión humana anterior (sin cambio visible; tabla conservada) (v1.259.1, 2026-11-24)
 - Fase M1 — Malla, «casos especiales» (pedido 6 de Edwin): A tipos de excepción editables, B festivos de Colombia, C horario especial que se repite (v1.260.0, 2026-11-24)
 - Fase 309 — Revisión de seguridad: el cliente ya no recibe el nombre de los líderes en `GET /metas`; resto en `docs/revision-seguridad-2026-11-09.md` (v1.154.1, 2026-11-10)
 - Fase 308 — Revisión antes de la reunión con clientes y pendientes del supervisor (solo docs, 2026-11-10)

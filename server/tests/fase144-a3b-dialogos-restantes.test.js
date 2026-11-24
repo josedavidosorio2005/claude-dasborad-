@@ -17,7 +17,8 @@ const mh = require('../../public/js/motion-helpers.js');
 
 const DIALOGOS = ['clients-modal-overlay', 'sede-modal-overlay', 'modal-user', // Fase 354: + elegir la sede
    'modal-pass', 'modal-delete', 'inv-item-modal',
-  'gh-person-modal', 'inv-mov-modal', 'ger-kpi-modal', 'modal-change-own-password', 'modal-encuesta-preguntas', // Fase 147 (Parte B): + preguntas de la encuesta
+  'inv-mov-modal', // Fase GH8: sin 'gh-person-modal' (Gestión humana anterior retirada)
+  'ger-kpi-modal', 'modal-change-own-password', 'modal-encuesta-preguntas', // Fase 147 (Parte B): + preguntas de la encuesta
   'modal-encuesta-monitoreo', // Fase 331 (PR 4): + Monitoreo de una pregunta de la Encuesta
   'modal-ver-datos', // Fase 152 (B9): + "Ver datos" de una grafica
   'modal-clasif-asesores', // Fase 186: + "Clasificación de asesores" de Tipificacion

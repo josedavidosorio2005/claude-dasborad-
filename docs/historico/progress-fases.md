@@ -22372,6 +22372,19 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
 - **Merge con OK del usuario (24/11)**, después de traer `main` (#928, 1.258.1); queda en 1.259.0.
 
 
+## Fase GH8 — Limpieza del HTML oculto de la Gestión humana anterior (v1.259.1, 2026-11-24)
+
+- **Pedido (usuario, 24/11):** PR pequeño que quite el HTML oculto del módulo retirado en la Fase GH7. Rama nueva, sin mergear.
+- **Por qué también sale el JS:** `public/js/gestion-humana.js` registraba un evento sobre `#gestionhumana-overlay` al cargar la página; sin el HTML habría fallado. Nada lo abría desde la GH7.
+- **Cambio:**
+  - `public/index.html`: sin la entrada del menú (`menu-gestionhumana-li`), la sección `section-gestionhumana`, el formulario `gh-person-modal`, la ventana `gestionhumana-overlay` y el `<script>`.
+  - Sale `public/js/gestion-humana.js`.
+  - Sin sus referencias en `session.js`, `ui-core.js`, `dashboards-core.js`, `cerrar-ventanas.js`, `motion-helpers.js` y `styles.css`.
+  - **No se tocan:** el servidor (rutas 410, tablero 404), la tabla `gestion_humana_personal`, el rol `GESTION_HUMANA`, Talento humano, Inventario, Calidad, STA ni los dashboards de clientes.
+- **Pruebas:** `gestion-humana.test.js` con una prueba nueva (sin el HTML ni el JS, Talento humano sigue); `fase144`, `fase145` y `fase152` sin los ids retirados. Suite local: 3515 pasan, 0 fallan (la única falla, `fase145`, se corrigió y pasa).
+- **Revisión local** (copia de la base demo, Brave sin ventana, 1440/768/375): login, las 9 secciones del panel, Gerencia, Inventario y Talento humano abren y cierran con Escape; sin menú ni tarjeta vieja; 0 errores de consola; sin scroll horizontal.
+- **PR sin mergear** (pedido del usuario).
+
 ## Fase M1 — Malla: «casos especiales» A + B + C (v1.260.0, 2026-11-24)
 
 - **Pedido:** 6 de Edwin (reunión del 23/11), «Casos especiales» de la malla.
@@ -22412,4 +22425,9 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - 0 errores de consola, sin scroll lateral de la página ni de la ventana.
   - A 375 px la tabla de tipos desbordaba la ventana; se pasó a tarjetas y se volvió a revisar.
 - **No se tocó** producción ni otros módulos. `GH_ROL_ACTIVO` sigue apagado.
-- **PR sin mergear** (merge solo con OK del usuario).
+- **Antes del merge** (24/11, lectura en producción, solo conteos): ningún grupo trabajó un festivo de 2026.
+  - La réplica no tiene malla en semanas con festivo.
+  - SURA tiene malla en las semanas del 02/11 y el 16/11, que caen en lunes, y ningún grupo trabaja los lunes.
+  - Con «festivo = descanso» no cambió ningún número.
+  - Pendiente: al armar diciembre, marcar «Festivos» a los grupos de SURA que trabajen el 08/12 o el 25/12.
+- **Merge con OK del usuario (24/11)**, después de traer `main` (#930, 1.259.1); queda en 1.260.0.

@@ -7,62 +7,53 @@ decidir nada, solo priorizar cuándo invertir el tiempo). Lo ya cerrado
 no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 ítem tiene prioridad, cómo se cierra, y la fecha en que se anotó.
 
-## Estado al 19/11/2026 (producción 1.223.0)
+## Estado al 24/11/2026 (producción 1.260.0)
 
-- **Hecho hoy (19/11):**
-  - **Wolkvox, consulta automática:** las corridas de las 00:05 y las 7:00 terminaron bien. En cada una
-    corrieron los 4 reportes: Flujo (`skill_1`), flujo_hora (`skill_7`), cdr (`cdr_1`) y encuesta (`diagram_4`),
-    todos con respaldo y 21 consultas por corrida. Ya no hay bloqueo de red con Wolkvox.
-  - **Comparación de la réplica con el manual** (solo lectura, 8 días comunes del 03 al 12/11):
-    - iguales en todos los días: Flujo (llamadas, contestadas, abandonadas y NS 20 s), Flujo por hora
-      (25/25 celdas) y Encuesta (8/8);
-    - AHT 7/8 y espera 8/8, con una diferencia de ±1 s (el 03/11, AHT 269 contra 272 s);
-    - Tipificación de ingreso, Eficacia y únicas contestadas 7/8: el 04/11 falta una llamada en la API.
-  - **Horarios de SURA (noviembre, por archivo):** 10 días, 25 agentes y 161 sesiones.
-    - 4 agentes se enlazaron solos por nombre exacto;
-    - 19 se enlazaron a mano con OK del usuario (`MALLA_ENLACE`, tabla `malla_agente_enlace`);
-    - quedan 2 sin enlace a propósito: los agentes de prueba de Wolkvox;
-    - las 23 asesoras activas de SURA quedaron enlazadas.
-  - **Revisión en producción**, solo lectura, con «Ver como» (admin, supervisor, asesora y sistemas) a 1440 y 375 px:
-    - funcionan el menú en cuadrícula (4 columnas en 1440 y 1 en 375), Tickets, las ventanas a pantalla completa
-      (no se cierran con Escape ni con clic afuera, sí con «Cerrar»), Calidad sin heredar plantillas al cambiar
-      de usuario, la Malla con selector de mes, «Mi malla» de la asesora y el Inventario con las actas;
-    - 0 errores de consola y sin desborde lateral.
-  - **Fase 372 (v1.223.0):** Inventario de sistemas E4, formularios editables por Sistemas.
+- **Hecho del 20 al 24/11** (detalle en `PROGRESS.md` y `docs/historico/progress-fases.md`):
+  - **Gestión humana:**
+    - «Talento humano» (la app de Edwin dentro de SinCo) guarda en la plataforma, también los soportes (GH1–GH3).
+    - Salario y sede son obligatorios (GH6, v1.258.1, #928).
+    - El Inventario de sistemas ve las «Novedades de Gestión Humana» (GH4).
+    - El Inventario se ve como el diseño de Edwin (GH5, v1.258.0, #927).
+    - La Gestión humana anterior (personal por campaña) se retiró (GH7, v1.259.0, #929). Respaldo antes del merge, fuera del repo: 0 registros. `GH_ROL_ACTIVO` sigue apagado.
+  - **Verificado en producción el 24/11** (solo lectura, sesión del administrador, escrituras bloqueadas):
+    - #927 (todas las vistas del Inventario), #928 (avisos de salario y sede) y #929 (tarjeta y menú fuera, `/gh/personal` 410, tablero 404).
+    - Talento humano, el Inventario, Gerencia y los 8 tableros de clientes abren con 0 errores de consola.
+    - Mobilize «Calidad de encuestas» (Fase 331): pestaña con 0 pendientes y 20 resueltas, sin teléfonos, aviso de las 16 sin ID; filtro «Origen» con 3 opciones; botón «Monitoreo» en las 4 preguntas de la Encuesta, el modal abre y cierra con Escape. Sin desborde a 1440 ni a 375 px.
+  - **STA de ORLANT:** el filtro «Servicio» va en cascada (STA7) y hay «Descargar plantilla» (STA8). Ticket #3 de SURA (ID de agente automático en Calificar).
+  - **Wolkvox:** el MOBILIZE real llena noviembre por la API (A29); el hueco de julio y las no conectadas (A30–A32); la réplica de ORLANT con la API (N6, apagada hasta el OK).
+- **Mergeados el 24/11 con OK del usuario:** #932 (estos pendientes), #930 GH8 (v1.259.1) y #931 Fase M1, malla «casos especiales» A+B+C (v1.260.0).
+- **Malla, festivos (Fase M1):** con «festivo = descanso» no cambió ningún número. Lectura en producción del 24/11: la réplica no tiene malla en semanas con festivo; SURA tiene malla en las semanas del 02/11 y el 16/11 (lunes), pero ningún grupo trabaja los lunes.
+  **Al armar diciembre:** a los grupos de SURA que trabajen el **08/12** o el **25/12**, marcarles la fila «Festivos» (con su horario). Si no, ese día les sale descanso.
+- **Esperan a Edwin:** **#902** (ORLANT, citas asignadas en Total tráfico) y **N2** (rama local).
+- **Mobilize, Calidad de encuestas sin ID desde noviembre (causa encontrada el 24/11, solo lectura):**
+  - Desde el 21/11 la consulta automática reemplaza la Encuesta de noviembre del MOBILIZE real, y ese módulo guardaba las encuestas **sin CONN_ID**.
+  - Por eso noviembre tiene 16 mal calificadas «sin ID» y 0 pendientes.
+  - Los 5 monitoreos de noviembre que se calificaron con el archivo manual quedaron sin su encuesta: 25 monitoreos de origen «encuesta» contra 20 resueltas.
+  - **Decisión del usuario (24/11, opción a):** el módulo de Encuesta del MOBILIZE real guarda el CONN_ID (solo el ID de la llamada; teléfono y comentarios se siguen descartando). Va en un PR aparte, que espera el OK del merge.
 - **Pendiente, del usuario:**
-  - **Actas de prueba, opción A: HECHA (Fase 383, 20/11, OK del usuario).** Pasos que se siguieron:
-    1. devolver el elemento #1 (motivo «Prueba 371b», queda «Malo»);
-    2. darlo de baja;
-    3. desactivar el agente #1.
-    El acta #1 y su PDF se quedan. **20/11 (Fase 383, OK del usuario):** los 3 pasos hechos; las actas
-    automáticas que crearon (2, devolución; 3, baja) se anularon con motivo «Prueba 371b». Panel: 1 de baja, 0 agentes
-    activos, 0 por firmar.
+  - **Docker Hub:** crear los 2 secretos de GitHub (`DOCKERHUB_USERNAME` y `DOCKERHUB_TOKEN`) para quitar los 429 de CI y deploy (24/11, en curso con el usuario, paso a paso). El token nunca va al chat ni al repo.
   - **SURA no tiene malla de turnos.** Sin turnos, la puntualidad no da a tiempo ni tarde: las asesoras salen en
-    «con ingreso sin turno» (158 días-asesora del 26/10 al 22/11) y «Mi malla» dice «Todavía no tienes turno
-    asignado». Hay que armar la malla de SURA (supervisor o administrador) o que Edwin diga los turnos.
+    «con ingreso sin turno» y «Mi malla» dice «Todavía no tienes turno asignado». Hay que armar la malla de SURA
+    (supervisor o administrador) o que Edwin diga los turnos.
   - **Wolkvox, reportes que faltan** (salida, abandonadas con detalle y WhatsApp):
     1. el usuario revisa en el Manager las pantallas sugeridas (CDR 1 y su filtro de salida, Campañas, el
        detalle de abandonadas y Chats 1 con su rango de fechas);
     2. después se proponen las consultas de prueba con un número exacto, y se espera su OK.
-  - **MOBILIZE real por la API:** autorizado (20/11) y **encendido en SSM** por el usuario el 20/11
-    (`WOLKVOX_REAL_ACTIVO=1`, 5 módulos). **Desde la Fase A29 (v1.237.1) llena noviembre**: primera franja
-    21/11 00:05 (del 1 al 20/11); octubre y anteriores no se tocan. **Falta:** revisar las corridas del 21/11;
-    el supervisor no sube archivos manuales de noviembre ni diciembre a MOBILIZE; alias de MOBILIZE (2/2/1 nombres) por decidir. Ver `docs/plan-api-wolkvox.md` §10.24.
+  - **MOBILIZE real por la API:** encendido (20/11). **Falta:** que el supervisor no suba archivos manuales de
+    noviembre ni diciembre a MOBILIZE, y decidir los alias de MOBILIZE (2/2/1 nombres). Ver `docs/plan-api-wolkvox.md` §10.24.
+  - **Para después (24/11, decisión del usuario):** H-08 (llave de AWS y sudo), inventario de la cuenta AWS vieja y la política IAM, y las decisiones pequeñas del bloque 1.
   - **Pregunta para Edwin:** si quiere ver el nivel de servicio a 10 s y a 30 s (ya se guarda).
 - **Detalle visual menor, sin arreglar:** la franja de «Ver como» mide 178 px de alto a 375 px (el texto ocupa
   5 líneas). No tapa el botón «Cerrar» de las ventanas.
-- **Inventario de sistemas:** E1–E4 hechos (Fases 369–372); las actas firmadas en S3 funcionan desde el 18/11.
-  **El Inventario anterior se retiró** (Fase 383, 20/11; Edwin aprobó; no tenía datos): 410 en `/inventario/*`,
-  sin tarjeta, menú ni tablero; las tablas se quedan. Opcional: quitar el rol INVENTARIO (sin usuarios) y el código
-  de la ventana anterior.
+- **Inventario anterior:** retirado (Fase 383); las tablas se quedan. Opcional: quitar el rol INVENTARIO (sin usuarios) y el código de su ventana.
 - **Malla fase 2 (puntualidad, Fase 363):**
   - **réplica por la API:** sigue apagada (`WOLKVOX_LOGIN_ACTIVO`) hasta el OK del usuario;
-  - **SURA por archivo:** ya funciona (ver arriba).
+  - **SURA por archivo:** funciona (falta su malla, ver arriba);
   - **MOBILIZE real:** necesita autorización nueva por escrito.
-- **Esperando a Edwin:** Malla fases 2 (puntualidad) y 3 (Portal Asesor ampliado) — ver el bloque 2.
+- **Esperando a Edwin:** Malla fase 3 (Portal Asesor ampliado), N2 y #902 — ver el bloque 2.
 - **Plan B de Wolkvox (agente en la oficina):** B1 hecho (v1.206.0, endpoint apagado). Decidido (18/11): `skill_1` día a día.
-- **Réplica completa con la API (pedido del 18/11):** Flujo, Flujo por hora, Tipificación de ingreso, Eficacia y únicas contestadas ya salen de la API (7/8 o mejor contra el manual). Encuesta con `diagram_4` encendida el 18/11 (8/8 días iguales). **Falta:** salida (ningún reporte probado cuadra: preguntar a Wolkvox el de llamadas de salida/campaña); abandonadas con detalle (`skill_9` solo da conteos); WhatsApp (`chat_1` rechaza el formato de fechas). Detalle en `docs/plan-api-wolkvox.md` §10.9–10.10.
-- **Plan A de Wolkvox (consulta automática desde el servidor):** **ENCENDIDA** desde el 18/11 (`WOLKVOX_AUTO_ACTIVO=1`, solo la réplica). Primera corrida (18/11) y comparación con el Flujo manual: SKILL SAC 8/8 días iguales; `flujo_hora` tras la corrida de las 13:00: 25/25 celdas día-hora iguales, espera 8/8, AHT 7/8 (un día 3 s). Comparado otra vez el 19/11 tras la corrida de las 7:00 (mismo resultado, ver arriba). **MOBILIZE real:** autorizado y encendido el 20/11; desde noviembre (Fase A29, §10.25), primera franja el 21/11 00:05. **Falta:** preguntar a Edwin si quiere ver el nivel de servicio a 10 s y 30 s (ya se guarda). Detalle en `docs/plan-api-wolkvox.md`, sección 10.
+- **Réplica completa con la API (pedido del 18/11):** Flujo, Flujo por hora, Tipificación de ingreso, Eficacia y únicas contestadas ya salen de la API (7/8 o mejor contra el manual); Encuesta 8/8. **Falta:** salida, abandonadas con detalle y WhatsApp. Detalle en `docs/plan-api-wolkvox.md` §10.9–10.10.
 
 ## 1. Esperando una decisión tuya
 
@@ -298,7 +289,11 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   sigue sin logo (lo necesitaría cuando sus pestañas queden visibles para el
   cliente); SURA usa su tablero propio.
 
-- **Mobilize, Calidad de encuestas: verificar en producción con sesión** (Fase 331, 11/11) —
+- ~~**Mobilize, Calidad de encuestas: verificar en producción con sesión**~~ — **HECHO** (24/11/2026,
+  solo lectura, sesión del administrador, escrituras bloqueadas, 1440 y 375 px, 0 errores de consola):
+  pestaña con 0 pendientes y 20 resueltas, sin teléfonos; filtro «Origen» con 3 opciones; botón
+  «Monitoreo» en las 4 preguntas. Queda por revisar la diferencia entre 20 resueltas y los 25
+  monitoreos de origen «encuesta» (ver arriba). Pedido original (Fase 331, 11/11):
   la pestaña, el filtro de origen y el botón «Monitoreo» se verificaron en local (claro/oscuro,
   375/768/1440) y en producción solo por la versión y el 401 sin sesión. Falta mirarlos con tu sesión
   (solo lectura, sin calificar ninguna llamada de prueba). Para ver la hora de las encuestas ya

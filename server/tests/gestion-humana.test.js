@@ -37,6 +37,20 @@ test('la tarjeta y la entrada del menú ya no se muestran', () => {
   const pub = path.join(__dirname, '..', '..', 'public', 'js');
   const constants = fs.readFileSync(path.join(pub, 'constants.js'), 'utf8');
   assert.ok(!/key:'GestionHumana'/.test(constants), 'sin tarjeta «Gestión Humana — Personal por Campaña»');
-  const session = fs.readFileSync(path.join(pub, 'session.js'), 'utf8');
-  assert.match(session, /ghLi\.classList\.add\('hidden'\)/);
+});
+
+// Fase GH8: el HTML oculto y el JS de la Gestión humana anterior ya no están en la página.
+test('sin el HTML ni el JS de la Gestión humana anterior', () => {
+  const pub = path.join(__dirname, '..', '..', 'public');
+  const html = fs.readFileSync(path.join(pub, 'index.html'), 'utf8');
+  for (const id of ['menu-gestionhumana-li', 'section-gestionhumana', 'gh-person-modal', 'gestionhumana-overlay', 'gh-admin-tbody', 'gh-ov-table']) {
+    assert.ok(!html.includes('id="' + id + '"'), 'sigue ' + id);
+  }
+  assert.ok(!/openGenericDashboard\('GESTION_HUMANA'\)/.test(html), 'sin botón al tablero retirado');
+  assert.ok(!html.includes('js/gestion-humana.js'), 'sin el script');
+  assert.ok(!fs.existsSync(path.join(pub, 'js', 'gestion-humana.js')), 'el archivo salió');
+  const js = ['session.js', 'ui-core.js', 'dashboards-core.js', 'cerrar-ventanas.js', 'motion-helpers.js']
+    .map((f) => fs.readFileSync(path.join(pub, 'js', f), 'utf8')).join('\n');
+  assert.ok(!/gestionhumana|openGestionHumana|closeGestionHumana|gh-person-modal/.test(js), 'sin referencias en el JS');
+  assert.ok(html.includes('id="th-frame"'), 'Talento humano sigue en la página');
 });

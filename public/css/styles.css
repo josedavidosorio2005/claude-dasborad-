@@ -1189,9 +1189,9 @@ td.kpi-red{background:rgba(231,76,60,.14);color:var(--c-danger-text);font-weight
 /* Overlays de los modulos Inventario / Gerencia / Gestion Humana.
    (Inventario y Gerencia no tenian regla propia — quedaban como bloque suelto
    al fondo; se corrige aqui junto con el nuevo de Gestion Humana. Fase 10.) */
-#inventario-overlay,#gerencia-overlay,#gestionhumana-overlay{display:none;position:fixed;inset:0;background:rgba(8,38,52,0.72);z-index:var(--z-panel);align-items:center;justify-content:center;backdrop-filter:blur(4px);}
-#inventario-overlay.show,#gerencia-overlay.show,#gestionhumana-overlay.show{display:flex;}
-#inventario-modal,#gerencia-modal,#gestionhumana-modal{background:var(--c-bg);border-radius:var(--r-xl);width:96vw;max-width:1180px;max-height:93vh;overflow-y:auto;box-shadow:var(--shadow-xl);display:flex;flex-direction:column;padding-bottom:18px;}
+#inventario-overlay,#gerencia-overlay{display:none;position:fixed;inset:0;background:rgba(8,38,52,0.72);z-index:var(--z-panel);align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+#inventario-overlay.show,#gerencia-overlay.show{display:flex;}
+#inventario-modal,#gerencia-modal{background:var(--c-bg);border-radius:var(--r-xl);width:96vw;max-width:1180px;max-height:93vh;overflow-y:auto;box-shadow:var(--shadow-xl);display:flex;flex-direction:column;padding-bottom:18px;}
 .dm-readonly{width:100%;padding:11px 14px;border:1.5px solid #e0eaf0;border-radius:8px;font-size:var(--fs-body-lg);color:var(--c-primary);background:#eef3f6;min-height:20px;}
 .qi-answer-badge{border-radius:var(--r-sm);padding:5px 12px;font-size:var(--fs-small);font-weight:700;min-width:60px;text-align:center;display:inline-block;}
 .qi-answer-si{background:#e8f8f1;color:var(--c-success-dark);border:1.5px solid var(--c-success);}
@@ -1553,9 +1553,9 @@ body{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;accent
 .tk-tipo-fila .btn-cancel,.tk-activo{min-height:44px}
 .tk-activo{display:inline-flex;align-items:center;gap:6px}
 /* Fase 364 (B3): ventanas de módulo en pantalla completa (lista en motion-helpers.js). */
-#calidad-overlay,#gd-overlay,#stv-overlay,#gerencia-overlay,#gestionhumana-overlay,#inventario-overlay,
+#calidad-overlay,#gd-overlay,#stv-overlay,#gerencia-overlay,#inventario-overlay,
 #modal-malla,#modal-tickets,#cargas-overlay,#centro-overlay,#dashcfg-overlay,#supervisar-lider-overlay,#activos-overlay,#th-overlay{padding:0 !important;align-items:stretch !important;justify-content:stretch !important;}
-#calidad-modal,#gd-modal,#stv-modal,#gerencia-modal,#gestionhumana-modal,#inventario-modal,
+#calidad-modal,#gd-modal,#stv-modal,#gerencia-modal,#inventario-modal,
 #modal-malla > .modal,#modal-tickets > .modal,#cargas-modal,#centro-modal,#dashcfg-modal,#supervisar-lider-modal,#activos-overlay > .modal,#th-overlay > .modal{
   width:100% !important;max-width:none !important;height:100dvh !important;max-height:none !important;margin:0 !important;border-radius:0 !important;overflow-y:auto;box-sizing:border-box;}
 

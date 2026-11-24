@@ -112,7 +112,7 @@ document.addEventListener('click', function(e){
 // NAVIGATION
 // ═══════════════════════════════════════════════════════════
 function showSection(sec){
-  ['users','perms','hist','metas','aliases','umbrales','reportesrole','dashboards','inventario','gerencia','gestionhumana'].forEach(function(s){
+  ['users','perms','hist','metas','aliases','umbrales','reportesrole','dashboards','inventario','gerencia'].forEach(function(s){
     var el=document.getElementById('section-'+s);
     var mel=document.getElementById('menu-'+s);
     if(el) el.classList.toggle('hidden',s!==sec);
@@ -127,7 +127,6 @@ function showSection(sec){
   if(sec==='dashboards'){ renderDashboardsSection(); }
   if(sec==='inventario'){ renderInventarioSection(); }
   if(sec==='gerencia'){ renderGerenciaSection(); }
-  if(sec==='gestionhumana'){ renderGestionHumanaSection(); }
 }
 
 // ═══════════════════════════════════════════════════════════
