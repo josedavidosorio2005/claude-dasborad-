@@ -7,6 +7,19 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.263.1 — Noviembre 2026
+
+**Arreglos de la revisión de diseño del 24/11.**
+
+- Inventario de sistemas:
+  - los títulos de las gráficas del «Panel general» se leen mejor;
+  - en modo oscuro, la opción seleccionada del menú ya no queda blanca sobre celeste;
+  - en el celular, los filtros y los botones «Excel» y «Registrar ingreso» son más grandes para tocarlos con el dedo.
+- Inventario de sistemas: el gráfico de movimientos de los últimos 6 meses cuenta cada movimiento en su mes según la hora de Colombia (antes, lo hecho después de las 7 p. m. del último día del mes salía en el mes siguiente).
+- Malla de turnos: en el celular, los campos de entrada y salida son más grandes, como los de las pausas.
+- Calidad: en el celular, los selectores de campaña y de mes son más grandes.
+- Portal Asesor: en modo oscuro, el número rojo de monitoreos nuevos se lee mejor.
+
 ## v1.263.0 — Noviembre 2026
 
 **Malla de turnos: pausas activas, almuerzo y horas de la semana (pedido de Edwin).**
