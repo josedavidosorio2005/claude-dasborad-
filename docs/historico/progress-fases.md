@@ -22488,3 +22488,13 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - 0 errores de consola y sin scroll lateral.
   - Las capturas antes y después quedan fuera del repo (regla de la Fase 112).
 - **Merge con OK del usuario (24/11)**, después de #934 (1.260.2), trayendo main; queda en 1.261.0.
+
+## Pedido de Edwin (24/11) — Encuesta de Mobilize: monitorear si falla cualquier pregunta (solo prueba, sin cambio de versión)
+
+- **Pedido:** una encuesta sale para monitorear si se contestó mal CUALQUIER pregunta (P1 a P4), no solo la 1. Revisar el módulo automático de Encuesta del real y compararlo con la carga manual de antes.
+- **Revisión del código:** ya era así por los dos caminos.
+  - «Mal calificada» = alguna de las 4 reglas de `encuesta_monitoreo_reglas` (Fase 331: P1 de 0 a 5, P2 y P4 de 1 a 3, P3 = No). `listar` arma un OR de las 4.
+  - El módulo automático (`diagram_4`) y el archivo manual pasan por el mismo lector (`encuestaParseFilas`).
+  - Las reglas no se pueden cambiar desde la interfaz; solo las crea la migración.
+- **Prueba nueva** `faseE3-encuesta-cualquier-pregunta` (2), con datos inventados. Una corrida del real con la API (Wolkvox falso) y la misma encuesta cargada por archivo dan la misma lista: 4 pendientes (solo P1, solo P2, solo P3 y solo P4), y ninguna para «todo bien» ni «P2 sin respuesta». El botón «Monitoreo» de cada pregunta trae la suya.
+- **Causa probable de lo que vio Edwin** (por confirmar en producción, solo lectura y solo conteos): desde el 21/11, noviembre del real venía de la API sin CONN_ID. Por eso las mal calificadas caían en «sin ID» y no salían en la lista (Fase A33). Con A33 en producción (1.260.1), la siguiente corrida las trae con ID.
