@@ -124,9 +124,11 @@ test('state.js: la cabecera del dashboard de cliente se corre igual que el navba
   assert.match(res.text, /function renderSeedDemoBanner\(\)/);
   assert.match(res.text, /function aplicarOffsetSeedDemoBanner\(\)/);
   assert.match(res.text, /getBoundingClientRect\(\)\.height/);
-  assert.match(res.text, /getElementById\('gd-modal'\)/);
-  assert.match(res.text, /gdModal\.style\.marginTop/);
-  assert.match(res.text, /gdModal\.style\.height/);
+  // Auditoría 24/11: el offset va a TODAS las ventanas de pantalla completa (incluido #gd-modal), con
+  // 'important' porque la regla de la Fase 364 fija margin:0 y height con !important.
+  assert.match(res.text, /SEED_DEMO_MODALES_PANTALLA_COMPLETA = '#calidad-modal,#gd-modal,/);
+  assert.match(res.text, /setProperty\('margin-top', topPx, 'important'\)/);
+  assert.match(res.text, /setProperty\('height', 'calc\(100dvh - ' \+ alto \+ 'px\)', 'important'\)/);
   assert.ok(!/gdHeader\.style\.top/.test(res.text), 'el header ya no deberia correrse a si mismo (eso tapaba las pestanas) -- el offset va en el modal completo');
   assert.ok(!/'34px'/.test(res.text), 'no deberia quedar el offset viejo hardcodeado en 34px');
   // Un resize de ventana (o rotar el telefono) tiene que reaplicar el

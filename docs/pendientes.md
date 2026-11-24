@@ -34,8 +34,8 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 - **Auditoría del 24/11, puntos de prioridad baja (solo anotados):**
   - Talento humano: en el celular, las pestañas miden 41 px y los botones 35 px. Es el HTML de Edwin y no se toca.
   - Botones chicos (`.btn-sm`) de la malla y el «Ver» del aviso de monitoreos nuevos del Portal Asesor (36×24 px): el sistema de diseño los exime.
-  - En Talento humano, una novedad sin fecha de fin no sale como «ausente» en el Inventario. Es igual en el HTML de Edwin; preguntarle si debe contar.
-  - En modo demostración, la franja de aviso tapa parte del botón de cerrar del Inventario.
+  - ~~En Talento humano, una novedad sin fecha de fin no sale como «ausente» en el Inventario.~~ Arreglado en v1.264.1 (24/11): cuenta como ausente desde su inicio, «sin fecha de regreso». El HTML de Edwin no se tocó.
+  - ~~En modo demostración, la franja de aviso tapa parte del botón de cerrar del Inventario.~~ Arreglado en v1.264.1 (24/11), en las 13 ventanas de pantalla completa.
 - **Pendiente, del usuario:**
   - **Docker Hub:** crear los 2 secretos de GitHub (`DOCKERHUB_USERNAME` y `DOCKERHUB_TOKEN`) para quitar los 429 de CI y deploy (24/11, en curso con el usuario, paso a paso). El token nunca va al chat ni al repo.
   - **SURA no tiene malla de turnos.** Sin turnos, la puntualidad no da a tiempo ni tarde: las asesoras salen en

@@ -7,6 +7,13 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.264.1 — Noviembre 2026
+
+**Dos arreglos pequeños.**
+
+- Inventario de sistemas, «Novedades de Gestión Humana»: una persona con una novedad que todavía no tiene fecha de regreso ahora sí aparece como ausente, con el aviso «sin fecha de regreso».
+- En modo de demostración, la franja naranja de aviso ya no tapa la parte de arriba (ni la equis de cerrar) del Inventario, la Malla, las Cargas y las demás ventanas que ocupan toda la pantalla.
+
 ## v1.264.0 — Noviembre 2026
 
 **ORLANT · Tablero nuevo (en prueba, solo el administrador): llamadas de entrada más completas.**

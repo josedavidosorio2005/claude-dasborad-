@@ -164,24 +164,23 @@ function aplicarOffsetSeedDemoBanner() {
   // medida para que el borde de abajo no quede fuera del viewport (el
   // modal ya tiene overflow-y:auto, con margin-top solo y SIN este ajuste
   // de height su contenido de mas abajo quedaria inalcanzable).
-  var gdModal = document.getElementById('gd-modal');
-  if (gdModal) {
-    gdModal.style.marginTop = topPx;
-    gdModal.style.height = alto ? 'calc(100dvh - ' + alto + 'px)' : '';
-  }
-  // Fase GH1: «Talento humano» también (su barra con «Cerrar» va arriba de todo). Con 'important'
-  // porque la regla de ventanas de módulo en pantalla completa (styles.css) fija margin y height así.
-  var thModal = document.querySelector('#th-overlay > .modal');
-  if (thModal) {
+  // Auditoría 24/11 (bajo): las 13 ventanas de módulo en pantalla completa (styles.css, Fase 364) fijan
+  // margin y height con !important, así que el ajuste va con 'important' en TODAS (antes solo Talento
+  // humano): sin esto la franja tapaba la barra con «Cerrar» del Inventario, Malla, Cargas, etc.
+  document.querySelectorAll(SEED_DEMO_MODALES_PANTALLA_COMPLETA).forEach(function (m) {
     if (alto) {
-      thModal.style.setProperty('margin-top', topPx, 'important');
-      thModal.style.setProperty('height', 'calc(100dvh - ' + alto + 'px)', 'important');
+      m.style.setProperty('margin-top', topPx, 'important');
+      m.style.setProperty('height', 'calc(100dvh - ' + alto + 'px)', 'important');
     } else {
-      thModal.style.removeProperty('margin-top');
-      thModal.style.removeProperty('height');
+      m.style.removeProperty('margin-top');
+      m.style.removeProperty('height');
     }
-  }
+  });
 }
+// Misma lista que la regla «ventanas de módulo en pantalla completa» de styles.css (una prueba las compara).
+var SEED_DEMO_MODALES_PANTALLA_COMPLETA = '#calidad-modal,#gd-modal,#stv-modal,#gerencia-modal,#inventario-modal,' +
+  '#modal-malla > .modal,#modal-tickets > .modal,#cargas-modal,#centro-modal,#dashcfg-modal,#supervisar-lider-modal,' +
+  '#activos-overlay > .modal,#th-overlay > .modal';
 
 function renderSeedDemoBanner() {
   var el = ensureSeedDemoBannerEl();
