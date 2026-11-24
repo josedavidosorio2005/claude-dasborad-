@@ -14,6 +14,41 @@ sepan que hay nuevo, que se corrigio y que falta.
 - Ya no aparece su tarjeta ni su entrada en el menú. La reemplaza «Talento humano», que no cambia.
 - No tenía datos en la plataforma (0 personas registradas). Su tabla se conserva por si algún día hiciera falta.
 
+## v1.258.1 — Noviembre 2026
+
+**Talento humano: salario y sede son obligatorios (pedido de Edwin).**
+
+- La ficha del empleado no se guarda sin salario (mayor que 0) ni sin sede. El aviso sale debajo del campo: «El salario es obligatorio…» y «La sede es obligatoria…».
+- Un empleado viejo al que le falten, al editarlo, pide completarlos antes de guardar.
+- Las gráficas del panel ya no fallan con empleados viejos sin salario o sin sede: salen como «Sin dato».
+- No cambia ningún dato guardado.
+
+## v1.258.0 — Noviembre 2026
+
+**Inventario de sistemas: el «Panel general» ahora se ve como el diseño de Edwin.**
+
+- Arriba están los botones «Ver gráficas de» (Todos o un solo tipo) y los botones Excel y Registrar ingreso.
+- Las tarjetas muestran equipos asignados, libres, en reparación, malos, torres, portátiles, agentes y actas pendientes. Cada una abre su vista.
+- Gráficas nuevas:
+  - una dona con el estado de los equipos y otra con el rendimiento por memoria RAM;
+  - barras por tipo, por sede y por operación, separadas por estado;
+  - marcas más comunes;
+  - valor del inventario propio y renta mensual de los equipos de proveedores;
+  - calidad de los datos: sin sede, sin operación, códigos repetidos, agentes incompletos y actas por firmar o atrasadas;
+  - movimientos de los últimos 6 meses.
+- **«Registrar ingreso»** también cambia:
+  - tiene una tarjeta por tipo, con cuántos hay registrados y cuántos libres;
+  - cada tarjeta trae los botones Registrar, Ver inventario y Editar formulario;
+  - hay una tarjeta «Nueva tecnología», un botón «Importar desde Excel» y la lista «Últimos ingresos»;
+  - el formulario se abre al elegir el tipo y queda en ese tipo para registrar el siguiente.
+- En las listas (Libres, Asignados, etc.), el conteo dice cuántos hay de cada tipo: «22 elementos con estos filtros · 4 monitor · 2 portátil».
+- Las listas (Libres, Asignados, En reparación y Malos) tienen las columnas de Edwin: Tipo, Código, Nombre, Equipo (con el serial debajo), Procesador, RAM, Sede y Operación. En Asignados también Agente, Cédula y «Asignado desde».
+- Cada fila trae los botones «Estado» (cambiar el estado) y, en Asignados, «Recibir» (devolver el equipo). «Ver» sigue abriendo el detalle.
+- «Inventario completo» ahora se llama «Inventario»: arriba tiene una tarjeta por tipo con libres, en uso, reparación y malos; «Ver detalle» filtra la lista por ese tipo.
+- **Actas** tiene pestañas como en el diseño de Edwin: «Actas pendientes», «Actas firmadas», «Todas» y «Novedades de GH» (con cuántas hay). Las novedades de Gestión Humana ya no están en el menú: se ven dentro de Actas. El botón «Generar acta manual» lleva a Agentes, donde se elige a quién.
+- **Ajustes y datos** ahora va en tarjetas, como el diseño de Edwin: Excel (exportar todo e importar), Sedes, Operaciones, Propietarios / proveedores, Motivos frecuentes, Estados (fijos, solo para ver), Formularios por tipo y Textos del acta. Todo funciona igual que antes.
+- Solo cambia cómo se ve. Los elementos, agentes y actas guardados no se tocan.
+
 ## v1.257.0 — Noviembre 2026
 
 **Gestión STA de ORLANT: botón «Descargar plantilla» para la carga de la base.**

@@ -645,6 +645,8 @@ mismo orden):
 - Ticket #3 SURA — Calidad, «Calificar»: «ID de agente» se llena solo al elegir el asesor (enlace con Wolkvox o último monitoreo; editable; aviso si no hay dato) (v1.256.0, 2026-11-23)
 - Fase STA7 — Gestión STA: filtros de la asignación (Entidad, Servicio, CUPS) en cascada; «Servicio» ya no ofrece servicios que no corresponden (v1.256.1, 2026-11-23)
 - Fase STA8 — Gestión STA de ORLANT: «Descargar plantilla» en la carga (Excel vacío con las 8 columnas) (v1.257.0, 2026-11-23)
+- Fase GH5 — Inventario de sistemas: «Panel general», «Registrar ingreso», listas, «Inventario» por tipo, Actas con pestañas y Ajustes en tarjetas como el diseño de Edwin; lista de diferencias en `docs/gestion-humana/inventario-diferencias.md` (v1.258.0, 2026-11-23)
+- Fase GH6 — Talento humano: salario y sede obligatorios en la ficha; gráficas sin fallar con registros viejos (v1.258.1, 2026-11-23)
 - Fase GH7 — Retiro de la Gestión humana anterior (personal por campaña): rutas 410, tablero 404, tabla y rol conservados (v1.259.0, 2026-11-23)
 - Fase 309 — Revisión de seguridad: el cliente ya no recibe el nombre de los líderes en `GET /metas`; resto en `docs/revision-seguridad-2026-11-09.md` (v1.154.1, 2026-11-10)
 - Fase 308 — Revisión antes de la reunión con clientes y pendientes del supervisor (solo docs, 2026-11-10)
