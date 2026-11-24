@@ -7,6 +7,13 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.259.0 — Noviembre 2026
+
+**Se retiró la «Gestión Humana — Personal por Campaña» anterior.**
+
+- Ya no aparece su tarjeta ni su entrada en el menú. La reemplaza «Talento humano», que no cambia.
+- No tenía datos en la plataforma (0 personas registradas). Su tabla se conserva por si algún día hiciera falta.
+
 ## v1.258.1 — Noviembre 2026
 
 **Talento humano: salario y sede son obligatorios (pedido de Edwin).**

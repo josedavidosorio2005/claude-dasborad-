@@ -383,8 +383,8 @@ declarar(['POST /gerencia/kpis', 'PUT /gerencia/kpis/:id', 'DELETE /gerencia/kpi
 // rol por rol (apagado y encendido) en faseGH2-talento-humano-servidor.test.js.
 declarar(['GET /gh/acceso', 'GET /gh/estado', 'PUT /gh/estado/:clave', 'GET /gh/bitacora',
   'POST /gh/archivos', 'GET /gh/archivos/:id', 'DELETE /gh/archivos/:id'], 'skip'); // Fase GH3: en faseGH3-talento-humano-soportes.test.js
-declarar(['GET /gh/personal', 'GET /gh/resumen'], 'modulo:GestionHumana');
-declarar(['POST /gh/personal', 'PUT /gh/personal/:id', 'DELETE /gh/personal/:id'], 'modulo:GestionHumana');
+// Fase GH7: la Gestión humana anterior (/gh/personal*, /gh/resumen) se retiró: ya no tiene rutas (un
+// middleware responde 410), probado en gestion-humana.test.js y abajo.
 
 // Query extra obligatoria por ruta (mas alla de `campana`), segun el
 // esquema Zod real de validation.js (confirmado por lectura, Fase 118).
@@ -662,13 +662,11 @@ test('Fase 118 2A: POST /gerencia/kpis exige canLoadData (cargarDatos) -- GERENC
   assert.equal(resGerencia.status, 403, 'GERENCIA (solo vista) no deberia poder cargar KPIs');
 });
 
-test('Fase 118 2A: POST /gh/personal solo rol GESTION_HUMANA o ADMIN', async () => {
+test('Fase GH7: POST /gh/personal (Gestión humana anterior, retirada) da 410 a todos los roles', async () => {
   const body = { nombre: 'Persona matriz 118', fecha_ingreso: '2026-01-15' };
   for (const rol of TODOS_LOS_ROLES) {
     const res = await request(app).post('/api/gh/personal').set(auth(rol)).send(body);
-    const deberiaPasar = rol === 'ADMIN' || rol === 'GESTION_HUMANA';
-    if (deberiaPasar) assert.notEqual(res.status, 403, `${rol}: ${JSON.stringify(res.body)}`);
-    else assert.equal(res.status, 403, `${rol} deberia dar 403, vino ${res.status}`);
+    assert.equal(res.status, 410, `${rol} deberia dar 410, vino ${res.status}`);
   }
 });
 

@@ -79,12 +79,10 @@ test('matriz de roles: cada rol accede solo a lo suyo', async (t) => {
   // ── GESTION_HUMANA: su modulo (CRUD) si, gerencia/inventario/clientes no ──
   await t.test('GESTION_HUMANA: su módulo sí, el resto no', async () => {
     const tok = await crearUsuario(admin, 'GESTION_HUMANA', { GestionHumana: true });
-    assert.equal(await G(tok, '/api/gh/personal'), 200);
-    assert.equal(await G(tok, '/api/gh/resumen'), 200);
-    assert.equal(await G(tok, '/api/dashboard/GESTION_HUMANA'), 200);
-    const alta = await request(app).post('/api/gh/personal').set(auth(tok))
-      .send({ nombre: 'RM GH', campana: 'RM', fecha_ingreso: '2026-02-01', costo_hora: 1000, horas_mes: 160 });
-    assert.equal(alta.status, 201);
+    // Fase GH7: la Gestión humana anterior se retiró (410 y tablero 404); el rol queda para Talento humano.
+    assert.equal(await G(tok, '/api/gh/personal'), 410);
+    assert.equal(await G(tok, '/api/gh/resumen'), 410);
+    assert.equal(await G(tok, '/api/dashboard/GESTION_HUMANA'), 404);
     // no toca otros modulos
     assert.equal(await G(tok, '/api/dashboard/GERENCIA'), 403);
     assert.equal(await G(tok, '/api/gerencia/kpis'), 403);
