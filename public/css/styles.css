@@ -2911,6 +2911,14 @@ circle.acp-l-ingresos{fill:var(--c-brand-blue)}circle.acp-l-asignaciones{fill:va
 .mp-exc-form .btn-primary,.mp-quitar,#mp-agentes-btn,#mp-agentes .btn-cancel,#mp-agentes select{min-height:44px}
 .mp-exc-lista{list-style:none;padding:0;margin:10px 0 0}
 .mp-exc-lista li{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:4px 0;border-bottom:1px solid var(--c-border-soft)}
+/* Fase M1 (B): festivos */
+.ml-festivos{margin:8px 0;padding:8px 12px;border-left:4px solid var(--c-primary);background:var(--c-surface-subtle);border-radius:var(--r-md)}
+.ml-fila-festivo th,.ml-fila-festivo td{border-top:2px dashed var(--c-border-soft)}
+.ml-fest-ayuda{margin:4px 0 8px}
+#ml-festivos-btn{min-height:44px}
+.ml-fest-lista{list-style:none;padding:0;margin:6px 0 10px}
+.ml-fest-lista li{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:4px 0;border-bottom:1px solid var(--c-border-soft)}
+.ml-fest-quitado{color:var(--c-text-muted)}
 /* Fase M1 (A): tipos de excepción (solo el ADMIN) */
 .mp-check{display:inline-flex;align-items:center;gap:6px;min-height:44px;cursor:pointer}
 .mp-check input{width:18px;height:18px;accent-color:var(--c-primary)}

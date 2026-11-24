@@ -39,7 +39,8 @@ router.get('/malla', requireActor, wrap((req, res) => {
   if (!campana || !L.mallaEsLunes(lunes)) return res.status(400).json({ error: 'Elige la campaña y una semana (su lunes, AAAA-MM-DD)' });
   if (!M.puedeLeer(req.actor, campana)) return res.status(403).json({ error: 'Sin acceso a la malla de esta campaña' });
   res.json({ campana, semana: lunes, grupos: M.semana(db, campana, lunes), asesoras: M.asesorasDe(db, campana), puedeEditar: M.puedeEditar(req.actor, campana),
-    novedades: X.novedadesSemana(db, campana, lunes, { incluirQuitadas: true }), ajustes: X.ajustesSemana(db, campana, lunes) }); // Fase 373
+    novedades: X.novedadesSemana(db, campana, lunes, { incluirQuitadas: true }), ajustes: X.ajustesSemana(db, campana, lunes), // Fase 373
+    festivos: C.festivosDeSemana(db, lunes), puedeAdministrarFestivos: isFullAdmin(req.actor) }); // Fase M1 (B)
 }));
 
 router.post('/malla/grupos', requireActor, wrap((req, res) => {
@@ -273,6 +274,30 @@ router.get('/malla/mi-puntualidad', requireActor, wrap((req, res) => {
     return { semana: s, datosHasta: r.datosHasta, filas: r.filas.map((f) => ({ fecha: f.fecha, entrada: f.entrada, salida: f.salida, estado: f.estado, tardeSeg: f.tardeSeg, salidaAnticipadaSeg: f.salidaAnticipadaSeg, primerLogin: f.primerLogin, ultimoLogout: f.ultimoLogout, excepcion: f.excepcion ? f.excepcion.tipo : null })) };
   });
   res.json({ semanas, tipos: C.tiposMapa(db) });
+}));
+
+// ── Fase M1 (B): festivos de Colombia. Los lee quien lee alguna malla; agregar o quitar: solo el ADMIN
+// completo (cambia la puntualidad de todas las campañas). Todo cambio queda en el Historial.
+router.get('/malla/festivos', requireActor, wrap((req, res) => {
+  if (!M.campanasDe(db, req.actor).length) return res.status(403).json({ error: 'Sin acceso a la malla' });
+  const anio = /^\d{4}$/.test(String(req.query.anio || '')) ? Number(req.query.anio) : Number(fechaLimitesHoyColombia().slice(0, 4));
+  if (anio < 2000 || anio > 2100) return res.status(400).json({ error: 'Año no válido' });
+  const admin = isFullAdmin(req.actor);
+  res.json({ anio, festivos: C.festivosDelAnio(db, anio, { incluirQuitados: admin }), puedeAdministrar: admin });
+}));
+router.post('/malla/festivos', requireActor, wrap((req, res) => {
+  if (!isFullAdmin(req.actor)) return res.status(403).json({ error: 'Solo el administrador cambia los festivos' });
+  const r = C.agregarFestivo(db, req.body, actorLabel(req.actor), ahoraIso());
+  if (r.error) return res.status(r.status || 400).json({ error: r.error });
+  log('MALLA_FESTIVO', '-', r.festivo.nombre, req, r.festivo.fecha + (r.restaurado ? ' · vuelve el festivo de ley' : ' · agregado'));
+  res.status(201).json(r);
+}));
+router.delete('/malla/festivos/:fecha', requireActor, wrap((req, res) => {
+  if (!isFullAdmin(req.actor)) return res.status(403).json({ error: 'Solo el administrador cambia los festivos' });
+  const r = C.quitarFestivo(db, String(req.params.fecha || ''), actorLabel(req.actor), ahoraIso());
+  if (r.error) return res.status(r.status || 400).json({ error: r.error });
+  log('MALLA_FESTIVO_QUITADO', '-', r.festivo.nombre, req, r.festivo.fecha + (r.festivo.origen === 'ley' ? ' · festivo de ley quitado' : ' · agregado quitado'));
+  res.json({ ok: true });
 }));
 
 // ── Fase M1 (A): tipos de excepción. Los lee quien lee alguna malla; los crea y edita solo el ADMIN

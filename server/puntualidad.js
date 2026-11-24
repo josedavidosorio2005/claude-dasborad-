@@ -214,6 +214,7 @@ function calcular(db, campana, desde, hasta, opts) {
   for (const r of db.prepare('SELECT * FROM wolkvox_login_diario WHERE operacion = ? AND fecha BETWEEN ? AND ?').all(cfg.operacion, desde, hasta)) logins.set(r.fecha + '|' + r.agentId, r);
   const exc = excepcionesEnRango(db, campana, desde, hasta);
   const cuentaTrabajado = require('./malla-casos').codigosQueCuentanTrabajado(db); // Fase M1 (A)
+  const festivos = require('./malla-casos').festivosEnRango(db, desde, hasta); // Fase M1 (B)
   const turnoStmt = db.prepare(`SELECT g.horario, g.nombre grupo FROM malla_grupos g JOIN malla_asignaciones a ON a.grupoId = g.id WHERE g.campana = ? AND g.semana = ? AND a.asesorId = ?`);
   const ajusteStmt = db.prepare('SELECT entrada, salida FROM malla_ajustes WHERE campana = ? AND asesorId = ? AND fecha = ?'); // Fase 373
   const asesorasSemana = db.prepare(`SELECT DISTINCT u.id, u.nombre FROM malla_grupos g JOIN malla_asignaciones a ON a.grupoId = g.id JOIN users u ON u.id = a.asesorId WHERE g.campana = ? AND g.semana = ?`);
@@ -232,7 +233,9 @@ function calcular(db, campana, desde, hasta, opts) {
       try { h = JSON.parse(t.horario); } catch (e) { h = {}; }
       // Fase 373: el horario especial de la asesora ese día pesa sobre el de su grupo (null = descanso).
       const aj = ajusteStmt.get(campana, a.id, fecha);
-      const turno = aj ? (aj.entrada ? { entrada: aj.entrada, salida: aj.salida } : null) : (h[n] || h[String(n)]);
+      // Fase M1 (B): en un festivo, el día que el grupo trabaja usa su horario de festivo (o descansa, por defecto).
+      const delGrupo = Object.prototype.hasOwnProperty.call(festivos, fecha) ? ((h[n] || h[String(n)]) ? (h.festivo || null) : null) : (h[n] || h[String(n)]);
+      const turno = aj ? (aj.entrada ? { entrada: aj.entrada, salida: aj.salida } : null) : delGrupo;
       if (!turno) continue;
       const agentId = agentDe.get(a.id) || null;
       const login = agentId ? logins.get(fecha + '|' + agentId) || null : null;

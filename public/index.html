@@ -2082,7 +2082,10 @@
         <select id="ml-copiar-a"></select>
         <button type="button" class="btn-cancel" id="ml-copiar-btn" onclick="mallaCopiar(false)">Copiar</button>
       </span>
+      <!-- Fase M1 (B): festivos de Colombia (solo el administrador los cambia). -->
+      <button type="button" class="btn-cancel hidden" id="ml-festivos-btn" aria-expanded="false" aria-controls="ml-festivos-admin" onclick="mallaFestivosAbrir()">Festivos</button>
     </div>
+    <section id="ml-festivos-admin" class="aurora-card hidden" aria-labelledby="ml-festivos-tit"></section>
     <div class="ml-confirmar hidden" id="ml-confirmar" role="alertdialog" aria-labelledby="ml-confirmar-txt">
       <span id="ml-confirmar-txt"></span>
       <button type="button" class="btn-danger" id="ml-reemplazar-btn" onclick="mallaCopiar(true)">Sí, reemplazar</button>
@@ -2090,6 +2093,7 @@
     </div>
     <p class="wv-error hidden" id="ml-error" role="alert"></p>
     <p class="ml-nota" id="ml-nota" role="status" aria-live="polite"></p>
+    <p id="ml-festivos" class="ml-festivos hidden"></p><!-- Fase M1 (B): festivos de la semana -->
     <div id="ml-grupos"></div>
     <section id="ml-novedades" class="aurora-card hidden" aria-labelledby="ml-novedades-tit"></section><!-- Fase 373: historial de «Novedades de la semana» -->
     <div id="ml-puntualidad" class="hidden" aria-live="polite"></div>
