@@ -22557,3 +22557,28 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - las fechas de malla, STA y novedades ya van en hora de Colombia;
   - las rutas nuevas revisan el rol.
 - **Verificación final:** nueva pasada local de las pantallas afectadas, con 0 problemas de contraste y 0 controles principales de menos de 44 px. Suite completa y `npm audit` en el PR.
+
+## Fase N2 — ORLANT, tablero nuevo: llamadas de entrada con el flujo y el CDR (v1.264.0, 2026-11-24, PR sin mergear)
+
+- **Pedido (usuario, 24/11):** Edwin confirmó que el flujo de llamadas y el CDR siguen siendo las fuentes de la primera gráfica. Avanzar todo lo que sale de esas dos fuentes y dejar marcado «Pendiente de Edwin» lo que dependa de otras fuentes o del mapa de skills. Sin activar nada automático (no se creó `WOLKVOX_ORLANT_AUTO_ACTIVO`).
+- **Del flujo** (`calidad_nivel_servicio_diario`), con las mismas reglas que «Tráfico de Llamadas»:
+  - recibidas, contestadas y abandonadas por fila;
+  - NS 20 s y nivel de atención;
+  - abandono;
+  - TMO y ASA, ponderados por contestadas;
+  - variación contra el período anterior;
+  - participación por skill.
+- **Del CDR** (`tipificaciones`, canal Llamadas, sin la salida): tipificación de la entrada, las 15 más frecuentes y «Otras».
+- **Primera gráfica:** «Llamadas por período», con contestadas y abandonadas apiladas y el NS 20 s como línea en el eje derecho. Usa `_gdChart`, con su botón «Ver datos», y un `aria-label` de resumen. No inventa los días sin NS.
+- **«Pendiente de Edwin»** (`_otPendiente`, etiqueta ámbar):
+  - Línea General y 3P, del mapa de skills; también las llamadas de skills «Sin definir»;
+  - WhatsApp por línea, que depende del mapa de colas;
+  - citas por canal (N4);
+  - back office (N10).
+  - Lo que espera la API (N3, N7 y N8) sigue con su aviso de fase.
+- **Pruebas:** `faseN2-orlant-inbound` (+2: gráfica y marcas) y `faseN1` ajustada. ORLANT: 37/37.
+- **Revisión local** (base desechable en el scratchpad, datos inventados, Brave) a 375, 768 y 1440 px, en claro y oscuro, en Total y en 3P:
+  - la gráfica se dibuja en todas;
+  - «Pendiente de Edwin» sale en 3P;
+  - 0 errores de consola y nada se sale de la pantalla, fuera del menú de secciones, que tiene su propio scroll lateral (así quedó en N1).
+- **PR sin mergear** (pedido del usuario).
