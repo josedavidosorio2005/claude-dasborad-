@@ -412,3 +412,9 @@ tr.cc-cur td{background:rgba(60,160,220,.06)}tr.cc-ret td{background:rgba(239,11
 .kclick{cursor:pointer;position:relative;transition:transform .15s,border-color .15s,box-shadow .15s;border-color:rgba(100,180,80,.45)!important}.kclick:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(100,180,80,.18)}
 .kgo{display:block;margin-top:4px;font-style:normal;font-size:11.5px;font-weight:700;color:#8fd47a;opacity:.85}
 .home-btn{all:unset;cursor:pointer;margin:10px 10px 0;padding:9px 12px;border-radius:10px;border:1px dashed rgba(86,189,240,.45);color:#56bdf0;font-size:13px;font-weight:600;text-align:center;transition:.2s}.home-btn:hover{background:rgba(60,160,220,.12);border-style:solid;color:#fff}
+/* SinCo (auditoría 24/11): objetivos táctiles de 44 px en el celular. */
+@media (max-width:768px){
+  .tabs button,.ptabs button{display:inline-flex;align-items:center;min-height:44px;box-sizing:border-box}
+  .btn,.filters input,.filters select,select.btn{min-height:44px;box-sizing:border-box}
+  .btn.sm,.btn.ic{min-width:44px;justify-content:center}
+}
