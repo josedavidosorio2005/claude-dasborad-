@@ -212,7 +212,10 @@ declarar(['GET /malla', 'POST /malla/grupos', 'PUT /malla/grupos/:id', 'DELETE /
   // Fase 367: «Horarios» por archivo -- probados rol por rol en fase367-horarios-archivo.test.js.
   'GET /malla/horarios', 'POST /malla/horarios/carga',
   // Fase 373: novedades y horario especial, probados rol por rol en fase373-malla-novedades.test.js.
-  'POST /malla/novedades', 'DELETE /malla/novedades/:id', 'PUT /malla/ajustes', 'DELETE /malla/ajustes/:id'], 'skip');
+  'POST /malla/novedades', 'DELETE /malla/novedades/:id', 'PUT /malla/ajustes', 'DELETE /malla/ajustes/:id',
+  // Fase M1: casos especiales (tipos de excepción, festivos, repetición), probados rol por rol en faseM1-malla-*.test.js.
+  'GET /malla/tipos-excepcion', 'POST /malla/tipos-excepcion', 'PUT /malla/tipos-excepcion/:codigo',
+  'GET /malla/festivos', 'POST /malla/festivos', 'DELETE /malla/festivos/:fecha', 'DELETE /malla/ajustes/serie/:serie'], 'skip');
 declarar(['PUT /monitoreos/:id/fecha'], 'calidadManage'); // Fase 337: quien lo califico, Reportes o admin (fase337-fecha-del-monitoreo.test.js) // Fase 333: corregir solo el asesor "Invalid Date" (fase333-sin-asesor.test.js)
 declarar(['GET /calidad/codificaciones'], 'scopedRead');
 declarar(['POST /calidad/codificaciones/bulk', 'PUT /calidad/codificaciones/:id'], 'cargaCampana'); // Fase 299

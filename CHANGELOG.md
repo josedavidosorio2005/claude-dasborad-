@@ -7,6 +7,23 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.260.0 — Noviembre 2026
+
+**Malla de turnos: «casos especiales» (pedido de Edwin).**
+
+- **Más tipos de excepción.** Además de incapacidad, vacaciones y permiso, ahora hay licencia (maternidad, paternidad, luto), calamidad doméstica, capacitación, compensatorio, suspensión y día de la familia.
+  - El administrador puede crear tipos nuevos, cambiarles el nombre o desactivarlos, en Malla › Puntualidad › «Tipos de excepción». Un tipo no se borra: se desactiva, y lo ya registrado conserva su nombre.
+  - Cada tipo dice si «cuenta como día trabajado» (por ejemplo, una capacitación). El resumen de puntualidad lo muestra aparte.
+- **Festivos de Colombia.** La malla ya conoce los festivos del año (los fijos, los que se pasan al lunes y los de Semana Santa).
+  - **Por defecto, el festivo es descanso**: ya no sale «Sin ingreso» a quien no trabaja ese día.
+  - Si un grupo sí trabaja los festivos, se marca la fila «Festivos» en su horario, con la hora de entrada y de salida.
+  - La semana de la malla avisa qué día es festivo, y la asesora lo ve en «Mi malla».
+  - El administrador puede agregar un festivo o quitar uno, en el botón «Festivos».
+  - El horario especial de una asesora sigue mandando sobre el festivo.
+- **Horario especial que se repite.** Al guardar un horario especial se puede elegir «Repetir cada semana hasta» una fecha (hasta 26 semanas). Ejemplo: una asesora que estudia y todos los martes entra a las 10:00 ya no se carga semana por semana.
+  - Se puede quitar un solo día o «Quitar todas las semanas» de una vez.
+- No cambia nada de lo ya guardado.
+
 ## v1.259.0 — Noviembre 2026
 
 **Se retiró la «Gestión Humana — Personal por Campaña» anterior.**
