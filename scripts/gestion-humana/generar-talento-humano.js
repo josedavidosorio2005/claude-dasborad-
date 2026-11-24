@@ -156,6 +156,15 @@ ${js.trim()}
 const dir = path.join(repo, 'public', 'gestion-humana');
 fs.mkdirSync(dir, { recursive: true });
 fs.writeFileSync(path.join(dir, 'talento-humano.html'), pagina);
-fs.writeFileSync(path.join(dir, 'talento-humano.css'), css.trim() + '\n');
+// Auditoría del 24/11 (bajo): en el celular las pestañas medían 41 px y los botones 35 px. Objetivo táctil de
+// 44 px en ≤768 px (docs/sistema-de-diseno.md), solo añadido al final de su hoja; el HTML de Edwin no cambia.
+const CSS_TACTIL = `
+/* SinCo (auditoría 24/11): objetivos táctiles de 44 px en el celular. */
+@media (max-width:768px){
+  .tabs button,.ptabs button{display:inline-flex;align-items:center;min-height:44px;box-sizing:border-box}
+  .btn,.filters input,.filters select,select.btn{min-height:44px;box-sizing:border-box}
+  .btn.sm,.btn.ic{min-width:44px;justify-content:center}
+}`;
+fs.writeFileSync(path.join(dir, 'talento-humano.css'), css.trim() + '\n' + CSS_TACTIL.trim() + '\n');
 fs.writeFileSync(path.join(dir, 'talento-humano-app.js'), app);
 console.log('css', css.length, 'marcado', markup.length, 'js', app.length);
