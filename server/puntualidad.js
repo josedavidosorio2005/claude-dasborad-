@@ -215,12 +215,20 @@ function calcular(db, campana, desde, hasta, opts) {
   const exc = excepcionesEnRango(db, campana, desde, hasta);
   const cuentaTrabajado = require('./malla-casos').codigosQueCuentanTrabajado(db); // Fase M1 (A)
   const festivos = require('./malla-casos').festivosEnRango(db, desde, hasta); // Fase M1 (B)
+  // Pedido de Edwin (24/11): si la asesora tiene una NOVEDAD de la malla ese día (o de toda la semana) y no
+  // entró, se muestra la novedad (p. ej. «Suspensión») en vez de «Sin ingreso». Solo las vigentes.
+  const novedades = new Map();
+  for (const n of db.prepare(`SELECT asesorId, semana, fecha, texto FROM malla_novedades WHERE campana = ? AND quitadaEn IS NULL AND semana BETWEEN ? AND ? ORDER BY id`)
+    .all(campana, L.mallaLunesDe(desde), hasta)) {
+    const k = n.asesorId + '|' + (n.fecha || 'semana:' + n.semana);
+    if (!novedades.has(k)) novedades.set(k, n.texto);
+  }
   const turnoStmt = db.prepare(`SELECT g.horario, g.nombre grupo FROM malla_grupos g JOIN malla_asignaciones a ON a.grupoId = g.id WHERE g.campana = ? AND g.semana = ? AND a.asesorId = ?`);
   const ajusteStmt = db.prepare('SELECT entrada, salida FROM malla_ajustes WHERE campana = ? AND asesorId = ? AND fecha = ?'); // Fase 373
   const asesorasSemana = db.prepare(`SELECT DISTINCT u.id, u.nombre FROM malla_grupos g JOIN malla_asignaciones a ON a.grupoId = g.id JOIN users u ON u.id = a.asesorId WHERE g.campana = ? AND g.semana = ?`);
   const filas = [];
   const conTurno = new Set();
-  const resumen = { a_tiempo: 0, tarde: 0, sin_ingreso: 0, excepcion: 0, excepcionTrabajada: 0, sin_enlace: 0, pendiente: 0, salidaAnticipada: 0 };
+  const resumen = { a_tiempo: 0, tarde: 0, sin_ingreso: 0, novedad: 0, excepcion: 0, excepcionTrabajada: 0, sin_enlace: 0, pendiente: 0, salidaAnticipada: 0 };
   for (const fecha of diasEntre(desde, hasta)) {
     const lunes = L.mallaLunesDe(fecha);
     const n = _diaSemana(fecha);
@@ -242,6 +250,11 @@ function calcular(db, campana, desde, hasta, opts) {
       if (agentId) conTurno.add(fecha + '|' + agentId);
       const e = exc.find((x) => x.userId === a.id && x.desde <= fecha && x.hasta >= fecha) || null;
       const st = estadoDelDia({ fecha, turno, enlazado: !!agentId, login, excepcion: e, ahora, hastaDatos });
+      let novedad = null;
+      if (st.estado === 'sin_ingreso') {
+        novedad = novedades.get(a.id + '|' + fecha) || novedades.get(a.id + '|semana:' + lunes) || null;
+        if (novedad) st.estado = 'novedad'; // pedido de Edwin (24/11)
+      }
       resumen[st.estado]++;
       if (st.salidaAnticipadaSeg) resumen.salidaAnticipada++;
       if (st.estado === 'excepcion' && cuentaTrabajado.has(e.tipo)) resumen.excepcionTrabajada++; // Fase M1 (A)
@@ -250,6 +263,7 @@ function calcular(db, campana, desde, hasta, opts) {
         tardeSeg: st.tardeSeg, salidaAnticipadaSeg: st.salidaAnticipadaSeg,
         primerLogin: login ? login.primerLogin.slice(11) : null, ultimoLogout: login && login.ultimoLogout ? login.ultimoLogout.slice(11) : null,
         sesiones: login ? login.sesiones : 0, excepcion: e ? { id: e.id, tipo: e.tipo, cuentaTrabajado: cuentaTrabajado.has(e.tipo) } : null,
+        novedad, // texto de la novedad cuando reemplaza a «Sin ingreso» (pedido de Edwin 24/11)
       });
     }
   }

@@ -7,6 +7,21 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.261.0 — Noviembre 2026
+
+**Malla de turnos: la ventana del supervisor es más compacta (pedido de Edwin).**
+
+- Los filtros van en una sola fila: campaña, semana con flechas, «Ir al mes» y una lista con las semanas del mes. Las fichas de semanas se quitaron.
+- Las pestañas «Turnos» y «Puntualidad» se ven como pestañas, bien marcadas.
+- Cada grupo ocupa menos espacio:
+  - el nombre y los botones van arriba, en una fila;
+  - el horario y la lista de asesoras quedan lado a lado en pantallas anchas;
+  - la lista de asesoras tiene su propio scroll.
+- Cada asesora tiene botones pequeños «+ Agregar novedad» y «Horario especial».
+- En Puntualidad, si la asesora tiene una novedad ese día (o de toda la semana) y no entró, se muestra la novedad (por ejemplo, «Novedad: Suspensión») en lugar de «Sin ingreso». El resumen la cuenta aparte, como «Con novedad».
+- «Novedades de la semana» ya no aparece encima de Puntualidad.
+- La vista de la asesora («Mi malla») no cambia.
+
 ## v1.260.1 — Noviembre 2026
 
 **Mobilize, Calidad de encuestas: las encuestas de noviembre vuelven a traer el ID de la llamada.**
