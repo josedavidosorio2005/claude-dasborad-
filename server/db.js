@@ -5512,6 +5512,27 @@ function agregarStaGestionOrlant() {
 }
 runOnceMigration('faseSTA_orlant_gestion_base_v1', agregarStaGestionOrlant);
 
+// Equidad profesionales (pedido de Edwin, llamada del 24/11/2026; excepción del tablero congelado autorizada por
+// el usuario el 24/11): pestaña nueva «Equidad profesionales» en ORLANT, justo debajo de «Gestión STA» (después de
+// «Gestión de la base STA» si existe). Un solo panel equidad_panel (el HTML de Edwin generado en
+// orlant-equidad-app.js). Oculta: el tablero la destapa en memoria cuando hay citas cargadas y quien mira tiene
+// acceso (routes/orlant-equidad.js). Idempotente; no toca otro cliente ni otra pestaña.
+function agregarEquidadOrlant() {
+  const row = db.prepare("SELECT layout FROM dashboards_config WHERE cliente = 'ORLANT'").get();
+  if (!row) return;
+  let layout;
+  try { layout = JSON.parse(row.layout); } catch (e) { return; }
+  const tabs = layout && layout.tabs;
+  if (!Array.isArray(tabs) || tabs.some((t) => t && t.key === 'equidad')) return;
+  let i = tabs.findIndex((t) => t && t.key === 'sta_gestion');
+  if (i === -1) i = tabs.findIndex((t) => t && t.key === 'sta');
+  if (i === -1) return; // un layout sin «Gestión STA» no es el de ORLANT de siempre: no se toca
+  tabs.splice(i + 1, 0, { key: 'equidad', label: 'Equidad profesionales', oculta: true, panels: [{ tipo: 'equidad_panel', campana: 'ORLANT', titulo: 'Equidad profesionales' }] });
+  db.prepare("UPDATE dashboards_config SET layout = ?, updatedAt = ? WHERE cliente = 'ORLANT'").run(JSON.stringify(layout), new Date().toISOString());
+  if (!config.isTest) console.log('[db] Migracion faseEQ_orlant_equidad_tab_v1 aplicada.');
+}
+runOnceMigration('faseEQ_orlant_equidad_tab_v1', agregarEquidadOrlant);
+
 // Fase A32 (usuario 21/11/2026): «mes consultado» de las no conectadas. llamadas_no_conectadas guarda una
 // fila por llamada, así que un mes en el que Wolkvox (cdr_5) respondió bien pero sin llamadas válidas
 // (ninguna, o solo de la cuenta de pruebas) no se distinguía de un mes nunca consultado y la pestaña

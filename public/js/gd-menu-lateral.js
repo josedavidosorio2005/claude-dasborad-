@@ -16,6 +16,7 @@ var GD_MENU_LATERAL_CLIENTES = ['MOBILIZE', 'CLINICA AURORA', 'HOSPITAL LA MARIA
 // «salida» antes de «WhatsApp» (Aurora: «Llamadas y WhatsApp de salida»). Fase 350: «Efectividad de
 // Citas» (ORLANT) con icono propio, distinto del de Agendamiento. Mobilize, Aurora y HLM quedan igual.
 var GD_MENU_ICONOS = [
+  [/equidad/i, 'i-users'], // Equidad profesionales (ORLANT, 24/11)
   [/efectividad/i, 'i-trending-up'],
   [/calidad/i, 'i-circle-check'],
   [/error/i, 'i-triangle-alert'],

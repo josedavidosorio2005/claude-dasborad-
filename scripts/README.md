@@ -120,14 +120,13 @@ ahí (`path.join(SERVER_DIR, 'node_modules', ...)`), nunca con un
 - **`generar-plantillas.js`** — genera `server/plantillas/PLANTILLA_<MODULO>.xlsx`.
 - **`generar-fichas.js`** — genera las fichas de `docs/plantillas/`.
 
-## scripts/orlant/ — propuestas de ORLANT
+## scripts/orlant/ — generadores de ORLANT
 
-- **`equidad-ejemplo-inventado.js`** — genera los dos ejemplos con datos
-  inventados de Equidad de agendamiento (plan de acción 20/11, A6), con el mismo
-  formato que manda Isa: `docs/orlant/equidad/EJEMPLO_EQUIDAD_FORMATO_REAL_INVENTADO.xlsx`
-  (completo, 17 columnas) y `EJEMPLO_EQUIDAD_FORMATO_CORTO_INVENTADO.xlsx` (corto,
-  6 columnas). Sirven para el lector y sus pruebas (ver
-  `docs/orlant/equidad/propuesta.md`).
+- **`generar-sta.js`** — genera «Gestión STA» desde el HTML de Edwin (`docs/orlant/sta/`).
+- **`generar-equidad.js`** — genera «Equidad profesionales» (`public/js/orlant-equidad-app.js` y
+  `public/css/orlant-equidad-app.css`) desde el HTML de Edwin, que **vive fuera del repo** porque trae las
+  bases reales pegadas adentro. Vacía esos datos y falla si queda alguno. Uso:
+  `node scripts/orlant/generar-equidad.js "<ruta del HTML de Edwin>"`. Ver `docs/orlant/equidad/propuesta.md`.
 
 ## Convenciones
 

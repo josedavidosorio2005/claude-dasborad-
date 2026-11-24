@@ -222,6 +222,11 @@ const TABS_EXTRA = {
     despuesDe: 'sta',
     crear: (cliente) => ({ key: 'sta_gestion', label: 'Gestión de la base STA', oculta: true, panels: [{ tipo: 'sta_resumen_panel', campana: cliente, titulo: 'Gestión de la base STA' }] }),
   },
+  // Equidad profesionales (24/11/2026), como la migración faseEQ_orlant_equidad_tab_v1 (db.js).
+  equidad: {
+    despuesDe: 'sta_gestion',
+    crear: (cliente) => ({ key: 'equidad', label: 'Equidad profesionales', oculta: true, panels: [{ tipo: 'equidad_panel', campana: cliente, titulo: 'Equidad profesionales' }] }),
+  },
 };
 function _tabEspecifica(cliente, key) {
   if (TABS_EXTRA[key]) return TABS_EXTRA[key].crear(cliente);
@@ -311,7 +316,7 @@ const PERFILES_ACTUALES = {
       // Fase 219: Total tráfico (sin carga propia: sale de lo ya cargado), justo
       // despues de "Llamadas y WhatsApp de salida" (TABS_EXTRA), igual que la
       // migracion fase219_total_trafico_v1 en produccion.
-      tabs: ['ordenamiento_medico', 'recuperacion_cancelados', 'flujo', 'sta', 'sta_gestion', 'total_trafico'], // Fase STA: sta_gestion
+      tabs: ['ordenamiento_medico', 'recuperacion_cancelados', 'flujo', 'sta', 'sta_gestion', 'equidad', 'total_trafico'], // Fase STA: sta_gestion; Equidad (24/11)
       secciones: ['resumen', 'salida', 'tipificacion', 'sta_categorias'],
     },
   },

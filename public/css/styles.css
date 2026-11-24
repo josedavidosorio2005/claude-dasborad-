@@ -2982,6 +2982,21 @@ circle.acp-l-ingresos{fill:var(--c-brand-blue)}circle.acp-l-asignaciones{fill:va
 /* Fase 367 (D2): «Horarios» en el Centro de cargas (botones por mes). */
 #cc-horarios[hidden]{display:none}
 .cc-horarios{margin-top:16px}
+.cc-equidad{margin-top:16px} /* Equidad profesionales (ORLANT, 24/11) */
+.cc-eq-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(260px,100%),1fr));gap:12px}
+.cc-eq-card{border:1px solid var(--c-border-soft);border-radius:var(--r-md);padding:12px 14px;display:flex;flex-direction:column;gap:8px;background:var(--c-surface)}
+.cc-eq-cab{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.cc-eq-cab h4{margin:0;font-size:var(--fs-body);color:var(--c-text)}
+.cc-eq-info{margin:0;display:flex;flex-direction:column;gap:4px;font-size:var(--fs-small)}
+.cc-eq-info>div{display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid var(--c-border-soft);padding-bottom:3px}
+.cc-eq-info dt{color:var(--c-text-2)}
+.cc-eq-info dd{margin:0;font-weight:600;text-align:right;overflow-wrap:anywhere;min-width:0}
+.cc-eq-subir{min-height:44px;margin-top:auto}
+.cc-eq-ent{margin-top:12px;border:1px solid var(--c-border-soft);border-radius:var(--r-md);padding:6px 12px}
+.cc-eq-ent summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-weight:600;color:var(--c-text-2)}
+.cc-eq-ent-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(240px,100%),1fr));gap:12px}
+.cc-eq-ent textarea{width:100%;font:inherit;min-height:120px}
+.cc-eq-ent .btn-cancel{min-height:44px;margin:8px 0}
 .cc-horarios .cc-mes{cursor:pointer;min-height:44px;text-align:left;font:inherit;color:inherit}
 .cc-horarios .cc-mes-ok{border-color:var(--c-success-text)}
 .cc-mes-dato{display:block;font-size:var(--fs-small);color:var(--c-text-2)}

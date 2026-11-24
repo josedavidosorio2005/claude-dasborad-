@@ -22652,3 +22652,23 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - #937, propuesta de Equidad de ORLANT (solo docs): espera la respuesta de Isa. Entrega el viernes 27/11.
   - #902 (B1): espera las respuestas de Edwin.
 - **Pendiente para el 25/11:** leer, solo conteos, la corrida de las 00:05 de MOBILIZE (réplica y real).
+
+## Equidad profesionales de ORLANT con el diseño de Edwin (v1.267.0, 2026-11-24, en el PR #937, sin mergear)
+
+- **Pedido (Edwin, llamada del 24/11 a las 3:30 p. m.; el usuario autorizó abrir sus archivos y la excepción del tablero congelado):**
+  - su HTML y sus 3 bases reemplazan la propuesta con el formato de Isa;
+  - la pestaña «Equidad profesionales» va debajo de «Gestión STA», con Pólizas, Medicina prepagada y Particulares;
+  - la carga va por «Cargar bases», y la lista de entidades (pólizas / prepagadas) es configurable.
+- **Hecho:**
+  - generador `scripts/orlant/generar-equidad.js`: el HTML de Edwin (fuera del repo) pasa a un Shadow DOM, sin sus datos;
+  - lector `public/js/equidad-logic.js`, con 5 columnas, y 4 en Particulares;
+  - servidor `server/orlant-equidad.js` y `routes/orlant-equidad.js`;
+  - migración `faseEQ_orlant_equidad_tab_v1`;
+  - sección «Equidad profesionales» en el Centro de cargas (`centro-equidad.js`);
+  - filtro «Profesional»; sin «Entidad» en Particulares.
+  - Sale lo de la propuesta anterior: el lector del formato de Isa, los ejemplos y la maqueta. Detalle en `docs/orlant/equidad/propuesta.md`.
+- **Verificación local:**
+  - Las bases reales, solo en conteos: 403 / 305 / 256 citas e índice 44,7 / 39,6 / 53,7 %, iguales al HTML de Edwin.
+  - Con bases inventadas, cargadas por la interfaz, a 375, 768 y 1440 px: sin desborde y 0 errores de consola.
+- **Pruebas:** `faseEQ2-equidad-profesionales` (8).
+- **Pendiente:** la lista de entidades de Isa y si la ve la cuenta cliente.
