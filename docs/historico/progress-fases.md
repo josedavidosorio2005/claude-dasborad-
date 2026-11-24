@@ -22512,3 +22512,21 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - 0 errores de consola;
   - contraste del texto ámbar: 6,08:1 o más en claro y 8,28:1 o más en oscuro;
   - el aviso de Talento humano no se ve (`display:none`).
+
+## Pedido de Edwin (24/11, 11 a. m.) — Malla: pausas activas, almuerzo y horas por día y semana (v1.263.0)
+
+- **Modelo** (`malla-logic.js`): cada día del horario puede traer, **opcional**, `pausa1` (15 min), `almuerzo` + `almuerzoMin` (30 o 60) y `pausa2` (10 min). Viajan dentro del mismo JSON del horario: no hay migración, y un horario guardado antes (solo entrada y salida) se valida y se guarda idéntico.
+  - Validación: cada pausa y el almuerzo deben quedar dentro del turno, en orden pausa 1 → almuerzo → pausa 2. El horario de festivos sigue solo con entrada y salida.
+  - `mallaMinutosDia` = salida − entrada − almuerzo (las pausas no se descuentan). `mallaHorasSemana` suma los 7 días (el festivo no cuenta).
+  - `mallaAvisoHoras`: si la semana no da 42 h, muestra un aviso **que no bloquea**.
+- **Supervisor:** bloque «Pausas, almuerzo y horas» debajo del horario, con las horas de cada día, el total y el aviso en ámbar.
+  - Se recalcula al escribir. Las pausas quedan deshabilitadas en los días de descanso.
+  - En el celular, cada día es una tarjeta (día y horas, las 2 pausas y el almuerzo) y los días de descanso no se muestran.
+- **Asesora («Mi malla»):** una línea discreta por día («Pausa 10:00 · Almuerzo 12:30–13:30 · Pausa 15:30»), solo si el grupo las tiene, y «Horas de la semana» al final. El total se oculta si hay un horario especial, que no trae almuerzo.
+- Puntualidad, el horario especial, copiar semana y los festivos no cambian: solo leen entrada y salida, o copian el día completo.
+- **Pruebas:** `faseE5-malla-pausas` (7). En `fase368` se agregaron las funciones nuevas que usa «Mi malla».
+- **Revisión local** (Brave, con los JS y el `styles.css` reales y datos inventados), a 375, 768 y 1440 px, en claro y oscuro:
+  - 42 h sin aviso; con el almuerzo en 30 min, 42 h 30 min y el aviso aparece;
+  - sábado de descanso deshabilitado;
+  - 0 errores de consola, sin scroll lateral, campos de 44 px en el celular y la tableta, y contraste de 5,9:1 o más.
+  - Se corrigieron durante la revisión: los campos medían menos de 44 px a 768, el selector del almuerzo se cortaba a 375 y la vista de celular quedaba larga.
