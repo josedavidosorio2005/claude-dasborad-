@@ -110,16 +110,17 @@ function mallaGrupoHtml(g, puedeEditar, asesoras, idx, datos) { // datos: la sem
       (otro && !marcadas[a.id] ? ' <span class="ml-otro">(en ' + esc(otro) + ')</span>' : '') + '</label>';
   }).join('') : '<p class="vis-vacio">No hay asesoras activas en esta campaña.</p>';
   var color = g.color || ((idx % 8) + 1); // Fase 373: cada grupo con su color (serie 1 a 8)
-  // Pedido de Edwin (24/11): más compacto. Cabecera (nombre + botones) en una fila; el horario y la lista de
-  // asesoras lado a lado en pantallas anchas; la lista en un cuadro con su propio scroll.
+  // Pedido de Edwin (24/11): más compacto. Cabecera (nombre + botones) en una fila y la lista en un cuadro con
+  // su propio scroll. Pedido de Edwin (24/11, 3:30 p. m.): la lista va justo debajo del horario (no al lado),
+  // en 2 o 3 columnas seguidas; la ayuda de festivos y las pausas quedan después.
   return '<section class="aurora-card ml-grupo ml-color-' + color + '" data-idx="' + idx + '" data-id="' + (g.id || '') + '" aria-labelledby="' + pre + '-tit"' +
     (puedeEditar ? ' oninput="mallaRecalcularHoras(' + idx + ')" onchange="mallaRecalcularHoras(' + idx + ')"' : '') + '>' +
     '<div class="ml-grupo-cab"><div class="ig"><label for="' + pre + '-nombre" id="' + pre + '-tit"><span class="ml-punto" aria-hidden="true"></span>Grupo</label><input type="text" id="' + pre + '-nombre" maxlength="' + MALLA_NOMBRE_MAX + '" value="' + esc(g.nombre || '') + '"' + dis + '></div>' +
     (puedeEditar ? '<div class="ml-grupo-btns"><button type="button" class="btn-cancel ml-borrar" onclick="mallaBorrarGrupo(' + idx + ')">' + (g.id ? 'Eliminar grupo' : 'Descartar') + '</button>' +
       '<button type="button" class="btn-primary" onclick="mallaGuardarGrupo(' + idx + ')">Guardar grupo</button></div>' : '') + '</div>' +
-    '<div class="ml-grupo-cuerpo"><div class="ml-grupo-horario"><div class="table-wrap"><table class="ml-tabla" aria-describedby="' + pre + '-fest-ayuda"><thead><tr><th scope="col">Día</th><th scope="col"><span class="ml-dia-largo">Trabaja</span><span class="ml-dia-corto" aria-hidden="true">Trab.</span></th><th scope="col">Entrada</th><th scope="col">Salida</th></tr></thead><tbody>' + filas + '</tbody></table></div>' +
-    '<p class="vis-ayuda ml-fest-ayuda" id="' + pre + '-fest-ayuda">Festivos: si no se marca, el grupo descansa los festivos. Un festivo en un día que el grupo no trabaja sigue siendo descanso.</p>' + pausas + '</div>' +
-    '<fieldset class="ml-asesoras"><legend>Asesoras (' + (g.asesoras || []).length + ')</legend><div class="ml-asesoras-lista" tabindex="0" role="group" aria-label="Asesoras de la campaña (con scroll)">' + lista + '</div></fieldset></div>' +
+    '<div class="ml-grupo-cuerpo"><div class="ml-grupo-horario"><div class="table-wrap"><table class="ml-tabla" aria-describedby="' + pre + '-fest-ayuda"><thead><tr><th scope="col">Día</th><th scope="col"><span class="ml-dia-largo">Trabaja</span><span class="ml-dia-corto" aria-hidden="true">Trab.</span></th><th scope="col">Entrada</th><th scope="col">Salida</th></tr></thead><tbody>' + filas + '</tbody></table></div></div>' +
+    '<fieldset class="ml-asesoras"><legend>Asesoras (' + (g.asesoras || []).length + ')</legend><div class="ml-asesoras-lista" tabindex="0" role="group" aria-label="Asesoras de la campaña (con scroll)">' + lista + '</div></fieldset>' +
+    '<div class="ml-grupo-extra"><p class="vis-ayuda ml-fest-ayuda" id="' + pre + '-fest-ayuda">Festivos: si no se marca, el grupo descansa los festivos. Un festivo en un día que el grupo no trabaja sigue siendo descanso.</p>' + pausas + '</div></div>' +
     (g.id && (g.asesoras || []).length ? mallaCasosHtml(g, idx, puedeEditar, datos) : '') +
     '</section>';
 }
@@ -291,7 +292,7 @@ function mallaCasosHtml(g, idx, puedeEditar, datos) {
         '<button type="button" class="btn-sm ml-btn-sm ml-btn-ambar" onclick="mallaFormCaso(' + idx + ',' + Number(a.id) + ',\'horario\')" aria-label="Horario especial de ' + esc(a.nombre) + '">Horario especial</button></span>' : '') + '</div>' +
       (chips ? '<ul class="ml-chips">' + chips + '</ul>' : '') + '<div class="ml-caso-form" id="ml-g' + idx + '-caso-' + Number(a.id) + '"></div></li>';
   }).join('');
-  return '<details class="ml-casos"' + (d.ajustes && d.ajustes.length || d.novedades && d.novedades.length ? ' open' : '') + '><summary>Novedades y horarios especiales</summary><ul class="ml-casos-lista">' + filas + '</ul></details>';
+  return '<details class="ml-casos"' + (d.ajustes && d.ajustes.length || d.novedades && d.novedades.length ? ' open' : '') + '><summary class="ml-casos-btn">Novedades y horarios especiales</summary><ul class="ml-casos-lista">' + filas + '</ul></details>';
 }
 function mallaFormCaso(idx, asesorId, tipo) {
   document.querySelectorAll('.ml-caso-form').forEach(function (c) { c.innerHTML = ''; });

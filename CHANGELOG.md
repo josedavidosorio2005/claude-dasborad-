@@ -7,6 +7,13 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.266.0 — Noviembre 2026
+
+**Malla del supervisor: el horario y las asesoras juntos, y un botón más visible.**
+
+- La lista de asesoras de cada grupo queda justo debajo de su horario, repartida en 2 o 3 columnas (en el celular, una).
+- «Novedades y horarios especiales» ahora se ve como un botón ámbar: al darle clic se abre la lista para agregar novedades u horarios especiales.
+
 ## v1.265.0 — Noviembre 2026
 
 **ORLANT, pruebas internas: WhatsApp puede llegar solo desde Wolkvox (todavía apagado).**

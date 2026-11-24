@@ -22638,3 +22638,18 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - #937, propuesta de Equidad de ORLANT (solo docs): espera la respuesta de Isa. Entrega el viernes 27/11.
   - #902 (B1): espera las respuestas de Edwin.
 - **Pendiente para el 25/11:** leer, solo conteos, la corrida de las 00:05 de MOBILIZE (réplica y real).
+
+## Pedido de Edwin (24/11, 3:30 p. m.) — Malla: asesoras debajo del horario y «Novedades y horarios especiales» como botón (v1.266.0, 2026-11-24, PR #948, sin mergear)
+
+- **Pedido:**
+  - a) que el cuadro del horario del grupo y la lista de asesoras queden juntos: la lista justo debajo, en 2 o 3 columnas;
+  - b) que «Novedades y horarios especiales» parezca un botón (nadie le daba clic).
+- **Hecho (`public/js/malla.js`, `styles.css`):**
+  - la lista va justo después de la tabla del horario: 3 columnas desde 1024 px, 2 desde 560 px y 1 en el celular;
+  - la ayuda de festivos y las pausas quedan después;
+  - el `summary` es un botón ámbar (tokens `--c-warning*`, 44 px, flecha que gira al abrir, foco visible), sin transición ni `rgba` literal (pruebas de CSS de las Fases 141 y 175).
+- **Pruebas:** `faseE2-malla-compacta` (+1); CI verde.
+- **Verificación local** (Brave, base desechable, 14 personas inventadas), en claro y oscuro a 375, 768 y 1440 px:
+  - la lista queda debajo de la tabla, con 1, 2 o 3 columnas;
+  - el botón mide 44 px;
+  - sin desborde y 0 errores de consola.
