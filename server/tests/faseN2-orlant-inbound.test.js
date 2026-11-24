@@ -55,7 +55,7 @@ test('sin mapa: Total igual a la pestaña «Tráfico de Llamadas» (abandonadas 
   const c = front.otContenido(d, base);
   assert.match(c.kpis, /TMO/);
   assert.match(c.detalle, /Tipificación de la entrada/);
-  if (ll.mapaVacio) assert.match(front.otContenido(d, Object.assign({}, base, { linea: '3p' })).kpis, /Todavía no hay skills con línea guardada/);
+  if (ll.mapaVacio) assert.match(front.otContenido(d, Object.assign({}, base, { linea: '3p' })).kpis, /Pendiente de Edwin<\/span> Línea General y 3P salen del «Mapa de skills»/);
 });
 
 test('con mapa: General y 3P salen del «Mapa de skills»; «Sin definir» avisado; «No cuenta» fuera de todo', () => {
@@ -113,4 +113,33 @@ test('variación y formatos: % para cantidades, puntos para porcentajes; TMO en 
   const c = front.otContenido(d, { seccion: 'inbound', canal: 'llamadas', gran: 'mes', linea: 'total' });
   assert.match(c.detalle, /vs\. anterior/);
   assert.match(c.detalle, /<th scope="row">Abr 2025<\/th><td>[^<]+<\/td><td>[+−]/, 'abril trae la variación contra marzo');
+});
+
+test('N2 (24/11): primera gráfica del inbound con el flujo (contestadas + abandonadas apiladas y NS 20 s en %)', () => {
+  const front = require('../../public/js/orlant-tablero.js');
+  const serie = [
+    { periodo: '2031-01-05', recibidas: 100, contestadas: 90, abandonadas: 10, nivelServicio20s: 0.8 },
+    { periodo: '2031-01-06', recibidas: 50, contestadas: 40, abandonadas: 10, nivelServicio20s: null },
+  ];
+  const html = front.otGraficaLlamadasHtml(serie, 'dia');
+  assert.match(html, /<canvas id="ot-graf-llamadas" role="img" aria-label="Llamadas por período: 2 períodos, 150 recibidas en total/);
+  assert.equal(front.otGraficaLlamadasHtml([], 'dia'), '', 'sin datos, sin gráfica');
+  const cfg = front.otGraficaLlamadasCfg(serie, 'dia');
+  assert.deepEqual(cfg.data.datasets.map((x) => [x.label, x.type, x.yAxisID]), [['Contestadas', 'bar', 'y'], ['Abandonadas', 'bar', 'y'], ['NS 20 s', 'line', 'y1']]);
+  assert.deepEqual(cfg.data.datasets[0].data, [90, 40]);
+  assert.deepEqual(cfg.data.datasets[1].data, [10, 10]);
+  assert.deepEqual(cfg.data.datasets[2].data, [80, null], 'NS en %, sin inventar el día sin dato');
+  assert.equal(cfg.options.scales.y.stacked, true);
+  assert.equal(cfg.options.scales.y1.max, 100);
+});
+
+test('N2 (24/11): lo que depende de Edwin (mapa de skills, citas por canal, back office, colas de WhatsApp) va marcado «Pendiente de Edwin»', () => {
+  const fs = require('fs');
+  const path = require('path');
+  const js = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'js', 'orlant-tablero.js'), 'utf8');
+  for (const t of ['Línea General y 3P salen del «Mapa de skills»', 'Las citas por canal', 'Back office: falta definir']) {
+    assert.ok(js.includes("_otPendiente('" + t), t);
+  }
+  assert.match(js, /_otPendiente\(avisoLinea\)/, 'WhatsApp por línea');
+  assert.match(js, /_otPendiente\(otNum\(sd\.recibidas\)/, 'skills «Sin definir»');
 });

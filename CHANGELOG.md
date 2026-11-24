@@ -7,6 +7,22 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.264.0 — Noviembre 2026
+
+**ORLANT · Tablero nuevo (en prueba, solo el administrador): llamadas de entrada más completas.**
+
+- Llamadas de entrada, con el flujo de llamadas y el CDR, que Edwin confirmó como fuentes:
+  - tarjetas de recibidas, nivel de servicio a 20 s, nivel de atención, abandono y TMO;
+  - en «Ver más», contestadas, ASA y la variación contra el período anterior.
+- Primera gráfica: llamadas por período (contestadas y abandonadas) con la línea del nivel de servicio a 20 s.
+- Participación por skill y tipificación de las llamadas de entrada (las 15 más frecuentes y «Otras»).
+- Lo que todavía depende de una definición de Edwin dice «Pendiente de Edwin»:
+  - Línea General y 3P, que salen del «Mapa de skills»;
+  - WhatsApp por línea;
+  - citas por canal;
+  - back office.
+- El tablero que usa hoy ORLANT no cambia.
+
 ## v1.263.0 — Noviembre 2026
 
 **Malla de turnos: pausas activas, almuerzo y horas de la semana (pedido de Edwin).**

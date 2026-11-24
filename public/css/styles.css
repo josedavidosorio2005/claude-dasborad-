@@ -3213,6 +3213,12 @@ html.ver-como-activo body{padding-bottom:84px}
 .ot-aviso{grid-column:1/-1;margin:8px 0;color:var(--c-text-muted);font-size:var(--fs-small);}
 .ot-vermas{margin-top:14px;min-height:44px;padding:8px 16px;border:1px solid var(--c-primary-mid);border-radius:8px;background:none;color:var(--c-text-link);font:inherit;font-weight:600;cursor:pointer;}
 .ot-tabla-wrap{overflow-x:auto;background:var(--c-surface);border:1px solid var(--c-border);border-radius:var(--r-md);}
+.ot-grafica{margin-top:14px;background:var(--c-surface);border:1px solid var(--c-border);border-radius:var(--r-md);padding:10px 12px}
+.ot-grafica .ot-h3{margin-top:0}
+.ot-grafica-wrap{position:relative;height:280px}
+.ot-pendiente{border-left:3px solid var(--c-warning)}
+.ot-pendiente-etq{display:inline-block;margin-right:6px;padding:1px 8px;border-radius:999px;background:var(--c-warning-bg);color:var(--c-warning-text);font-size:var(--fs-note);font-weight:700}
+@media (max-width:600px){.ot-grafica-wrap{height:240px}}
 .ot-tabla{width:100%;border-collapse:collapse;font-size:var(--fs-body);color:var(--c-text);}
 .ot-tabla th,.ot-tabla td{padding:8px 12px;border-bottom:1px solid var(--c-border-soft);text-align:right;white-space:nowrap;}
 .ot-tabla th:first-child{text-align:left;}

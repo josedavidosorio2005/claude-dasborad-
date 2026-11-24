@@ -73,9 +73,9 @@ function otLlamadasDeLinea(ll, linea) {
 // Avisos de línea de la entrada (Fase N2).
 function otAvisosLineaLlamadas(ll, linea) {
   var out = '';
-  if (linea !== 'total' && ll.mapaVacio) out += _otAviso('Todavía no hay skills con línea guardada: elige la línea de cada skill en «Mapa de skills». Mientras tanto, solo «Total» tiene cifras.');
+  if (linea !== 'total' && ll.mapaVacio) out += _otPendiente('Línea General y 3P salen del «Mapa de skills», que Edwin tiene que confirmar. Mientras no haya skills con línea guardada, solo «Total» tiene cifras.');
   var sd = ll.porLinea && ll.porLinea.SIN_DEFINIR && ll.porLinea.SIN_DEFINIR.total;
-  if (linea !== 'total' && !ll.mapaVacio && sd && sd.recibidas > 0) out += _otAviso(otNum(sd.recibidas) + ' llamadas son de skills «Sin definir» y no entran en Línea General ni en 3P (ver «Mapa de skills»).');
+  if (linea !== 'total' && !ll.mapaVacio && sd && sd.recibidas > 0) out += _otPendiente(otNum(sd.recibidas) + ' llamadas son de skills «Sin definir» y no entran en Línea General ni en 3P (ver «Mapa de skills»).');
   if (ll.noCuenta && ll.noCuenta.recibidas > 0) out += _otAviso(otNum(ll.noCuenta.recibidas) + ' llamadas de ' + ll.noCuenta.skills + (ll.noCuenta.skills === 1 ? ' skill marcado' : ' skills marcados') + ' «No cuenta» quedan fuera de todas las cifras.');
   return out;
 }
@@ -93,6 +93,7 @@ function otContenidoLlamadas(d, s) {
   var skills = ll.porSkill.filter(function (x) { return s.linea === 'total' ? x.linea !== 'NO_CUENTA' : x.linea === OT_LINEA_CLAVE[s.linea]; });
   var tip = d.tipificacionEntrada ? (s.linea === 'total' ? d.tipificacionEntrada.total : d.tipificacionEntrada.porLinea[OT_LINEA_CLAVE[s.linea]]) : null;
   return {
+    grafica: otGraficaLlamadasHtml(serie, g), serieGrafica: serie,
     kpis: avisos + _otKpi(otNum(L.recibidas), 'Llamadas recibidas') + _otKpi(otPct(L.nivelServicio20s), 'Nivel de servicio a 20\u00a0s') +
       _otKpi(otPct(L.nivelAtencion), 'Nivel de atención', 'contestadas ÷ recibidas') + _otKpi(otPct(L.abandono), 'Abandono', otNum(L.abandonadas) + ' abandonadas') +
       _otKpi(otMinSeg(L.tmoSegundos), 'TMO', 'tiempo medio de operación'),
@@ -103,6 +104,46 @@ function otContenidoLlamadas(d, s) {
       '<h3 class="ot-h3">Tipificación de la entrada</h3>' + (tip && tip.total ? _otTabla(['Tipificación', 'Llamadas', 'Participación'],
         tip.filas.map(function (x) { return [x.tipificacion, otNum(x.n), otPct(x.participacion)]; })) : _otAviso('Sin tipificación de entrada cargada en este rango (CDR de llamadas).')),
   };
+}
+
+// Fase N2 (Edwin, 24/11: el flujo de llamadas y el CDR son las fuentes de la primera gráfica): llamadas por
+// período, contestadas + abandonadas apiladas y el nivel de servicio a 20 s como línea (eje derecho, %).
+function otGraficaLlamadasHtml(serie, gran) {
+  if (!serie || !serie.length) return '';
+  var rec = serie.reduce(function (a, x) { return a + (x.recibidas || 0); }, 0);
+  var resumen = 'Llamadas por período: ' + serie.length + ' períodos, ' + otNum(rec) + ' recibidas en total. El detalle está en «Ver más indicadores».';
+  return '<div class="ot-grafica"><h3 class="ot-h3">Llamadas por período</h3><div class="ot-grafica-wrap"><canvas id="ot-graf-llamadas" role="img" aria-label="' + _otEsc(resumen) + '"></canvas></div></div>';
+}
+function otGraficaLlamadasCfg(serie, gran) {
+  var pc = (typeof PC !== 'undefined' && PC.length) ? PC : []; // colores solo de paleta.css (charts.js)
+  var o = (typeof loBar === 'function') ? loBar() : { responsive: true, maintainAspectRatio: false, plugins: {}, scales: {} };
+  o.maintainAspectRatio = false;
+  o.plugins = o.plugins || {};
+  if (o.plugins.datalabels) o.plugins.datalabels.display = false;
+  o.plugins.legend = { display: true, position: 'bottom' };
+  o.scales = o.scales || {};
+  o.scales.x = Object.assign({}, o.scales.x || {}, { stacked: true });
+  o.scales.y = Object.assign({}, o.scales.y || {}, { stacked: true, beginAtZero: true, title: { display: true, text: 'Llamadas' } });
+  o.scales.y1 = { position: 'right', min: 0, max: 100, grid: { drawOnChartArea: false }, title: { display: true, text: 'NS 20 s (%)' }, ticks: { callback: function (v) { return v + ' %'; } } };
+  return {
+    type: 'bar',
+    data: {
+      labels: serie.map(function (x) { return otPeriodoLbl(x.periodo, gran); }),
+      datasets: [
+        { type: 'bar', label: 'Contestadas', data: serie.map(function (x) { return x.contestadas; }), backgroundColor: pc[0], stack: 'll', yAxisID: 'y', order: 2, maxBarThickness: 56 },
+        { type: 'bar', label: 'Abandonadas', data: serie.map(function (x) { return x.abandonadas; }), backgroundColor: pc[1], stack: 'll', yAxisID: 'y', order: 2, maxBarThickness: 56 },
+        { type: 'line', label: 'NS 20 s', data: serie.map(function (x) { return x.nivelServicio20s === null || x.nivelServicio20s === undefined ? null : Math.round(x.nivelServicio20s * 1000) / 10; }),
+          borderColor: pc[2], backgroundColor: pc[2], yAxisID: 'y1', tension: 0.2, spanGaps: true, order: 1 },
+      ],
+    },
+    options: o,
+  };
+}
+function otDibujarGraficas(c, gran) {
+  if (!c || !c.grafica || !document.getElementById('ot-graf-llamadas')) return;
+  var cfg = otGraficaLlamadasCfg(c.serieGrafica, gran);
+  if (typeof _gdChart === 'function') _gdChart('ot-graf-llamadas', cfg);
+  else if (typeof Chart !== 'undefined') new Chart(document.getElementById('ot-graf-llamadas'), cfg);
 }
 
 function otPeriodoLbl(p, gran) {
@@ -120,6 +161,8 @@ function _otTabla(cab, filas) {
     '</tbody></table></div>';
 }
 function _otAviso(t) { return '<p class="ot-aviso">' + _otEsc(t) + '</p>'; }
+// Fase N2 (24/11): lo que depende de una definición de Edwin (mapa de skills u otra fuente) va marcado igual en todo el tablero.
+function _otPendiente(t) { return '<p class="ot-aviso ot-pendiente"><span class="ot-pendiente-etq">Pendiente de Edwin</span> ' + _otEsc(t) + '</p>'; }
 // Revisión del 23/11 (hallazgo 1): WhatsApp se carga por período (un día o un mes por fila).
 function otAvisoPeriodosWpp(w, gran) {
   var out = '';
@@ -131,11 +174,11 @@ function otAvisoPeriodosWpp(w, gran) {
 // { kpis: html, detalle: html } de la vista actual.
 function otContenido(d, s) {
   var g = s.gran, sinLinea = !otEntradaTieneLinea(s.linea);
-  var avisoLinea = 'WhatsApp todavía no se separa por línea: falta saber qué colas son 3P (fase N3). Elige «Total» para ver las cifras.';
+  var avisoLinea = 'WhatsApp todavía no se separa por línea: falta saber qué colas son 3P (fase N3, mapa de colas). Elige «Total» para ver las cifras.';
   if (s.seccion === 'inbound' && s.canal === 'llamadas') return otContenidoLlamadas(d, s);
   if (s.seccion === 'inbound' && s.canal === 'whatsapp') {
     var W = d.whatsapp.total;
-    if (sinLinea) return { kpis: _otAviso(avisoLinea), detalle: '' };
+    if (sinLinea) return { kpis: _otPendiente(avisoLinea), detalle: '' };
     return {
       kpis: _otKpi(otNum(W.recibidos), 'WhatsApp recibidos') + _otKpi(otNum(W.contestados), 'Atendidos') + _otKpi(otPct(W.pct0a3), 'Atendidos en 0–3 min', W.conTiempo ? 'de ' + otNum(W.conTiempo) + ' con tiempo' : 'sin tiempos cargados') +
         _otKpi(otPct(W.abandono), 'Abandono', W.abandonados === null ? 'el archivo no trae abandonados' : '') + _otKpi(otSeg(W.asaSegundos), 'ASA', 'espera promedio'),
@@ -155,7 +198,7 @@ function otContenido(d, s) {
         (s.linea === 'total' ? _otKpi(otNum(d.citas.total.general), 'Línea General') + _otKpi(otNum(d.citas.total.p3), '3P') : ''),
       detalle: '<h3 class="ot-h3">Por período</h3>' + _otTabla(['Período', 'Citas', 'Línea General', '3P'],
         d.citas.serie.map(function (x) { return [otPeriodoLbl(x.periodo, g), otNum(otCitasLinea(x, s.linea)), otNum(x.general), otNum(x.p3)]; })) +
-        _otAviso('Las citas por canal (llamada, WhatsApp, salida) esperan la definición de Edwin (fase N4).'),
+        _otPendiente('Las citas por canal (llamada, WhatsApp, salida) esperan su definición (fase N4).'),
     };
   }
   if (s.seccion === 'outbound') {
@@ -167,7 +210,7 @@ function otContenido(d, s) {
         _otAviso('La salida se carga por mes: la granularidad por día o semana llega con la API. Contactabilidad, intentos por registro y citas de salida: fase N7.'),
     };
   }
-  if (s.seccion === 'backoffice') return { kpis: _otAviso('Back office: falta definir con Edwin qué se mide y de qué archivo sale (fase N10).'), detalle: '' };
+  if (s.seccion === 'backoffice') return { kpis: _otPendiente('Back office: falta definir qué se mide y de qué archivo sale (fase N10).'), detalle: '' };
   return { kpis: _otAviso('Asesores (ocupación, horas logueadas, Talk / ACW, por intervalo): llegan con la API de Wolkvox de ORLANT (fase N8).'), detalle: '' };
 }
 
@@ -197,11 +240,11 @@ function otRender() {
     '</div>';
   var lineas = '<div class="ot-lineas" role="group" aria-label="Línea">' + _otBotones(OT_LINEAS, s.linea, 'data-ot-linea') + '</div>';
   var canales = s.seccion === 'inbound' ? '<div class="ot-canales" role="group" aria-label="Canal">' + _otBotones(OT_CANALES, s.canal, 'data-ot-canal') + '</div>' : '';
-  var cuerpo;
+  var cuerpo, c = null;
   if (!d) cuerpo = '<p class="ot-aviso" aria-live="polite">Cargando…</p>';
   else {
-    var c = otContenido(d, s);
-    cuerpo = '<div class="ot-kpis">' + c.kpis + '</div>' +
+    c = otContenido(d, s);
+    cuerpo = '<div class="ot-kpis">' + c.kpis + '</div>' + (c.grafica || '') +
       (c.detalle ? '<button type="button" class="ot-vermas" id="ot-vermas" aria-expanded="' + s.verMas + '" aria-controls="ot-detalle">' + (s.verMas ? 'Ver menos indicadores' : 'Ver más indicadores') + '</button>' +
         '<div id="ot-detalle" class="ot-detalle"' + (s.verMas ? '' : ' hidden') + '>' + c.detalle + '</div>' : '');
   }
@@ -211,6 +254,7 @@ function otRender() {
     return;
   }
   host.innerHTML = '<div class="ot-layout">' + nav + '<section class="ot-main" aria-labelledby="ot-h2"><h2 class="ot-h2" id="ot-h2">' + _otEsc(titulo) + '</h2>' + filtros + lineas + canales + '<div class="ot-cuerpo" aria-live="polite">' + cuerpo + '</div></section></div>';
+  otDibujarGraficas(c, s.gran); // Fase N2
 }
 
 // Revisión del 23/11 (hallazgo 3): cada carga lleva un número; una respuesta que llega después de
@@ -366,5 +410,5 @@ async function otSkillsGuardar() {
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { otContenidoLlamadas: otContenidoLlamadas, otVariacion: otVariacion, otMinSeg: otMinSeg, otLlamadasDeLinea: otLlamadasDeLinea, otAvisosLineaLlamadas: otAvisosLineaLlamadas, otSkillsHtml: otSkillsHtml, otSkillsCambiar: otSkillsCambiar, otSkillsAgregar: otSkillsAgregar, otSkillLinea: otSkillLinea, otCargar: otCargar, otRender: otRender, _otEstado: function () { return _ot; }, otAvisoPeriodosWpp: otAvisoPeriodosWpp, otContenido: otContenido, otRangoAtajo: otRangoAtajo, otOutboundLinea: otOutboundLinea, otCitasLinea: otCitasLinea, otHojasExcel: otHojasExcel, otPeriodoLbl: otPeriodoLbl, orlantTableroVeTarjeta: orlantTableroVeTarjeta, OT_SECCIONES: OT_SECCIONES };
+  module.exports = { otGraficaLlamadasHtml: otGraficaLlamadasHtml, otGraficaLlamadasCfg: otGraficaLlamadasCfg, otContenidoLlamadas: otContenidoLlamadas, otVariacion: otVariacion, otMinSeg: otMinSeg, otLlamadasDeLinea: otLlamadasDeLinea, otAvisosLineaLlamadas: otAvisosLineaLlamadas, otSkillsHtml: otSkillsHtml, otSkillsCambiar: otSkillsCambiar, otSkillsAgregar: otSkillsAgregar, otSkillLinea: otSkillLinea, otCargar: otCargar, otRender: otRender, _otEstado: function () { return _ot; }, otAvisoPeriodosWpp: otAvisoPeriodosWpp, otContenido: otContenido, otRangoAtajo: otRangoAtajo, otOutboundLinea: otOutboundLinea, otCitasLinea: otCitasLinea, otHojasExcel: otHojasExcel, otPeriodoLbl: otPeriodoLbl, orlantTableroVeTarjeta: orlantTableroVeTarjeta, OT_SECCIONES: OT_SECCIONES };
 }
