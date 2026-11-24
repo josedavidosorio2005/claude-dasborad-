@@ -68,3 +68,11 @@ test('Calidad (Calificar y Calidad de encuestas): selectores de campaña y de me
   const html = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'index.html'), 'utf8');
   for (const id of ['cal-campana-sel', 'cal-mes-sel']) assert.ok(!new RegExp('id="' + id + '"[^>]*style="[^"]*(height|min-height)\s*:').test(html), id + ' sin alto fijo en línea que gane al CSS');
 });
+
+test('Portal Asesor: la insignia de monitoreos nuevos pasa AA también en oscuro', () => {
+  assert.ok(CSS.includes('[data-theme="dark"] .asesor-badge-nuevos{background:var(--c-danger-bg);color:var(--c-danger-dark);border:1px solid var(--c-danger-dark)}'));
+  assert.ok(contraste(token('c-danger-dark', false), '#ffffff') >= 4.5, 'claro: blanco sobre rojo');
+  assert.ok(contraste(token('c-danger-dark', true), token('c-danger-bg', true)) >= 4.5, 'oscuro: rojo claro sobre fondo rojo oscuro');
+  const html = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'index.html'), 'utf8');
+  assert.ok(!/id="asesor-menu-calidad-badge"[^>]*style=/.test(html), 'sin estilo en línea que gane al tema oscuro');
+});
