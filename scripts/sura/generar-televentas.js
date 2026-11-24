@@ -327,7 +327,9 @@ X('function draw4(){', [
   '  if(a==="__total")S=[{n:"Total equipo",v:Array.from({length:n},(_,i)=>names.reduce((s,x)=>s+m[x][i],0))}];',
   '  else S=(a==="__all"?names:[a]).map(x=>({n:pretty(x),v:m[x]||new Array(n).fill(0)})).sort((p,q)=>sum(q.v)-sum(p.v));',
   '  const X=Array.from({length:n},(_,i)=>String(i+1));',
-  '  $("gl").innerHTML=line(S,X,f,S.length===1);drawX4(RM,a,med);',
+  // Pedido de Edwin (24/11): con «Ver por = Día» la gráfica NO muestra los porcentajes de crecimiento/caída
+  // (pct=false); con «Mes» se quedan (draw4 de siempre, sin cambio).
+  '  $("gl").innerHTML=line(S,X,f,false);drawX4(RM,a,med);',
   '  $("gt").innerHTML=`<table><tr><th>Agente</th>${X.map(x=>`<th>${x}</th>`).join("")}<th>Total</th></tr>`+S.map(s=>`<tr><td>${esc(s.n)}</td>${s.v.map(v=>`<td>${fl(v)}</td>`).join("")}<td><b>${fl(sum(s.v))}</b></td></tr>`).join("")+`</table>`;',
   '}',
   '["g4p","g4mes"].forEach(i=>$(i).addEventListener("change",draw4));',
