@@ -2675,6 +2675,66 @@ div.ca-bar-fila{cursor:default}
   .modal-malla .table-wrap{margin:0 -4px}
 }
 .ml-dia-corto{display:none}
+/* Pedido de Edwin (24/11): ventana de la malla del supervisor más compacta. Solo .modal-malla («Mi malla» de la
+   asesora no cambia). Escritorio: controles de ≥32 px (WCAG 2.5.8 pide ≥24); en celular (≤768) los principales
+   vuelven a 44 px (docs/sistema-de-diseno.md). */
+.modal-malla{width:min(1280px,100%)}
+.modal-malla h3{margin-bottom:8px}
+.ml-barra{flex-wrap:nowrap;gap:10px;margin-bottom:8px}
+.ml-barra .ig{min-width:0;flex:0 1 auto}
+.ml-barra .ig:first-child{flex:0 1 230px}
+.ml-barra .ml-mes{flex:0 0 200px}
+.ml-barra .ml-semanas-mes{flex:1 1 220px}
+.ml-semana{flex-wrap:nowrap;gap:6px;flex:0 1 auto}
+.ml-semana span{font-size:var(--fs-body);white-space:nowrap}
+.modal-malla select,.modal-malla input[type="text"],.modal-malla input[type="time"],.modal-malla input[type="month"],.modal-malla input[type="date"]{min-height:36px;padding:5px 8px}
+.ml-semana .btn-cancel{min-height:36px;min-width:36px;padding:0 10px}
+.ml-acciones{gap:8px;margin-bottom:8px}
+.ml-acciones .btn-primary,.ml-acciones .btn-cancel,#ml-festivos-btn{min-height:36px;padding:6px 12px}
+.ml-vistas{display:flex;gap:4px;margin:4px 0 10px;border-bottom:2px solid var(--c-border-soft)}
+.ml-vistas.hidden{display:none}
+.ml-tab{min-height:40px;padding:8px 20px;border:0;border-bottom:3px solid transparent;margin-bottom:-2px;background:transparent;color:var(--c-text-2);font-size:var(--fs-body);font-weight:700;cursor:pointer;border-radius:var(--r-md) var(--r-md) 0 0}
+.ml-tab:hover{background:var(--c-hover-bg);color:var(--c-text)}
+.ml-tab[aria-pressed="true"]{color:var(--c-primary);border-bottom-color:var(--c-primary);background:var(--c-primary-soft)}
+.ml-tab:focus-visible{outline:2px solid var(--c-focus);outline-offset:2px}
+.ml-grupo{padding:12px 14px;margin-bottom:10px}
+.ml-grupo-cab{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;justify-content:space-between;margin-bottom:8px}
+.ml-grupo-cab .ig{margin-bottom:0;flex:1 1 240px;max-width:420px}
+.ml-grupo-btns{display:flex;gap:8px}
+.ml-grupo-btns button{min-height:36px;padding:6px 12px}
+.ml-grupo-cuerpo{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
+@media (min-width:1024px){.ml-grupo-cuerpo{grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);align-items:start}}
+.modal-malla .ml-tabla th,.modal-malla .ml-tabla td{padding:3px 6px}
+.modal-malla .ml-tabla input[type="checkbox"],.modal-malla .ml-asesora input{width:20px;height:20px}
+.ml-grupo .ml-fest-ayuda{margin:4px 0 0;font-size:var(--fs-small)}
+.ml-grupo .ml-asesoras{margin:0;padding:6px 10px;display:block;min-width:0}
+.ml-asesoras-lista{max-height:286px;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:0 10px;padding-right:4px}
+.ml-asesoras-lista:focus-visible{outline:2px solid var(--c-focus);outline-offset:2px}
+.modal-malla .ml-asesora{min-height:32px;font-size:var(--fs-body)}
+.ml-casos{margin-top:10px;padding:4px 10px}
+.ml-casos summary{min-height:36px}
+.ml-caso{padding:5px 0}
+.ml-caso-btns{gap:6px}
+.ml-btn-sm{min-height:30px;padding:4px 10px;border:1px solid var(--c-border);border-radius:var(--r-sm);background:var(--c-surface);color:var(--c-primary);font-size:var(--fs-small);font-weight:600;cursor:pointer}
+.ml-btn-sm:hover{background:var(--c-hover-bg)}
+.ml-btn-sm:focus-visible{outline:2px solid var(--c-focus);outline-offset:1px}
+.mp-novedad{white-space:normal;max-width:180px;min-width:96px;overflow-wrap:break-word;word-break:normal;hyphens:manual}
+@media (max-width:1100px){.ml-barra{flex-wrap:wrap}}
+@media (max-width:768px){
+  .modal-malla select,.modal-malla input[type="text"],.modal-malla input[type="month"],.ml-semana .btn-cancel,.ml-tab,.ml-acciones .btn-primary,.ml-acciones .btn-cancel,#ml-festivos-btn,.ml-grupo-btns button{min-height:44px}
+  .ml-semana .btn-cancel{min-width:44px}
+  .ml-barra .ig:first-child,.ml-barra .ml-mes,.ml-barra .ml-semanas-mes{flex:1 1 calc(50% - 10px)}
+  .ml-semana{flex:1 1 calc(50% - 10px);flex-wrap:nowrap}
+  .ml-semana span{white-space:normal;min-width:0;flex:1 1 auto;text-align:center}
+  .ml-tab{flex:1 1 0}
+}
+@media (max-width:600px){ /* las reglas compactas no deben pisar las del celular (Fase 358) */
+  .modal-malla .ml-tabla th,.modal-malla .ml-tabla td{padding:4px 2px}
+  .modal-malla input[type="time"]{padding:6px 2px;width:100%;min-width:0;font-size:var(--fs-small)}
+  .ml-grupo{padding:10px 8px}
+  .ml-barra .ig:first-child,.ml-barra .ml-mes,.ml-barra .ml-semanas-mes,.ml-semana{flex:1 1 100%}
+  .ml-semana{flex-wrap:wrap}
+}
 /* Fase 369 (E1): Inventario de sistemas. */
 .modal-activos{position:relative}
 /* Fase GH1: «Talento humano» (app de Edwin en un iframe, con su propio tema oscuro). Barra de SinCo arriba. */
@@ -2888,9 +2948,6 @@ circle.acp-l-ingresos{fill:var(--c-brand-blue)}circle.acp-l-asignaciones{fill:va
 .cc-horarios-sin{margin:6px 0 0 18px}
 /* Fase 366 (D1): selector de mes y semanas del mes en la malla. */
 .ml-mes{margin-bottom:0;min-width:180px}
-.ml-semanas-mes{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}
-.ml-sem-btn{min-height:44px}
-.ml-sem-btn[aria-pressed="true"]{background:var(--grad-btn);border-color:transparent;color:var(--c-on-brand)}
 /* Fase 363: pestaña «Puntualidad» de la malla. La tabla (asesora × 7 días) se desplaza dentro de su
    .table-wrap en el celular; la página nunca. */
 .ml-vistas{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}

@@ -23,6 +23,7 @@ function mpEstadoTexto(f, tipos) {
     case 'a_tiempo': return { texto: '✓ A tiempo' + (f.primerLogin ? ' · ' + f.primerLogin.slice(0, 5) : ''), clase: 'vis-verde' };
     case 'tarde': return { texto: '! Tarde ' + _mpMin(f.tardeSeg) + (f.primerLogin ? ' · ' + f.primerLogin.slice(0, 5) : ''), clase: 'vis-amarillo' };
     case 'sin_ingreso': return { texto: '✕ Sin ingreso', clase: 'vis-rojo' };
+    case 'novedad': return { texto: 'Novedad: ' + (f.novedad || ''), clase: 'vis-gris mp-novedad' }; // pedido de Edwin (24/11)
     case 'excepcion': { var t = f.excepcion && (f.excepcion.tipo || f.excepcion); return { texto: tipos[t] || 'Excepción', clase: 'vis-gris' }; }
     case 'sin_enlace': return { texto: 'Sin enlace', clase: 'vis-gris' };
     case 'pendiente': return { texto: 'Pendiente', clase: 'vis-gris' };
@@ -49,7 +50,7 @@ function mpTablaHtml(d) {
       var f = a.dias[fecha];
       if (!f) return '<td class="mp-descanso">—</td>';
       var e = mpEstadoTexto(f, d.tipos), s = mpSalidaTexto(f);
-      return '<td><span class="vis-pill ' + e.clase + '">' + esc(e.texto) + '</span>' +
+      return '<td><span class="vis-pill ' + e.clase + '"' + (f.estado === 'novedad' ? ' title="' + esc(e.texto) + '"' : '') + '>' + esc(e.texto) + '</span>' +
         '<span class="mp-turno">' + esc(f.entrada + '–' + f.salida) + '</span>' + (s ? '<span class="mp-salida">' + esc(s) + '</span>' : '') + '</td>';
     }).join('') + '</tr>';
   }).join('');
@@ -58,8 +59,8 @@ function mpTablaHtml(d) {
 
 function mpResumenHtml(d) {
   var r = d.resumen || {};
-  var p = [['vis-verde', '✓ A tiempo', r.a_tiempo], ['vis-amarillo', '! Tarde', r.tarde], ['vis-rojo', '✕ Sin ingreso', r.sin_ingreso],
-    ['vis-gris', 'Excepción', r.excepcion], ['vis-gris', 'Sin enlace', r.sin_enlace], ['vis-gris', 'Pendiente', r.pendiente]];
+  var p = [['vis-verde', '✓ A tiempo', r.a_tiempo], ['vis-amarillo', '! Tarde', r.tarde], ['vis-rojo', '✕ Sin ingreso', r.sin_ingreso]].concat(r.novedad ? [['vis-gris', 'Con novedad', r.novedad]] : []).concat([ // pedido de Edwin (24/11)
+    ['vis-gris', 'Excepción', r.excepcion], ['vis-gris', 'Sin enlace', r.sin_enlace], ['vis-gris', 'Pendiente', r.pendiente]]);
   return '<div class="vis-resumen">' + p.map(function (x) { return '<span class="vis-pill ' + x[0] + '">' + x[1] + ': ' + (x[2] || 0) + '</span>'; }).join('') +
     (r.excepcionTrabajada ? '<span class="vis-pill vis-gris">Excepciones que cuentan como día trabajado: ' + r.excepcionTrabajada + '</span>' : '') + // Fase M1 (A)
     '<span class="vis-pill vis-gris">Salida anticipada: ' + (r.salidaAnticipada || 0) + '</span></div>' +
@@ -84,6 +85,9 @@ function mpMostrar(vista, sinFoco) {
   if (punt) _mpEl('ml-acciones').classList.add('hidden');
   else if (_ml.datos) _mpEl('ml-acciones').classList.toggle('hidden', !_ml.datos.puedeEditar);
   _mpEl('ml-puntualidad').classList.toggle('hidden', !punt);
+  // Pedido de Edwin (24/11): «Novedades de la semana» es de la vista de turnos (en Puntualidad tapaba el resumen).
+  var nov = _mpEl('ml-novedades');
+  if (nov) nov.classList.toggle('hidden', punt || !(_ml.datos && _ml.datos.grupos && _ml.datos.grupos.length));
   if (punt) mpCargar();
   if (!sinFoco) _mpEl(punt ? 'ml-vista-punt' : 'ml-vista-turnos').focus();
 }

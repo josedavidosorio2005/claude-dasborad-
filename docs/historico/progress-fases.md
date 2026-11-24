@@ -22466,4 +22466,25 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - «Total equipo» por mes: 1 porcentaje. Por día: 0. «Todos» por día: 0.
   - 0 errores de consola y sin scroll lateral.
 - **Sin cambio** (no se pidió): con valores chicos, el eje Y de esa gráfica repite etiquetas por el redondeo.
-- **PR sin mergear.**
+
+## Pedido b de Edwin (24/11) — Malla del supervisor más compacta (v1.261.0, 2026-11-24)
+
+- **Pedido:** vista del supervisor más compacta (la de la asesora queda igual). Además, en Puntualidad, la novedad del día en vez de «Sin ingreso». Con capturas antes y después.
+- **Cambio:**
+  - **Filtros:** una fila con campaña, ‹ semana ›, «Ir al mes» y «Semana del mes». La semana ahora es una lista (`#ml-sem-sel`); salen las fichas `.ml-sem-btn`.
+  - **Pestañas:** «Turnos» y «Puntualidad» como pestañas (`.ml-tab`, con `aria-pressed`).
+  - **Grupo:** cabecera `.ml-grupo-cab` con el nombre y los botones. El cuerpo `.ml-grupo-cuerpo` va en 2 columnas desde 1024 px: horario y asesoras. La lista de asesoras (`.ml-asesoras-lista`) tiene scroll propio (286 px), se puede enfocar con el teclado y tiene nombre accesible.
+  - **Botones por asesora:** «+ Agregar novedad» y «Horario especial» son `.ml-btn-sm`, con `aria-label` que nombra a la asesora.
+  - **Tamaños:** en escritorio, controles de 36 px (la regla del sistema de diseño pide al menos 24). En celular (≤768 px) los principales vuelven a 44 px. A 768 px la barra queda en 2 columnas; a 375 px, en una.
+  - **Puntualidad** (`puntualidad.js`):
+    - Si el estado es «Sin ingreso» y la asesora tiene una novedad vigente ese día o de toda la semana, el estado pasa a `novedad` y la fila trae su texto. El resumen la cuenta como `novedad`.
+    - «Mi puntualidad» (la asesora) sigue viendo «Sin ingreso».
+    - «Novedades de la semana» se oculta en la vista de Puntualidad; antes tapaba el resumen.
+- **Pruebas:** `faseE2-malla-compacta` (3) y las de la malla de antes siguen en verde.
+- **Revisión local:** copia de la base demo, 12 asesoras, novedades y logins INVENTADOS, Brave a 1440, 768 y 375 px.
+  - El grupo pasó de 1574 a 1043 px de alto en 1440, y de 1752 a 1232 en 768.
+  - Las fichas de semanas pasaron de 6 a 0. La barra quedó en 1 fila en 1440 y en 2 en 768.
+  - «Novedad: Suspensión (inventada)» en vez de «Sin ingreso».
+  - 0 errores de consola y sin scroll lateral.
+  - Las capturas antes y después quedan fuera del repo (regla de la Fase 112).
+- **Merge con OK del usuario (24/11)**, después de #934 (1.260.2), trayendo main; queda en 1.261.0.

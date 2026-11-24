@@ -282,7 +282,9 @@ router.get('/malla/mi-puntualidad', requireActor, wrap((req, res) => {
   const ahora = ahoraColombia();
   const semanas = [actual, L.mallaSumarSemanas(actual, -1)].map((s) => {
     const r = P.calcular(db, campana, s, L.mallaFechaDelDia(s, 7), { ahora, soloUserId: req.actor.id });
-    return { semana: s, datosHasta: r.datosHasta, filas: r.filas.map((f) => ({ fecha: f.fecha, entrada: f.entrada, salida: f.salida, estado: f.estado, tardeSeg: f.tardeSeg, salidaAnticipadaSeg: f.salidaAnticipadaSeg, primerLogin: f.primerLogin, ultimoLogout: f.ultimoLogout, excepcion: f.excepcion ? f.excepcion.tipo : null })) };
+    // Pedido de Edwin (24/11): la vista de la asesora queda igual; la novedad que reemplaza a «Sin ingreso» es
+    // solo para el supervisor (el texto lo escribió él y la asesora ya ve sus novedades en «Mi malla»).
+    return { semana: s, datosHasta: r.datosHasta, filas: r.filas.map((f) => ({ fecha: f.fecha, entrada: f.entrada, salida: f.salida, estado: f.estado === 'novedad' ? 'sin_ingreso' : f.estado, tardeSeg: f.tardeSeg, salidaAnticipadaSeg: f.salidaAnticipadaSeg, primerLogin: f.primerLogin, ultimoLogout: f.ultimoLogout, excepcion: f.excepcion ? f.excepcion.tipo : null })) };
   });
   res.json({ semanas, tipos: C.tiposMapa(db) });
 }));

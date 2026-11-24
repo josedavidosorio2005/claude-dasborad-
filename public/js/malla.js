@@ -35,19 +35,28 @@ function mallaElegirMes() {
   var mes = (_mlEl('ml-mes') || {}).value;
   if (mes) mallaPintarSemanasMes(mes);
 }
+// Pedido de Edwin (24/11): las semanas del mes en una lista compacta (antes, una ficha por semana).
 function mallaPintarSemanasMes(mes) {
-  var c = _mlEl('ml-semanas-mes');
-  if (!c) return;
-  c.textContent = '';
-  mallaSemanasDelMes(mes).forEach(function (l) {
-    var b = document.createElement('button');
-    b.type = 'button';
-    b.className = 'btn-cancel ml-sem-btn';
-    b.setAttribute('aria-pressed', String(l === _ml.semana));
-    b.textContent = mallaSemanaTexto(l).replace(/^Semana /, '') + (l === _ml.actual ? ' (esta semana)' : '');
-    b.addEventListener('click', function () { _ml.semana = l; mallaCargar(); });
-    c.appendChild(b);
+  var s = _mlEl('ml-sem-sel');
+  if (!s) return;
+  s.textContent = '';
+  var lista = mallaSemanasDelMes(mes);
+  if (lista.indexOf(_ml.semana) === -1) {
+    var o0 = document.createElement('option');
+    o0.value = ''; o0.textContent = 'Elige una semana';
+    s.appendChild(o0);
+  }
+  lista.forEach(function (l) {
+    var o = document.createElement('option');
+    o.value = l;
+    o.textContent = mallaSemanaTexto(l).replace(/^Semana /, '') + (l === _ml.actual ? ' (esta semana)' : '');
+    if (l === _ml.semana) o.selected = true;
+    s.appendChild(o);
   });
+}
+function mallaElegirSemanaMes() {
+  var v = (_mlEl('ml-sem-sel') || {}).value;
+  if (v && v !== _ml.semana) { _ml.semana = v; mallaCargar(); }
 }
 // Fase 373 (Edwin 19/11): sin botón «Esta semana»; solo las flechas y el selector de mes.
 
@@ -100,13 +109,15 @@ function mallaGrupoHtml(g, puedeEditar, asesoras, idx, datos) { // datos: la sem
       (otro && !marcadas[a.id] ? ' <span class="ml-otro">(en ' + esc(otro) + ')</span>' : '') + '</label>';
   }).join('') : '<p class="vis-vacio">No hay asesoras activas en esta campaña.</p>';
   var color = g.color || ((idx % 8) + 1); // Fase 373: cada grupo con su color (serie 1 a 8)
+  // Pedido de Edwin (24/11): más compacto. Cabecera (nombre + botones) en una fila; el horario y la lista de
+  // asesoras lado a lado en pantallas anchas; la lista en un cuadro con su propio scroll.
   return '<section class="aurora-card ml-grupo ml-color-' + color + '" data-idx="' + idx + '" data-id="' + (g.id || '') + '" aria-labelledby="' + pre + '-tit">' +
-    '<div class="ig"><label for="' + pre + '-nombre" id="' + pre + '-tit"><span class="ml-punto" aria-hidden="true"></span>Grupo</label><input type="text" id="' + pre + '-nombre" maxlength="' + MALLA_NOMBRE_MAX + '" value="' + esc(g.nombre || '') + '"' + dis + '></div>' +
-    '<div class="table-wrap"><table class="ml-tabla" aria-describedby="' + pre + '-fest-ayuda"><thead><tr><th scope="col">Día</th><th scope="col"><span class="ml-dia-largo">Trabaja</span><span class="ml-dia-corto" aria-hidden="true">Trab.</span></th><th scope="col">Entrada</th><th scope="col">Salida</th></tr></thead><tbody>' + filas + '</tbody></table></div>' +
-    '<p class="vis-ayuda ml-fest-ayuda" id="' + pre + '-fest-ayuda">Festivos: si no se marca, el grupo descansa los festivos. Un festivo en un día que el grupo no trabaja sigue siendo descanso.</p>' +
-    '<fieldset class="ml-asesoras"><legend>Asesoras (' + (g.asesoras || []).length + ')</legend>' + lista + '</fieldset>' +
-    (puedeEditar ? '<div class="modal-btns"><button type="button" class="btn-cancel ml-borrar" onclick="mallaBorrarGrupo(' + idx + ')">' + (g.id ? 'Eliminar grupo' : 'Descartar') + '</button>' +
-      '<button type="button" class="btn-primary" onclick="mallaGuardarGrupo(' + idx + ')">Guardar grupo</button></div>' : '') +
+    '<div class="ml-grupo-cab"><div class="ig"><label for="' + pre + '-nombre" id="' + pre + '-tit"><span class="ml-punto" aria-hidden="true"></span>Grupo</label><input type="text" id="' + pre + '-nombre" maxlength="' + MALLA_NOMBRE_MAX + '" value="' + esc(g.nombre || '') + '"' + dis + '></div>' +
+    (puedeEditar ? '<div class="ml-grupo-btns"><button type="button" class="btn-cancel ml-borrar" onclick="mallaBorrarGrupo(' + idx + ')">' + (g.id ? 'Eliminar grupo' : 'Descartar') + '</button>' +
+      '<button type="button" class="btn-primary" onclick="mallaGuardarGrupo(' + idx + ')">Guardar grupo</button></div>' : '') + '</div>' +
+    '<div class="ml-grupo-cuerpo"><div class="ml-grupo-horario"><div class="table-wrap"><table class="ml-tabla" aria-describedby="' + pre + '-fest-ayuda"><thead><tr><th scope="col">Día</th><th scope="col"><span class="ml-dia-largo">Trabaja</span><span class="ml-dia-corto" aria-hidden="true">Trab.</span></th><th scope="col">Entrada</th><th scope="col">Salida</th></tr></thead><tbody>' + filas + '</tbody></table></div>' +
+    '<p class="vis-ayuda ml-fest-ayuda" id="' + pre + '-fest-ayuda">Festivos: si no se marca, el grupo descansa los festivos. Un festivo en un día que el grupo no trabaja sigue siendo descanso.</p></div>' +
+    '<fieldset class="ml-asesoras"><legend>Asesoras (' + (g.asesoras || []).length + ')</legend><div class="ml-asesoras-lista" tabindex="0" role="group" aria-label="Asesoras de la campaña (con scroll)">' + lista + '</div></fieldset></div>' +
     (g.id && (g.asesoras || []).length ? mallaCasosHtml(g, idx, puedeEditar, datos) : '') +
     '</section>';
 }
@@ -220,8 +231,9 @@ function mallaCasosHtml(g, idx, puedeEditar, datos) {
         (puedeEditar ? ' <button type="button" class="ml-chip-x" onclick="mallaQuitarNovedad(' + Number(x.id) + ')" aria-label="Quitar la novedad de ' + esc(a.nombre) + '">×</button>' : '') + '</li>';
     })).join('');
     return '<li class="ml-caso"><div class="ml-caso-cab"><strong>' + esc(a.nombre) + '</strong>' +
-      (puedeEditar ? '<span class="ml-caso-btns"><button type="button" class="btn-cancel ml-btn" onclick="mallaFormCaso(' + idx + ',' + Number(a.id) + ',\'novedad\')">Novedad</button>' +
-        '<button type="button" class="btn-cancel ml-btn" onclick="mallaFormCaso(' + idx + ',' + Number(a.id) + ',\'horario\')">Horario especial</button></span>' : '') + '</div>' +
+      // Pedido de Edwin (24/11): botón pequeño «Agregar novedad» por fila.
+      (puedeEditar ? '<span class="ml-caso-btns"><button type="button" class="btn-sm ml-btn-sm" onclick="mallaFormCaso(' + idx + ',' + Number(a.id) + ',\'novedad\')" aria-label="Agregar novedad a ' + esc(a.nombre) + '">+ Agregar novedad</button>' +
+        '<button type="button" class="btn-sm ml-btn-sm" onclick="mallaFormCaso(' + idx + ',' + Number(a.id) + ',\'horario\')" aria-label="Horario especial de ' + esc(a.nombre) + '">Horario especial</button></span>' : '') + '</div>' +
       (chips ? '<ul class="ml-chips">' + chips + '</ul>' : '') + '<div class="ml-caso-form" id="ml-g' + idx + '-caso-' + Number(a.id) + '"></div></li>';
   }).join('');
   return '<details class="ml-casos"' + (d.ajustes && d.ajustes.length || d.novedades && d.novedades.length ? ' open' : '') + '><summary>Novedades y horarios especiales</summary><ul class="ml-casos-lista">' + filas + '</ul></details>';
