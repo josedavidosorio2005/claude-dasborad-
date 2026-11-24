@@ -3,152 +3,161 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Maqueta · Equidad de profesionales (ORLANT) · datos inventados</title>
-<!-- PROPUESTA (plan de acción ORLANT 20/11, A6). Archivo suelto para mostrarle a Isa la estructura:
-     no es parte de la app. Datos 100 % inventados (mismo generador que la plantilla propuesta).
-     Colores: los tokens de public/css/styles.css y paleta.css (paleta 3, semáforo con símbolo). -->
+<title>Maqueta · Equidad de agendamiento (ORLANT) · datos inventados</title>
+<!-- PROPUESTA (plan de acción ORLANT 20/11, A6), con la estructura y los cálculos del HTML de Isa
+     («Equidad de agendamiento»). Archivo suelto, no es parte de la app. Datos 100 % INVENTADOS
+     («MEDICO 01…», «ENTIDAD A…»). Colores: tokens de public/css/styles.css y paleta.css. -->
 <style>
 :root{--brand:#004150;--on-brand:#fff;--bg:#f0f4f8;--surface:#fff;--subtle:#f7fbfd;--border:#dde8ef;--text:#2a4a58;--muted:#4f6f7d;
-  --s1:#0072B2;--s2:#220F6C;--s3:#CB4893;--t1:#0072B2;--t2:#220F6C;--t3:#A8377F;
-  --ok:#17703b;--ok-bg:#e8f8f5;--warn:#8f4a00;--warn-bg:#fef3e2;--bad:#b02a1d;--bad-bg:#fde8e8;--focus:#0072B2;--control:#6b8794}
+  --s1:#0072B2;--s2:#220F6C;--s3:#CB4893;--s4:#186261;--t1:#0072B2;--t2:#220F6C;--focus:#0072B2;--control:#6b8794;--warn:#8f4a00;--warn-bg:#fef3e2}
 :root[data-theme="dark"]{--bg:#0a1e25;--surface:#132c35;--subtle:#17343e;--border:#2a4a56;--text:#dbe9ee;--muted:#a9c3cc;
-  --s1:#56B4E9;--s2:#7D6CEF;--s3:#E77EB3;--t1:#56B4E9;--t2:#A097F4;--t3:#E77EB3;
-  --ok:#4ade80;--ok-bg:#123a26;--warn:#fbbf24;--warn-bg:#3a2a10;--bad:#fca5a5;--bad-bg:#3a1c1c;--focus:#56B4E9;--control:#5a8290}
+  --s1:#56B4E9;--s2:#7D6CEF;--s3:#E77EB3;--s4:#60DCDC;--t1:#56B4E9;--t2:#A097F4;--focus:#56B4E9;--control:#5a8290;--warn:#fbbf24;--warn-bg:#3a2a10}
 *{box-sizing:border-box}
 body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.45}
 header{background:var(--brand);color:var(--on-brand);padding:14px 20px;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
 header h1{font-size:1.15rem;margin:0}
-.aviso{background:var(--warn-bg);color:var(--warn);padding:8px 20px;font-size:.9rem;border-bottom:1px solid var(--border)}
+.aviso{margin:0;background:var(--warn-bg);color:var(--warn);padding:8px 20px;font-size:.9rem;border-bottom:1px solid var(--border)}
 main{max-width:1280px;margin:0 auto;padding:16px 20px 40px}
-button,select{font:inherit;min-height:44px;border-radius:8px}
-button{background:transparent;color:var(--on-brand);border:1px solid rgba(255,255,255,.7);padding:0 14px;cursor:pointer}
+button,select,input{font:inherit;min-height:44px;border-radius:8px}
+header button{background:transparent;color:var(--on-brand);border:1px solid rgba(255,255,255,.7);padding:0 14px;cursor:pointer}
 :focus-visible{outline:3px solid var(--focus);outline-offset:2px}
-.filtros{display:flex;flex-wrap:wrap;gap:12px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:16px}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.tabs button{background:var(--surface);color:var(--text);border:1px solid var(--control);padding:0 16px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--brand);color:#fff;border-color:var(--brand)}
+.resumen{background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--s1);border-radius:10px;padding:12px 14px;margin-bottom:12px}
+.filtros{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:16px}
 .filtros label{display:flex;flex-direction:column;font-size:.8rem;color:var(--muted);gap:4px;min-width:150px;flex:1}
-select{background:var(--surface);color:var(--text);border:1px solid var(--control);padding:0 10px}
+select,input{background:var(--surface);color:var(--text);border:1px solid var(--control);padding:0 10px}
+.btn2{background:var(--surface);color:var(--text);border:1px solid var(--control);padding:0 14px;cursor:pointer}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:16px}
 .kpi{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px}
 .kpi .v{font-size:1.6rem;font-weight:700;font-variant-numeric:tabular-nums}
-.kpi .l{font-size:.85rem;color:var(--muted)}
-.kpi .m{font-size:.8rem;color:var(--muted);margin-top:2px}
-section{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px}
+.kpi .l{font-size:.85rem;color:var(--muted)}.kpi .m{font-size:.8rem;color:var(--muted)}
+.grid2{display:grid;grid-template-columns:2fr 1fr;gap:16px}
+section{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px;min-width:0}
 section h2{font-size:1rem;margin:0 0 4px}
 section p.sub{margin:0 0 12px;color:var(--muted);font-size:.85rem}
 .leyenda{display:flex;gap:16px;flex-wrap:wrap;font-size:.85rem;margin-bottom:10px}
 .leyenda span::before{content:"";display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px;background:var(--c)}
-.fila{display:grid;grid-template-columns:150px 1fr;gap:10px;align-items:center;margin:6px 0;font-size:.9rem}
-.barra{display:flex;height:26px;border-radius:6px;overflow:hidden;background:var(--subtle)}
+.leyenda .prom::before{background:none;border-top:2px dashed var(--text);height:0;width:18px;vertical-align:4px}
+.fila{display:grid;grid-template-columns:170px 1fr 44px;gap:10px;align-items:center;margin:6px 0;font-size:.88rem}
+.pista{position:relative;height:24px}
+.barra{display:flex;height:24px;border-radius:6px;overflow:hidden}
 .barra div{height:100%;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden}
+.promedio{position:absolute;top:-4px;bottom:-4px;border-left:2px dashed var(--text)}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+.dias{display:flex;align-items:flex-end;gap:3px;height:140px;border-bottom:1px solid var(--border)}
+.dias div{flex:1;background:var(--s4);border-radius:3px 3px 0 0;min-width:4px}
+.dias-eje{display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted);margin-top:4px}
 .tabla-wrap{overflow-x:auto}
 table{width:100%;border-collapse:collapse;font-size:.88rem;min-width:0}
 th,td{padding:8px 10px;border-bottom:1px solid var(--border);text-align:right;font-variant-numeric:tabular-nums}
-th:first-child,td:first-child,th:nth-child(2),td:nth-child(2){text-align:left}
+th:first-child,td:first-child{text-align:left}
 th{color:var(--muted);font-weight:600;font-size:.8rem}
-.sem{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.78rem;font-weight:600;white-space:nowrap}
-.sem.ok{color:var(--ok);background:var(--ok-bg)}.sem.cerca{color:var(--warn);background:var(--warn-bg)}.sem.lejos{color:var(--bad);background:var(--bad-bg)}
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@media (max-width:900px){.grid2{grid-template-columns:1fr}}
 @media (max-width:640px){
-  .fila{grid-template-columns:1fr}
-  table thead{display:none}
-  table,tbody,tr,td{display:block;width:100%}
+  .fila{grid-template-columns:1fr 44px}.fila>span:first-child{grid-column:1/-1}
+  table thead{display:none}table,tbody,tr,td{display:block;width:100%}
   tr{border:1px solid var(--border);border-radius:10px;margin-bottom:10px;padding:6px}
-  td{border:0;display:flex;justify-content:space-between;text-align:right;padding:5px 6px}
-  td::before{content:attr(data-l);color:var(--muted);font-size:.8rem;text-align:left;margin-right:12px}
-  td:first-child,td:nth-child(2){text-align:right}
+  td{border:0;display:flex;justify-content:space-between;padding:5px 6px}
+  td::before{content:attr(data-l);color:var(--muted);font-size:.8rem;margin-right:12px}
+  td:first-child{text-align:right}
 }
 </style>
 </head>
 <body>
 <header>
-  <h1>ORLANT · Equidad de profesionales</h1>
+  <h1>ORLANT · Equidad de agendamiento</h1>
   <button type="button" id="tema" aria-pressed="false">Tema oscuro</button>
 </header>
-<p class="aviso" role="note"><strong>Maqueta con datos inventados.</strong> Profesionales, sedes, entidades y metas son ficticios; la estructura se ajusta con la matriz real de Isa.</p>
+<p class="aviso" role="note"><strong>Maqueta con datos inventados.</strong> Misma estructura y cálculos del HTML de Isa; médicos, entidades y cifras son ficticios.</p>
 <main>
-  <div class="filtros" role="group" aria-label="Filtros">
-    <label>Semana<select id="f-semana"></select></label>
-    <label>Sede<select id="f-sede"></select></label>
-    <label>Especialidad<select id="f-esp"></select></label>
-    <label>Medir sobre<select id="f-base"><option value="citas">Citas asignadas</option><option value="cupos">Cupos ofertados</option></select></label>
+  <div class="tabs" role="tablist" aria-label="Grupo">
+    <button role="tab" id="t-pre" aria-selected="true" data-g="pre">Prepagadas</button>
+    <button role="tab" id="t-par" aria-selected="false" data-g="par">Particulares</button>
+    <button role="tab" id="t-sur" aria-selected="false" data-g="sur">Póliza SURA</button>
   </div>
-  <div class="kpis" id="kpis" aria-live="polite"></div>
-  <section aria-labelledby="h-reparto">
-    <h2 id="h-reparto">Reparto por profesional</h2>
-    <p class="sub">Participación de cada grupo en la agenda del profesional (100 %). Metas inventadas: <span id="metas-txt"></span>.</p>
-    <div class="leyenda" id="leyenda"></div>
-    <div id="barras"></div>
-  </section>
-  <section aria-labelledby="h-tabla">
-    <h2 id="h-tabla">Detalle por profesional</h2>
-    <p class="sub">Semáforo según la brecha más grande frente a la meta: hasta 2 puntos «En meta», hasta 5 «Cerca», más de 5 «Lejos» (umbrales a confirmar).</p>
-    <div class="tabla-wrap"><table id="tabla"></table></div>
-  </section>
-  <section aria-labelledby="h-tend">
-    <h2 id="h-tend">Tendencia semanal</h2>
-    <p class="sub">Participación de cada grupo por semana (todas las sedes y especialidades del filtro).</p>
-    <div id="tendencia"></div>
-  </section>
+  <div role="tabpanel" id="panel" aria-labelledby="t-pre">
+    <p class="resumen" id="resumen" aria-live="polite"></p>
+    <div class="filtros" role="group" aria-label="Filtros">
+      <label>Sede<select id="f-sede"><option value="">Todas</option><option>SEDE PRINCIPAL</option><option>SEDE POBLADO</option></select></label>
+      <label>Médico<select id="f-med"></select></label>
+      <label>Fecha de cita desde<input type="date" id="f-desde"></label>
+      <label>Fecha de cita hasta<input type="date" id="f-hasta"></label>
+      <button type="button" class="btn2" id="limpiar">Limpiar filtros</button>
+    </div>
+    <div class="kpis" id="kpis"></div>
+    <section aria-labelledby="h-med">
+      <h2 id="h-med">Citas por médico</h2>
+      <p class="sub">Barras apiladas por sede. La línea punteada marca el promedio por médico: muy por encima o por debajo indica desequilibrio en la asignación.</p>
+      <div class="leyenda"><span style="--c:var(--s1)">Sede Principal</span><span style="--c:var(--s2)">Sede Poblado</span><span class="prom">Promedio por médico</span></div>
+      <div id="barras"></div>
+    </section>
+    <div class="grid2">
+      <section aria-labelledby="h-dia"><h2 id="h-dia">Citas por fecha de cita</h2><p class="sub">Número de citas agendadas cada día.</p><div class="dias" id="dias" role="img"></div><div class="dias-eje" id="dias-eje"></div></section>
+      <section aria-labelledby="h-sede"><h2 id="h-sede">Distribución por sede</h2><p class="sub">Proporción de citas en cada sede.</p><div id="sedes"></div></section>
+    </div>
+    <section aria-labelledby="h-ent" id="sec-ent"><h2 id="h-ent">Citas por entidad</h2><p class="sub">Participación de cada prepagada en las citas filtradas.</p><div id="entidades"></div></section>
+    <section aria-labelledby="h-tab">
+      <h2 id="h-tab">Detalle de equidad por médico</h2>
+      <p class="sub">Citas por sede y participación de cada médico sobre el total filtrado. «vs. promedio» es una propuesta (no está en el HTML de Isa).</p>
+      <div class="tabla-wrap"><table id="tabla"></table></div>
+    </section>
+  </div>
 </main>
 <script>
-// Mismo generador inventado que scripts/orlant/equidad-plantilla-propuesta.js (misma semilla).
-var PROF = [['Profesional A','Sede 1','Otorrinolaringología'],['Profesional B','Sede 1','Otorrinolaringología'],['Profesional C','Sede 2','Otorrinolaringología'],['Profesional D','Sede 1','Audiología'],['Profesional E','Sede 2','Audiología'],['Profesional F','Sede 2','Fonoaudiología']];
-var GRUPOS_FILA = [['PARTICULAR',''],['POLIZA SURA','Póliza SURA'],['OTRAS ENTIDADES','Entidad X'],['OTRAS ENTIDADES','Entidad Y']];
-var DIAS = ['2026-11-09','2026-11-11','2026-11-13','2026-11-16','2026-11-18','2026-11-20'];
-var GRUPOS = [{k:'PARTICULAR',n:'Particular',c:'--s1',t:'--t1',meta:30},{k:'POLIZA SURA',n:'Póliza SURA',c:'--s2',t:'--t2',meta:30},{k:'OTRAS ENTIDADES',n:'Otras entidades',c:'--s3',t:'--t3',meta:40}];
-function datos(){ var out=[], semilla=7; function azar(n){ semilla=(semilla*9301+49297)%233280; return Math.floor((semilla/233280)*n); }
-  DIAS.forEach(function(f){ PROF.forEach(function(p){ GRUPOS_FILA.forEach(function(g){ var cu=3+azar(8), as=Math.max(0,cu-azar(4)), at=Math.max(0,as-azar(3));
-    out.push({fecha:f,sede:p[1],esp:p[2],prof:p[0],grupo:g[0],cupos:cu,citas:as,atendidas:at}); }); }); }); return out; }
-var FILAS = datos();
-function lunes(f){ var d=new Date(f+'T00:00:00Z'); var w=(d.getUTCDay()+6)%7; d.setUTCDate(d.getUTCDate()-w); return d.toISOString().slice(0,10); }
-FILAS.forEach(function(r){ r.semana=lunes(r.fecha); });
-function fmtFecha(s){ return s.slice(8,10)+'/'+s.slice(5,7); }
-function pct(a,b){ return b ? a/b*100 : null; }
-function f1(x){ return x==null ? '—' : x.toLocaleString('es-CO',{maximumFractionDigits:1,minimumFractionDigits:1})+' %'; }
+// Datos INVENTADOS, mismo espíritu que scripts/orlant/equidad-ejemplo-inventado.js.
+var MED = Array.from({length:8}, function(_,i){ return 'MEDICO '+String(i+1).padStart(2,'0'); });
+function generar(g, n, semilla){ function azar(k){ semilla=(semilla*9301+49297)%233280; return Math.floor((semilla/233280)*k); }
+  var out=[]; for(var i=0;i<n;i++){ var d=1+azar(27); out.push({ sede: azar(4)?'SEDE PRINCIPAL':'SEDE POBLADO', medico: MED[azar(azar(2)?8:4)],
+    fecha:'2026-11-'+String(d).padStart(2,'0'), entidad: g==='pre' ? ['ENTIDAD A','ENTIDAD B','ENTIDAD C','ENTIDAD D'][azar(4)] : null }); } return out; }
+var DATOS = { pre: generar('pre',216,11), par: generar('par',139,23), sur: generar('sur',213,37) };
+var g = 'pre';
+function pct(a,b){ return b ? Math.round(a/b*100) : 0; }
 function n0(x){ return x.toLocaleString('es-CO'); }
-function opciones(id, valores, todos){ var s=document.getElementById(id); s.innerHTML='<option value="">'+todos+'</option>'+valores.map(function(v){ return '<option value="'+v.v+'">'+v.n+'</option>'; }).join(''); }
-function unicos(k){ return FILAS.map(function(r){ return r[k]; }).filter(function(v,i,a){ return a.indexOf(v)===i; }).sort(); }
-opciones('f-semana', unicos('semana').map(function(s){ return {v:s,n:'Semana del '+fmtFecha(s)}; }), 'Todas las semanas');
-opciones('f-sede', unicos('sede').map(function(s){ return {v:s,n:s}; }), 'Todas las sedes');
-opciones('f-esp', unicos('esp').map(function(s){ return {v:s,n:s}; }), 'Todas las especialidades');
-document.getElementById('metas-txt').textContent = GRUPOS.map(function(g){ return g.n+' '+g.meta+' %'; }).join(', ');
-document.getElementById('leyenda').innerHTML = GRUPOS.map(function(g){ return '<span style="--c:var('+g.c+')">'+g.n+'</span>'; }).join('');
-function estado(brecha){ var a=Math.abs(brecha); if(a<=2) return ['ok','●','En meta']; if(a<=5) return ['cerca','◆','Cerca']; return ['lejos','■','Lejos']; }
-function semHtml(b){ var e=estado(b); return '<span class="sem '+e[0]+'"><span aria-hidden="true">'+e[1]+' </span>'+e[2]+'</span>'; }
+function fd(s){ return s.slice(8,10)+'/'+s.slice(5,7); }
+function lumRgb(t){ var c=(t.match(/\d+/g)||[0,0,0]).slice(0,3).map(function(v){ v=v/255; return v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4); }); return 0.2126*c[0]+0.7152*c[1]+0.0722*c[2]; }
+function letra(){ document.querySelectorAll('.barra div').forEach(function(d){ var L=lumRgb(getComputedStyle(d).backgroundColor); d.style.color=(L+0.05)/0.05>=1.05/(L+0.05)?'#000':'#fff'; }); }
+function opcionesMedico(){ var meds=Array.from(new Set(DATOS[g].map(function(r){ return r.medico; }))).sort(); document.getElementById('f-med').innerHTML='<option value="">Todos</option>'+meds.map(function(m){ return '<option>'+m+'</option>'; }).join(''); }
+function apilada(partes, etiqueta){ var t=partes.reduce(function(s,p){ return s+p.v; },0);
+  return '<div class="barra" role="img" aria-label="'+etiqueta+'">'+partes.map(function(p){ var w=t?p.v/t*100:0; return '<div style="width:'+w+'%;background:var('+p.c+')">'+(w>=12?Math.round(w)+' %':'')+'</div>'; }).join('')+'</div>'; }
 function pintar(){
-  var fs=document.getElementById('f-semana').value, fsd=document.getElementById('f-sede').value, fe=document.getElementById('f-esp').value, base=document.getElementById('f-base').value;
-  var rows=FILAS.filter(function(r){ return (!fs||r.semana===fs)&&(!fsd||r.sede===fsd)&&(!fe||r.esp===fe); });
-  var tot={cupos:0,citas:0,atendidas:0}, porG={}; GRUPOS.forEach(function(g){ porG[g.k]=0; });
-  var porP={};
-  rows.forEach(function(r){ tot.cupos+=r.cupos; tot.citas+=r.citas; tot.atendidas+=r.atendidas; porG[r.grupo]+=r[base];
-    var p=porP[r.prof]||(porP[r.prof]={prof:r.prof,sede:r.sede,esp:r.esp,cupos:0,citas:0,g:{}}); p.cupos+=r.cupos; p.citas+=r.citas; p.g[r.grupo]=(p.g[r.grupo]||0)+r[base]; });
-  var totBase = tot[base];
+  var sede=document.getElementById('f-sede').value, med=document.getElementById('f-med').value, de=document.getElementById('f-desde').value, ha=document.getElementById('f-hasta').value;
+  var c=DATOS[g].filter(function(r){ return (!sede||r.sede===sede)&&(!med||r.medico===med)&&(!de||r.fecha>=de)&&(!ha||r.fecha<=ha); });
+  var n=c.length, porMed={}; c.forEach(function(r){ var m=porMed[r.medico]||(porMed[r.medico]={medico:r.medico,principal:0,poblado:0,total:0}); m.total++; if(r.sede==='SEDE PRINCIPAL') m.principal++; else m.poblado++; });
+  var lista=Object.keys(porMed).map(function(k){ return porMed[k]; }).sort(function(a,b){ return b.total-a.total||a.medico.localeCompare(b.medico); });
+  var prom=lista.length?Math.round(n/lista.length):0, pri=c.filter(function(r){ return r.sede==='SEDE PRINCIPAL'; }).length, pob=n-pri;
+  var fechas=c.map(function(r){ return r.fecha; }).sort();
+  document.getElementById('resumen').textContent = n ? 'Citas del '+fd(fechas[0])+' al '+fd(fechas[fechas.length-1])+'. '+lista[0].medico+' concentra el '+pct(lista[0].total,n)+' % de las citas, frente a un promedio de '+prom+' citas por médico.' : 'Sin citas con estos filtros.';
   document.getElementById('kpis').innerHTML =
-    '<div class="kpi"><div class="l">Cupos ofertados</div><div class="v">'+n0(tot.cupos)+'</div></div>'+
-    '<div class="kpi"><div class="l">Citas asignadas</div><div class="v">'+n0(tot.citas)+'</div></div>'+
-    '<div class="kpi"><div class="l">Ocupación</div><div class="v">'+f1(pct(tot.citas,tot.cupos))+'</div><div class="m">citas ÷ cupos</div></div>'+
-    GRUPOS.map(function(g){ var p=pct(porG[g.k],totBase); return '<div class="kpi"><div class="l">'+g.n+'</div><div class="v" style="color:var('+g.t+')">'+f1(p)+'</div><div class="m">meta '+g.meta+' % · '+semHtml(p==null?0:p-g.meta)+'</div></div>'; }).join('');
-  var lista=Object.keys(porP).map(function(k){ var p=porP[k], t=0; GRUPOS.forEach(function(g){ t+=p.g[g.k]||0; });
-    p.part=GRUPOS.map(function(g){ return pct(p.g[g.k]||0,t)||0; }); p.brecha=GRUPOS.reduce(function(m,g,i){ var b=p.part[i]-g.meta; return Math.abs(b)>Math.abs(m)?b:m; },0); return p; })
-    .sort(function(a,b){ return Math.abs(b.brecha)-Math.abs(a.brecha); });
-  document.getElementById('barras').innerHTML = lista.length ? lista.map(function(p){
-    var etiqueta = GRUPOS.map(function(g,i){ return g.n+' '+f1(p.part[i]); }).join(', ');
-    return '<div class="fila"><span>'+p.prof+'</span><div class="barra" role="img" aria-label="'+p.prof+': '+etiqueta+'">'+GRUPOS.map(function(g,i){ var w=p.part[i]; return '<div style="width:'+w+'%;background:var('+g.c+')">'+(w>=9?Math.round(w)+' %':'')+'</div>'; }).join('')+'</div></div>'; }).join('') : '<p>Sin datos con estos filtros.</p>';
-  var cab=['Profesional','Sede · especialidad','Cupos','Citas','Ocupación'].concat(GRUPOS.map(function(g){ return '% '+g.n; })).concat(['Brecha mayor','Estado']);
-  document.getElementById('tabla').innerHTML = '<caption class="sr-only">Detalle por profesional</caption><thead><tr>'+cab.map(function(c){ return '<th scope="col">'+c+'</th>'; }).join('')+'</tr></thead><tbody>'+
-    lista.map(function(p){ var celdas=[p.prof,p.sede+' · '+p.esp,n0(p.cupos),n0(p.citas),f1(pct(p.citas,p.cupos))].concat(p.part.map(f1)).concat([(p.brecha>0?'+':'')+p.brecha.toLocaleString('es-CO',{maximumFractionDigits:1})+' pts',semHtml(p.brecha)]);
-      return '<tr>'+celdas.map(function(c,i){ return '<td data-l="'+cab[i]+'">'+c+'</td>'; }).join('')+'</tr>'; }).join('')+'</tbody>';
-  var sems=unicos('semana'), rowsT=FILAS.filter(function(r){ return (!fsd||r.sede===fsd)&&(!fe||r.esp===fe); });
-  document.getElementById('tendencia').innerHTML = sems.map(function(s){ var t=0, g={}; rowsT.filter(function(r){ return r.semana===s; }).forEach(function(r){ t+=r[base]; g[r.grupo]=(g[r.grupo]||0)+r[base]; });
-    var part=GRUPOS.map(function(x){ return pct(g[x.k]||0,t)||0; });
-    return '<div class="fila"><span>Semana del '+fmtFecha(s)+'</span><div class="barra" role="img" aria-label="Semana del '+fmtFecha(s)+': '+GRUPOS.map(function(x,i){ return x.n+' '+f1(part[i]); }).join(', ')+'">'+GRUPOS.map(function(x,i){ return '<div style="width:'+part[i]+'%;background:var('+x.c+')">'+Math.round(part[i])+' %</div>'; }).join('')+'</div></div>'; }).join('');
+    '<div class="kpi"><div class="l">Citas agendadas</div><div class="v">'+n0(n)+'</div><div class="m">Consulta de primera vez</div></div>'+
+    '<div class="kpi"><div class="l">Médicos con citas</div><div class="v">'+lista.length+'</div><div class="m">Especialistas en otorrino</div></div>'+
+    '<div class="kpi"><div class="l">Promedio por médico</div><div class="v">'+prom+'</div><div class="m">Citas / médico</div></div>'+
+    '<div class="kpi"><div class="l">Sede Principal</div><div class="v" style="color:var(--t1)">'+pct(pri,n)+' %</div><div class="m">'+n0(pri)+' citas</div></div>'+
+    '<div class="kpi"><div class="l">Sede Poblado</div><div class="v" style="color:var(--t2)">'+pct(pob,n)+' %</div><div class="m">'+n0(pob)+' citas</div></div>';
+  var max=Math.max.apply(null, lista.map(function(m){ return m.total; }).concat([1]));
+  document.getElementById('barras').innerHTML = lista.map(function(m){ return '<div class="fila"><span>'+m.medico+'</span><div class="pista"><div style="width:'+(m.total/max*100)+'%">'+
+    apilada([{v:m.principal,c:'--s1'},{v:m.poblado,c:'--s2'}], m.medico+': '+m.principal+' en Sede Principal y '+m.poblado+' en Sede Poblado, total '+m.total)+
+    '</div><div class="promedio" style="left:'+(prom/max*100)+'%" aria-hidden="true"></div></div><span class="num">'+m.total+'</span></div>'; }).join('') || '<p>Sin datos.</p>';
+  document.getElementById('sedes').innerHTML = apilada([{v:pri,c:'--s1'},{v:pob,c:'--s2'}], 'Sede Principal '+pct(pri,n)+' %, Sede Poblado '+pct(pob,n)+' %');
+  var porDia={}; c.forEach(function(r){ porDia[r.fecha]=(porDia[r.fecha]||0)+1; }); var dias=Object.keys(porDia).sort(), mx=Math.max.apply(null, dias.map(function(d){ return porDia[d]; }).concat([1]));
+  var dEl=document.getElementById('dias'); dEl.innerHTML=dias.map(function(d){ return '<div style="height:'+(porDia[d]/mx*100)+'%" title="'+fd(d)+': '+porDia[d]+'"></div>'; }).join('');
+  dEl.setAttribute('aria-label','Citas por día: '+dias.map(function(d){ return fd(d)+' '+porDia[d]; }).join(', '));
+  document.getElementById('dias-eje').innerHTML = dias.length ? '<span>'+fd(dias[0])+'</span><span>'+fd(dias[dias.length-1])+'</span>' : '';
+  var secEnt=document.getElementById('sec-ent'); secEnt.hidden = g!=='pre';
+  if(g==='pre'){ var porEnt={}; c.forEach(function(r){ porEnt[r.entidad]=(porEnt[r.entidad]||0)+1; });
+    document.getElementById('entidades').innerHTML = Object.keys(porEnt).sort(function(a,b){ return porEnt[b]-porEnt[a]; }).map(function(e,i){ return '<div class="fila"><span>'+e+'</span>'+apilada([{v:porEnt[e],c:['--s1','--s2','--s3','--s4'][i%4]},{v:n-porEnt[e],c:'--subtle'}], e+': '+porEnt[e]+' citas, '+pct(porEnt[e],n)+' %')+'<span class="num">'+pct(porEnt[e],n)+' %</span></div>'; }).join(''); }
+  var cab=['Médico','Principal','Poblado','Total','Participación %','vs. promedio'];
+  document.getElementById('tabla').innerHTML='<caption class="sr-only">Detalle de equidad por médico</caption><thead><tr>'+cab.map(function(h){ return '<th scope="col">'+h+'</th>'; }).join('')+'</tr></thead><tbody>'+
+    lista.map(function(m){ var dv=m.total-prom; var v=[m.medico,m.principal,m.poblado,m.total,pct(m.total,n)+' %',(dv>0?'+':'')+dv]; return '<tr>'+v.map(function(x,i){ return '<td data-l="'+cab[i]+'">'+x+'</td>'; }).join('')+'</tr>'; }).join('')+'</tbody>';
+  letra();
 }
-// Letra de cada segmento: negra o blanca, la de mayor contraste con su color (AA ≥ 4,5:1).
-function lumRgb(txt){ var c=(txt.match(/\d+/g)||[0,0,0]).slice(0,3).map(function(v){ v=v/255; return v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4); }); return 0.2126*c[0]+0.7152*c[1]+0.0722*c[2]; }
-function letraBarras(){ document.querySelectorAll('.barra div').forEach(function(d){ var L=lumRgb(getComputedStyle(d).backgroundColor); d.style.color = (L+0.05)/0.05 >= 1.05/(L+0.05) ? '#000' : '#fff'; }); }
-var _pintar = pintar; pintar = function(){ _pintar(); letraBarras(); };
-['f-semana','f-sede','f-esp','f-base'].forEach(function(id){ document.getElementById(id).addEventListener('change', pintar); });
-document.getElementById('tema').addEventListener('click', function(){ var o=document.documentElement.getAttribute('data-theme')==='dark'; document.documentElement.setAttribute('data-theme', o?'light':'dark'); this.textContent=o?'Tema oscuro':'Tema claro'; this.setAttribute('aria-pressed', String(!o)); letraBarras(); });
-pintar();
+document.querySelectorAll('.tabs button').forEach(function(b){ b.addEventListener('click', function(){ g=b.dataset.g; document.querySelectorAll('.tabs button').forEach(function(x){ x.setAttribute('aria-selected', String(x===b)); }); document.getElementById('panel').setAttribute('aria-labelledby', b.id); opcionesMedico(); pintar(); }); });
+['f-sede','f-med','f-desde','f-hasta'].forEach(function(id){ document.getElementById(id).addEventListener('change', pintar); });
+document.getElementById('limpiar').addEventListener('click', function(){ ['f-sede','f-med','f-desde','f-hasta'].forEach(function(id){ document.getElementById(id).value=''; }); pintar(); });
+document.getElementById('tema').addEventListener('click', function(){ var o=document.documentElement.getAttribute('data-theme')==='dark'; document.documentElement.setAttribute('data-theme', o?'light':'dark'); this.textContent=o?'Tema oscuro':'Tema claro'; this.setAttribute('aria-pressed', String(!o)); letra(); });
+opcionesMedico(); pintar();
 </script>
 </body>
 </html>

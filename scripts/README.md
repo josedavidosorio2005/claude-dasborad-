@@ -122,11 +122,12 @@ ahí (`path.join(SERVER_DIR, 'node_modules', ...)`), nunca con un
 
 ## scripts/orlant/ — propuestas de ORLANT
 
-- **`equidad-plantilla-propuesta.js`** — genera
-  `docs/orlant/equidad/PLANTILLA_EQUIDAD_PROFESIONALES_PROPUESTA.xlsx` con datos
-  inventados (Equidad de profesionales, plan de acción 20/11, A6). Es una
-  propuesta: entra al catálogo de `scripts/plantillas/` cuando el formato quede
-  cerrado con Isa (ver `docs/orlant/equidad/propuesta.md`).
+- **`equidad-ejemplo-inventado.js`** — genera los dos ejemplos con datos
+  inventados de Equidad de agendamiento (plan de acción 20/11, A6), con el mismo
+  formato que manda Isa: `docs/orlant/equidad/EJEMPLO_EQUIDAD_FORMATO_REAL_INVENTADO.xlsx`
+  (completo, 17 columnas) y `EJEMPLO_EQUIDAD_FORMATO_CORTO_INVENTADO.xlsx` (corto,
+  6 columnas). Sirven para el lector y sus pruebas (ver
+  `docs/orlant/equidad/propuesta.md`).
 
 ## Convenciones
 
