@@ -7,6 +7,8 @@ const { requireActor } = require('../auth');
 const { fechaLimitesHoyColombia } = require('../fecha-limites');
 const M = require('../malla');
 const X = require('../malla-extra'); // Fase 373: novedades y horario especial
+const C = require('../malla-casos'); // Fase M1: casos especiales (tipos de excepción, festivos)
+const { isFullAdmin } = require('../auth');
 const { wrap, actorLabel, logEvent } = require('./shared');
 
 const router = express.Router();
@@ -180,7 +182,7 @@ router.get('/malla/puntualidad', requireActor, wrap((req, res) => {
   const r = P.calcular(db, campana, lunes, L.mallaFechaDelDia(lunes, 7), { ahora: ahoraColombia() });
   const editar = M.puedeEditar(req.actor, campana);
   if (!editar) { delete r.agentesSinEnlace; delete r.conLoginSinTurno; }
-  res.json(Object.assign(r, { semana: lunes, puedeEditar: editar, tipos: P.TIPOS_EXCEPCION }));
+  res.json(Object.assign(r, { semana: lunes, puedeEditar: editar, tipos: C.tiposMapa(db), tiposActivos: C.tipos(db), puedeAdministrarTipos: isFullAdmin(req.actor) })); // Fase M1 (A)
 }));
 
 router.get('/malla/agentes', requireActor, wrap((req, res) => {
@@ -217,14 +219,14 @@ router.post('/malla/excepciones', requireActor, wrap((req, res) => {
   if (!soloClaves(b, ['campana', 'userId', 'desde', 'hasta', 'tipo'])) return res.status(400).json({ error: 'Datos no válidos' });
   const campana = campanaDe(b.campana);
   if (!campanaPuntualidad(req, res, campana, true)) return;
-  if (!Object.prototype.hasOwnProperty.call(P.TIPOS_EXCEPCION, b.tipo)) return res.status(400).json({ error: 'Elige el tipo: incapacidad, vacaciones o permiso' });
+  if (!C.tipoActivo(db, b.tipo)) return res.status(400).json({ error: 'Elige un tipo de excepción de la lista' }); // Fase M1 (A): tipos editables
   const hasta = b.hasta === undefined || b.hasta === '' ? b.desde : b.hasta;
   if (!fechaValida(b.desde) || !fechaValida(hasta) || hasta < b.desde) return res.status(400).json({ error: 'Revisa las fechas (desde y hasta, AAAA-MM-DD)' });
   if (P.diasEntre(b.desde, hasta).length > P.MAX_DIAS_EXCEPCION) return res.status(400).json({ error: 'Máximo ' + P.MAX_DIAS_EXCEPCION + ' días por excepción' });
   const a = P.asesorasDe(db, campana).find((x) => x.id === b.userId);
   if (!Number.isInteger(b.userId) || !a) return res.status(400).json({ error: 'Elige una asesora activa de la campaña' });
   const r = db.prepare('INSERT INTO malla_excepciones (campana, userId, desde, hasta, tipo, creadoPor, createdAt) VALUES (?,?,?,?,?,?,?)').run(campana, a.id, b.desde, hasta, b.tipo, actorLabel(req.actor), ahoraIso());
-  log('MALLA_EXCEPCION', campana, a.nombre, req, P.TIPOS_EXCEPCION[b.tipo] + ' · ' + b.desde + (hasta !== b.desde ? ' a ' + hasta : ''));
+  log('MALLA_EXCEPCION', campana, a.nombre, req, C.tiposMapa(db)[b.tipo] + ' · ' + b.desde + (hasta !== b.desde ? ' a ' + hasta : ''));
   res.status(201).json({ id: Number(r.lastInsertRowid) });
 }));
 
@@ -234,7 +236,7 @@ router.delete('/malla/excepciones/:id', requireActor, wrap((req, res) => {
   if (!e || !P.config(e.campana) || !M.puedeLeer(req.actor, e.campana)) return res.status(404).json({ error: 'Excepción no encontrada' });
   if (!M.puedeEditar(req.actor, e.campana)) return res.status(403).json({ error: 'Solo el supervisor de la campaña o el administrador' });
   db.prepare('DELETE FROM malla_excepciones WHERE id = ?').run(e.id);
-  log('MALLA_EXCEPCION_QUITADA', e.campana, e.nombre || '-', req, (P.TIPOS_EXCEPCION[e.tipo] || e.tipo) + ' · ' + e.desde + (e.hasta !== e.desde ? ' a ' + e.hasta : ''));
+  log('MALLA_EXCEPCION_QUITADA', e.campana, e.nombre || '-', req, (C.tiposMapa(db)[e.tipo] || e.tipo) + ' · ' + e.desde + (e.hasta !== e.desde ? ' a ' + e.hasta : ''));
   res.json({ ok: true });
 }));
 
@@ -270,7 +272,34 @@ router.get('/malla/mi-puntualidad', requireActor, wrap((req, res) => {
     const r = P.calcular(db, campana, s, L.mallaFechaDelDia(s, 7), { ahora, soloUserId: req.actor.id });
     return { semana: s, datosHasta: r.datosHasta, filas: r.filas.map((f) => ({ fecha: f.fecha, entrada: f.entrada, salida: f.salida, estado: f.estado, tardeSeg: f.tardeSeg, salidaAnticipadaSeg: f.salidaAnticipadaSeg, primerLogin: f.primerLogin, ultimoLogout: f.ultimoLogout, excepcion: f.excepcion ? f.excepcion.tipo : null })) };
   });
-  res.json({ semanas, tipos: P.TIPOS_EXCEPCION });
+  res.json({ semanas, tipos: C.tiposMapa(db) });
+}));
+
+// ── Fase M1 (A): tipos de excepción. Los lee quien lee alguna malla; los crea y edita solo el ADMIN
+// completo. Un tipo no se borra: se desactiva. Todo cambio queda en el Historial.
+router.get('/malla/tipos-excepcion', requireActor, wrap((req, res) => {
+  if (!M.campanasDe(db, req.actor).length) return res.status(403).json({ error: 'Sin acceso a la malla' });
+  res.json({ tipos: C.tipos(db, { todos: true }), puedeAdministrar: isFullAdmin(req.actor) });
+}));
+router.post('/malla/tipos-excepcion', requireActor, wrap((req, res) => {
+  if (!isFullAdmin(req.actor)) return res.status(403).json({ error: 'Solo el administrador cambia los tipos de excepción' });
+  const r = C.crearTipo(db, req.body, ahoraIso());
+  if (r.error) return res.status(r.status || 400).json({ error: r.error });
+  log('MALLA_TIPO_EXCEPCION', '-', r.tipo.nombre, req, 'creado' + (r.tipo.cuentaTrabajado ? ' · cuenta como día trabajado' : ''));
+  res.status(201).json(r);
+}));
+router.put('/malla/tipos-excepcion/:codigo', requireActor, wrap((req, res) => {
+  if (!isFullAdmin(req.actor)) return res.status(403).json({ error: 'Solo el administrador cambia los tipos de excepción' });
+  const codigo = String(req.params.codigo || '');
+  if (!/^[a-z0-9_]{1,40}$/.test(codigo)) return res.status(404).json({ error: 'Tipo no encontrado' });
+  const r = C.editarTipo(db, codigo, req.body);
+  if (r.error) return res.status(r.status || 400).json({ error: r.error });
+  const cambios = [];
+  if (r.antes.nombre !== r.tipo.nombre) cambios.push('nombre: ' + r.antes.nombre + ' → ' + r.tipo.nombre);
+  if (r.antes.activo !== r.tipo.activo) cambios.push(r.tipo.activo ? 'activado' : 'desactivado');
+  if (r.antes.cuentaTrabajado !== r.tipo.cuentaTrabajado) cambios.push(r.tipo.cuentaTrabajado ? 'cuenta como día trabajado' : 'no cuenta como día trabajado');
+  log('MALLA_TIPO_EXCEPCION_EDITADO', '-', r.tipo.nombre, req, cambios.join(' · ') || 'sin cambios');
+  res.json({ tipo: r.tipo });
 }));
 
 module.exports = router;

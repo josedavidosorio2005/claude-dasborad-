@@ -792,6 +792,7 @@ require('./gh-archivos').crearTablas(db); // Fase GH3: soportes de Talento human
 require('./activos-actas').crearTablas(db); // Fase 371 (E3): actas
 require('./activos-formularios').crearTablas(db); // Fase 372 (E4): textos del acta editables
 require('./malla-extra').crearTablas(db); // Fase 373: novedades y horario especial en la malla
+require('./malla-casos').crearTablas(db); // Fase M1: casos especiales de la malla (tipos de excepción, festivos)
 {
   const vencidas = require('./cargas-versiones').purgar(db);
   if (vencidas && !config.isTest) console.log('[db] cargas_versiones: ' + vencidas + ' version(es) vencida(s) borrada(s).');
