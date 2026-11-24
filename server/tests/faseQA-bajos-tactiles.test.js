@@ -20,3 +20,11 @@ test('Talento humano: pestañas y botones de 44 px en el celular, añadido por s
   const gen = leer('scripts/gestion-humana/generar-talento-humano.js');
   assert.match(gen, /'talento-humano\.css'\), css\.trim\(\) \+ '\\n' \+ CSS_TACTIL\.trim\(\)/, 'lo escribe el generador');
 });
+
+test('Malla: «+ Agregar novedad», «Horario especial», «Quitar todas las semanas» y la «×» de 44 px en ≤768 px', () => {
+  const css = leer('public/css/styles.css');
+  const b = css.slice(css.indexOf('/* Auditoría del 24/11 (bajos): objetivos táctiles de 44 px en ≤768 px. Malla'));
+  assert.match(b, /@media \(max-width: 768px\)\{\n  \.modal-malla \.ml-btn-sm,\.modal-malla \.ml-rep-quitar\{min-height:44px;/);
+  assert.match(b, /\.modal-malla \.ml-chip-x\{min-width:44px;min-height:44px\}/);
+  assert.ok(!/transition|animation|rgba?\(/.test(b), 'sin animaciones ni colores sueltos');
+});

@@ -3305,3 +3305,9 @@ html.ver-como-activo body{padding-bottom:84px}
 :root:not([data-theme="dark"]) .gd-grafica{box-shadow:var(--e-sombra-suave)}
 :root:not([data-theme="dark"]) .aurora-kpis{gap:12px}
 :root:not([data-theme="dark"]) .gd-sec > .aurora-card + .aurora-card{margin-top:18px}
+/* Auditoría del 24/11 (bajos): objetivos táctiles de 44 px en ≤768 px. Malla: los botones pequeños de cada
+   asesora («+ Agregar novedad», «Horario especial», «Quitar todas las semanas») y la «×» de los registros. */
+@media (max-width: 768px){
+  .modal-malla .ml-btn-sm,.modal-malla .ml-rep-quitar{min-height:44px;padding:8px 14px}
+  .modal-malla .ml-chip-x{min-width:44px;min-height:44px}
+}
