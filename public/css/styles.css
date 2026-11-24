@@ -3311,3 +3311,7 @@ html.ver-como-activo body{padding-bottom:84px}
   .modal-malla .ml-btn-sm,.modal-malla .ml-rep-quitar{min-height:44px;padding:8px 14px}
   .modal-malla .ml-chip-x{min-width:44px;min-height:44px}
 }
+/* Auditoría del 24/11 (bajo): «Ver» del aviso de monitoreos nuevos del Portal Asesor (36×24 px) a 44 px en ≤768 px. */
+@media (max-width: 768px){
+  #asesor-alerta-nuevos .btn-sm{min-height:44px;min-width:44px;padding:8px 16px}
+}

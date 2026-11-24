@@ -28,3 +28,9 @@ test('Malla: «+ Agregar novedad», «Horario especial», «Quitar todas las sem
   assert.match(b, /\.modal-malla \.ml-chip-x\{min-width:44px;min-height:44px\}/);
   assert.ok(!/transition|animation|rgba?\(/.test(b), 'sin animaciones ni colores sueltos');
 });
+
+test('Portal Asesor: el «Ver» del aviso de monitoreos nuevos mide 44 px en ≤768 px', () => {
+  const css = leer('public/css/styles.css');
+  assert.match(css, /@media \(max-width: 768px\)\{\n  #asesor-alerta-nuevos \.btn-sm\{min-height:44px;min-width:44px;padding:8px 16px\}\n\}/);
+  assert.match(leer('public/index.html'), /<div class="aux-banner hidden" id="asesor-alerta-nuevos"[\s\S]{0,400}<button class="btn-sm btn-edit" onclick="asesorVerAlertaNuevos\(\)">Ver<\/button>/);
+});
