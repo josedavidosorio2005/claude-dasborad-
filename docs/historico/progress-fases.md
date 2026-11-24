@@ -22582,3 +22582,18 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - «Pendiente de Edwin» sale en 3P;
   - 0 errores de consola y nada se sale de la pantalla, fuera del menú de secciones, que tiene su propio scroll lateral (así quedó en N1).
 - **PR sin mergear** (pedido del usuario).
+
+## Auditoría del 24/11: dos bajos arreglados (v1.264.1, 2026-11-24, PR sin mergear)
+
+- **Pedido (usuario, 24/11):** de los bajos de la auditoría, arreglar la novedad sin fecha de fin y la franja de demostración.
+- **Novedad sin fecha de fin** (`server/gh-novedades.js`):
+  - una novedad con inicio y sin fin cuenta como vigente desde su inicio;
+  - antes, `'' >= hoy` daba falso y nunca salía en «Novedades de Gestión Humana» del Inventario;
+  - el texto dice «Ausente desde el …, sin fecha de regreso»; la próxima ausencia sin fin, igual;
+  - el HTML de Edwin no se tocó.
+- **Franja de demostración** (`public/js/state.js`):
+  - el ajuste (margin-top y height con `!important`) ahora va a las 13 ventanas de pantalla completa de la regla de la Fase 364, no solo a Talento humano;
+  - el Panel de gestión ya lo tenía, pero sin `!important`, así que la regla de pantalla completa le ganaba.
+- **Pruebas:** `faseQA-bajos-24nov` (4), que compara la lista de `state.js` con la de `styles.css`; `fase103` ajustada.
+- **Verificación local** (Brave, base desechable con datos inventados, 375, 768 y 1440 px, modo demostración): en Inventario, Malla y Talento humano, el «Cerrar» queda debajo de la franja, sin desborde horizontal ni errores de página.
+- **PR sin mergear.**
