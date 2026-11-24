@@ -154,6 +154,11 @@ asumir en qué quedó una fase anterior.
   y los módulos en `WOLKVOX_REAL_MODULOS` (SSM). Crear esos parámetros
   necesita OK explícito del usuario. Ampliar a otro reporte o cliente =
   autorización nueva por escrito.
+  **Ampliación (usuario, 24/11/2026, Fase A33):** la Encuesta (`diagram_4`)
+  del **MOBILIZE real** guarda también el CONN_ID (solo el ID de la llamada,
+  para enlazar Calidad de encuestas con sus monitoreos). El teléfono (ANI),
+  los comentarios y los demás datos se siguen descartando. La réplica sigue
+  sin CONN_ID.
 - **Excepción escrita (usuario, 20/11/2026, hueco de julio de 2026 del
   MOBILIZE real con la API, Fase A30):** un administrador puede lanzar a
   mano (`POST /api/wolkvox/real/hueco`), una sola vez por pestaña, la

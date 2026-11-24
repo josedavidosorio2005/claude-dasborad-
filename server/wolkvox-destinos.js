@@ -22,12 +22,14 @@ const DESTINOS = Object.freeze({
   // `modulosPermitidos`: null = todos los de MODULOS. `cuentasPrueba`: quitar la cuenta de pruebas de
   // MOBILIZE (agent_id/huella, Fase A26; es de esa operación). `perfilCdr`: opciones del lector del CDR,
   // las mismas de la carga manual de cada cliente (public/js/cargas.js).
-  replica: Object.freeze({ clave: 'replica', campana: CAMPANA_REPLICA, operacion: 'MOBILIZE', interna: true, interruptor: 'WOLKVOX_AUTO_ACTIVO', modulos: 'WOLKVOX_AUTO_MODULOS', desdeMes: null, sufijoFranja: '', modulosPermitidos: null, cuentasPrueba: true, perfilCdr: 'mobilize' }),
-  real: Object.freeze({ clave: 'real', campana: CAMPANA_REAL, operacion: 'MOBILIZE', interna: false, interruptor: 'WOLKVOX_REAL_ACTIVO', modulos: 'WOLKVOX_REAL_MODULOS', desdeMes: DESDE_MES_REAL, sufijoFranja: ' real', modulosPermitidos: null, cuentasPrueba: true, perfilCdr: 'mobilize' }),
+  // Fase A33 (autorización escrita del usuario, 24/11/2026): `encuestaConnId` = la Encuesta (diagram_4) guarda el
+  // CONN_ID (solo el ID de la llamada, para Calidad de encuestas). SOLO el MOBILIZE real; la réplica sigue sin él.
+  replica: Object.freeze({ clave: 'replica', campana: CAMPANA_REPLICA, operacion: 'MOBILIZE', interna: true, interruptor: 'WOLKVOX_AUTO_ACTIVO', modulos: 'WOLKVOX_AUTO_MODULOS', desdeMes: null, sufijoFranja: '', modulosPermitidos: null, cuentasPrueba: true, perfilCdr: 'mobilize', encuestaConnId: false }),
+  real: Object.freeze({ clave: 'real', campana: CAMPANA_REAL, operacion: 'MOBILIZE', interna: false, interruptor: 'WOLKVOX_REAL_ACTIVO', modulos: 'WOLKVOX_REAL_MODULOS', desdeMes: DESDE_MES_REAL, sufijoFranja: ' real', modulosPermitidos: null, cuentasPrueba: true, perfilCdr: 'mobilize', encuestaConnId: true }),
   // Fase N6 (23/11/2026): SOLO la réplica de ORLANT, y solo Flujo (skill_1), Flujo por hora (skill_7),
   // Tipificación (cdr_1, sin datos sensibles) y No conectadas (cdr_5). Encuesta y abandonadas no están
   // autorizadas para ORLANT. Interruptor y lista de módulos propios; arranca apagada.
-  orlant_replica: Object.freeze({ clave: 'orlant_replica', campana: CAMPANA_REPLICA_ORLANT, operacion: 'ORLANT', interna: true, interruptor: 'WOLKVOX_ORLANT_AUTO_ACTIVO', modulos: 'WOLKVOX_ORLANT_AUTO_MODULOS', desdeMes: null, sufijoFranja: ' orlant', modulosPermitidos: Object.freeze(['flujo_hora', 'cdr', 'no_conectadas']), cuentasPrueba: false, perfilCdr: 'orlant' }),
+  orlant_replica: Object.freeze({ clave: 'orlant_replica', campana: CAMPANA_REPLICA_ORLANT, operacion: 'ORLANT', interna: true, interruptor: 'WOLKVOX_ORLANT_AUTO_ACTIVO', modulos: 'WOLKVOX_ORLANT_AUTO_MODULOS', desdeMes: null, sufijoFranja: ' orlant', modulosPermitidos: Object.freeze(['flujo_hora', 'cdr', 'no_conectadas']), cuentasPrueba: false, perfilCdr: 'orlant', encuestaConnId: false }),
 });
 const CAMPANAS_PERMITIDAS = Object.freeze([CAMPANA_REPLICA, CAMPANA_REAL, CAMPANA_REPLICA_ORLANT]);
 

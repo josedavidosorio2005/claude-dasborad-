@@ -7,6 +7,14 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.260.1 — Noviembre 2026
+
+**Mobilize, Calidad de encuestas: las encuestas de noviembre vuelven a traer el ID de la llamada.**
+
+- Desde el 21/11, las encuestas de noviembre de Mobilize llegan solas desde Wolkvox, pero llegaban sin el ID de la llamada. Por eso «Calidad de encuestas» no mostraba pendientes de noviembre (salían como «sin ID»), y 5 monitoreos de noviembre habían perdido su encuesta.
+- Ahora se guarda el ID de la llamada, y solo eso: el teléfono y los comentarios se siguen descartando.
+- En la siguiente consulta automática, esos monitoreos vuelven a enlazarse solos, y las encuestas mal calificadas de noviembre aparecen como pendientes.
+
 ## v1.260.0 — Noviembre 2026
 
 **Malla de turnos: «casos especiales» (pedido de Edwin).**

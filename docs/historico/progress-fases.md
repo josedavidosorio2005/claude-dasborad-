@@ -22431,3 +22431,24 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - Con «festivo = descanso» no cambió ningún número.
   - Pendiente: al armar diciembre, marcar «Festivos» a los grupos de SURA que trabajen el 08/12 o el 25/12.
 - **Merge con OK del usuario (24/11)**, después de traer `main` (#930, 1.259.1); queda en 1.260.0.
+
+
+## Fase A33 — MOBILIZE real: la Encuesta de la API guarda el CONN_ID (v1.260.1, 2026-11-24)
+
+- **Causa** (investigada el 24/11, solo lectura en producción):
+  - Calidad de encuestas de Mobilize mostraba 20 resueltas, pero había 25 monitoreos de origen «encuesta».
+  - Desde el 21/11 la consulta automática reemplaza la Encuesta de noviembre del MOBILIZE real (Fase A29), y el módulo `diagram_4` la guardaba sin CONN_ID.
+  - Noviembre quedó con 16 mal calificadas «sin ID» y 0 pendientes.
+  - Los 5 monitoreos de noviembre (calificados con el archivo manual) perdieron su encuesta. Agosto a octubre no cambiaron: 1, 1 y 18 resueltas.
+- **Autorización escrita del usuario (24/11, opción a):** el módulo de Encuesta del MOBILIZE real guarda el CONN_ID, solo el ID de la llamada. Teléfono y comentarios se siguen descartando. Anotado en `CLAUDE.md`.
+- **Cambio:**
+  - `wolkvox-destinos.js`: el destino real tiene `encuestaConnId: true`; la réplica y la réplica de ORLANT, `false`.
+  - `wolkvox-modulos.js`: `hojaEncuesta(data, conConnId)` agrega `CONN_ID` solo en el real. Pasa por el mismo lector del archivo manual (`encuestaParseFilas`).
+  - `encuesta-monitoreo.js`: el enlace compara el «ID limpio» (`claveId`: sin comillas ni espacios al inicio, criterio de la Fase 348). Así el ID del archivo (a veces con comilla) y el de la API (texto o número) son la misma llamada. Aplica en `listar`, `monitoreoDeLlamada` (tampoco se puede calificar dos veces), `fechasLlamada` e `impactoRecarga`.
+- **Confirmado en local con datos inventados:**
+  - 2 monitoreos guardados con el ID del archivo (`'A33-CONN-0001` y `900000333`) vuelven a enlazarse después de una corrida del real con la API (texto, número y con espacios): 2 resueltas, 0 sin ID.
+  - Una mal calificada nueva sale «pendiente».
+  - La réplica sigue sin CONN_ID. Nunca se guardan teléfono, documento, cliente ni comentario.
+- **Pruebas:** `faseA33-encuesta-conn-id-real` (5); `faseA11`, `fase331` y `fase344` siguen en verde.
+- **Falta, después del merge:** la próxima corrida automática del real (00:05, 7:00 o 13:00) vuelve a traer noviembre con el ID. Verificar en producción, solo lectura, que los 5 monitoreos se enlazan y cuántas pendientes aparecen.
+- **PR sin mergear** (OK del usuario).
