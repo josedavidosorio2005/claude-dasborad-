@@ -22488,3 +22488,17 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - 0 errores de consola y sin scroll lateral.
   - Las capturas antes y después quedan fuera del repo (regla de la Fase 112).
 - **Merge con OK del usuario (24/11)**, después de #934 (1.260.2), trayendo main; queda en 1.261.0.
+
+## Pedido de Edwin (24/11, 11 a. m.) — Malla: «Novedades» y «Horario especial» en ámbar; Talento humano sin el aviso del encabezado (v1.262.0)
+
+- **Malla del supervisor:** los botones «+ Agregar novedad» y «Horario especial» (`ml-btn-ambar`), los registros guardados (`ml-chip-ambar`) y el título del bloque se ven en ámbar.
+  - Usa los mismos tokens que la pastilla «Horario especial» de la asesora (`--c-warning-bg`, `--c-warning-text`, `--c-warning`).
+  - «Mi malla» de la asesora no cambia.
+- **Talento humano:** el encabezado ya no dice «Se guarda en la plataforma, también los soportes adjuntos.».
+  - Ese texto no sale del generador: está en el marco de SinCo (`public/index.html`, `#th-aviso`, que llena `talento-humano-api.js`, escrito a mano). El generador y el HTML de Edwin no cambian.
+  - La barra queda oculta. Solo aparece el aviso «los soportes adjuntos, por ahora, quedan solo en este navegador» si los soportes estuvieran apagados.
+- **Pruebas:** se actualizaron `faseE2-malla-compacta`, `faseGH1` y `faseGH3`, y se agregó la prueba del ámbar (+1). Malla y Talento humano: 88/88.
+- **Revisión local** (Brave, página con el `styles.css` real y el HTML de `mallaGrupoHtml`, datos inventados), a 375, 768 y 1440 px, en claro y oscuro:
+  - 0 errores de consola;
+  - contraste del texto ámbar: 6,08:1 o más en claro y 8,28:1 o más en oscuro;
+  - el aviso de Talento humano no se ve (`display:none`).
