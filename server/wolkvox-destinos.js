@@ -18,18 +18,24 @@ const CAMPANA_REPLICA_ORLANT = 'ORLANT PRUEBAS API';
 const CAMPANA_REAL = 'MOBILIZE';
 const DESDE_MES_REAL = '2026-11'; // Fase A29 (20/11/2026): antes '2026-12'
 
+// Fase N3 (autorización escrita del usuario, 24/11/2026): WhatsApp por API (chat_1) SOLO en la réplica de
+// ORLANT. Por eso MOBILIZE (réplica y real) pasa de «todos» (null) a su lista cerrada de siempre: ningún módulo
+// nuevo le llega solo. MOBILIZE no maneja WhatsApp (usuario, 19/11).
+const MODULOS_MOBILIZE = Object.freeze(['flujo_hora', 'cdr', 'encuesta', 'no_conectadas', 'abandonadas']);
+
 const DESTINOS = Object.freeze({
   // `modulosPermitidos`: null = todos los de MODULOS. `cuentasPrueba`: quitar la cuenta de pruebas de
   // MOBILIZE (agent_id/huella, Fase A26; es de esa operación). `perfilCdr`: opciones del lector del CDR,
   // las mismas de la carga manual de cada cliente (public/js/cargas.js).
   // Fase A33 (autorización escrita del usuario, 24/11/2026): `encuestaConnId` = la Encuesta (diagram_4) guarda el
   // CONN_ID (solo el ID de la llamada, para Calidad de encuestas). SOLO el MOBILIZE real; la réplica sigue sin él.
-  replica: Object.freeze({ clave: 'replica', campana: CAMPANA_REPLICA, operacion: 'MOBILIZE', interna: true, interruptor: 'WOLKVOX_AUTO_ACTIVO', modulos: 'WOLKVOX_AUTO_MODULOS', desdeMes: null, sufijoFranja: '', modulosPermitidos: null, cuentasPrueba: true, perfilCdr: 'mobilize', encuestaConnId: false }),
-  real: Object.freeze({ clave: 'real', campana: CAMPANA_REAL, operacion: 'MOBILIZE', interna: false, interruptor: 'WOLKVOX_REAL_ACTIVO', modulos: 'WOLKVOX_REAL_MODULOS', desdeMes: DESDE_MES_REAL, sufijoFranja: ' real', modulosPermitidos: null, cuentasPrueba: true, perfilCdr: 'mobilize', encuestaConnId: true }),
+  replica: Object.freeze({ clave: 'replica', campana: CAMPANA_REPLICA, operacion: 'MOBILIZE', interna: true, interruptor: 'WOLKVOX_AUTO_ACTIVO', modulos: 'WOLKVOX_AUTO_MODULOS', desdeMes: null, sufijoFranja: '', modulosPermitidos: MODULOS_MOBILIZE, cuentasPrueba: true, perfilCdr: 'mobilize', encuestaConnId: false }),
+  real: Object.freeze({ clave: 'real', campana: CAMPANA_REAL, operacion: 'MOBILIZE', interna: false, interruptor: 'WOLKVOX_REAL_ACTIVO', modulos: 'WOLKVOX_REAL_MODULOS', desdeMes: DESDE_MES_REAL, sufijoFranja: ' real', modulosPermitidos: MODULOS_MOBILIZE, cuentasPrueba: true, perfilCdr: 'mobilize', encuestaConnId: true }),
+  // Fase N3 (24/11/2026): + WhatsApp (chat_1), sin datos del cliente.
   // Fase N6 (23/11/2026): SOLO la réplica de ORLANT, y solo Flujo (skill_1), Flujo por hora (skill_7),
   // Tipificación (cdr_1, sin datos sensibles) y No conectadas (cdr_5). Encuesta y abandonadas no están
   // autorizadas para ORLANT. Interruptor y lista de módulos propios; arranca apagada.
-  orlant_replica: Object.freeze({ clave: 'orlant_replica', campana: CAMPANA_REPLICA_ORLANT, operacion: 'ORLANT', interna: true, interruptor: 'WOLKVOX_ORLANT_AUTO_ACTIVO', modulos: 'WOLKVOX_ORLANT_AUTO_MODULOS', desdeMes: null, sufijoFranja: ' orlant', modulosPermitidos: Object.freeze(['flujo_hora', 'cdr', 'no_conectadas']), cuentasPrueba: false, perfilCdr: 'orlant', encuestaConnId: false }),
+  orlant_replica: Object.freeze({ clave: 'orlant_replica', campana: CAMPANA_REPLICA_ORLANT, operacion: 'ORLANT', interna: true, interruptor: 'WOLKVOX_ORLANT_AUTO_ACTIVO', modulos: 'WOLKVOX_ORLANT_AUTO_MODULOS', desdeMes: null, sufijoFranja: ' orlant', modulosPermitidos: Object.freeze(['flujo_hora', 'cdr', 'no_conectadas', 'whatsapp']), cuentasPrueba: false, perfilCdr: 'orlant', encuestaConnId: false }),
 });
 const CAMPANAS_PERMITIDAS = Object.freeze([CAMPANA_REPLICA, CAMPANA_REAL, CAMPANA_REPLICA_ORLANT]);
 

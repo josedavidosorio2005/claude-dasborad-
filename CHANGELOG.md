@@ -7,6 +7,14 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.265.0 — Noviembre 2026
+
+**ORLANT, pruebas internas: WhatsApp puede llegar solo desde Wolkvox (todavía apagado).**
+
+- La copia de pruebas de ORLANT (no la que ve el cliente) ya puede traer de Wolkvox los chats de WhatsApp de entrada: cuántos llegaron y cuántos se contestaron por día y por cola, y en cuánto tiempo se respondió cada uno.
+- Los datos del cliente (nombre, correo, teléfono y comentarios) se descartan y nunca se guardan.
+- El abandono de WhatsApp queda pendiente de que Edwin diga cómo se cuenta.
+- Está apagado: no corre hasta que se encienda a propósito. MOBILIZE no cambia.
 ## v1.264.1 — Noviembre 2026
 
 **Dos arreglos pequeños.**

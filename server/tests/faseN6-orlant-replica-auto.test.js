@@ -160,7 +160,7 @@ test('estado de la réplica de ORLANT: su interruptor, sus módulos y su última
   const e = auto.estado(db, { WOLKVOX_ORLANT_AUTO_ACTIVO: '0' }, 'orlant_replica');
   assert.equal(e.campana, R);
   assert.equal(e.interruptor, 'WOLKVOX_ORLANT_AUTO_ACTIVO');
-  assert.deepEqual(e.modulosPermitidos, ['flujo_hora', 'cdr', 'no_conectadas']);
+  assert.deepEqual(e.modulosPermitidos, ['flujo_hora', 'cdr', 'no_conectadas', 'whatsapp']); // Fase N3: + WhatsApp (chat_1)
   assert.equal(e.activoAlArrancar, false);
   assert.ok(!e.ultimaCorrida || e.ultimaCorrida.detalle.includes(R));
   assert.ok(auto.estado(db).real, 'el de MOBILIZE sigue igual');
