@@ -150,8 +150,19 @@ router.put('/malla/ajustes', requireActor, wrap((req, res) => {
   if (!M.puedeEditar(req.actor, campana)) return res.status(403).json({ error: 'Solo el supervisor de la campaña o el administrador editan la malla' });
   const r = X.guardarAjuste(db, Object.assign({}, b, { campana }), actorLabel(req.actor), ahoraIso());
   if (r.error) return res.status(400).json({ error: r.error });
-  log('MALLA_HORARIO_ESPECIAL', campana, nombreDe(b.asesorId), req, r.fechas.join(', ') + ' · ' + L.mallaTurnoTexto(r.turno));
-  res.json({ ok: true, fechas: r.fechas, turno: r.turno });
+  // Fase M1 (C): una repetición se resume (primer y último día, cuántos) para no llenar el Historial.
+  const dias = r.serie ? r.fechas[0] + ' a ' + r.fechas[r.fechas.length - 1] + ' · ' + r.fechas.length + ' día(s), se repite cada semana' : r.fechas.join(', ');
+  log('MALLA_HORARIO_ESPECIAL', campana, nombreDe(b.asesorId), req, dias + ' · ' + L.mallaTurnoTexto(r.turno));
+  res.json({ ok: true, fechas: r.fechas, turno: r.turno, serie: r.serie });
+}));
+// Fase M1 (C): quitar toda una repetición de horario especial.
+router.delete('/malla/ajustes/serie/:serie', requireActor, wrap((req, res) => {
+  const lista = X.ajustesDeSerie(db, String(req.params.serie || ''));
+  if (!lista.length || !M.puedeLeer(req.actor, lista[0].campana)) return res.status(404).json({ error: 'Horario especial no encontrado' });
+  if (!M.puedeEditar(req.actor, lista[0].campana)) return res.status(403).json({ error: 'Solo el supervisor de la campaña o el administrador editan la malla' });
+  const n = X.quitarSerie(db, lista[0].serie);
+  log('MALLA_HORARIO_ESPECIAL_QUITADO', lista[0].campana, nombreDe(lista[0].asesorId), req, lista[0].fecha + ' a ' + lista[lista.length - 1].fecha + ' · ' + n + ' día(s), toda la repetición');
+  res.json({ ok: true, quitados: n });
 }));
 router.delete('/malla/ajustes/:id', requireActor, wrap((req, res) => {
   const a = idValido(req.params.id) ? X.obtenerAjuste(db, Number(req.params.id)) : null;

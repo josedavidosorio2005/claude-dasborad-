@@ -212,8 +212,9 @@ function mallaCasosHtml(g, idx, puedeEditar, datos) {
     var aj = (d.ajustes || []).filter(function (x) { return x.asesorId === a.id; });
     var nv = (d.novedades || []).filter(function (x) { return x.asesorId === a.id && !x.quitada; });
     var chips = aj.map(function (x) {
-      return '<li class="ml-chip">' + esc(_mlDiaTexto(x.fecha)) + ': ' + esc(mallaTurnoTexto(x.turno)) +
-        (puedeEditar ? ' <button type="button" class="ml-chip-x" onclick="mallaQuitarAjuste(' + Number(x.id) + ')" aria-label="Quitar el horario especial del ' + esc(_mlDiaTexto(x.fecha)) + ' de ' + esc(a.nombre) + '">×</button>' : '') + '</li>';
+      return '<li class="ml-chip">' + esc(_mlDiaTexto(x.fecha)) + ': ' + esc(mallaTurnoTexto(x.turno)) + (x.serie ? ' <span class="ml-rep">· se repite</span>' : '') + // Fase M1 (C)
+        (puedeEditar ? ' <button type="button" class="ml-chip-x" onclick="mallaQuitarAjuste(' + Number(x.id) + ')" aria-label="Quitar el horario especial del ' + esc(_mlDiaTexto(x.fecha)) + ' de ' + esc(a.nombre) + '">×</button>' : '') +
+        (puedeEditar && x.serie ? ' <button type="button" class="btn-cancel ml-btn ml-rep-quitar" onclick="mallaQuitarSerie(\'' + esc(x.serie) + '\')" aria-label="Quitar todas las semanas de este horario especial de ' + esc(a.nombre) + '">Quitar todas las semanas</button>' : '') + '</li>';
     }).concat(nv.map(function (x) {
       return '<li class="ml-chip ml-chip-nov">' + esc(_mlDiaTexto(x.fecha)) + ': ' + esc(x.texto) +
         (puedeEditar ? ' <button type="button" class="ml-chip-x" onclick="mallaQuitarNovedad(' + Number(x.id) + ')" aria-label="Quitar la novedad de ' + esc(a.nombre) + '">×</button>' : '') + '</li>';
@@ -241,6 +242,9 @@ function mallaFormCaso(idx, asesorId, tipo) {
       '<label class="ml-asesora"><input type="checkbox" id="' + pre + '-desc" onchange="mallaDescansoCaso(this)"> Descanso</label>' +
       '<div class="ig"><label for="' + pre + '-e">Entrada</label><input type="time" id="' + pre + '-e" value="09:00"></div>' +
       '<div class="ig"><label for="' + pre + '-s">Salida</label><input type="time" id="' + pre + '-s" value="18:00"></div>' +
+      // Fase M1 (C): los mismos días, cada semana, hasta una fecha (máximo 26 semanas).
+      '<div class="ig"><label for="' + pre + '-rep">Repetir cada semana hasta (opcional)</label><input type="date" id="' + pre + '-rep" min="' + esc(mallaFechaDelDia(_ml.semana, 7)) + '" max="' + esc(mallaFechaDelDia(mallaSumarSemanas(_ml.semana, 25), 7)) + '" aria-describedby="' + pre + '-rep-ayuda"></div>' +
+      '<p class="vis-ayuda ml-rep-ayuda" id="' + pre + '-rep-ayuda">Ej.: estudia y todos los martes entra a las 10:00. Se crea en cada semana hasta esa fecha (máximo 26 semanas); se puede quitar toda la repetición de una vez.</p>' +
       '<div class="modal-btns"><button type="submit" class="btn-primary">Guardar horario especial</button><button type="button" class="btn-cancel" onclick="this.closest(\'.ml-caso-form\').innerHTML=\'\'">Cancelar</button></div></form>';
   }
   var primero = c.querySelector('select, input'); if (primero) primero.focus();
@@ -267,15 +271,24 @@ async function mallaGuardarAjuste(ev, asesorId) {
   var desc = f.querySelector('input[id$="-desc"]').checked;
   var b = { campana: _ml.campana, semana: _ml.semana, asesorId: asesorId, dias: dias, descanso: desc };
   if (!desc) { b.entrada = f.querySelector('input[id$="-e"]').value; b.salida = f.querySelector('input[id$="-s"]').value; }
+  var rep = f.querySelector('input[id$="-rep"]'); // Fase M1 (C)
+  if (rep && rep.value) b.repetirHasta = rep.value;
   try {
-    await apiRequest('PUT', '/malla/ajustes', b);
+    var r = await apiRequest('PUT', '/malla/ajustes', b);
     showToast('Horario especial guardado', 'ok');
     await mallaCargar();
+    if (r && r.serie) _mlNota('Horario especial guardado en ' + r.fechas.length + ' día(s), hasta el ' + _mlDiaTexto(r.fechas[r.fechas.length - 1]) + '.');
   } catch (e) { _mlError(e.message || 'No se pudo guardar el horario especial'); }
 }
 async function mallaQuitarAjuste(id) {
   if (!window.confirm('¿Quitar este horario especial? Ese día vuelve al horario de su grupo.')) return;
   try { await apiRequest('DELETE', '/malla/ajustes/' + id); showToast('Horario especial quitado', 'ok'); await mallaCargar(); }
+  catch (e) { _mlError(e.message || 'No se pudo quitar'); }
+}
+// Fase M1 (C): quita todos los días de una repetición (también los de otras semanas).
+async function mallaQuitarSerie(serie) {
+  if (!window.confirm('¿Quitar este horario especial en TODAS las semanas en que se repite? Esos días vuelven al horario de su grupo.')) return;
+  try { var r = await apiRequest('DELETE', '/malla/ajustes/serie/' + encodeURIComponent(serie)); showToast('Repetición quitada', 'ok'); await mallaCargar(); _mlNota('Se quitaron ' + r.quitados + ' día(s) del horario especial.'); }
   catch (e) { _mlError(e.message || 'No se pudo quitar'); }
 }
 async function mallaQuitarNovedad(id) {
