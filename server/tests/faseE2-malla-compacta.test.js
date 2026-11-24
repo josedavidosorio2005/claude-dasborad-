@@ -102,3 +102,21 @@ test('Pedido de Edwin (24/11): «Novedades» y «Horario especial» en ámbar (b
   assert.equal(js.split('class="btn-sm ml-btn-sm ml-btn-ambar"').length - 1, 2, 'los dos botones');
   assert.ok(js.includes('<li class="ml-chip ml-chip-ambar">') && js.includes('<li class="ml-chip ml-chip-nov ml-chip-ambar">'), 'los registros');
 });
+
+test('Pedido de Edwin (24/11, 3:30 p. m.): asesoras justo debajo del horario en 2-3 columnas y «Novedades y horarios especiales» como botón ámbar', () => {
+  global.esc = require('../../public/js/esc.js').esc;
+  Object.assign(global, L);
+  const UI = require('../../public/js/malla.js');
+  const g = { id: 1, nombre: 'G', horario: HOR, asesoras: [{ id: 7, nombre: 'Persona Inventada' }] };
+  const html = UI.mallaGrupoHtml(g, true, [{ id: 7, nombre: 'Persona Inventada' }], 0, { ajustes: [], novedades: [] });
+  // Orden: tabla del horario → lista de asesoras → ayuda de festivos y pausas (la lista ya no queda al lado).
+  const iTabla = html.indexOf('</table>'), iLista = html.indexOf('class="ml-asesoras"'), iAyuda = html.indexOf('ml-fest-ayuda"');
+  assert.ok(iTabla > 0 && iLista > iTabla && iAyuda > iLista, 'tabla, lista y después la ayuda');
+  assert.match(html, /<summary class="ml-casos-btn">Novedades y horarios especiales<\/summary>/);
+  const css = fs.readFileSync(path.join(PUB, 'css', 'styles.css'), 'utf8');
+  assert.ok(!css.includes('.ml-grupo-cuerpo{grid-template-columns:minmax(0,1.05fr) minmax(0,1fr)'), 'sin el lado a lado');
+  assert.match(css, /@media \(min-width:560px\)\{\.ml-asesoras-lista\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\)\}\}/);
+  assert.match(css, /@media \(min-width:1024px\)\{\.ml-asesoras-lista\{grid-template-columns:repeat\(3,minmax\(0,1fr\)\)\}\}/);
+  assert.match(css, /\.ml-casos summary\.ml-casos-btn\{display:inline-flex;[^}]*min-height:44px;[^}]*border:1px solid var\(--c-warning\);[^}]*background:var\(--c-warning-bg\)/);
+  assert.match(css, /\.ml-casos summary\.ml-casos-btn:focus-visible\{outline:2px solid var\(--c-focus\)/);
+});

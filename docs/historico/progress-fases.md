@@ -22653,6 +22653,21 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - #902 (B1): espera las respuestas de Edwin.
 - **Pendiente para el 25/11:** leer, solo conteos, la corrida de las 00:05 de MOBILIZE (réplica y real).
 
+## Pedido de Edwin (24/11, 3:30 p. m.) — Malla: asesoras debajo del horario y «Novedades y horarios especiales» como botón (v1.266.0, 2026-11-24, PR #948, sin mergear)
+
+- **Pedido:**
+  - a) que el cuadro del horario del grupo y la lista de asesoras queden juntos: la lista justo debajo, en 2 o 3 columnas;
+  - b) que «Novedades y horarios especiales» parezca un botón (nadie le daba clic).
+- **Hecho (`public/js/malla.js`, `styles.css`):**
+  - la lista va justo después de la tabla del horario: 3 columnas desde 1024 px, 2 desde 560 px y 1 en el celular;
+  - la ayuda de festivos y las pausas quedan después;
+  - el `summary` es un botón ámbar (tokens `--c-warning*`, 44 px, flecha que gira al abrir, foco visible), sin transición ni `rgba` literal (pruebas de CSS de las Fases 141 y 175).
+- **Pruebas:** `faseE2-malla-compacta` (+1); CI verde.
+- **Verificación local** (Brave, base desechable, 14 personas inventadas), en claro y oscuro a 375, 768 y 1440 px:
+  - la lista queda debajo de la tabla, con 1, 2 o 3 columnas;
+  - el botón mide 44 px;
+  - sin desborde y 0 errores de consola.
+
 ## Equidad profesionales de ORLANT con el diseño de Edwin (v1.267.0, 2026-11-24, en el PR #937, sin mergear)
 
 - **Pedido (Edwin, llamada del 24/11 a las 3:30 p. m.; el usuario autorizó abrir sus archivos y la excepción del tablero congelado):**
@@ -22672,3 +22687,11 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - Con bases inventadas, cargadas por la interfaz, a 375, 768 y 1440 px: sin desborde y 0 errores de consola.
 - **Pruebas:** `faseEQ2-equidad-profesionales` (8).
 - **Pendiente:** la lista de entidades de Isa y si la ve la cuenta cliente.
+
+### Merges del 24/11 en la tarde (con OK del usuario)
+
+- **#948** (malla) mergeado y desplegado: producción **1.266.0** (`/api/health`).
+- **#937** (Equidad profesionales): antes del merge, la revisión de seguridad pidió que cargar exija acceso a ORLANT también con `cargarDatos`. Quedó hecho y probado (un usuario con `cargarDatos` sin ORLANT recibe 403).
+  - `VISIBLE_PARA_CLIENTE` sigue en `false`.
+  - Este mismo PR actualiza `PROGRESS.md` a 1.267.0.
+
