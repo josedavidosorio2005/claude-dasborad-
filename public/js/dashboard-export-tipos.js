@@ -14,6 +14,7 @@ var GD_EXPORT_TIPOS_SOPORTADOS = [
   'aurora_inasistencia_panel', 'aurora_encuestas_panel', // Fase 306
   'aurora_li_flujo_panel', 'aurora_li_cdr_panel', 'aurora_li_whatsapp_panel', // Fase 311
   'sta_resumen_panel', // Fase STA (ORLANT, Gestión de la base STA)
+  'equidad_panel', // Equidad profesionales (ORLANT, 24/11)
 ];
 
 if (typeof module !== 'undefined' && module.exports) {

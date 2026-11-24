@@ -22583,6 +22583,20 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - 0 errores de consola y nada se sale de la pantalla, fuera del menú de secciones, que tiene su propio scroll lateral (así quedó en N1).
 - **PR sin mergear** (pedido del usuario).
 
+## Equidad ORLANT: EQ1 adelantado sin esperar a Isa (v1.266.0, 2026-11-24, en el PR #937, sin mergear)
+
+- **Pedido (usuario, 24/11):** adelantar en #937 lo que no dependa de las respuestas de Isa, de modo que cambiar una respuesta sea solo una opción de configuración.
+- **Hecho:** `server/equidad-agendamiento.js`:
+  - lector de los formatos completo (17 columnas) y corto (6), reconocidos por los encabezados;
+  - la observación nunca sale; el usuario que agenda y la entidad de Particulares solo si su opción lo pide;
+  - cálculos del HTML: citas, médicos, promedio, sedes, mayor participación, detalle con «vs. promedio», entidades y fechas;
+  - guardado en `equidad_citas`, todo o nada, reemplazando los meses del grupo.
+  - Cada pregunta abierta (5, 6, 7, 11, A–F) es una opción de `OPCIONES_POR_DEFECTO`, con el valor del HTML de Isa por defecto. Tabla en `docs/orlant/equidad/propuesta.md` §10.
+- **Sin ruta, pantalla ni pestaña:** dependen de las preguntas 7 y 8.
+- **Prueba en local con los 6 Excel reales** (solo conteos): noviembre suma 568, igual que el HTML de Isa.
+- **Hallazgo:** `FECHA_CITA` trae solo la fecha. Con el formato corto no se pueden detectar las repetidas; el lector lo avisa (pregunta C).
+- **Pruebas:** `faseEQ1-equidad-lector` (6), con los ejemplos inventados.
+
 ## Auditoría del 24/11: dos bajos arreglados (v1.264.1, 2026-11-24, PR sin mergear)
 
 - **Pedido (usuario, 24/11):** de los bajos de la auditoría, arreglar la novedad sin fecha de fin y la franja de demostración.
@@ -22653,3 +22667,31 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - la lista queda debajo de la tabla, con 1, 2 o 3 columnas;
   - el botón mide 44 px;
   - sin desborde y 0 errores de consola.
+
+## Equidad profesionales de ORLANT con el diseño de Edwin (v1.267.0, 2026-11-24, en el PR #937, sin mergear)
+
+- **Pedido (Edwin, llamada del 24/11 a las 3:30 p. m.; el usuario autorizó abrir sus archivos y la excepción del tablero congelado):**
+  - su HTML y sus 3 bases reemplazan la propuesta con el formato de Isa;
+  - la pestaña «Equidad profesionales» va debajo de «Gestión STA», con Pólizas, Medicina prepagada y Particulares;
+  - la carga va por «Cargar bases», y la lista de entidades (pólizas / prepagadas) es configurable.
+- **Hecho:**
+  - generador `scripts/orlant/generar-equidad.js`: el HTML de Edwin (fuera del repo) pasa a un Shadow DOM, sin sus datos;
+  - lector `public/js/equidad-logic.js`, con 5 columnas, y 4 en Particulares;
+  - servidor `server/orlant-equidad.js` y `routes/orlant-equidad.js`;
+  - migración `faseEQ_orlant_equidad_tab_v1`;
+  - sección «Equidad profesionales» en el Centro de cargas (`centro-equidad.js`);
+  - filtro «Profesional»; sin «Entidad» en Particulares.
+  - Sale lo de la propuesta anterior: el lector del formato de Isa, los ejemplos y la maqueta. Detalle en `docs/orlant/equidad/propuesta.md`.
+- **Verificación local:**
+  - Las bases reales, solo en conteos: 403 / 305 / 256 citas e índice 44,7 / 39,6 / 53,7 %, iguales al HTML de Edwin.
+  - Con bases inventadas, cargadas por la interfaz, a 375, 768 y 1440 px: sin desborde y 0 errores de consola.
+- **Pruebas:** `faseEQ2-equidad-profesionales` (8).
+- **Pendiente:** la lista de entidades de Isa y si la ve la cuenta cliente.
+
+### Merges del 24/11 en la tarde (con OK del usuario)
+
+- **#948** (malla) mergeado y desplegado: producción **1.266.0** (`/api/health`).
+- **#937** (Equidad profesionales): antes del merge, la revisión de seguridad pidió que cargar exija acceso a ORLANT también con `cargarDatos`. Quedó hecho y probado (un usuario con `cargarDatos` sin ORLANT recibe 403).
+  - `VISIBLE_PARA_CLIENTE` sigue en `false`.
+  - Este mismo PR actualiza `PROGRESS.md` a 1.267.0.
+

@@ -81,6 +81,7 @@ async function _ccCargar() {
   _ccOcultarTeleventas();
   document.getElementById('cc-anio').closest('.ig').hidden = esTablero;
   if (typeof ccHorariosPintar === 'function') ccHorariosPintar(_cc.cliente, _cc.anio); // Fase 367: «Horarios» (también SURA)
+  if (typeof ccEquidadPintar === 'function') ccEquidadPintar(_cc.cliente); // Equidad profesionales (ORLANT, 24/11)
   if (esTablero) { await _ccCargarTeleventas(body, gen); return; }
   try {
     var r = await apiRequest('GET', '/centro-cargas/' + encodeURIComponent(_cc.cliente) + '?anio=' + _cc.anio);

@@ -158,6 +158,7 @@ function createApp() {
     '/api/calidad/llamadas-no-conectadas/carga', '/api/calidad/llamadas-no-conectadas/carga/impacto', // Fase 194
     '/api/calidad/whatsapp-tiempos/carga', '/api/calidad/whatsapp-tiempos/carga/impacto',
     '/api/orlant/sta/cargas', // Fase STA: base de Gestión STA (filas leídas + Excel original)
+    '/api/orlant/equidad/cargas/polizas', '/api/orlant/equidad/cargas/prepagada', '/api/orlant/equidad/cargas/particulares', // Equidad profesionales (24/11)
     '/api/tickets', // pedido 7 de Edwin (23/11/2026): ticket con 1 adjunto de hasta 3 MB (≈4 MB en base64)
   ];
   const jsonLimiteNormal = express.json({ limit: '2mb' });
@@ -380,6 +381,7 @@ function createApp() {
   api.use(require('./routes/total-trafico')); // Fase 219
   api.use(require('./routes/sura-televentas')); // Fase 215
   api.use(require('./routes/orlant-sta')); // Fase STA: «Gestión STA» de ORLANT
+  api.use(require('./routes/orlant-equidad')); // Equidad profesionales de ORLANT (pedido de Edwin, 24/11)
   api.use(require('./routes/orlant-tablero')); // Fase N1: tablero nuevo de ORLANT (solo ADMIN)
   api.use(require('./routes/dashboards'));
   api.use(require('./routes/centro-cargas')); // Fase 153: Centro de cargas

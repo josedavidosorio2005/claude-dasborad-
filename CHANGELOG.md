@@ -7,6 +7,17 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.267.0 — Noviembre 2026
+
+**ORLANT: nueva pestaña «Equidad profesionales», con el diseño de Edwin.**
+
+- Muestra si las citas se reparten parejo entre los profesionales, en tres pestañas: Pólizas, Medicina prepagada y Particulares.
+- Trae el índice de equidad, el mapa de calor por día, quién está sobreasignado, quién es equitativo y quién tiene baja asignación, y el reparto por sede y por entidad.
+- Filtros: sede, especialidad, entidad (menos en Particulares), profesional y fechas, con «Limpiar filtros».
+- Las bases se suben en «Cargar bases» → ORLANT, y cada una actualiza solo su pestaña. De Particulares no se guarda ningún dato del paciente.
+- También hay una lista, que se puede cambiar, de qué entidades son pólizas y cuáles prepagadas.
+- Por ahora la ven el administrador, el supervisor de ORLANT y gerencia, y aparece cuando se carga la primera base.
+
 ## v1.266.0 — Noviembre 2026
 
 **Malla del supervisor: el horario y las asesoras juntos, y un botón más visible.**

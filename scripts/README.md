@@ -120,6 +120,14 @@ ahí (`path.join(SERVER_DIR, 'node_modules', ...)`), nunca con un
 - **`generar-plantillas.js`** — genera `server/plantillas/PLANTILLA_<MODULO>.xlsx`.
 - **`generar-fichas.js`** — genera las fichas de `docs/plantillas/`.
 
+## scripts/orlant/ — generadores de ORLANT
+
+- **`generar-sta.js`** — genera «Gestión STA» desde el HTML de Edwin (`docs/orlant/sta/`).
+- **`generar-equidad.js`** — genera «Equidad profesionales» (`public/js/orlant-equidad-app.js` y
+  `public/css/orlant-equidad-app.css`) desde el HTML de Edwin, que **vive fuera del repo** porque trae las
+  bases reales pegadas adentro. Vacía esos datos y falla si queda alguno. Uso:
+  `node scripts/orlant/generar-equidad.js "<ruta del HTML de Edwin>"`. Ver `docs/orlant/equidad/propuesta.md`.
+
 ## Convenciones
 
 - Nunca escriben en producción salvo que el script sea explícitamente de

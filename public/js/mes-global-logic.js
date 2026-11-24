@@ -16,7 +16,7 @@
 // tipo de panel autonomo nuevo y se olvida agregarlo aqui, "Comparar
 // contra" quedaria visible donde no aplica -- ver la prueba de lista
 // cerrada en mes-global-logic.test.js.
-var GD_TIPOS_AUTONOMOS = ['trafico_combo', 'trafico_whatsapp_combo', 'agendas_panel', 'efectividad_agendamiento_panel', 'inasistencia_panel', 'efectividad_citas_panel', 'tipificacion_panel', 'salida_panel', 'total_trafico_panel', 'calidad_kpis', 'calidad_pie', 'calidad_bar_asesores', 'llamadas_unicas_panel', 'encuesta_panel', 'calidad_resumen_panel', 'calidad_monitoreos_panel', 'agendas_usuaria_panel', 'flujo_hora_panel', 'errores_panel', 'aurora_inasistencia_panel', 'aurora_encuestas_panel', 'aurora_li_flujo_panel', 'aurora_li_cdr_panel', 'aurora_li_whatsapp_panel', 'sta_resumen_panel']; // Fase 306: + paneles de Aurora // Fase STA
+var GD_TIPOS_AUTONOMOS = ['trafico_combo', 'trafico_whatsapp_combo', 'agendas_panel', 'efectividad_agendamiento_panel', 'inasistencia_panel', 'efectividad_citas_panel', 'tipificacion_panel', 'salida_panel', 'total_trafico_panel', 'calidad_kpis', 'calidad_pie', 'calidad_bar_asesores', 'llamadas_unicas_panel', 'encuesta_panel', 'calidad_resumen_panel', 'calidad_monitoreos_panel', 'agendas_usuaria_panel', 'flujo_hora_panel', 'errores_panel', 'aurora_inasistencia_panel', 'aurora_encuestas_panel', 'aurora_li_flujo_panel', 'aurora_li_cdr_panel', 'aurora_li_whatsapp_panel', 'sta_resumen_panel', 'equidad_panel']; // Fase 306: + paneles de Aurora // Fase STA // Equidad (24/11)
 
 // true si TODOS los paneles visibles (de la pestana o sub-pestana activa)
 // son de tipo autonomo -- en ese caso "Comparar contra" se esconde y se
@@ -304,7 +304,7 @@ var GD_TIPOS_SIGUEN_MESES = ['kpi_row', 'line', 'bar', 'area', 'pie', 'combo', '
   'trafico_combo', 'trafico_whatsapp_combo', 'agendas_panel', 'efectividad_agendamiento_panel', 'inasistencia_panel',
   'efectividad_citas_panel', 'tipificacion_panel', 'salida_panel', 'total_trafico_panel', 'calidad_kpis', 'calidad_pie', 'calidad_bar_asesores',
   'llamadas_unicas_panel', 'encuesta_panel', 'calidad_resumen_panel', 'calidad_monitoreos_panel', 'agendas_usuaria_panel', 'flujo_hora_panel', 'errores_panel', 'aurora_inasistencia_panel', 'aurora_encuestas_panel', 'aurora_li_flujo_panel', 'aurora_li_cdr_panel', 'aurora_li_whatsapp_panel',
-  'sta_resumen_panel']; // Fase 306 // Fase STA: muestra toda la base STA (no filtra por mes y lo dice en su nota)
+  'sta_resumen_panel', 'equidad_panel']; // Fase 306 // Fase STA: muestra toda la base STA (no filtra por mes y lo dice en su nota) // Equidad: sus propias fechas desde/hasta
 
 // En el navegador: meses de las tarjetas del tablero abierto.
 function gdMesesTarjetasActual() {
