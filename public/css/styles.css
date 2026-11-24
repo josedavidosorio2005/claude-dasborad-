@@ -2734,14 +2734,13 @@ div.ca-bar-fila{cursor:default}
 .ml-casos summary{color:var(--c-warning-text)}
 /* Pedido de Edwin (24/11, 3:30 p. m.): «Novedades y horarios especiales» parecía un título; ahora es un botón ámbar. */
 .ml-casos{border:0;padding:0}
-.ml-casos summary.ml-casos-btn{display:inline-flex;align-items:center;gap:10px;min-height:44px;padding:8px 16px;border:1px solid var(--c-warning);border-radius:var(--r-md);background:var(--c-warning-bg);color:var(--c-warning-text);font-weight:700;cursor:pointer;list-style:none;box-shadow:0 1px 2px rgba(0,0,0,.12);user-select:none}
+.ml-casos summary.ml-casos-btn{display:inline-flex;align-items:center;gap:10px;min-height:44px;padding:8px 16px;border:1px solid var(--c-warning);border-radius:var(--r-md);background:var(--c-warning-bg);color:var(--c-warning-text);font-weight:700;cursor:pointer;list-style:none;box-shadow:var(--shadow-sm);user-select:none}
 .ml-casos summary.ml-casos-btn::-webkit-details-marker{display:none}
-.ml-casos summary.ml-casos-btn::after{content:"";width:8px;height:8px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg) translateY(-2px);transition:transform .15s}
+.ml-casos summary.ml-casos-btn::after{content:"";width:8px;height:8px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg) translateY(-2px)}
 .ml-casos[open] summary.ml-casos-btn::after{transform:rotate(-135deg) translate(-2px,0)}
 .ml-casos summary.ml-casos-btn:hover{border-color:var(--c-warning-dark);box-shadow:inset 0 0 0 1px var(--c-warning)}
 .ml-casos summary.ml-casos-btn:focus-visible{outline:2px solid var(--c-focus);outline-offset:2px}
 .ml-casos[open] .ml-casos-lista{margin-top:10px}
-@media (prefers-reduced-motion:reduce){.ml-casos summary.ml-casos-btn::after{transition:none}}
 /* Pedido de Edwin (24/11): pausas activas, almuerzo y horas por día del grupo; total de la semana y aviso
    (sin bloquear) si no suma 42 h. En el celular cada día pasa a una tarjeta de 2 columnas con su etiqueta. */
 .ml-pausas{margin-top:10px;border:1px solid var(--c-border-soft);border-radius:var(--r-md);padding:4px 10px 8px}
