@@ -196,7 +196,7 @@ El plan:
 | Fase | Qué | Horas | Depende de |
 |---|---|---|---|
 | N1 | Tablero aparte: estructura, menú, sub-pestañas de línea, filtros (línea, fechas, granularidad), «Ver más», Excel/PDF/pantalla completa, con los datos manuales que ya hay. Oculto, solo admin | 16–20 | **empezada el 21/11** (rama `faseN1-orlant-tablero-nuevo`, PR sin mergear) |
-| N2 | Inbound llamadas (C3) con los datos manuales de hoy + ASA y participación por skill | 8–10 | mapa de skills para la línea |
+| N2 | Inbound llamadas (C3) con los datos manuales de hoy + ASA y participación por skill. **24/11: hecho en el PR de N2** (fuentes confirmadas por Edwin: flujo de llamadas y CDR; primera gráfica, TMO, ASA, variación, tipificación). General/3P queda «Pendiente de Edwin» (mapa de skills) | 8–10 | mapa de skills para la línea |
 | N3 | WhatsApp (C4) con la carga manual (`whatsapp_tiempos`: 0–3 / 3–5 / >5, TMO, ASA) | 6–8 | meta de WhatsApp |
 | N4 | Citas (C5): General/3P ya; por canal según lo que decida Edwin | 4–10 | definición del canal |
 | N5 | Motor Wolkvox generalizado por operación (sin cambiar MOBILIZE) + réplica «ORLANT PRUEBAS API» + «Diagnóstico de red» para `wv0034` | 12–16 | token en SSM (lunes 23/11) + OK de Jairo (IP ya autorizada el 21/11, §7) |

@@ -31,6 +31,11 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   - Por eso noviembre tiene 16 mal calificadas «sin ID» y 0 pendientes.
   - Los 5 monitoreos de noviembre que se calificaron con el archivo manual quedaron sin su encuesta: 25 monitoreos de origen «encuesta» contra 20 resueltas.
   - **Decisión del usuario (24/11, opción a):** el módulo de Encuesta del MOBILIZE real guarda el CONN_ID (solo el ID de la llamada; teléfono y comentarios se siguen descartando). Va en un PR aparte, que espera el OK del merge.
+- **Auditoría del 24/11, puntos de prioridad baja (solo anotados):**
+  - Talento humano: en el celular, las pestañas miden 41 px y los botones 35 px. Es el HTML de Edwin y no se toca.
+  - Botones chicos (`.btn-sm`) de la malla y el «Ver» del aviso de monitoreos nuevos del Portal Asesor (36×24 px): el sistema de diseño los exime.
+  - En Talento humano, una novedad sin fecha de fin no sale como «ausente» en el Inventario. Es igual en el HTML de Edwin; preguntarle si debe contar.
+  - En modo demostración, la franja de aviso tapa parte del botón de cerrar del Inventario.
 - **Pendiente, del usuario:**
   - **Docker Hub:** crear los 2 secretos de GitHub (`DOCKERHUB_USERNAME` y `DOCKERHUB_TOKEN`) para quitar los 429 de CI y deploy (24/11, en curso con el usuario, paso a paso). El token nunca va al chat ni al repo.
   - **SURA no tiene malla de turnos.** Sin turnos, la puntualidad no da a tiempo ni tarde: las asesoras salen en

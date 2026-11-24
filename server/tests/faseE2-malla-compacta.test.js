@@ -81,7 +81,7 @@ test('Ventana compacta: una fila de filtros con la semana en una lista, pestaña
   const ed = UI.mallaGrupoHtml(g, true, [{ id: 7, nombre: 'Asesora <i>x</i>' }], 0, { ajustes: [], novedades: [] });
   assert.match(ed, /<div class="ml-grupo-cab">[\s\S]*Guardar grupo[\s\S]*<div class="ml-grupo-cuerpo">/);
   assert.match(ed, /<div class="ml-asesoras-lista" tabindex="0" role="group"/);
-  assert.match(ed, /class="btn-sm ml-btn-sm"[^>]*aria-label="Agregar novedad a Asesora &lt;i&gt;x&lt;\/i&gt;">\+ Agregar novedad<\/button>/);
+  assert.match(ed, /class="btn-sm ml-btn-sm ml-btn-ambar"[^>]*aria-label="Agregar novedad a Asesora &lt;i&gt;x&lt;\/i&gt;">\+ Agregar novedad<\/button>/);
   const ro = UI.mallaGrupoHtml(g, false, [{ id: 7, nombre: 'A' }], 0, { ajustes: [], novedades: [] });
   assert.ok(!/Agregar novedad|Guardar grupo/.test(ro), 'solo lectura: sin botones');
   const css = fs.readFileSync(path.join(PUB, 'css', 'styles.css'), 'utf8');
@@ -89,4 +89,16 @@ test('Ventana compacta: una fila de filtros con la semana en una lista, pestaña
   assert.match(css, /\.ml-tab\[aria-pressed="true"\]\{/);
   // «Mi malla» de la asesora no usa nada de lo nuevo.
   assert.ok(!/ml-grupo-cab|ml-btn-sm|ml-asesoras-lista/.test(UI.mallaMiaHtml({ semanas: [{ semana: S, turno: { grupo: 'G', horario: HOR } }] })));
+});
+
+test('Pedido de Edwin (24/11): «Novedades» y «Horario especial» en ámbar (botones, registros y título del bloque)', () => {
+  const fs = require('fs');
+  const path = require('path');
+  const css = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'css', 'styles.css'), 'utf8');
+  assert.match(css, /\.ml-btn-sm\.ml-btn-ambar\{background:var\(--c-warning-bg\);color:var\(--c-warning-text\);border-color:var\(--c-warning\)\}/);
+  assert.match(css, /\.ml-chip\.ml-chip-ambar\{background:var\(--c-warning-bg\)/);
+  assert.match(css, /\.ml-casos summary\{color:var\(--c-warning-text\)\}/);
+  const js = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'js', 'malla.js'), 'utf8');
+  assert.equal(js.split('class="btn-sm ml-btn-sm ml-btn-ambar"').length - 1, 2, 'los dos botones');
+  assert.ok(js.includes('<li class="ml-chip ml-chip-ambar">') && js.includes('<li class="ml-chip ml-chip-nov ml-chip-ambar">'), 'los registros');
 });

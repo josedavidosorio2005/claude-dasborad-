@@ -22488,3 +22488,97 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - 0 errores de consola y sin scroll lateral.
   - Las capturas antes y después quedan fuera del repo (regla de la Fase 112).
 - **Merge con OK del usuario (24/11)**, después de #934 (1.260.2), trayendo main; queda en 1.261.0.
+
+## Pedido de Edwin (24/11) — Encuesta de Mobilize: monitorear si falla cualquier pregunta (solo prueba, sin cambio de versión)
+
+- **Pedido:** una encuesta sale para monitorear si se contestó mal CUALQUIER pregunta (P1 a P4), no solo la 1. Revisar el módulo automático de Encuesta del real y compararlo con la carga manual de antes.
+- **Revisión del código:** ya era así por los dos caminos.
+  - «Mal calificada» = alguna de las 4 reglas de `encuesta_monitoreo_reglas` (Fase 331: P1 de 0 a 5, P2 y P4 de 1 a 3, P3 = No). `listar` arma un OR de las 4.
+  - El módulo automático (`diagram_4`) y el archivo manual pasan por el mismo lector (`encuestaParseFilas`).
+  - Las reglas no se pueden cambiar desde la interfaz; solo las crea la migración.
+- **Prueba nueva** `faseE3-encuesta-cualquier-pregunta` (2), con datos inventados. Una corrida del real con la API (Wolkvox falso) y la misma encuesta cargada por archivo dan la misma lista: 4 pendientes (solo P1, solo P2, solo P3 y solo P4), y ninguna para «todo bien» ni «P2 sin respuesta». El botón «Monitoreo» de cada pregunta trae la suya.
+- **Causa probable de lo que vio Edwin** (por confirmar en producción, solo lectura y solo conteos): desde el 21/11, noviembre del real venía de la API sin CONN_ID. Por eso las mal calificadas caían en «sin ID» y no salían en la lista (Fase A33). Con A33 en producción (1.260.1), la siguiente corrida las trae con ID.
+
+## Pedido de Edwin (24/11, 11 a. m.) — Malla: «Novedades» y «Horario especial» en ámbar; Talento humano sin el aviso del encabezado (v1.262.0)
+
+- **Malla del supervisor:** los botones «+ Agregar novedad» y «Horario especial» (`ml-btn-ambar`), los registros guardados (`ml-chip-ambar`) y el título del bloque se ven en ámbar.
+  - Usa los mismos tokens que la pastilla «Horario especial» de la asesora (`--c-warning-bg`, `--c-warning-text`, `--c-warning`).
+  - «Mi malla» de la asesora no cambia.
+- **Talento humano:** el encabezado ya no dice «Se guarda en la plataforma, también los soportes adjuntos.».
+  - Ese texto no sale del generador: está en el marco de SinCo (`public/index.html`, `#th-aviso`, que llena `talento-humano-api.js`, escrito a mano). El generador y el HTML de Edwin no cambian.
+  - La barra queda oculta. Solo aparece el aviso «los soportes adjuntos, por ahora, quedan solo en este navegador» si los soportes estuvieran apagados.
+- **Pruebas:** se actualizaron `faseE2-malla-compacta`, `faseGH1` y `faseGH3`, y se agregó la prueba del ámbar (+1). Malla y Talento humano: 88/88.
+- **Revisión local** (Brave, página con el `styles.css` real y el HTML de `mallaGrupoHtml`, datos inventados), a 375, 768 y 1440 px, en claro y oscuro:
+  - 0 errores de consola;
+  - contraste del texto ámbar: 6,08:1 o más en claro y 8,28:1 o más en oscuro;
+  - el aviso de Talento humano no se ve (`display:none`).
+
+## Pedido de Edwin (24/11, 11 a. m.) — Malla: pausas activas, almuerzo y horas por día y semana (v1.263.0)
+
+- **Modelo** (`malla-logic.js`): cada día del horario puede traer, **opcional**, `pausa1` (15 min), `almuerzo` + `almuerzoMin` (30 o 60) y `pausa2` (10 min). Viajan dentro del mismo JSON del horario: no hay migración, y un horario guardado antes (solo entrada y salida) se valida y se guarda idéntico.
+  - Validación: cada pausa y el almuerzo deben quedar dentro del turno, en orden pausa 1 → almuerzo → pausa 2. El horario de festivos sigue solo con entrada y salida.
+  - `mallaMinutosDia` = salida − entrada − almuerzo (las pausas no se descuentan). `mallaHorasSemana` suma los 7 días (el festivo no cuenta).
+  - `mallaAvisoHoras`: si la semana no da 42 h, muestra un aviso **que no bloquea**.
+- **Supervisor:** bloque «Pausas, almuerzo y horas» debajo del horario, con las horas de cada día, el total y el aviso en ámbar.
+  - Se recalcula al escribir. Las pausas quedan deshabilitadas en los días de descanso.
+  - En el celular, cada día es una tarjeta (día y horas, las 2 pausas y el almuerzo) y los días de descanso no se muestran.
+- **Asesora («Mi malla»):** una línea discreta por día («Pausa 10:00 · Almuerzo 12:30–13:30 · Pausa 15:30»), solo si el grupo las tiene, y «Horas de la semana» al final. El total se oculta si hay un horario especial, que no trae almuerzo.
+- Puntualidad, el horario especial, copiar semana y los festivos no cambian: solo leen entrada y salida, o copian el día completo.
+- **Pruebas:** `faseE5-malla-pausas` (7). En `fase368` se agregaron las funciones nuevas que usa «Mi malla».
+- **Revisión local** (Brave, con los JS y el `styles.css` reales y datos inventados), a 375, 768 y 1440 px, en claro y oscuro:
+  - 42 h sin aviso; con el almuerzo en 30 min, 42 h 30 min y el aviso aparece;
+  - sábado de descanso deshabilitado;
+  - 0 errores de consola, sin scroll lateral, campos de 44 px en el celular y la tableta, y contraste de 5,9:1 o más.
+  - Se corrigieron durante la revisión: los campos medían menos de 44 px a 768, el selector del almuerzo se cortaba a 375 y la vista de celular quedaba larga.
+
+## Auditoría de diseño y bugs del 24/11 (v1.263.1, 2026-11-24, PR sin mergear)
+
+- **Pedido (usuario, 24/11):** auditoría en local, con datos inventados, de las pantallas que cambiaron esta semana, a 375, 768 y 1440 px en claro y oscuro, más una revisión del código de esos cambios. Arreglar lo de prioridad alta y media en una rama, con un commit por arreglo y su prueba; los bajos solo se anotan. Producción no se tocó.
+  - Pantallas: malla (supervisor y asesora), Inventario de sistemas, Talento humano, STA, SURA, Calidad «Calificar» y «Calidad de encuestas».
+- **Cómo se revisó:**
+  - Base desechable en el scratchpad con `seed:demo` más datos inventados: 2 grupos de malla con pausas, una novedad, 5 elementos de inventario, 30 casos de STA, 12 encuestas de MOBILIZE y una base de ventas sintética de SURA.
+  - Brave con Playwright: 8 pantallas × 3 anchos × 2 temas, buscando errores de consola, scroll horizontal, elementos fuera de pantalla, textos cortados, contraste AA y controles de menos de 44 px.
+  - Primera pasada: 0 errores de consola y 0 pantallas con scroll horizontal.
+- **Arreglos** (un commit cada uno; pruebas en `faseQA-auditoria-24nov.test.js`):
+  1. **Alta.** Inventario: los títulos de las gráficas usaban `--c-brand-blue` como texto (2,84:1; el sistema de diseño lo prohíbe). En oscuro, el menú seleccionado quedaba blanco sobre `--c-primary` claro (1,90:1). Ahora usan `--c-primary` y `--c-brand`.
+  2. **Media.** `activos-panel.js`: los movimientos se agrupaban por mes con la hora del servidor (UTC). Ahora usan la hora de Colombia. La prueba corre con `TZ=UTC`, falla sin el arreglo y pasa con él.
+  3. **Media.** Inventario: los filtros y los botones del Panel general miden 44 px en ≤768 px.
+  4. **Media.** Malla: la entrada y la salida miden 44 px en ≤768 px, igual que las pausas de E5.
+  5. **Media.** Calidad: los selectores de campaña y de mes (24 px de alto) miden 44 px en ≤768 px.
+  6. **Media.** Portal Asesor: la insignia de monitoreos nuevos tenía 2,77:1 en oscuro. El estilo pasó a la clase `.asesor-badge-nuevos`, con la misma versión oscura que `.cen-badge`. Se ajustó `fase144-a5`.
+- **Bajos (solo anotados, en `docs/pendientes.md`):**
+  - Talento humano: pestañas de 41 px y botones de 35 px en el celular. Es el HTML de Edwin y no se toca.
+  - `.btn-sm` de 30 px en la malla, «Ver» (36×24 px) del aviso de monitoreos nuevos y «×» de 32 px en los chips: el sistema de diseño exime a los `.btn-sm`.
+  - `gh-novedades.js`: una novedad sin fecha de fin no sale como «ausente». Es la misma lógica que el HTML de Edwin; falta preguntarle.
+  - En modo demostración, la franja «DATOS DE DEMOSTRACIÓN» tapa parte del botón de cerrar del Inventario. Solo pasa en demo.
+- **Revisión de código** (fechas, divisiones por 0, nulos y permisos) de la malla (pausas, casos especiales, festivos, excepciones), inventario, novedades de Gestión Humana, STA, ID de agente y encuestas:
+  - fuera del arreglo 2, no se encontraron más bugs;
+  - las divisiones están protegidas;
+  - las fechas de malla, STA y novedades ya van en hora de Colombia;
+  - las rutas nuevas revisan el rol.
+- **Verificación final:** nueva pasada local de las pantallas afectadas, con 0 problemas de contraste y 0 controles principales de menos de 44 px. Suite completa y `npm audit` en el PR.
+
+## Fase N2 — ORLANT, tablero nuevo: llamadas de entrada con el flujo y el CDR (v1.264.0, 2026-11-24, PR sin mergear)
+
+- **Pedido (usuario, 24/11):** Edwin confirmó que el flujo de llamadas y el CDR siguen siendo las fuentes de la primera gráfica. Avanzar todo lo que sale de esas dos fuentes y dejar marcado «Pendiente de Edwin» lo que dependa de otras fuentes o del mapa de skills. Sin activar nada automático (no se creó `WOLKVOX_ORLANT_AUTO_ACTIVO`).
+- **Del flujo** (`calidad_nivel_servicio_diario`), con las mismas reglas que «Tráfico de Llamadas»:
+  - recibidas, contestadas y abandonadas por fila;
+  - NS 20 s y nivel de atención;
+  - abandono;
+  - TMO y ASA, ponderados por contestadas;
+  - variación contra el período anterior;
+  - participación por skill.
+- **Del CDR** (`tipificaciones`, canal Llamadas, sin la salida): tipificación de la entrada, las 15 más frecuentes y «Otras».
+- **Primera gráfica:** «Llamadas por período», con contestadas y abandonadas apiladas y el NS 20 s como línea en el eje derecho. Usa `_gdChart`, con su botón «Ver datos», y un `aria-label` de resumen. No inventa los días sin NS.
+- **«Pendiente de Edwin»** (`_otPendiente`, etiqueta ámbar):
+  - Línea General y 3P, del mapa de skills; también las llamadas de skills «Sin definir»;
+  - WhatsApp por línea, que depende del mapa de colas;
+  - citas por canal (N4);
+  - back office (N10).
+  - Lo que espera la API (N3, N7 y N8) sigue con su aviso de fase.
+- **Pruebas:** `faseN2-orlant-inbound` (+2: gráfica y marcas) y `faseN1` ajustada. ORLANT: 37/37.
+- **Revisión local** (base desechable en el scratchpad, datos inventados, Brave) a 375, 768 y 1440 px, en claro y oscuro, en Total y en 3P:
+  - la gráfica se dibuja en todas;
+  - «Pendiente de Edwin» sale en 3P;
+  - 0 errores de consola y nada se sale de la pantalla, fuera del menú de secciones, que tiene su propio scroll lateral (así quedó en N1).
+- **PR sin mergear** (pedido del usuario).

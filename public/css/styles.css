@@ -2419,6 +2419,9 @@ div.ca-bar-fila{cursor:default}
    (docs/sistema-de-diseno.md): se ven igual de bien en claro y oscuro. */
 .cen-badge{display:inline-block;min-width:20px;margin-left:6px;padding:1px 7px;border-radius:var(--r-pill);background:var(--c-danger-dark);color:var(--c-on-brand);font-size:var(--fs-note);font-weight:700;line-height:1.5;text-align:center;vertical-align:middle}
 [data-theme="dark"] .cen-badge{background:var(--c-danger-bg);color:var(--c-danger-dark);border:1px solid var(--c-danger-dark)}
+/* Auditoría 24/11: insignia de monitoreos nuevos del Portal Asesor (antes en línea; en oscuro el blanco sobre --c-danger-dark quedaba en 2,77:1). Mismo patrón que .cen-badge. */
+.asesor-badge-nuevos{background:var(--c-danger-dark);color:var(--c-on-brand);border-radius:var(--r-md);padding:1px 7px;font-size:var(--fs-note);font-weight:700;margin-left:6px}
+[data-theme="dark"] .asesor-badge-nuevos{background:var(--c-danger-bg);color:var(--c-danger-dark);border:1px solid var(--c-danger-dark)}
 .cen-cab{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 12px;margin-bottom:8px}
 .cen-filtro{display:flex;flex-wrap:wrap;gap:6px}
 .cen-ayuda,.cen-nota{font-size:var(--fs-note);color:var(--c-text-muted);margin:4px 0 10px}
@@ -2453,6 +2456,7 @@ div.ca-bar-fila{cursor:default}
 .cal-origen-fil label{font-size:var(--fs-note);font-weight:700;color:var(--c-text-2)}
 .cal-origen-fil select{min-height:32px;padding:4px 8px;border:1px solid var(--c-border);border-radius:var(--r-sm);background:var(--c-surface);color:var(--c-text)}
 @media (max-width:768px){.cal-origen-fil select{min-height:44px}}
+@media (max-width:768px){#cal-campana-sel,#cal-mes-sel{min-height:44px}} /* auditoría 24/11: selector de campaña y de MES de Calidad (sistema de diseño: 44 px en el celular) */
 /* Fase 331 (PR 4): boton y ventana "Monitoreo" de la Encuesta del dashboard. */
 .enc-cab-acc{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
 .modal.enc-mon-modal{width:1160px;max-width:calc(100vw - 32px)}
@@ -2718,6 +2722,41 @@ div.ca-bar-fila{cursor:default}
 .ml-btn-sm{min-height:30px;padding:4px 10px;border:1px solid var(--c-border);border-radius:var(--r-sm);background:var(--c-surface);color:var(--c-primary);font-size:var(--fs-small);font-weight:600;cursor:pointer}
 .ml-btn-sm:hover{background:var(--c-hover-bg)}
 .ml-btn-sm:focus-visible{outline:2px solid var(--c-focus);outline-offset:1px}
+/* Pedido de Edwin (24/11): «Novedades» y «Horario especial» en ámbar (mismos tokens que la pastilla vis-amarillo). */
+.ml-btn-sm.ml-btn-ambar{background:var(--c-warning-bg);color:var(--c-warning-text);border-color:var(--c-warning)}
+.ml-btn-sm.ml-btn-ambar:hover{background:var(--c-warning-bg);border-color:var(--c-warning-dark);box-shadow:inset 0 0 0 1px var(--c-warning)}
+.ml-chip.ml-chip-ambar{background:var(--c-warning-bg);border-color:var(--c-warning)}
+.ml-casos summary{color:var(--c-warning-text)}
+/* Pedido de Edwin (24/11): pausas activas, almuerzo y horas por día del grupo; total de la semana y aviso
+   (sin bloquear) si no suma 42 h. En el celular cada día pasa a una tarjeta de 2 columnas con su etiqueta. */
+.ml-pausas{margin-top:10px;border:1px solid var(--c-border-soft);border-radius:var(--r-md);padding:4px 10px 8px}
+.ml-pausas summary{cursor:pointer;min-height:36px;display:flex;align-items:center;font-weight:600;color:var(--c-text-2)}
+.ml-tabla-pausas select{min-height:32px;min-width:84px;padding:2px 4px;font-size:var(--fs-small)}
+.ml-alm{display:inline-flex;gap:4px;align-items:center;flex-wrap:nowrap}
+.ml-dur{display:block;font-weight:400;color:var(--c-text-muted)}
+.ml-horas-dia{white-space:nowrap;font-variant-numeric:tabular-nums;font-weight:600;color:var(--c-text)}
+.ml-descanso .ml-horas-dia{color:var(--c-text-muted);font-weight:400}
+.ml-horas-semana{margin:8px 0 0;color:var(--c-text);font-size:var(--fs-body)}
+.ml-horas-aviso{margin:6px 0 0;padding:6px 10px;border-radius:var(--r-sm);background:var(--c-warning-bg);color:var(--c-warning-text);font-size:var(--fs-small);border:1px solid var(--c-warning)}
+.ml-mia-pausas{display:block;margin-top:2px;font-size:var(--fs-small);color:var(--c-text-2)}
+.ml-mia-total{margin:8px 0 0;font-size:var(--fs-small);color:var(--c-text-2)}
+@media (max-width:600px){
+  .ml-tabla-pausas thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+  .ml-tabla-pausas tr{display:grid;grid-template-columns:1fr 1fr;grid-template-areas:"dia horas" "p1 p2" "alm alm";gap:4px 10px;padding:6px 0;border-bottom:1px solid var(--c-border-soft)}
+  .ml-tabla-pausas tr.ml-descanso{display:none}
+  .ml-tabla-pausas td[data-etq="Pausa 1"]{grid-area:p1}
+  .ml-tabla-pausas td[data-etq="Pausa 2"]{grid-area:p2}
+  .ml-tabla-pausas td[data-etq="Horas"]{grid-area:horas;text-align:right;align-self:center}
+  .ml-tabla-pausas td[data-etq="Horas"]::before{display:none}
+  .ml-tabla-pausas th,.ml-tabla-pausas td{border:0;padding:0 !important}
+  .ml-tabla-pausas th[scope="row"]{grid-area:dia;font-weight:700}
+  .ml-tabla-pausas th[scope="row"] .ml-dia-largo{position:static;width:auto;height:auto;clip:auto;overflow:visible}
+  .ml-tabla-pausas th[scope="row"] .ml-dia-corto{display:none}
+  .ml-tabla-pausas td::before{content:attr(data-etq);display:block;font-size:var(--fs-note);color:var(--c-text-2)}
+  .ml-tabla-pausas td[data-etq="Almuerzo"]{grid-area:alm}
+  .ml-tabla-pausas .ml-alm input{flex:1 1 auto}
+}
+@media (max-width:768px){.ml-tabla-pausas select,.ml-tabla-pausas input[type="time"],.ml-tabla input[type="time"]{min-height:44px}} /* auditoría 24/11: + entrada y salida */
 .mp-novedad{white-space:normal;max-width:180px;min-width:96px;overflow-wrap:break-word;word-break:normal;hyphens:manual}
 @media (max-width:1100px){.ml-barra{flex-wrap:wrap}}
 @media (max-width:768px){
@@ -2791,6 +2830,7 @@ div.ca-bar-fila{cursor:default}
 .acp-btn{min-height:36px;padding:6px 14px;border-radius:var(--r-md);border:1px solid var(--c-brand-blue);background:transparent;color:var(--c-text);font:inherit;font-size:var(--fs-note);font-weight:600;cursor:pointer;white-space:nowrap}
 .acp-btn:hover,.acp-chip:hover{background:var(--c-surface-subtle)}
 .acp-chip.on:hover{background:var(--c-brand);color:var(--c-on-brand)}
+@media (max-width:768px){.acp-chip,.acp-btn{min-height:44px}} /* auditoría 24/11: filtros y Excel del Panel general, 44 px en el celular */
 .acp-kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin:0 0 14px}
 .acp-kpi{display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;padding:12px 14px;border:1px solid var(--c-border-soft);border-radius:var(--r-md);background:var(--c-surface);color:var(--c-text);font:inherit;cursor:pointer}
 .acp-kpi span{font-size:var(--fs-note);color:var(--c-text-2)}
@@ -2799,7 +2839,7 @@ div.ca-bar-fila{cursor:default}
 .acp-kpi:hover{border-color:var(--c-brand-blue)}
 .acp-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
 .acp-card{border:1px solid var(--c-border-soft);border-radius:var(--r-md);background:var(--c-surface);padding:14px 16px;display:flex;flex-direction:column;gap:10px;min-width:0}
-.acp-card h4{margin:0;color:var(--c-brand-blue);font-size:var(--fs-body)}
+.acp-card h4{margin:0;color:var(--c-primary);font-size:var(--fs-body)} /* auditoría 24/11: --c-brand-blue como texto no pasa AA (2,84:1) */
 .acp-ancha{grid-column:1/-1}
 .acp-ayuda{margin:0;font-size:var(--fs-note);color:var(--c-text-muted)}
 .acp-pie{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin-top:auto;font-size:var(--fs-note);color:var(--c-text-2)}
@@ -2905,7 +2945,7 @@ circle.acp-l-ingresos{fill:var(--c-brand-blue)}circle.acp-l-asignaciones{fill:va
 .ac-menu-sec:first-child{margin-top:0}
 .ac-menu-btn{display:flex;align-items:center;gap:8px;min-height:44px;width:100%;padding:8px 10px;border:0;border-radius:var(--r-sm);background:transparent;color:var(--c-text);font:inherit;font-size:var(--fs-body);text-align:left;cursor:pointer}
 .ac-menu-btn:hover{background:var(--c-surface)}
-.ac-menu-btn[aria-current="page"]{background:var(--c-primary);color:var(--c-on-brand);font-weight:600}
+.ac-menu-btn[aria-current="page"]{background:var(--c-brand);color:var(--c-on-brand);font-weight:600} /* auditoría 24/11: en oscuro --c-primary es claro y el blanco quedaba en 1,9:1 */
 .ac-menu-btn:focus-visible,.ac-flujo-paso:focus-visible{outline:2px solid var(--c-focus);outline-offset:2px}
 .ac-menu-txt{flex:1 1 auto}
 .ac-menu-n{min-width:28px;padding:1px 8px;border-radius:999px;background:var(--c-surface);color:var(--c-text);font-size:var(--fs-small);text-align:center}
@@ -3178,6 +3218,12 @@ html.ver-como-activo body{padding-bottom:84px}
 .ot-aviso{grid-column:1/-1;margin:8px 0;color:var(--c-text-muted);font-size:var(--fs-small);}
 .ot-vermas{margin-top:14px;min-height:44px;padding:8px 16px;border:1px solid var(--c-primary-mid);border-radius:8px;background:none;color:var(--c-text-link);font:inherit;font-weight:600;cursor:pointer;}
 .ot-tabla-wrap{overflow-x:auto;background:var(--c-surface);border:1px solid var(--c-border);border-radius:var(--r-md);}
+.ot-grafica{margin-top:14px;background:var(--c-surface);border:1px solid var(--c-border);border-radius:var(--r-md);padding:10px 12px}
+.ot-grafica .ot-h3{margin-top:0}
+.ot-grafica-wrap{position:relative;height:280px}
+.ot-pendiente{border-left:3px solid var(--c-warning)}
+.ot-pendiente-etq{display:inline-block;margin-right:6px;padding:1px 8px;border-radius:999px;background:var(--c-warning-bg);color:var(--c-warning-text);font-size:var(--fs-note);font-weight:700}
+@media (max-width:600px){.ot-grafica-wrap{height:240px}}
 .ot-tabla{width:100%;border-collapse:collapse;font-size:var(--fs-body);color:var(--c-text);}
 .ot-tabla th,.ot-tabla td{padding:8px 12px;border-bottom:1px solid var(--c-border-soft);text-align:right;white-space:nowrap;}
 .ot-tabla th:first-child{text-align:left;}

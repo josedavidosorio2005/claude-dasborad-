@@ -7,6 +7,57 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.264.0 — Noviembre 2026
+
+**ORLANT · Tablero nuevo (en prueba, solo el administrador): llamadas de entrada más completas.**
+
+- Llamadas de entrada, con el flujo de llamadas y el CDR, que Edwin confirmó como fuentes:
+  - tarjetas de recibidas, nivel de servicio a 20 s, nivel de atención, abandono y TMO;
+  - en «Ver más», contestadas, ASA y la variación contra el período anterior.
+- Primera gráfica: llamadas por período (contestadas y abandonadas) con la línea del nivel de servicio a 20 s.
+- Participación por skill y tipificación de las llamadas de entrada (las 15 más frecuentes y «Otras»).
+- Lo que todavía depende de una definición de Edwin dice «Pendiente de Edwin»:
+  - Línea General y 3P, que salen del «Mapa de skills»;
+  - WhatsApp por línea;
+  - citas por canal;
+  - back office.
+- El tablero que usa hoy ORLANT no cambia.
+## v1.263.1 — Noviembre 2026
+
+**Arreglos de la revisión de diseño del 24/11.**
+
+- Inventario de sistemas:
+  - los títulos de las gráficas del «Panel general» se leen mejor;
+  - en modo oscuro, la opción seleccionada del menú ya no queda blanca sobre celeste;
+  - en el celular, los filtros y los botones «Excel» y «Registrar ingreso» son más grandes para tocarlos con el dedo.
+- Inventario de sistemas: el gráfico de movimientos de los últimos 6 meses cuenta cada movimiento en su mes según la hora de Colombia (antes, lo hecho después de las 7 p. m. del último día del mes salía en el mes siguiente).
+- Malla de turnos: en el celular, los campos de entrada y salida son más grandes, como los de las pausas.
+- Calidad: en el celular, los selectores de campaña y de mes son más grandes.
+- Portal Asesor: en modo oscuro, el número rojo de monitoreos nuevos se lee mejor.
+
+## v1.263.0 — Noviembre 2026
+
+**Malla de turnos: pausas activas, almuerzo y horas de la semana (pedido de Edwin).**
+
+- En el horario de cada grupo, por día: pausa activa 1 (en la mañana, 15 min), almuerzo (la hora y si dura 30 min o 1 h) y pausa activa 2 (en la tarde, 10 min). Todo es opcional.
+- Se ven las horas de cada día y el total de la semana: salida menos entrada menos almuerzo. Si la semana no suma 42 horas, sale un aviso en ámbar, pero se puede guardar igual.
+- La asesora ve en «Mi malla», debajo del horario de cada día, una línea corta con sus pausas y su almuerzo, y al final las horas de la semana.
+- Los horarios que ya estaban guardados siguen funcionando igual.
+
+## v1.262.0 — Noviembre 2026
+
+**Malla de turnos: «Novedades» y «Horario especial» en ámbar; Talento humano sin el aviso del encabezado (pedidos de Edwin).**
+
+- En la ventana del supervisor, los botones «+ Agregar novedad» y «Horario especial», las novedades y horarios especiales ya guardados y el título «Novedades y horarios especiales» se ven en color ámbar, para que resalten.
+- Talento humano: el encabezado ya no dice «Se guarda en la plataforma, también los soportes adjuntos.». Solo aparece un aviso si algún día los soportes adjuntos no se pudieran guardar en la plataforma.
+
+## v1.261.1 — Noviembre 2026
+
+**Seguridad: el límite de intentos para entrar ya no se puede subir en el servidor.**
+
+- Después de 10 contraseñas equivocadas seguidas para el mismo usuario desde el mismo lugar, la plataforma pide esperar unos minutos antes de volver a intentar. La configuración del servidor podía subir ese número; ahora nunca pasa de 10.
+- Para quien entra con su contraseña correcta no cambia nada.
+
 ## v1.261.0 — Noviembre 2026
 
 **Malla de turnos: la ventana del supervisor es más compacta (pedido de Edwin).**

@@ -8,6 +8,8 @@
 // las citas sí. Asesores y back office llegan con la API (N8) y con su definición (N10).
 'use strict';
 const { salidaCombinadaPorMes } = require('./salida-cdr');
+const skillLinea = require('./skill-linea'); // Fase N2: línea de cada skill
+const { traficoAbandonadasDe } = require('../public/js/trafico-logic.js'); // Fase N2: misma regla que la pestaña
 
 const CAMPANA = 'ORLANT';
 const GRANULARIDADES = ['dia', 'semana', 'mes'];
@@ -46,27 +48,74 @@ function acumular(mapa, clave, inicial) {
 }
 const ordenar = (mapa) => [...mapa.entries()].sort((a, b) => (a[0] < b[0] ? -1 : 1)).map(([periodo, v]) => ({ periodo, ...v }));
 
+// Fase N2 (23/11/2026): entrada de llamadas con las MISMAS reglas que la pestaña «Tráfico de Llamadas»
+// (public/js/trafico-logic.js): abandonadas por fila (las del archivo o, si no vinieron, ingresadas −
+// contestadas), TMO (AHT) y ASA ponderados por contestadas. La línea (General / 3P) sale del «Mapa de
+// skills» (skill-linea.js, Fase N6): un skill sin guardar va a «SIN_DEFINIR» (no entra en ninguna de
+// las dos), y uno marcado «No cuenta» queda fuera de todo (se informa cuántas llamadas).
+const LINEAS_ENTRADA = ['GENERAL', '3P', 'SIN_DEFINIR'];
 function llamadas(db, campana, desde, hasta, gran) {
   const f = filtroFechas('fecha', desde, hasta);
-  const filas = db.prepare(`SELECT fecha, skillName, totalLlamadas, contestadas, contestadas20sEstimado FROM calidad_nivel_servicio_diario WHERE campana = ?${f.sql}`).all(campana, ...f.args);
-  const nuevo = () => ({ recibidas: 0, contestadas: 0, ns20Num: 0, ns20Den: 0 });
+  const filas = db.prepare(`SELECT fecha, skillName, totalLlamadas, contestadas, contestadas20sEstimado, llamadasAbandonadas, asaSegundos, ahtSegundos FROM calidad_nivel_servicio_diario WHERE campana = ?${f.sql}`).all(campana, ...f.args);
+  const mapa = skillLinea.mapa(db, campana);
+  const nuevo = () => ({ recibidas: 0, contestadas: 0, abandonadas: 0, ns20Num: 0, ns20Den: 0, tmoNum: 0, tmoDen: 0, asaNum: 0, asaDen: 0 });
   const serie = new Map(), skills = new Map(), tot = nuevo();
+  const porLinea = Object.fromEntries(LINEAS_ENTRADA.map((l) => [l, { tot: nuevo(), serie: new Map() }]));
+  const noCuenta = { recibidas: 0, skills: new Set() };
   for (const r of filas) {
-    for (const o of [tot, acumular(serie, periodoDe(r.fecha, gran), nuevo), acumular(skills, r.skillName, nuevo)]) {
+    const linea = mapa.get(skillLinea.normalizarSkill(r.skillName) || '') || null;
+    if (linea === 'NO_CUENTA') { noCuenta.recibidas += r.totalLlamadas; noCuenta.skills.add(r.skillName); continue; }
+    const pl = porLinea[linea || 'SIN_DEFINIR'];
+    const p = periodoDe(r.fecha, gran);
+    for (const o of [tot, acumular(serie, p, nuevo), acumular(skills, r.skillName, nuevo), pl.tot, acumular(pl.serie, p, nuevo)]) {
       o.recibidas += r.totalLlamadas; o.contestadas += r.contestadas;
+      o.abandonadas += traficoAbandonadasDe(r);
       if (r.contestadas20sEstimado !== null && r.contestadas20sEstimado !== undefined) { o.ns20Num += r.contestadas20sEstimado; o.ns20Den += r.totalLlamadas; }
+      if (r.ahtSegundos !== null && r.ahtSegundos !== undefined && r.contestadas > 0) { o.tmoNum += r.ahtSegundos * r.contestadas; o.tmoDen += r.contestadas; }
+      if (r.asaSegundos !== null && r.asaSegundos !== undefined && r.contestadas > 0) { o.asaNum += r.asaSegundos * r.contestadas; o.asaDen += r.contestadas; }
     }
   }
   const cerrar = (o) => ({
-    recibidas: o.recibidas, contestadas: o.contestadas, abandonadas: o.recibidas - o.contestadas,
-    nivelServicio20s: pct(o.ns20Num, o.ns20Den), nivelAtencion: pct(o.contestadas, o.recibidas), abandono: pct(o.recibidas - o.contestadas, o.recibidas),
+    recibidas: o.recibidas, contestadas: o.contestadas, abandonadas: o.abandonadas,
+    nivelServicio20s: pct(o.ns20Num, o.ns20Den), nivelAtencion: pct(o.contestadas, o.recibidas), abandono: pct(o.abandonadas, o.recibidas),
+    tmoSegundos: o.tmoDen > 0 ? o.tmoNum / o.tmoDen : null, asaSegundos: o.asaDen > 0 ? o.asaNum / o.asaDen : null,
   });
+  const serieDe = (m) => ordenar(m).map((x) => ({ periodo: x.periodo, ...cerrar(x) }));
   return {
     total: cerrar(tot),
-    serie: ordenar(serie).map((s) => ({ periodo: s.periodo, ...cerrar(s) })),
-    porSkill: [...skills.entries()].map(([skill, o]) => ({ skill, recibidas: o.recibidas, contestadas: o.contestadas, participacion: pct(o.recibidas, tot.recibidas) }))
+    serie: serieDe(serie),
+    porSkill: [...skills.entries()].map(([skill, o]) => ({ skill, linea: mapa.get(skillLinea.normalizarSkill(skill) || '') || null, recibidas: o.recibidas, contestadas: o.contestadas, participacion: pct(o.recibidas, tot.recibidas) }))
       .sort((a, b) => b.recibidas - a.recibidas),
+    porLinea: Object.fromEntries(LINEAS_ENTRADA.map((l) => [l, { total: cerrar(porLinea[l].tot), serie: serieDe(porLinea[l].serie) }])),
+    noCuenta: { recibidas: noCuenta.recibidas, skills: noCuenta.skills.size },
+    mapaVacio: mapa.size === 0,
   };
+}
+
+// Fase N2: tipificación de las llamadas de ENTRADA (canal Llamadas; la salida es skill «-», Fase 183),
+// en el rango, por línea con el mismo «Mapa de skills». Las 15 más frecuentes y «Otras».
+const TOP_TIPIFICACION = 15;
+function tipificacionEntrada(db, campana, desde, hasta) {
+  const f = filtroFechas('fecha', desde, hasta);
+  const filas = db.prepare(`SELECT tipificacion, skill, COUNT(*) AS n FROM tipificaciones WHERE campana = ? AND canal = 'LLAMADAS' AND COALESCE(skill, '') <> '-'${f.sql} GROUP BY tipificacion, skill`).all(campana, ...f.args);
+  const mapa = skillLinea.mapa(db, campana);
+  const grupos = { total: new Map(), GENERAL: new Map(), '3P': new Map(), SIN_DEFINIR: new Map() };
+  let fuera = 0;
+  for (const r of filas) {
+    const linea = mapa.get(skillLinea.normalizarSkill(r.skill || '') || '') || null;
+    if (linea === 'NO_CUENTA') { fuera += r.n; continue; }
+    const t = r.tipificacion || 'Sin tipificación';
+    for (const g of [grupos.total, grupos[linea || 'SIN_DEFINIR']]) g.set(t, (g.get(t) || 0) + r.n);
+  }
+  const top = (m) => {
+    const lista = [...m.entries()].sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1));
+    const total = lista.reduce((a, x) => a + x[1], 0);
+    const filasTop = lista.slice(0, TOP_TIPIFICACION).map(([tipificacion, n]) => ({ tipificacion, n, participacion: pct(n, total) }));
+    const resto = lista.slice(TOP_TIPIFICACION).reduce((a, x) => a + x[1], 0);
+    if (resto) filasTop.push({ tipificacion: 'Otras (' + (lista.length - TOP_TIPIFICACION) + ')', n: resto, participacion: pct(resto, total) });
+    return { total, filas: filasTop };
+  };
+  return { total: top(grupos.total), porLinea: { GENERAL: top(grupos.GENERAL), '3P': top(grupos['3P']), SIN_DEFINIR: top(grupos.SIN_DEFINIR) }, noCuenta: fuera };
 }
 
 // Cada fila de trafico_whatsapp es una cola por un PERÍODO (fechaInicio..fechaFin): un día con la base
@@ -143,6 +192,7 @@ function orlantTableroDatos(db, q = {}, campana = CAMPANA) {
   return {
     campana, desde, hasta, gran,
     llamadas: llamadas(db, campana, desde, hasta, gran),
+    tipificacionEntrada: tipificacionEntrada(db, campana, desde, hasta), // Fase N2
     whatsapp: whatsapp(db, campana, desde, hasta, gran),
     outbound: outbound(db, campana, desde, hasta),
     citas: citas(db, campana, desde, hasta, gran),
