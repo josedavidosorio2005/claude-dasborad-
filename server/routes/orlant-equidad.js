@@ -21,8 +21,8 @@ const VISIBLE_PARA_CLIENTE = false;
 function puedeCargar(a) {
   if (!a) return false;
   if (isFullAdmin(a)) return true;
-  if (a.perms && a.perms.cargarDatos === true) return true;
-  return a.rol === 'SUPERVISOR' && campaignAccess(a, EQ.CAMPANA);
+  if (!campaignAccess(a, EQ.CAMPANA)) return false; // todo lo que no es admin, solo con acceso a ORLANT
+  return (a.perms && a.perms.cargarDatos === true) || a.rol === 'SUPERVISOR';
 }
 function puedeVer(a) {
   if (!a) return false;

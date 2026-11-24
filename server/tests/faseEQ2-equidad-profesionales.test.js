@@ -18,7 +18,7 @@ function crear(user, rol, perms, asesorCampana) {
     .run('Prueba ' + user, user, rol, bcrypt.hashSync('Clave#2026x', 4), JSON.stringify(perms), asesorCampana || null, new Date().toISOString());
 }
 const tok = (u) => tokenFor(u, 'Clave#2026x');
-let admin, sup, supOtro, ger, cli, ase;
+let admin, sup, supOtro, ger, cli, ase, cargaOtro;
 
 const ENC = ['CODIGO_SEDE', 'ESPNOM', 'MEDNOM', 'FECHA_CITA', 'NOMBRE_ENTIDAD'];
 const fila = (i, ent) => ['SEDE FICTICIA ' + (i % 2 ? 'NORTE' : 'SUR'), 'ESPECIALIDAD INVENTADA', 'DR INVENTADO ' + (i % 3), new Date(2031, 0, 1 + (i % 5)), ent || 'ENTIDAD FICTICIA ' + (i % 2 ? 'A' : 'B')];
@@ -30,7 +30,8 @@ before(async () => {
   crear('feq_ger', 'GERENCIA', {});
   crear('feq_cli', 'CLIENTES_DASH', { ClientesDash: true, cliente_ORLANT: true });
   crear('feq_ase', 'ASESOR', { campana_ORLANT: true }, 'ORLANT');
-  [sup, supOtro, ger, cli, ase] = await Promise.all(['feq_sup', 'feq_supotro', 'feq_ger', 'feq_cli', 'feq_ase'].map(tok));
+  crear('feq_cargaotro', 'CALIDAD', { cargarDatos: true, campana_MOBILIZE: true, cliente_MOBILIZE: true }); // carga, pero sin ORLANT
+  [sup, supOtro, ger, cli, ase, cargaOtro] = await Promise.all(['feq_sup', 'feq_supotro', 'feq_ger', 'feq_cli', 'feq_ase', 'feq_cargaotro'].map(tok));
 });
 
 test('Lector: la tabla dinámica se ignora, Particulares sin entidad no es error y una columna de paciente nunca se lee', () => {
@@ -100,12 +101,13 @@ test('Carga por base: cada archivo reemplaza SOLO su base; el servidor revisa ca
 });
 
 test('Permisos: ven admin, gerencia y el supervisor de ORLANT; el cliente y el asesor no (por ahora); cargan solo quien carga ORLANT', async () => {
-  for (const [t, s] of [[admin, 200], [ger, 200], [sup, 200], [cli, 403], [ase, 403], [supOtro, 403]]) {
+  for (const [t, s] of [[admin, 200], [ger, 200], [sup, 200], [cli, 403], [ase, 403], [supOtro, 403], [cargaOtro, 403]]) {
     assert.equal((await request(app).get(B + '/estado').set(H(t))).status, s);
   }
   const f = [{ sede: 'S', esp: 'E', prof: 'P', fecha: '2031-01-01', ent: '' }];
-  for (const t of [ger, cli, ase, supOtro]) assert.equal((await request(app).post(B + '/cargas/prepagada').set(H(t)).send({ filas: f })).status, 403);
+  for (const t of [ger, cli, ase, supOtro, cargaOtro]) assert.equal((await request(app).post(B + '/cargas/prepagada').set(H(t)).send({ filas: f })).status, 403);
   assert.equal((await request(app).get(B + '/resumen').set(H(ger))).status, 403);
+  assert.equal((await request(app).put(B + '/entidades').set(H(cargaOtro)).send({ polizas: [], prepagada: [] })).status, 403, 'cargarDatos sin ORLANT: no'); // revisión de seguridad 24/11
   assert.equal((await request(app).get(B + '/estado')).status, 401);
 });
 
