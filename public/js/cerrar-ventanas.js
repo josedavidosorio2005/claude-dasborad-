@@ -20,7 +20,6 @@ var CERRAR_VENTANAS_FUNCIONES = {
   'centro-overlay': 'closeCentroCargas',
   'clients-modal-overlay': 'closeClientsModal',
   'gerencia-overlay': 'closeGerencia',
-  'gestionhumana-overlay': 'closeGestionHumana',
   'inventario-overlay': 'closeInventario',
   'activos-overlay': 'activosCerrar', // Fase 369
   'th-overlay': 'talentoHumanoCerrar', // Fase GH1

@@ -7,6 +7,13 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.259.1 — Noviembre 2026
+
+**Limpieza: sale el código que quedó de la «Gestión Humana — Personal por Campaña» anterior.**
+
+- Se quitaron las pantallas ocultas que ya nadie podía abrir (la lista de personal, el formulario «Nueva persona» y su ventana). No se ve ningún cambio.
+- Talento humano, el Inventario, Gerencia, Calidad y los dashboards de los clientes siguen igual. No se borró ningún dato: la tabla vieja se conserva.
+
 ## v1.259.0 — Noviembre 2026
 
 **Se retiró la «Gestión Humana — Personal por Campaña» anterior.**

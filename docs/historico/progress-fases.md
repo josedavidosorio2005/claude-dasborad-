@@ -22370,3 +22370,17 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - Suite local: 3502 pasan, 0 fallan.
 - **Respaldo antes de mergear (24/11, solo GET, sesión del administrador):** `GET /api/gh/personal` = 0 registros y `GET /api/gh/resumen` todo en 0, guardados FUERA del repo (`C:\Users\filid\Documents\trabajo inconexion\respaldos\gh-vieja-pr929-2026-11-24\`). «Salud del servidor» (run 45400286187): último respaldo diario hace 9 h, subida a S3 OK.
 - **Merge con OK del usuario (24/11)**, después de traer `main` (#928, 1.258.1); queda en 1.259.0.
+
+
+## Fase GH8 — Limpieza del HTML oculto de la Gestión humana anterior (v1.259.1, 2026-11-24)
+
+- **Pedido (usuario, 24/11):** PR pequeño que quite el HTML oculto del módulo retirado en la Fase GH7. Rama nueva, sin mergear.
+- **Por qué también sale el JS:** `public/js/gestion-humana.js` registraba un evento sobre `#gestionhumana-overlay` al cargar la página; sin el HTML habría fallado. Nada lo abría desde la GH7.
+- **Cambio:**
+  - `public/index.html`: sin la entrada del menú (`menu-gestionhumana-li`), la sección `section-gestionhumana`, el formulario `gh-person-modal`, la ventana `gestionhumana-overlay` y el `<script>`.
+  - Sale `public/js/gestion-humana.js`.
+  - Sin sus referencias en `session.js`, `ui-core.js`, `dashboards-core.js`, `cerrar-ventanas.js`, `motion-helpers.js` y `styles.css`.
+  - **No se tocan:** el servidor (rutas 410, tablero 404), la tabla `gestion_humana_personal`, el rol `GESTION_HUMANA`, Talento humano, Inventario, Calidad, STA ni los dashboards de clientes.
+- **Pruebas:** `gestion-humana.test.js` con una prueba nueva (sin el HTML ni el JS, Talento humano sigue); `fase144`, `fase145` y `fase152` sin los ids retirados. Suite local: 3515 pasan, 0 fallan (la única falla, `fase145`, se corrigió y pasa).
+- **Revisión local** (copia de la base demo, Brave sin ventana, 1440/768/375): login, las 9 secciones del panel, Gerencia, Inventario y Talento humano abren y cierran con Escape; sin menú ni tarjeta vieja; 0 errores de consola; sin scroll horizontal.
+- **PR sin mergear** (pedido del usuario).
