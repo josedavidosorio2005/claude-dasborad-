@@ -35,8 +35,9 @@ function estadoHoy(e, vac, nov, hoy) {
   if (e.estado === 'Retirado') return { t: 'retiro', txt: 'Retirado de la empresa desde el ' + fD(e.fRetiro) };
   const v = vac.find((x) => x.empId === e.id && !x.anulada && x.tipo === 'Disfrute' && iso(x.fIni) && iso(x.fIni) <= hoy && iso(x.fFin) >= hoy);
   if (v) return { t: 'vacaciones', txt: 'De vacaciones hasta el ' + fD(v.fFin) };
-  const n = nov.find((x) => x.empId === e.id && !x.anulada && iso(x.fIni) && iso(x.fIni) <= hoy && iso(x.fFin) >= hoy);
-  if (n) return { t: 'ausente', txt: 'Ausente hasta el ' + fD(n.fFin) + ' (novedad registrada en Gestión Humana)' };
+  // Auditoría 24/11 (bajo): una novedad SIN fecha de fin sigue vigente desde su inicio (antes '' >= hoy daba falso).
+  const n = nov.find((x) => x.empId === e.id && !x.anulada && iso(x.fIni) && iso(x.fIni) <= hoy && (!iso(x.fFin) || iso(x.fFin) >= hoy));
+  if (n) return { t: 'ausente', txt: (iso(n.fFin) ? 'Ausente hasta el ' + fD(n.fFin) : 'Ausente desde el ' + fD(n.fIni) + ', sin fecha de regreso') + ' (novedad registrada en Gestión Humana)' };
   return null;
 }
 function proxima(e, vac, nov, hoy) {
@@ -46,7 +47,7 @@ function proxima(e, vac, nov, hoy) {
   const v = prim(vac.filter((x) => x.tipo === 'Disfrute'));
   if (v) return { t: 'proximo', txt: 'Sale a vacaciones el ' + fD(v.fIni) + ' hasta el ' + fD(v.fFin) };
   const n = prim(nov);
-  return n ? { t: 'proximo', txt: 'Ausente del ' + fD(n.fIni) + ' al ' + fD(n.fFin) } : null;
+  return n ? { t: 'proximo', txt: iso(n.fFin) ? 'Ausente del ' + fD(n.fIni) + ' al ' + fD(n.fFin) : 'Ausente desde el ' + fD(n.fIni) + ', sin fecha de regreso' } : null;
 }
 
 // → { empleadosGH, retirados[], ausentes[], proximos[], sinRegistro[] }; cada fila:

@@ -118,10 +118,12 @@ test('vista: 4 secciones (+ «Mapa de skills», Fase N6), línea sin dato en la 
   const base = { seccion: 'inbound', canal: 'llamadas', linea: 'total', gran: 'mes' };
   const c = front.otContenido(d, base);
   assert.match(c.kpis, /Llamadas recibidas/); assert.match(c.detalle, /Participación por skill/);
-  assert.match(front.otContenido(d, { ...base, linea: '3p' }).kpis, /todavía no se separa por línea/);
+  // Fase N2: las llamadas se separan con el «Mapa de skills»; sin mapa, el aviso lo dice. WhatsApp todavía no.
+  assert.match(front.otContenido(d, { ...base, linea: '3p' }).kpis, /Pendiente de Edwin<\/span> Línea General y 3P salen del «Mapa de skills»/);
+  assert.match(front.otContenido(d, { ...base, canal: 'whatsapp', linea: '3p' }).kpis, /WhatsApp todavía no se separa por línea/);
   assert.match(front.otContenido(d, { ...base, canal: 'citas', linea: '3p' }).kpis, />1</);
   assert.match(front.otContenido(d, { ...base, seccion: 'asesores' }).kpis, /fase N8/);
-  assert.deepEqual(front.otHojasExcel(d).map((h) => h.nombre), ['Llamadas', 'Llamadas por skill', 'WhatsApp', 'Citas', 'Salida']);
+  assert.deepEqual(front.otHojasExcel(d).map((h) => h.nombre), ['Llamadas', 'Llamadas por skill', 'Tipificación entrada', 'WhatsApp', 'Citas', 'Salida']);
   const RAIZ = path.join(__dirname, '..', '..', 'public');
   const html = fs.readFileSync(path.join(RAIZ, 'index.html'), 'utf8');
   assert.ok(html.includes('<script src="js/orlant-tablero.js"></script>'));

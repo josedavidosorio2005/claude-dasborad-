@@ -93,6 +93,8 @@ test('contador de rol en oscuro (--c-text-2) y texto verde de campañas (--c-suc
 });
 
 test('badge de monitoreos nuevos del asesor: texto blanco sobre --c-danger-dark (>=4.5:1)', () => {
-  assert.match(leer('index.html'), /id="asesor-menu-calidad-badge"[^>]*background:var\(--c-danger-dark\);color:var\(--c-on-brand\)/);
+  // Auditoría 24/11: el estilo pasó de en línea a la clase .asesor-badge-nuevos (con su versión oscura).
+  assert.match(leer('index.html'), /id="asesor-menu-calidad-badge" class="hidden asesor-badge-nuevos"/);
+  assert.match(css, /\.asesor-badge-nuevos\{background:var\(--c-danger-dark\);color:var\(--c-on-brand\)/);
   assert.ok(contrasteRazon('#ffffff', token('--c-danger-dark')) >= 4.5);
 });

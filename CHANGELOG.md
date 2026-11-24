@@ -15,6 +15,40 @@ sepan que hay nuevo, que se corrigio y que falta.
 - Los datos del cliente (nombre, correo, teléfono y comentarios) se descartan y nunca se guardan.
 - El abandono de WhatsApp queda pendiente de que Edwin diga cómo se cuenta.
 - Está apagado: no corre hasta que se encienda a propósito. MOBILIZE no cambia.
+## v1.264.1 — Noviembre 2026
+
+**Dos arreglos pequeños.**
+
+- Inventario de sistemas, «Novedades de Gestión Humana»: una persona con una novedad que todavía no tiene fecha de regreso ahora sí aparece como ausente, con el aviso «sin fecha de regreso».
+- En modo de demostración, la franja naranja de aviso ya no tapa la parte de arriba (ni la equis de cerrar) del Inventario, la Malla, las Cargas y las demás ventanas que ocupan toda la pantalla.
+
+## v1.264.0 — Noviembre 2026
+
+**ORLANT · Tablero nuevo (en prueba, solo el administrador): llamadas de entrada más completas.**
+
+- Llamadas de entrada, con el flujo de llamadas y el CDR, que Edwin confirmó como fuentes:
+  - tarjetas de recibidas, nivel de servicio a 20 s, nivel de atención, abandono y TMO;
+  - en «Ver más», contestadas, ASA y la variación contra el período anterior.
+- Primera gráfica: llamadas por período (contestadas y abandonadas) con la línea del nivel de servicio a 20 s.
+- Participación por skill y tipificación de las llamadas de entrada (las 15 más frecuentes y «Otras»).
+- Lo que todavía depende de una definición de Edwin dice «Pendiente de Edwin»:
+  - Línea General y 3P, que salen del «Mapa de skills»;
+  - WhatsApp por línea;
+  - citas por canal;
+  - back office.
+- El tablero que usa hoy ORLANT no cambia.
+## v1.263.1 — Noviembre 2026
+
+**Arreglos de la revisión de diseño del 24/11.**
+
+- Inventario de sistemas:
+  - los títulos de las gráficas del «Panel general» se leen mejor;
+  - en modo oscuro, la opción seleccionada del menú ya no queda blanca sobre celeste;
+  - en el celular, los filtros y los botones «Excel» y «Registrar ingreso» son más grandes para tocarlos con el dedo.
+- Inventario de sistemas: el gráfico de movimientos de los últimos 6 meses cuenta cada movimiento en su mes según la hora de Colombia (antes, lo hecho después de las 7 p. m. del último día del mes salía en el mes siguiente).
+- Malla de turnos: en el celular, los campos de entrada y salida son más grandes, como los de las pausas.
+- Calidad: en el celular, los selectores de campaña y de mes son más grandes.
+- Portal Asesor: en modo oscuro, el número rojo de monitoreos nuevos se lee mejor.
 
 ## v1.263.0 — Noviembre 2026
 

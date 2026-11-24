@@ -11,7 +11,10 @@ const vacioEstados = () => Object.fromEntries(ESTADOS.map((e) => [e, 0]));
 const num = (v) => (typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : 0);
 const PROPIO = /inconexi[oó]n/i; // propietario InConexion (o sin propietario) = propio; otro = proveedor (rentado)
 const esPropio = (p) => !String(p || '').trim() || PROPIO.test(String(p));
-const mesDe = (d) => { const x = new Date(d); return x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0'); };
+// Auditoría 24/11: el mes en hora de Colombia (UTC−5, sin horario de verano), no la del servidor (UTC):
+// antes, lo hecho después de las 7 p. m. del último día del mes caía en el mes siguiente.
+const COL_MS = 5 * 3600 * 1000;
+const mesDe = (d) => { const x = new Date(new Date(d).getTime() - COL_MS); return x.getUTCFullYear() + '-' + String(x.getUTCMonth() + 1).padStart(2, '0'); };
 
 // Agrupa por una clave y cuenta por estado; ordena de mayor a menor (el «sin …» va al final).
 function porClave(filas, clave, sinTxt) {
@@ -82,11 +85,12 @@ function panel(db, ambito, tipoSel, ahora) {
   if (actas && !tipo) calidad.push({ k: 'actas_pendientes', l: 'Actas pendientes por firmar', n: actas.pendientes, ir: 'actas' }, { k: 'actas_atrasadas', l: 'Actas atrasadas (' + ACT.DIAS_ATRASO + '+ días hábiles)', n: actas.atrasadas, ir: 'actas' });
 
   // Movimientos de los últimos 6 meses (del historial del inventario, de los elementos de este panel).
-  const hoy = ahora ? new Date(ahora) : new Date();
+  const hoy = new Date((ahora ? new Date(ahora) : new Date()).getTime() - COL_MS); // reloj de Colombia en campos UTC
+  const inicioMes = (i) => Date.UTC(hoy.getUTCFullYear(), hoy.getUTCMonth() - i, 1) + COL_MS; // 00:00 de Colombia
   const meses = [];
-  for (let i = 5; i >= 0; i--) { const d = new Date(hoy.getFullYear(), hoy.getMonth() - i, 1); meses.push({ mes: mesDe(d), ingresos: 0, asignaciones: 0, devoluciones: 0, danos: 0 }); }
+  for (let i = 5; i >= 0; i--) meses.push({ mes: mesDe(inicioMes(i)), ingresos: 0, asignaciones: 0, devoluciones: 0, danos: 0 });
   const ids = new Set(filas.map((f) => f.id));
-  const desde = new Date(hoy.getFullYear(), hoy.getMonth() - 5, 1).getTime();
+  const desde = inicioMes(5);
   for (const h of db.prepare('SELECT activoId, ts, accion, estadoAntes, estadoDespues FROM activos_historial WHERE ts >= ?').all(desde)) {
     if (!ids.has(h.activoId)) continue;
     const m = meses.find((x) => x.mes === mesDe(Number(h.ts))); if (!m) continue;
