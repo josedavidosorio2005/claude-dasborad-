@@ -62,3 +62,9 @@ test('Inventario, Panel general: filtros y botones (Excel, Registrar ingreso) de
 test('Malla del supervisor: entrada y salida de 44 px en el celular (como las pausas)', () => {
   assert.ok(CSS.includes('.ml-tabla-pausas input[type="time"],.ml-tabla input[type="time"]{min-height:44px}'));
 });
+
+test('Calidad (Calificar y Calidad de encuestas): selectores de campaña y de mes de 44 px en el celular', () => {
+  assert.ok(CSS.includes('@media (max-width:768px){#cal-campana-sel,#cal-mes-sel{min-height:44px}}'));
+  const html = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'index.html'), 'utf8');
+  for (const id of ['cal-campana-sel', 'cal-mes-sel']) assert.ok(!new RegExp('id="' + id + '"[^>]*style="[^"]*(height|min-height)\s*:').test(html), id + ' sin alto fijo en línea que gane al CSS');
+});
