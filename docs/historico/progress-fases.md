@@ -22531,6 +22531,33 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - 0 errores de consola, sin scroll lateral, campos de 44 px en el celular y la tableta, y contraste de 5,9:1 o más.
   - Se corrigieron durante la revisión: los campos medían menos de 44 px a 768, el selector del almuerzo se cortaba a 375 y la vista de celular quedaba larga.
 
+## Auditoría de diseño y bugs del 24/11 (v1.263.1, 2026-11-24, PR sin mergear)
+
+- **Pedido (usuario, 24/11):** auditoría en local, con datos inventados, de las pantallas que cambiaron esta semana, a 375, 768 y 1440 px en claro y oscuro, más una revisión del código de esos cambios. Arreglar lo de prioridad alta y media en una rama, con un commit por arreglo y su prueba; los bajos solo se anotan. Producción no se tocó.
+  - Pantallas: malla (supervisor y asesora), Inventario de sistemas, Talento humano, STA, SURA, Calidad «Calificar» y «Calidad de encuestas».
+- **Cómo se revisó:**
+  - Base desechable en el scratchpad con `seed:demo` más datos inventados: 2 grupos de malla con pausas, una novedad, 5 elementos de inventario, 30 casos de STA, 12 encuestas de MOBILIZE y una base de ventas sintética de SURA.
+  - Brave con Playwright: 8 pantallas × 3 anchos × 2 temas, buscando errores de consola, scroll horizontal, elementos fuera de pantalla, textos cortados, contraste AA y controles de menos de 44 px.
+  - Primera pasada: 0 errores de consola y 0 pantallas con scroll horizontal.
+- **Arreglos** (un commit cada uno; pruebas en `faseQA-auditoria-24nov.test.js`):
+  1. **Alta.** Inventario: los títulos de las gráficas usaban `--c-brand-blue` como texto (2,84:1; el sistema de diseño lo prohíbe). En oscuro, el menú seleccionado quedaba blanco sobre `--c-primary` claro (1,90:1). Ahora usan `--c-primary` y `--c-brand`.
+  2. **Media.** `activos-panel.js`: los movimientos se agrupaban por mes con la hora del servidor (UTC). Ahora usan la hora de Colombia. La prueba corre con `TZ=UTC`, falla sin el arreglo y pasa con él.
+  3. **Media.** Inventario: los filtros y los botones del Panel general miden 44 px en ≤768 px.
+  4. **Media.** Malla: la entrada y la salida miden 44 px en ≤768 px, igual que las pausas de E5.
+  5. **Media.** Calidad: los selectores de campaña y de mes (24 px de alto) miden 44 px en ≤768 px.
+  6. **Media.** Portal Asesor: la insignia de monitoreos nuevos tenía 2,77:1 en oscuro. El estilo pasó a la clase `.asesor-badge-nuevos`, con la misma versión oscura que `.cen-badge`. Se ajustó `fase144-a5`.
+- **Bajos (solo anotados, en `docs/pendientes.md`):**
+  - Talento humano: pestañas de 41 px y botones de 35 px en el celular. Es el HTML de Edwin y no se toca.
+  - `.btn-sm` de 30 px en la malla, «Ver» (36×24 px) del aviso de monitoreos nuevos y «×» de 32 px en los chips: el sistema de diseño exime a los `.btn-sm`.
+  - `gh-novedades.js`: una novedad sin fecha de fin no sale como «ausente». Es la misma lógica que el HTML de Edwin; falta preguntarle.
+  - En modo demostración, la franja «DATOS DE DEMOSTRACIÓN» tapa parte del botón de cerrar del Inventario. Solo pasa en demo.
+- **Revisión de código** (fechas, divisiones por 0, nulos y permisos) de la malla (pausas, casos especiales, festivos, excepciones), inventario, novedades de Gestión Humana, STA, ID de agente y encuestas:
+  - fuera del arreglo 2, no se encontraron más bugs;
+  - las divisiones están protegidas;
+  - las fechas de malla, STA y novedades ya van en hora de Colombia;
+  - las rutas nuevas revisan el rol.
+- **Verificación final:** nueva pasada local de las pantallas afectadas, con 0 problemas de contraste y 0 controles principales de menos de 44 px. Suite completa y `npm audit` en el PR.
+
 ## Fase N2 — ORLANT, tablero nuevo: llamadas de entrada con el flujo y el CDR (v1.264.0, 2026-11-24, PR sin mergear)
 
 - **Pedido (usuario, 24/11):** Edwin confirmó que el flujo de llamadas y el CDR siguen siendo las fuentes de la primera gráfica. Avanzar todo lo que sale de esas dos fuentes y dejar marcado «Pendiente de Edwin» lo que dependa de otras fuentes o del mapa de skills. Sin activar nada automático (no se creó `WOLKVOX_ORLANT_AUTO_ACTIVO`).
