@@ -22384,3 +22384,50 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
 - **Pruebas:** `gestion-humana.test.js` con una prueba nueva (sin el HTML ni el JS, Talento humano sigue); `fase144`, `fase145` y `fase152` sin los ids retirados. Suite local: 3515 pasan, 0 fallan (la única falla, `fase145`, se corrigió y pasa).
 - **Revisión local** (copia de la base demo, Brave sin ventana, 1440/768/375): login, las 9 secciones del panel, Gerencia, Inventario y Talento humano abren y cierran con Escape; sin menú ni tarjeta vieja; 0 errores de consola; sin scroll horizontal.
 - **PR sin mergear** (pedido del usuario).
+
+## Fase M1 — Malla: «casos especiales» A + B + C (v1.260.0, 2026-11-24)
+
+- **Pedido:** 6 de Edwin (reunión del 23/11), «Casos especiales» de la malla.
+- **Alcance:** A + B + C de `docs/propuesta-malla-casos-especiales.md`, aprobado por el usuario el 24/11.
+- **Forma de trabajo:** rama nueva, un commit por parte, PR sin mergear.
+- **A. Tipos de excepción editables** (`server/malla-casos.js`).
+  - Tabla nueva `malla_tipos_excepcion`, sembrada con los 3 de siempre (mismo código) y 6 nuevos: licencia, calamidad, capacitación, compensatorio, suspensión y día de la familia.
+  - Cada tipo dice si «cuenta como día trabajado»; el resumen de puntualidad trae `excepcionTrabajada`.
+  - Rutas `GET/POST/PUT /malla/tipos-excepcion`. Para leer basta con leer alguna malla; para cambiar hay que ser ADMIN completo. Todo queda en el Historial.
+  - Un tipo no se borra, se desactiva, y siempre debe quedar uno activo.
+  - `POST /malla/excepciones` solo acepta tipos activos.
+  - En la pantalla, la tarjeta «Tipos de excepción» (solo el ADMIN) pasa a tarjetas en celular.
+- **B. Festivos de Colombia.**
+  - `mallaFestivosColombia(anio)` en `malla-logic.js` calcula los fijos, los de Ley Emiliani y los de Pascua; 2026 da igual al calendario oficial (18 días).
+  - Los cambios del ADMIN (agregar o quitar) van en la tabla `malla_festivos_ajuste`; el calendario de ley no se guarda.
+  - Por grupo: clave opcional `festivo` en el horario. Sin la clave, el festivo descansa (por defecto); con ella, trabaja de HH:MM a HH:MM. Un festivo en un día que el grupo no trabaja sigue siendo descanso.
+  - Se aplica en la puntualidad, en «Mi malla» (`turnoDe` devuelve `festivos`) y en la semana de la malla (aviso).
+  - El horario especial de la asesora manda sobre el festivo. Copiar la semana conserva el horario de festivo.
+  - Rutas `GET/POST /malla/festivos` y `DELETE /malla/festivos/:fecha` (cambiar: solo ADMIN, con Historial).
+  - **Cambio de comportamiento:** antes un festivo era un día normal (salía «Sin ingreso»). Hoy la puntualidad está solo en la réplica y en SURA (por archivo).
+- **C. Horario especial que se repite.**
+  - `PUT /malla/ajustes` acepta `repetirHasta` (máximo 26 semanas). Crea los mismos días en cada semana, con una misma `serie`.
+  - La serie es una columna nueva de `malla_ajustes`; se agrega con ALTER si falta y no borra nada.
+  - Basta con que la asesora esté en un grupo la primera semana: en las siguientes se aplica cuando quede asignada.
+  - `DELETE /malla/ajustes/serie/:serie` quita toda la repetición. El Historial va resumido (primer y último día, cuántos).
+- **Pruebas:**
+  - `faseM1-malla-casos` (A, 5), `faseM1-malla-festivos` (B, 5) y `faseM1-malla-repetir` (C, 5), con personas y fechas inventadas (2031).
+  - `fase118` declara las 7 rutas nuevas.
+  - Las pruebas de la malla de antes siguen en verde.
+- **Revisión local** (copia de la base demo, asesoras inventadas, Brave a 1440, 768 y 375 px):
+  - aviso del festivo (martes 08/12, Inmaculada Concepción);
+  - fila «Festivos» del grupo;
+  - formulario «Repetir cada semana hasta» (con su mínimo y su máximo);
+  - chip «se repite» con «Quitar todas las semanas»;
+  - panel de festivos (18);
+  - puntualidad con «día trabajado: 1»;
+  - tabla de tipos (9);
+  - 0 errores de consola, sin scroll lateral de la página ni de la ventana.
+  - A 375 px la tabla de tipos desbordaba la ventana; se pasó a tarjetas y se volvió a revisar.
+- **No se tocó** producción ni otros módulos. `GH_ROL_ACTIVO` sigue apagado.
+- **Antes del merge** (24/11, lectura en producción, solo conteos): ningún grupo trabajó un festivo de 2026.
+  - La réplica no tiene malla en semanas con festivo.
+  - SURA tiene malla en las semanas del 02/11 y el 16/11, que caen en lunes, y ningún grupo trabaja los lunes.
+  - Con «festivo = descanso» no cambió ningún número.
+  - Pendiente: al armar diciembre, marcar «Festivos» a los grupos de SURA que trabajen el 08/12 o el 25/12.
+- **Merge con OK del usuario (24/11)**, después de traer `main` (#930, 1.259.1); queda en 1.260.0.

@@ -7,7 +7,7 @@ decidir nada, solo priorizar cuándo invertir el tiempo). Lo ya cerrado
 no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 ítem tiene prioridad, cómo se cierra, y la fecha en que se anotó.
 
-## Estado al 24/11/2026 (producción 1.259.0)
+## Estado al 24/11/2026 (producción 1.260.0)
 
 - **Hecho del 20 al 24/11** (detalle en `PROGRESS.md` y `docs/historico/progress-fases.md`):
   - **Gestión humana:**
@@ -22,11 +22,15 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
     - Mobilize «Calidad de encuestas» (Fase 331): pestaña con 0 pendientes y 20 resueltas, sin teléfonos, aviso de las 16 sin ID; filtro «Origen» con 3 opciones; botón «Monitoreo» en las 4 preguntas de la Encuesta, el modal abre y cierra con Escape. Sin desborde a 1440 ni a 375 px.
   - **STA de ORLANT:** el filtro «Servicio» va en cascada (STA7) y hay «Descargar plantilla» (STA8). Ticket #3 de SURA (ID de agente automático en Calificar).
   - **Wolkvox:** el MOBILIZE real llena noviembre por la API (A29); el hueco de julio y las no conectadas (A30–A32); la réplica de ORLANT con la API (N6, apagada hasta el OK).
-- **PRs abiertos, esperando el OK del usuario para mergear:**
-  - **#930, GH8 (v1.259.1):** sale el HTML oculto y el JS de la Gestión humana anterior. CI verde.
-  - **Fase M1, malla «casos especiales» A+B+C (v1.260.0):** ver el bloque 1.
-  - **#902** (ORLANT, citas asignadas en Total tráfico) y **N2** (rama local): esperan a Edwin.
-- **Por revisar (solo lectura):** en Calidad › Monitoreos de Mobilize, la nota dice «25 monitoreos vienen de Calidad de encuestas», pero la pestaña muestra 20 resueltas. Puede ser que 5 sean de encuestas que ya no cumplen la regla o que se recargaron. Mirar sin cambiar nada.
+- **Mergeados el 24/11 con OK del usuario:** #932 (estos pendientes), #930 GH8 (v1.259.1) y #931 Fase M1, malla «casos especiales» A+B+C (v1.260.0).
+- **Malla, festivos (Fase M1):** con «festivo = descanso» no cambió ningún número. Lectura en producción del 24/11: la réplica no tiene malla en semanas con festivo; SURA tiene malla en las semanas del 02/11 y el 16/11 (lunes), pero ningún grupo trabaja los lunes.
+  **Al armar diciembre:** a los grupos de SURA que trabajen el **08/12** o el **25/12**, marcarles la fila «Festivos» (con su horario). Si no, ese día les sale descanso.
+- **Esperan a Edwin:** **#902** (ORLANT, citas asignadas en Total tráfico) y **N2** (rama local).
+- **Mobilize, Calidad de encuestas sin ID desde noviembre (causa encontrada el 24/11, solo lectura):**
+  - Desde el 21/11 la consulta automática reemplaza la Encuesta de noviembre del MOBILIZE real, y ese módulo guardaba las encuestas **sin CONN_ID**.
+  - Por eso noviembre tiene 16 mal calificadas «sin ID» y 0 pendientes.
+  - Los 5 monitoreos de noviembre que se calificaron con el archivo manual quedaron sin su encuesta: 25 monitoreos de origen «encuesta» contra 20 resueltas.
+  - **Decisión del usuario (24/11, opción a):** el módulo de Encuesta del MOBILIZE real guarda el CONN_ID (solo el ID de la llamada; teléfono y comentarios se siguen descartando). Va en un PR aparte, que espera el OK del merge.
 - **Pendiente, del usuario:**
   - **Docker Hub:** crear los 2 secretos de GitHub (`DOCKERHUB_USERNAME` y `DOCKERHUB_TOKEN`) para quitar los 429 de CI y deploy (24/11, en curso con el usuario, paso a paso). El token nunca va al chat ni al repo.
   - **SURA no tiene malla de turnos.** Sin turnos, la puntualidad no da a tiempo ni tarde: las asesoras salen en

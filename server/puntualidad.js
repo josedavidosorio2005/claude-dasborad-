@@ -33,6 +33,8 @@ let _config = CAMPANAS;
 function config(campana) { return Object.prototype.hasOwnProperty.call(_config, campana) ? _config[campana] : null; }
 function campanasConPuntualidad() { return Object.keys(_config); }
 
+// Fase M1 (A): los tipos ahora están en la tabla malla_tipos_excepcion (malla-casos.js, editables por el
+// ADMIN). Esta lista queda solo como los 3 de siempre (compatibilidad).
 const TIPOS_EXCEPCION = { incapacidad: 'Incapacidad', vacaciones: 'Vacaciones', permiso: 'Permiso' };
 const MAX_DIAS_EXCEPCION = 62;
 const MAX_DIAS_CONSULTA = 31;
@@ -211,12 +213,14 @@ function calcular(db, campana, desde, hasta, opts) {
   const logins = new Map();
   for (const r of db.prepare('SELECT * FROM wolkvox_login_diario WHERE operacion = ? AND fecha BETWEEN ? AND ?').all(cfg.operacion, desde, hasta)) logins.set(r.fecha + '|' + r.agentId, r);
   const exc = excepcionesEnRango(db, campana, desde, hasta);
+  const cuentaTrabajado = require('./malla-casos').codigosQueCuentanTrabajado(db); // Fase M1 (A)
+  const festivos = require('./malla-casos').festivosEnRango(db, desde, hasta); // Fase M1 (B)
   const turnoStmt = db.prepare(`SELECT g.horario, g.nombre grupo FROM malla_grupos g JOIN malla_asignaciones a ON a.grupoId = g.id WHERE g.campana = ? AND g.semana = ? AND a.asesorId = ?`);
   const ajusteStmt = db.prepare('SELECT entrada, salida FROM malla_ajustes WHERE campana = ? AND asesorId = ? AND fecha = ?'); // Fase 373
   const asesorasSemana = db.prepare(`SELECT DISTINCT u.id, u.nombre FROM malla_grupos g JOIN malla_asignaciones a ON a.grupoId = g.id JOIN users u ON u.id = a.asesorId WHERE g.campana = ? AND g.semana = ?`);
   const filas = [];
   const conTurno = new Set();
-  const resumen = { a_tiempo: 0, tarde: 0, sin_ingreso: 0, excepcion: 0, sin_enlace: 0, pendiente: 0, salidaAnticipada: 0 };
+  const resumen = { a_tiempo: 0, tarde: 0, sin_ingreso: 0, excepcion: 0, excepcionTrabajada: 0, sin_enlace: 0, pendiente: 0, salidaAnticipada: 0 };
   for (const fecha of diasEntre(desde, hasta)) {
     const lunes = L.mallaLunesDe(fecha);
     const n = _diaSemana(fecha);
@@ -229,7 +233,9 @@ function calcular(db, campana, desde, hasta, opts) {
       try { h = JSON.parse(t.horario); } catch (e) { h = {}; }
       // Fase 373: el horario especial de la asesora ese día pesa sobre el de su grupo (null = descanso).
       const aj = ajusteStmt.get(campana, a.id, fecha);
-      const turno = aj ? (aj.entrada ? { entrada: aj.entrada, salida: aj.salida } : null) : (h[n] || h[String(n)]);
+      // Fase M1 (B): en un festivo, el día que el grupo trabaja usa su horario de festivo (o descansa, por defecto).
+      const delGrupo = Object.prototype.hasOwnProperty.call(festivos, fecha) ? ((h[n] || h[String(n)]) ? (h.festivo || null) : null) : (h[n] || h[String(n)]);
+      const turno = aj ? (aj.entrada ? { entrada: aj.entrada, salida: aj.salida } : null) : delGrupo;
       if (!turno) continue;
       const agentId = agentDe.get(a.id) || null;
       const login = agentId ? logins.get(fecha + '|' + agentId) || null : null;
@@ -238,11 +244,12 @@ function calcular(db, campana, desde, hasta, opts) {
       const st = estadoDelDia({ fecha, turno, enlazado: !!agentId, login, excepcion: e, ahora, hastaDatos });
       resumen[st.estado]++;
       if (st.salidaAnticipadaSeg) resumen.salidaAnticipada++;
+      if (st.estado === 'excepcion' && cuentaTrabajado.has(e.tipo)) resumen.excepcionTrabajada++; // Fase M1 (A)
       filas.push({
         userId: a.id, nombre: a.nombre, fecha, grupo: t.grupo, entrada: turno.entrada, salida: turno.salida, estado: st.estado,
         tardeSeg: st.tardeSeg, salidaAnticipadaSeg: st.salidaAnticipadaSeg,
         primerLogin: login ? login.primerLogin.slice(11) : null, ultimoLogout: login && login.ultimoLogout ? login.ultimoLogout.slice(11) : null,
-        sesiones: login ? login.sesiones : 0, excepcion: e ? { id: e.id, tipo: e.tipo } : null,
+        sesiones: login ? login.sesiones : 0, excepcion: e ? { id: e.id, tipo: e.tipo, cuentaTrabajado: cuentaTrabajado.has(e.tipo) } : null,
       });
     }
   }
