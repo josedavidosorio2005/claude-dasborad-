@@ -229,6 +229,26 @@ asumir en qué quedó una fase anterior.
     se pide a Wolkvox.
   - Pasar al ORLANT real (N9), WhatsApp por API o asesores (`agent_*`) =
     autorización nueva por escrito.
+- **Excepción escrita (usuario, 24/11/2026, WhatsApp por API en la réplica de
+  ORLANT, Fase N3):**
+  - **Sondeo:** el usuario autorizó por escrito 3 consultas de `chat_1` y `chat_13`.
+    Se hicieron el 24/11 y funcionaron.
+  - **Qué se autoriza:** que la consulta automática pida `chat_1` (módulo
+    `whatsapp`) y GUARDE, **solo en la réplica «ORLANT PRUEBAS API»**:
+    - el tráfico de WhatsApp de entrada por día y cola, en `trafico_whatsapp`;
+    - el tiempo de primera respuesta de cada chat contestado, en
+      `whatsapp_tiempos`.
+  - **Datos sensibles:** `customer_name`, `customer_email`, `customer_phone`,
+    `comment`, `comments` y `extra_field` se descartan en memoria antes de
+    guardar, como en `cdr_1`.
+  - **Abandono:** queda vacío y marcado «¿Edwin?». `chat_1` no lo trae, y
+    nunca se calcula como recibidos − contestados.
+  - **Reglas:** las mismas de N6. Arranca **APAGADO**, y no se crea
+    `WOLKVOX_ORLANT_AUTO_ACTIVO` sin OK explícito; se enciende añadiendo
+    `whatsapp` a `WOLKVOX_ORLANT_AUTO_MODULOS`, también con OK.
+  - **MOBILIZE** (réplica y real) no tiene este módulo: su lista de módulos es
+    cerrada.
+  - Pasarlo al ORLANT real = autorización nueva por escrito.
 - Nada de pruebas agresivas contra producción (sin límite de tasa, sin
   volumen alto, sin tocar datos que no sean los explícitamente
   autorizados). No destapar pestañas ocultas a mano, no tocar datos de

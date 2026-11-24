@@ -22530,3 +22530,30 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - sábado de descanso deshabilitado;
   - 0 errores de consola, sin scroll lateral, campos de 44 px en el celular y la tableta, y contraste de 5,9:1 o más.
   - Se corrigieron durante la revisión: los campos medían menos de 44 px a 768, el selector del almuerzo se cortaba a 375 y la vista de celular quedaba larga.
+
+## Fase N3 — ORLANT, WhatsApp por API en la réplica, apagado (v1.265.0, 2026-11-24, PR sin mergear)
+
+- **Sondeo** (autorizado por escrito por el usuario el 24/11; 3 consultas desde «ORLANT PRUEBAS API», solo estado, filas y columnas):
+  - `chat_1` del 23/11: 200, 624 chats;
+  - `chat_13` del 23/11: 200, 1 fila;
+  - `chat_1` del 1 al 23/11: 200, 8.180 chats.
+  - El «Validate dates entered» de antes era por usar el token de MOBILIZE, que no tiene WhatsApp. Detalle en `docs/plan-api-wolkvox.md` 10.27.
+- **Pedido (usuario, 24/11):** preparar N3, WhatsApp por API (`chat_1`) en la réplica de ORLANT, APAGADO.
+  - Descartar en memoria `customer_name`, `customer_email`, `customer_phone`, `comment`, `comments` y `extra_field`.
+  - El abandono queda «¿Edwin?».
+  - No crear `WOLKVOX_ORLANT_AUTO_ACTIVO`.
+- **Hecho:**
+  - módulo `whatsapp` en `wolkvox-modulos.js`, con `hojaWhatsapp` como lógica pura;
+  - una consulta por mes;
+  - guarda en `trafico_whatsapp` (por día y cola: recibidos, contestados y ASA) y en `whatsapp_tiempos` (primera respuesta de cada chat contestado);
+  - reemplazo del mes con respaldo, las dos tablas en una sola transacción;
+  - la salida (`skill_id` 0) y las filas sin fecha quedan fuera.
+  - `wolkvox-destinos.js`: `whatsapp` solo en `orlant_replica`; MOBILIZE (réplica y real) pasa de «todos» a su lista cerrada de 5 módulos.
+  - La excepción escrita quedó en `CLAUDE.md`.
+- **Pruebas** (`faseN3-orlant-whatsapp-api`, 4; `faseN6` ajustada; Wolkvox falso y datos inventados):
+  - los datos del cliente se borran en memoria y no llegan ni a la base ni al Historial;
+  - MOBILIZE no tiene el módulo y no consulta a Wolkvox;
+  - apagado, no corre;
+  - el ORLANT real no cambia;
+  - volver a correr el mes lo reemplaza, sin duplicar.
+- **PR sin mergear.** Nada encendido en SSM.

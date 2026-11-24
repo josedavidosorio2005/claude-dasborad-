@@ -791,3 +791,31 @@ Réplica vs MOBILIZE real, 01–12/11: Flujo, Flujo por hora, Tipificación y En
 - **Protecciones:** exige `WOLKVOX_REAL_ACTIVO=1` (leído fresco); cada pestaña se revisa vacía antes de consultar y otra vez justo antes de escribir (si alguien cargó algo mientras tanto, no se toca); el AHT/espera del Flujo solo se completa con `skill_7` si todo el Flujo del mes vino de la API; una marca por pestaña (`hueco real 2026-07 <pestaña>`) hace que no vuelva a correr aunque se vacíe; si `cdr_1` trae solo la cuenta de pruebas, no se escribe ni se vacía nada; mismo candado que el programador; respaldo, cuenta de pruebas fuera, datos sensibles de `cdr_1` descartados en memoria y skills mapeadas en el Flujo, como en la franja del real. El plan normal y el corte de 2026-11 no cambian: el programador nunca pide julio.
 - **Pruebas** (`faseA30-wolkvox-hueco-real`, 7): lista cerrada (otros meses, otras pestañas y la réplica dan plan vacío); apagado/sin interruptor/mes fuera = 0 consultas; julio vacío = 34 consultas, cuenta de pruebas fuera, agosto/octubre/noviembre y la réplica idénticos; Flujo y Tipificación manuales en julio no se consultan ni cambian (tampoco el AHT); carga simultánea = no escribe; una sola vez aunque se vacíe; ruta solo admin (401/403/400/409/429). `fase118-matriz-acceso`: la ruta nueva declarada `admin`.
 - **Corrida en producción (20/11/2026, 15:30 Colombia):** `ok`, 34 consultas. Julio del real: Flujo 7 filas/4 días, Flujo por hora 11/4, Tipificación 2/1 (16 de la cuenta de pruebas fuera), Abandonadas 4/4; igual a la réplica pestaña por pestaña (filas por día y contenido). Agosto–noviembre del real idénticos antes y después. Detalle en `docs/historico/progress-fases.md` (Fase A30).
+
+### 10.27 WhatsApp por API: el sondeo de ORLANT funcionó; la réplica de ORLANT lo guarda, apagado (24/11/2026, Fase N3, v1.265.0)
+
+- **Por qué fallaba antes:** `chat_1` y `chat_13` respondían «Validate dates entered» (10.10). Esas pruebas usaban el **token de MOBILIZE**, que no maneja WhatsApp. El formato de las fechas siempre estuvo bien (`AAAAMMDDHHMMSS`).
+- **Sondeo** desde la réplica «ORLANT PRUEBAS API», autorizado por escrito por el usuario el 24/11: 3 consultas, solo estado, filas y nombres de columnas.
+
+| Consulta | Resultado |
+|---|---|
+| `chat_1`, 23/11 | 200 · 624 chats · 32 columnas |
+| `chat_13`, 23/11 | 200 · 1 fila · `chanel`, `interaction` |
+| `chat_1`, 1–23/11 (mes en una consulta) | 200 · 8.180 chats |
+
+- **Columnas de `chat_1`:** agent_answers, agent_average_response_time, agent_chars, agent_dni, agent_id, agent_name, assignment_time, bsuid, channel, chat_duration, cod_act, comment, comments, conn_id, customer_chars, customer_email, customer_id, customer_name, customer_phone, date, date_close, description_cod_act, extra_field, feeling, first_response_time, last_participant_who_spoke, routing, skill_id, time_on_agent, transfer, transfer_type, user_id.
+- **Módulo `whatsapp`** (`server/wolkvox-modulos.js`, solo para `orlant_replica`):
+  - una consulta por mes;
+  - descarta en memoria `customer_name`, `customer_email`, `customer_phone`, `comment`, `comments` y `extra_field`;
+  - deja fuera `skill_id` 0, que es la salida;
+  - el nombre de la cola sale del mapa «Skills de WhatsApp» del cliente original.
+- **Qué guarda:**
+  - `trafico_whatsapp`, por día y cola: recibidos, contestados (con asesor) y ASA (promedio de `first_response_time`);
+  - `whatsapp_tiempos`: una fila por chat contestado, con su tiempo.
+  - Reemplaza el mes con respaldo, y las dos tablas en una sola transacción.
+- **Por confirmar con Edwin:**
+  - el **abandono**: queda vacío;
+  - si «contestado = con asesor» es la regla correcta;
+  - la unidad de `first_response_time`: se aceptan segundos y `HH:MM:SS`, y se confirma con la primera corrida.
+- **MOBILIZE** (réplica y real) pasa de «todos los módulos» a su lista cerrada de siempre, sin WhatsApp.
+- **Apagado:** solo corre con `WOLKVOX_ORLANT_AUTO_ACTIVO=1` y `whatsapp` en `WOLKVOX_ORLANT_AUTO_MODULOS` (no creados; OK del usuario).
