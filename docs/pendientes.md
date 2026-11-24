@@ -32,8 +32,8 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   - Los 5 monitoreos de noviembre que se calificaron con el archivo manual quedaron sin su encuesta: 25 monitoreos de origen «encuesta» contra 20 resueltas.
   - **Decisión del usuario (24/11, opción a):** el módulo de Encuesta del MOBILIZE real guarda el CONN_ID (solo el ID de la llamada; teléfono y comentarios se siguen descartando). Va en un PR aparte, que espera el OK del merge.
 - **Auditoría del 24/11, puntos de prioridad baja (solo anotados):**
-  - Talento humano: en el celular, las pestañas miden 41 px y los botones 35 px. Es el HTML de Edwin y no se toca.
-  - Botones chicos (`.btn-sm`) de la malla y el «Ver» del aviso de monitoreos nuevos del Portal Asesor (36×24 px): el sistema de diseño los exime.
+  - ~~Talento humano: en el celular, las pestañas miden 41 px y los botones 35 px.~~ Arreglado en v1.267.1 (24/11) por su generador; el HTML de Edwin no se tocó.
+  - ~~Botones chicos (`.btn-sm`) de la malla y el «Ver» del aviso de monitoreos nuevos del Portal Asesor (36×24 px).~~ Arreglado en v1.267.1 (24/11): 44 px en ≤768 px.
   - ~~En Talento humano, una novedad sin fecha de fin no sale como «ausente» en el Inventario.~~ Arreglado en v1.264.1 (24/11): cuenta como ausente desde su inicio, «sin fecha de regreso». El HTML de Edwin no se tocó.
   - ~~En modo demostración, la franja de aviso tapa parte del botón de cerrar del Inventario.~~ Arreglado en v1.264.1 (24/11), en las 13 ventanas de pantalla completa.
 - **Pendiente, del usuario:**
