@@ -54,3 +54,7 @@ test('Inventario, movimientos por mes: en hora de Colombia, no en la del servido
   assert.equal(q.movimientos[5].mes, '2026-12');
   assert.equal(q.movimientos[4].ingresos, 1);
 });
+
+test('Inventario, Panel general: filtros y botones (Excel, Registrar ingreso) de 44 px en el celular', () => {
+  assert.ok(CSS.includes('@media (max-width:768px){.acp-chip,.acp-btn{min-height:44px}}'));
+});
