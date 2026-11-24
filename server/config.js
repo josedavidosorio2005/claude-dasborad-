@@ -160,6 +160,18 @@ if (!parsed.success) {
 
 const env = parsed.data;
 
+// H-08 (hallazgo L-03 de la auditoría de la Fase 151): en producción, la configuración del servidor
+// subía el límite de intentos de login por encima del valor del código. En producción nunca se pasa
+// de estos topes: un valor más alto se ignora (con un aviso al arrancar, sin el valor de ningún
+// secreto) y uno más bajo se respeta. Fuera de producción (pruebas, CI, local) no cambia nada.
+const TOPES_LOGIN_PRODUCCION = Object.freeze({ LOGIN_RATE_LIMIT_MAX: 10, LOGIN_RATE_LIMIT_USUARIO_MAX: 30 });
+function topeLoginProduccion(nombre, valor) {
+  const tope = TOPES_LOGIN_PRODUCCION[nombre];
+  if (env.NODE_ENV !== 'production' || valor <= tope) return valor;
+  process.stderr.write(`[config] ${nombre}=${valor} supera el tope de producción (${tope}); se usa ${tope}.\n`);
+  return tope;
+}
+
 const config = Object.freeze({
   nodeEnv: env.NODE_ENV,
   isProduction: env.NODE_ENV === 'production',
@@ -184,9 +196,9 @@ const config = Object.freeze({
   },
   loginRateLimit: {
     windowMs: env.LOGIN_RATE_LIMIT_WINDOW_MS,
-    max: env.LOGIN_RATE_LIMIT_MAX,
+    max: topeLoginProduccion('LOGIN_RATE_LIMIT_MAX', env.LOGIN_RATE_LIMIT_MAX),
     usuarioWindowMs: env.LOGIN_RATE_LIMIT_USUARIO_WINDOW_MS,
-    usuarioMax: env.LOGIN_RATE_LIMIT_USUARIO_MAX,
+    usuarioMax: topeLoginProduccion('LOGIN_RATE_LIMIT_USUARIO_MAX', env.LOGIN_RATE_LIMIT_USUARIO_MAX),
   },
 
   backupDir: env.BACKUP_DIR || null,

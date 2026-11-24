@@ -7,6 +7,13 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.261.1 — Noviembre 2026
+
+**Seguridad: el límite de intentos para entrar ya no se puede subir en el servidor.**
+
+- Después de 10 contraseñas equivocadas seguidas para el mismo usuario desde el mismo lugar, la plataforma pide esperar unos minutos antes de volver a intentar. La configuración del servidor podía subir ese número; ahora nunca pasa de 10.
+- Para quien entra con su contraseña correcta no cambia nada.
+
 ## v1.261.0 — Noviembre 2026
 
 **Malla de turnos: la ventana del supervisor es más compacta (pedido de Edwin).**
