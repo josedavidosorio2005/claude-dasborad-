@@ -57,7 +57,7 @@ La visual es la del HTML de Edwin, como con STA. No se edita a mano: la genera
 | Administrador | Sí | Sí |
 | Supervisor de ORLANT | Sí | Sí |
 | Gerencia | Sí | No |
-| Cuenta cliente ORLANT | **No por ahora** (`VISIBLE_PARA_CLIENTE` en `server/routes/orlant-equidad.js`; pregunta abierta: ¿con el nombre de los profesionales?) | No |
+| Cuenta cliente ORLANT | **Solo si el administrador enciende la opción** «La cuenta cliente de ORLANT ve…» en «Cargar bases» (apagada por defecto; pregunta abierta a Edwin: ¿con el nombre de los profesionales?) | No |
 | Asesor | No | No |
 
 ## 6. Verificación del 24/11 (local)

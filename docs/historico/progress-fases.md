@@ -22695,3 +22695,17 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - `VISIBLE_PARA_CLIENTE` sigue en `false`.
   - Este mismo PR actualiza `PROGRESS.md` a 1.267.0.
 
+## Equidad profesionales: opción para la cuenta cliente de ORLANT, apagada (v1.268.0, 2026-11-24, PR sin mergear)
+
+- **Pedido (usuario, 24/11):** dejar listo, en una rama aparte, que la cuenta cliente de ORLANT pueda ver la Equidad detrás de una opción, apagada por defecto, para activarla rápido si Edwin dice que sí.
+- **Hecho:**
+  - `VISIBLE_PARA_CLIENTE` (una constante) pasa a ser una opción guardada en la plataforma: tabla `equidad_opciones`, clave `visibleCliente`; sin fila = apagada.
+  - `PUT /api/orlant/equidad/opciones` es solo del administrador y queda en el Historial (`EQUIDAD_OPCIONES`).
+  - Casilla en «Cargar bases» → ORLANT → «Equidad profesionales», visible solo para el administrador.
+  - Encendida, la cuenta `CLIENTES_DASH` con acceso a ORLANT ve la pestaña. No carga, y el cliente de otra campaña no la ve.
+  - Se activa sin redesplegar. **Encenderla en producción necesita el OK de Edwin y del usuario.**
+- **Pruebas:** `faseEQ3-equidad-cliente` (3); `fase118` declara la ruta.
+- **Verificación local** (Brave, base desechable), a 375, 768 y 1440 px:
+  - la casilla arranca apagada, se enciende y se apaga, y mide 44 px o más;
+  - sin desborde y 0 errores de consola.
+

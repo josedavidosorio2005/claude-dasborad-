@@ -49,7 +49,10 @@ function ccEquidadHtml(r) {
     '<p class="cc-intro">Una entidad por renglón. Al cargar, avisa si una base trae entidades de la otra lista (no mueve ni borra citas).</p>' +
     '<div class="cc-eq-ent-grid"><div class="ig"><label for="cc-eq-ent-polizas">Pólizas</label><textarea id="cc-eq-ent-polizas" rows="6">' + esc((ent.polizas || []).join('\n')) + '</textarea></div>' +
     '<div class="ig"><label for="cc-eq-ent-prepagada">Medicina prepagada</label><textarea id="cc-eq-ent-prepagada" rows="6">' + esc((ent.prepagada || []).join('\n')) + '</textarea></div></div>' +
-    '<button type="button" class="btn-cancel" onclick="ccEquidadGuardarEntidades()">Guardar entidades</button><div id="cc-eq-ent-res" aria-live="polite"></div></details></section>';
+    '<button type="button" class="btn-cancel" onclick="ccEquidadGuardarEntidades()">Guardar entidades</button><div id="cc-eq-ent-res" aria-live="polite"></div></details>' +
+    (ccEquidadEsAdmin() ? '<div class="cc-eq-cliente"><label class="cc-eq-check"><input type="checkbox" id="cc-eq-visible-cliente"' + (r.visibleCliente ? ' checked' : '') + ' onchange="ccEquidadVisibleCliente(this)"> ' +
+      'La cuenta cliente de ORLANT ve «Equidad profesionales» (con los nombres de los profesionales)</label>' +
+      '<p class="cc-intro">Apagado por defecto. Encenderlo solo con el OK de Edwin.</p><div id="cc-eq-cliente-res" aria-live="polite"></div></div>' : '') + '</section>';
 }
 
 // Resultado de una carga. Puro.
@@ -87,6 +90,22 @@ async function ccEquidadSubir(input) {
     var res2 = _ceqEl('cc-equidad-res'); if (res2) res2.innerHTML = guardado;
   } catch (e) {
     res.innerHTML = '<div class="cc-aviso cc-aviso-error" role="alert">' + esc(e.message || 'No se pudo cargar el archivo') + '</div>';
+  }
+}
+
+function ccEquidadEsAdmin() { return typeof isFullAdmin === 'function' && isFullAdmin(); }
+
+// Opción «la ve la cuenta cliente» (solo el administrador; apagada por defecto).
+async function ccEquidadVisibleCliente(input) {
+  var res = _ceqEl('cc-eq-cliente-res');
+  var quiere = !!input.checked;
+  try {
+    var r = await apiRequest('PUT', '/orlant/equidad/opciones', { visibleCliente: quiere });
+    input.checked = !!r.visibleCliente;
+    res.innerHTML = '<div class="cc-aviso" role="status">' + (r.visibleCliente ? 'La cuenta cliente de ORLANT ya ve la pestaña (al volver a abrir su tablero).' : 'La cuenta cliente de ORLANT no ve la pestaña.') + '</div>';
+  } catch (e) {
+    input.checked = !quiere;
+    res.innerHTML = '<div class="cc-aviso cc-aviso-error" role="alert">' + esc(e.message || 'No se pudo cambiar') + '</div>';
   }
 }
 

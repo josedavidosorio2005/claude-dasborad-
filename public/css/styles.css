@@ -3011,6 +3011,9 @@ circle.acp-l-ingresos{fill:var(--c-brand-blue)}circle.acp-l-asignaciones{fill:va
 .cc-eq-ent-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(240px,100%),1fr));gap:12px}
 .cc-eq-ent textarea{width:100%;font:inherit;min-height:120px}
 .cc-eq-ent .btn-cancel{min-height:44px;margin:8px 0}
+.cc-eq-cliente{margin-top:12px;border:1px solid var(--c-border-soft);border-radius:var(--r-md);padding:8px 12px}
+.cc-eq-check{display:flex;gap:10px;align-items:center;min-height:44px;font-weight:600;cursor:pointer}
+.cc-eq-check input{width:22px;height:22px;flex:none}
 .cc-horarios .cc-mes{cursor:pointer;min-height:44px;text-align:left;font:inherit;color:inherit}
 .cc-horarios .cc-mes-ok{border-color:var(--c-success-text)}
 .cc-mes-dato{display:block;font-size:var(--fs-small);color:var(--c-text-2)}

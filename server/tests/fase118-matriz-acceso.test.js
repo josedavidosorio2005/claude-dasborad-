@@ -162,7 +162,7 @@ declarar(['GET /orlant/sta/estado', 'GET /orlant/sta/resumen', 'POST /orlant/sta
   'POST /orlant/sta/gestionados/regresar'], 'skip'); // pedido 2 de Edwin (23/11): soloGestor, probado en faseSTA5
 // Equidad profesionales de ORLANT (24/11/2026): ver = admin, gerencia y supervisor de ORLANT; cargar = admin,
 // cargarDatos y supervisor de ORLANT. Probado rol por rol en faseEQ2-equidad-profesionales.test.js.
-declarar(['GET /orlant/equidad/estado', 'GET /orlant/equidad/resumen', 'POST /orlant/equidad/cargas/:grupo', 'PUT /orlant/equidad/entidades'], 'skip');
+declarar(['GET /orlant/equidad/estado', 'GET /orlant/equidad/resumen', 'POST /orlant/equidad/cargas/:grupo', 'PUT /orlant/equidad/entidades', 'PUT /orlant/equidad/opciones'], 'skip'); // opciones: solo admin (faseEQ3)
 // Plan B de Wolkvox (B1): agente de la oficina, sin sesion; se protege con su propia clave
 // (X-Agente-Clave, huella en SSM) -- cubierto en faseB1-wolkvox-ingesta.test.js.
 declarar(['POST /api/wolkvox/agente/flujo'], 'skip');

@@ -14,9 +14,10 @@ const { wrap, logEvent, actorLabel } = require('./shared');
 
 const router = express.Router();
 const BASE = '/orlant/equidad';
-// Pregunta abierta (Isa/Edwin): ¿la ve la cuenta cliente de ORLANT, con el nombre de los profesionales?
-// Mientras no respondan, no: la pestaña queda para el administrador, gerencia y el supervisor de ORLANT.
-const VISIBLE_PARA_CLIENTE = false;
+// Pregunta abierta (Edwin): ¿la ve la cuenta cliente de ORLANT, con el nombre de los profesionales? Es una
+// opción guardada en la plataforma (EQ.visibleParaCliente), APAGADA por defecto: mientras esté apagada, la
+// pestaña queda para el administrador, gerencia y el supervisor de ORLANT. La cambia solo el administrador
+// (PUT /opciones, «Cargar bases» → ORLANT → Equidad profesionales), sin redesplegar.
 
 function puedeCargar(a) {
   if (!a) return false;
@@ -27,7 +28,7 @@ function puedeCargar(a) {
 function puedeVer(a) {
   if (!a) return false;
   if (puedeCargar(a) || a.rol === 'GERENCIA') return true;
-  return VISIBLE_PARA_CLIENTE && a.rol === 'CLIENTES_DASH' && campaignAccess(a, EQ.CAMPANA);
+  return a.rol === 'CLIENTES_DASH' && campaignAccess(a, EQ.CAMPANA) && EQ.visibleParaCliente(db);
 }
 const soloCarga = (req, res, next) => (puedeCargar(req.actor) ? next() : res.status(403).json({ error: 'Solo quien carga las bases de ORLANT' }));
 
@@ -60,6 +61,13 @@ router.put(BASE + '/entidades', requireActor, soloCarga, h((req, res) => {
   const r = EQ.guardarEntidades(db, req.body || {});
   logEvent('EQUIDAD_ENTIDADES', null, actorLabel(req.actor), `ORLANT · pólizas ${r.polizas.length}, prepagadas ${r.prepagada.length}`);
   res.json(r);
+}));
+
+router.put(BASE + '/opciones', requireActor, h((req, res) => {
+  if (!isFullAdmin(req.actor)) return res.status(403).json({ error: 'Solo el administrador' });
+  const v = EQ.cambiarVisibleParaCliente(db, (req.body || {}).visibleCliente, actorLabel(req.actor));
+  logEvent('EQUIDAD_OPCIONES', null, actorLabel(req.actor), `ORLANT · la cuenta cliente ${v ? 'VE' : 'no ve'} Equidad profesionales`);
+  res.json({ visibleCliente: v });
 }));
 
 module.exports = router;

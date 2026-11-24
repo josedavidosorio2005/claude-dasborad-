@@ -7,6 +7,14 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.268.0 — Noviembre 2026
+
+**ORLANT, Equidad profesionales: lista para mostrársela al cliente cuando Edwin diga.**
+
+- En «Cargar bases» → ORLANT → «Equidad profesionales» hay una casilla, solo para el administrador: «La cuenta cliente de ORLANT ve “Equidad profesionales”».
+- Viene apagada: el cliente no ve la pestaña hasta que alguien la marque. Se enciende y se apaga al instante, sin actualizar la plataforma.
+- El cliente solo puede verla, nunca cargar.
+
 ## v1.267.0 — Noviembre 2026
 
 **ORLANT: nueva pestaña «Equidad profesionales», con el diseño de Edwin.**

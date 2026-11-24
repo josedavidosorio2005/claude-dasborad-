@@ -33,6 +33,12 @@ function asegurarTablas(db) {
       cargadoEn TEXT NOT NULL,
       cargadoPor TEXT NOT NULL DEFAULT ''
     );
+    CREATE TABLE IF NOT EXISTS equidad_opciones (
+      clave TEXT PRIMARY KEY,
+      valor TEXT NOT NULL,
+      cambiadoEn TEXT NOT NULL,
+      cambiadoPor TEXT NOT NULL DEFAULT ''
+    );
     CREATE TABLE IF NOT EXISTS equidad_entidades (
       entidadNorm TEXT PRIMARY KEY,
       entidad TEXT NOT NULL,
@@ -112,6 +118,22 @@ function estado(db) {
   return { grupos, total: grupos.reduce((a, g) => a + g.filas.length, 0) };
 }
 
+// Opción «la ve la cuenta cliente de ORLANT» (pregunta abierta a Edwin). APAGADA por defecto: sin fila = no.
+// La enciende o apaga solo el administrador, desde «Cargar bases» (sin deploy).
+function visibleParaCliente(db) {
+  asegurarTablas(db);
+  const r = db.prepare("SELECT valor FROM equidad_opciones WHERE clave = 'visibleCliente'").get();
+  return !!r && r.valor === '1';
+}
+function cambiarVisibleParaCliente(db, valor, actor) {
+  if (typeof valor !== 'boolean') throw new EquidadError('visibleCliente debe ser sí o no');
+  asegurarTablas(db);
+  db.prepare(`INSERT INTO equidad_opciones (clave, valor, cambiadoEn, cambiadoPor) VALUES ('visibleCliente', ?, ?, ?)
+    ON CONFLICT(clave) DO UPDATE SET valor = excluded.valor, cambiadoEn = excluded.cambiadoEn, cambiadoPor = excluded.cambiadoPor`)
+    .run(valor ? '1' : '0', new Date().toISOString(), String(actor || '').slice(0, 80));
+  return visibleParaCliente(db);
+}
+
 // Resumen para el Centro de cargas (sin filas).
 function resumen(db) {
   asegurarTablas(db);
@@ -125,7 +147,8 @@ function resumen(db) {
       return { id: g.id, nombre: g.nombre, conEntidad: g.conEntidad, archivo: c ? c.archivoNombre : '', citas: c ? c.filas : 0, profesionales: p.n || 0, desde: p.desde || '', hasta: p.hasta || '', cargadoEn: c ? c.cargadoEn : '' };
     }),
     entidades: entidades(db),
+    visibleCliente: visibleParaCliente(db),
   };
 }
 
-module.exports = { CAMPANA, EquidadError, asegurarTablas, cargar, estado, resumen, entidades, guardarEntidades, mapaEntidades };
+module.exports = { CAMPANA, EquidadError, asegurarTablas, cargar, estado, resumen, entidades, guardarEntidades, mapaEntidades, visibleParaCliente, cambiarVisibleParaCliente };
