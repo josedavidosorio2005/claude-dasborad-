@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.261.0` (ver `server/package.json`, expuesta en
+- **Versión**: `1.265.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -653,6 +653,16 @@ mismo orden):
 - Fase A33 — MOBILIZE real: la Encuesta de la API guarda el CONN_ID (solo el ID de la llamada); Calidad de encuestas enlaza por el ID limpio (v1.260.1, 2026-11-24)
 - Pedido a de Edwin (24/11) — SURA «Ventas por día» sin porcentajes con «Ver por = Día» (v1.260.2, 2026-11-24)
 - Pedido b de Edwin (24/11) — Malla del supervisor compacta; en Puntualidad, la novedad en vez de «Sin ingreso» (v1.261.0, 2026-11-24)
+- Fase H-08 (L-03) — Tope de intentos de login en producción: `LOGIN_RATE_LIMIT_MAX` ≤ 10 y `LOGIN_RATE_LIMIT_USUARIO_MAX` ≤ 30, con aviso al arrancar (v1.261.1, 2026-11-24)
+- Pedido de Edwin (24/11) — Encuesta de Mobilize: monitorear si falla cualquier pregunta (solo prueba, sin cambio de versión)
+- Pedido de Edwin (24/11, 11 a. m.) — Malla: «Novedades» y «Horario especial» en ámbar; Talento humano sin el aviso del encabezado (v1.262.0, 2026-11-24)
+- Pedido de Edwin (24/11, 11 a. m.) — Malla: pausas activas, almuerzo y horas por día y semana (v1.263.0, 2026-11-24)
+- Auditoría de diseño y bugs del 24/11 — 6 arreglos: contraste AA, 44 px en el celular, meses en hora de Colombia (v1.263.1, 2026-11-24)
+- B6 y C2 (24/11) — Borradores de la política de retención de datos y de la ficha de fórmulas del tablero nuevo de ORLANT (solo docs)
+- Fase N2 — ORLANT, tablero nuevo: llamadas de entrada con el flujo y el CDR (v1.264.0, 2026-11-24)
+- Auditoría del 24/11 — Novedad sin fecha de fin y franja de demostración (v1.264.1, 2026-11-24)
+- Fase N3 — ORLANT, WhatsApp por API (`chat_1`) en la réplica, apagado (v1.265.0, 2026-11-24)
+- Cierre del 24/11 — Estado al final del día: producción 1.265.0 (solo docs)
 - Fase 309 — Revisión de seguridad: el cliente ya no recibe el nombre de los líderes en `GET /metas`; resto en `docs/revision-seguridad-2026-11-09.md` (v1.154.1, 2026-11-10)
 - Fase 308 — Revisión antes de la reunión con clientes y pendientes del supervisor (solo docs, 2026-11-10)
 - Fase 307 — Calidad para que los líderes evalúen: ORLANT conserva su Calidad y suma «Resultado de los monitoreos» al final; Aurora ya lo tenía (se muestra con el primer monitoreo) (v1.154.0, 2026-11-10)

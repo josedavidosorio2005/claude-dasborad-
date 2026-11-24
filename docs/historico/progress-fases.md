@@ -22624,3 +22624,17 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - el ORLANT real no cambia;
   - volver a correr el mes lo reemplaza, sin duplicar.
 - **PR sin mergear.** Nada encendido en SSM.
+
+## Cierre del 24/11 — Estado al final del día (solo docs, 2026-11-24)
+
+- **Producción:** `1.265.0` (`/api/health`, leído al cierre).
+- **Mergeados y desplegados hoy** (uno a la vez):
+  - #934 (1.260.2), #935 (1.261.0), #936 H-08 tope de login (1.261.1), #938 prueba de la Encuesta de Mobilize (sin versión), #939 (1.262.0), #940 (1.263.0), #944 (1.263.1), #941 N2 (1.264.0), #946 (1.264.1) y #945 N3 (1.265.0).
+  - Solo docs: #942 (B6, retención de datos) y #943 (C2, ficha de fórmulas de ORLANT).
+  - Las entradas de arriba que dicen «PR sin mergear» (auditoría del 24/11, N2, auditoría de bajos y N3) quedaron mergeadas con los PR de esta lista.
+- **H-08 (#936):** en producción el login queda en máximo 10 intentos por IP y 30 por usuario, con un aviso al arrancar si `app.env` pide más. Los pasos en AWS y en el servidor (permisos, rotar la llave, sudo) siguen sin tocar: los hace el usuario, uno a la vez y con su OK.
+- **N3:** el módulo `whatsapp` está en producción pero **apagado**. No se creó `WOLKVOX_ORLANT_AUTO_ACTIVO` ni se añadió `whatsapp` a `WOLKVOX_ORLANT_AUTO_MODULOS`.
+- **Siguen abiertos:**
+  - #937, propuesta de Equidad de ORLANT (solo docs): espera la respuesta de Isa. Entrega el viernes 27/11.
+  - #902 (B1): espera las respuestas de Edwin.
+- **Pendiente para el 25/11:** leer, solo conteos, la corrida de las 00:05 de MOBILIZE (réplica y real).
