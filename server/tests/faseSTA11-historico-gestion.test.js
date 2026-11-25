@@ -1,7 +1,8 @@
 // faseSTA11-historico-gestion.test.js — Pedido de Edwin (25/11/2026, 2:45 p. m.): cargar el histórico de STA con su
 // gestión (codificación, observación, fecha de gestión sin hora y asesor). Decisiones del usuario (26/11):
 //  - orden NOVIEMBRE → OCTUBRE → SEPTIEMBRE; una autorización que ya existe se rechaza (gana la más reciente);
-//  - «En proceso» / «Sin contacto»: disponibles, la gestión vieja en «Gestiones anteriores» (no suma);
+//  - «En proceso» / «Sin contacto»: disponibles, la gestión vieja en «Gestiones anteriores»; ajuste (25/11): si trae
+//    codificación, esa gestión CUENTA (gráficas, Gestionados, productividad) con la marca `cuenta`; sin codificación no;
 //  - otro estado: gestionados a nombre de su asesora, en su fecha y sin hora, con su estado (suman en gráficas);
 //  - «Agenda InConexion» (efectiva) = 1 cita; asesora sin usuario = no entra; revisar (dryRun) no escribe nada.
 // Datos INVENTADOS.
@@ -43,7 +44,7 @@ test('revisar (dryRun): hace las cuentas y NO escribe nada', async () => {
   const cargasAntes = db.prepare('SELECT COUNT(*) n FROM sta_cargas').get().n;
   const r = await hist(sup, 'STA - NOVIEMBRE.xlsx', [fila('HX-1', 'En proceso', 'No contesta', '2026-11-03', 'Asesora Inventada Uno'), fila('HX-2', 'Agendada', 'Agenda InConexion', '2026-11-04', 'ASESORA INVENTADA DOS')], true);
   assert.equal(r.status, 200, JSON.stringify(r.body));
-  assert.deepEqual([r.body.dryRun, r.body.nuevos, r.body.disponibles, r.body.gestionados, r.body.citas], [true, 2, 1, 1, 1]);
+  assert.deepEqual([r.body.dryRun, r.body.nuevos, r.body.disponibles, r.body.gestionados, r.body.cuentanDisponibles, r.body.citas], [true, 2, 1, 1, 1, 1]);
   assert.match(r.body.mensaje, /^Revisión \(no se cargó nada\)/);
   assert.equal(db.prepare('SELECT COUNT(*) n FROM sta_casos').get().n, antes);
   assert.equal(db.prepare('SELECT COUNT(*) n FROM sta_cargas').get().n, cargasAntes);
@@ -55,15 +56,23 @@ test('NOVIEMBRE → OCTUBRE: rechaza las que ya existen (gana la más reciente);
     fila('HX-2', 'Agendada', 'Agenda InConexion', '2026-11-04', 'ASESORA INVENTADA DOS'),
     fila('HX-EXISTE', 'Facturado', 'Paciente atendido', '2026-11-05', 'Asesora Inventada Uno'),
     fila('HX-3', 'Facturado', 'Paciente atendido', '2026-11-06', 'Persona Sin Usuario'),
+    fila('HX-6', 'Sin contacto', '', '2026-11-07', 'Asesora Inventada Uno'),
+    fila('HX-7', 'En proceso', 'Agenda InConexion', '2026-11-08', 'Asesora Inventada Dos'),
   ]);
   assert.equal(r.status, 200);
-  assert.deepEqual([r.body.nuevos, r.body.existen, r.body.sinAsesor], [2, 1, 1]);
+  assert.deepEqual([r.body.nuevos, r.body.existen, r.body.sinAsesor, r.body.disponibles, r.body.cuentanDisponibles, r.body.citas], [4, 1, 1, 3, 2, 2]);
   assert.deepEqual(r.body.asesoresSinUsuario, { 'Persona Sin Usuario': 1 });
   // HX-1 «En proceso»: disponible, sin asesora; la gestión vieja en «Gestiones anteriores».
   const c1 = caso('HX-1');
   assert.deepEqual([c1.estado, c1.agenteId, c1.tipi], ['pendiente', null, '']);
   const p1 = JSON.parse(c1.prev)[0];
-  assert.deepEqual([p1.tipi, p1.fg, p1.agente, p1.historico], ['No contesta', '2026-11-03 00:00:00', idA, true]);
+  assert.deepEqual([p1.tipi, p1.fg, p1.agente, p1.historico, p1.cuenta], ['No contesta', '2026-11-03 00:00:00', idA, true, true]);
+  // Sin codificación: disponible y su gestión NO cuenta.
+  const p6 = JSON.parse(caso('HX-6').prev)[0];
+  assert.deepEqual([caso('HX-6').estado, p6.cuenta, p6.citas], ['pendiente', undefined, 0]);
+  // «Agenda InConexion» en un caso disponible: cuenta con 1 cita.
+  const p7 = JSON.parse(caso('HX-7').prev)[0];
+  assert.deepEqual([caso('HX-7').estado, caso('HX-7').agenteId, p7.cuenta, p7.citas, p7.agente], ['pendiente', null, true, 1, idB]);
   assert.ok(STA.disponiblesFiltrados(db, {}).some((x) => x.numero === 'HX-1'));
   // HX-2 «Agendada»: gestionado a nombre de su asesora, en su fecha sin hora, 1 cita (efectiva).
   const c2 = caso('HX-2');
@@ -96,11 +105,35 @@ test('cada archivo queda como una carga propia (se puede eliminar) y el Historia
   assert.equal(caso('HX-4'), undefined, 'eliminar la carga quita lo del histórico');
 });
 
-test('las gestiones del histórico (no disponibles) suman en el resumen del cliente; las disponibles no', async () => {
+test('suman en el resumen del cliente las gestionadas y las disponibles con codificación; las sin codificación no', async () => {
   const r = (await request(app).get(B + '/resumen').set(H(cli))).body;
   assert.ok(r.porTipi['Agenda InConexion'] >= 1);
   assert.ok(r.porDia['2026-11-04'] && r.porDia['2026-11-04'].citas >= 1);
-  assert.ok(!r.porDia['2026-11-03'], 'HX-1 quedó disponible: no suma');
+  assert.equal(r.porDia['2026-11-03'].gestiones, 1, 'HX-1 disponible con codificación: suma en su fecha');
+  assert.equal(r.porDia['2026-11-08'].citas, 1, 'HX-7: Agenda InConexion = 1 cita');
+  assert.ok(!r.porDia['2026-11-07'], 'HX-6 sin codificación: no suma');
+  // La vista del cliente lleva la gestión que cuenta, recortada (sin observación).
+  const e = (await request(app).get(B + '/estado?vista=cliente').set(H(cli))).body;
+  const conPrev = (e.casos || []).filter((c) => c._prev);
+  assert.ok(conPrev.length >= 2 && conPrev.every((c) => c._prev.every((p) => p.cuenta && !('obs' in p))), JSON.stringify(conPrev).slice(0, 200));
+});
+
+test('app: gestFiltradas suma la gestión del histórico de un caso disponible, a nombre de su asesora y en su fecha', () => {
+  const fs = require('fs'), path = require('path'), vm = require('vm');
+  const APP = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'js', 'orlant-sta-app.js'), 'utf8');
+  const trozo = (n) => APP.match(new RegExp('\nfunction ' + n + '\\(.*\n'))[0];
+  const ctx = { S: { casos: {
+    a: { _id: 'a', _estado: 'gestionado', _agente: '5', _tipi: 'No contesta', _fg: '2026-10-02 08:00:00', _citas: 0 },
+    b: { _id: 'b', _estado: 'pendiente', _agente: null, _tipi: '', _fg: '', _prev: [{ cuenta: true, agente: 7, tipi: 'Agenda InConexion', fg: '2026-11-03 00:00:00', citas: 1 }, { agente: 7, tipi: 'No contesta', fg: '2026-11-01 00:00:00' }] },
+  } } };
+  vm.createContext(ctx); vm.runInContext(trozo('gestHistCuenta') + trozo('gestFiltradas'), ctx);
+  const l = ctx.gestFiltradas('', '', '');
+  assert.equal(l.length, 2, 'la gestionada y la del histórico que cuenta (no la que no cuenta)');
+  const v = l.find((c) => c._virtual);
+  assert.deepEqual([v._agente, v._tipi, v._citas, v._estado, v._id], ['7', 'Agenda InConexion', 1, 'gestionado', 'b#h0']);
+  assert.equal(ctx.gestFiltradas('7', '2026-11-01', '2026-11-30').length, 1, 'filtra por asesora y fechas');
+  assert.equal(ctx.S.casos.b._estado, 'pendiente', 'el caso sigue disponible');
+  assert.match(APP, /c\._virtual\?' disabled title="Gestión del histórico: el caso ya está disponible"'/);
 });
 
 test('permisos y validación: solo quien gestiona el STA; archivo vacío o sin nombre, 400', async () => {

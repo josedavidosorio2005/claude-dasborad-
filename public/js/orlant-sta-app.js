@@ -643,7 +643,8 @@ function llenarSelects(){
     $(id).innerHTML=`<option value="">Todas</option>`+ops.map(o=>`<option value="${esc(o)}">${esc(o||'(vacío)')}</option>`).join(''); $(id).value=v; });
 }
 function limpiarGr(){ ['grAg','grEnt','grServ','grD','grH','grMes'].forEach(id=>$(id).value=''); pintarGraficas(); }
-function gestFiltradas(ag,d,h){ return Object.values(S.casos).filter(c=>c._estado==='gestionado' && (!ag||c._agente===ag) && (!d||c._fg.slice(0,10)>=d) && (!h||c._fg.slice(0,10)<=h)); }
+function gestHistCuenta(){ const out=[]; for(const c of Object.values(S.casos)) (c._prev||[]).forEach((p,i)=>{ if(p&&p.cuenta&&p.fg) out.push(Object.assign({},c,{_id:c._id+'#h'+i,_virtual:true,_estado:'gestionado',_agente:p.agente==null?null:String(p.agente),_tipi:p.tipi||'',_obs:p.obs||'',_fg:p.fg,_citas:p.citas||0,_rell:null})); }); return out; }
+function gestFiltradas(ag,d,h){ return Object.values(S.casos).filter(c=>c._estado==='gestionado').concat(gestHistCuenta()).filter(c=>(!ag||c._agente===ag) && (!d||c._fg.slice(0,10)>=d) && (!h||c._fg.slice(0,10)<=h)); }
 function diasHabiles(a,b){ const out=[]; const d=new Date(a+'T00:00:00'), f=new Date(b+'T00:00:00');
   while(d<=f && out.length<400){ const w=d.getDay(); if(w!==0&&w!==6) out.push(`${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())}`); d.setDate(d.getDate()+1); } return out; }
 const dm=s=>`${s.slice(8,10)}/${s.slice(5,7)}`;
@@ -821,7 +822,7 @@ function gestSupLista(){
 }
 function pintarGestSup(){
   pintarCambios();
-  const l=gestSupLista(), tot=Object.values(S.casos).filter(c=>c._estado==='gestionado').length;
+  const l=gestSupLista(), tot=Object.values(S.casos).filter(c=>c._estado==='gestionado').length+gestHistCuenta().length;
   const max=20;
   const tis=[...new Set([...S.tipis,...Object.values(S.casos).filter(c=>c._estado==='gestionado'&&c._tipi).map(c=>c._tipi)])];
   const vr=$('gsRegTi').value; $('gsRegTi').innerHTML='<option value="">Elige la codificación</option>'+tis.map(t=>{ const n=Object.values(S.casos).filter(c=>c._estado==='gestionado'&&c._tipi===t).length; return `<option value="${esc(t)}">${esc(t)} (${n.toLocaleString('es-CO')})</option>`; }).join(''); $('gsRegTi').value=vr;
@@ -830,14 +831,14 @@ function pintarGestSup(){
   $('gsInfo').innerHTML = `${l.length.toLocaleString('es-CO')} gestiones${l.length!==tot?` (de ${tot.toLocaleString('es-CO')} en total)`:''}`
     + (l.length>max?` · Se muestran las últimas ${max}. Para ver todas usa <b>Exportar a Excel</b>.`:'');
   if(!l.length){ $('gsTabla').innerHTML='<div class="card vacio">No hay gestiones para mostrar.</div>'; return; }
-  const vis=l.slice(0,max), todos=vis.every(c=>selGest.has(c._id));
+  const vis=l.slice(0,max), marcables=vis.filter(c=>!c._virtual), todos=marcables.length>0&&marcables.every(c=>selGest.has(c._id));
   $('gsTabla').innerHTML=`<div class="tw"><table><thead><tr><th><input type="checkbox" aria-label="Marcar todos los mostrados" ${todos?'checked':''} onchange="STAapp.marcarGestTodos(this.checked)"></th><th>Fecha</th><th>Hora</th><th>Numero Autorizacion</th><th>Codificación</th><th>Citas</th><th>Agente</th></tr></thead><tbody>
-    ${vis.map(c=>`<tr><td><input type="checkbox" aria-label="Marcar ${esc(c['Numero Autorizacion'])}" ${selGest.has(c._id)?'checked':''} onchange="STAapp.marcarGest(${jsArg(c._id)},this.checked)"></td><td class="nw">${verFecha(c._fg)}</td><td class="nw">${c._fg.slice(11,19)==='00:00:00'?'':c._fg.slice(11,19)}</td><td class="nw">${esc(c['Numero Autorizacion'])}</td><td><span class="tag ${S.efectivas.includes(c._tipi)?'v':''}">${esc(c._tipi)}</span></td><td>${c._citas||''}</td><td>${esc(nombreAgente(c._agente))}</td></tr>`).join('')}
+    ${vis.map(c=>`<tr><td><input type="checkbox" aria-label="Marcar ${esc(c['Numero Autorizacion'])}" ${selGest.has(c._id)?'checked':''}${c._virtual?' disabled title="Gestión del histórico: el caso ya está disponible"':''} onchange="STAapp.marcarGest(${jsArg(c._id)},this.checked)"></td><td class="nw">${verFecha(c._fg)}</td><td class="nw">${c._fg.slice(11,19)==='00:00:00'?'':c._fg.slice(11,19)}</td><td class="nw">${esc(c['Numero Autorizacion'])}</td><td><span class="tag ${S.efectivas.includes(c._tipi)?'v':''}">${esc(c._tipi)}</span></td><td>${c._citas||''}</td><td>${esc(nombreAgente(c._agente))}</td></tr>`).join('')}
   </tbody></table></div>${l.length>max?`<div class="fila" style="margin-top:10px"><span class="muted">Mostrando las últimas ${max} de ${l.length.toLocaleString('es-CO')}.</span><button class="btn pri sm" onclick="STAapp.exportarGestionados()">Descargar todas (Excel)</button></div>`:''}`;
 }
 const selGest=new Set();
 function marcarGest(id,on){ if(on) selGest.add(id); else selGest.delete(id); pintarGestSup(); }
-function marcarGestTodos(on){ gestSupLista().slice(0,20).forEach(c=>{ if(on) selGest.add(c._id); else selGest.delete(c._id); }); pintarGestSup(); }
+function marcarGestTodos(on){ gestSupLista().slice(0,20).filter(c=>!c._virtual).forEach(c=>{ if(on) selGest.add(c._id); else selGest.delete(c._id); }); pintarGestSup(); }
 async function regresarPorTipi(){
   const t=$('gsRegTi').value; if(!t) return toast('Elige la codificación');
   const n=Object.values(S.casos).filter(c=>c._estado==='gestionado'&&c._tipi===t).length; if(!n) return toast('No hay gestionados con esa codificación');
@@ -893,7 +894,7 @@ const dropEst=$('dropEst');
 dropEst.addEventListener('drop',ev=>{ const f=ev.dataTransfer.files[0]; if(f) procesarEstados(f); });
 $('archivoEst').addEventListener('change',e=>{ const f=e.target.files[0]; if(f) procesarEstados(f); e.target.value=''; });
 
-var STAapp = { estadoVacio, cargarEstado, accion, refrescar, isoLocal, ahora, aFecha, verFecha, verValor, normClave, normHeader, nombreAgente, cerrarModal, dialogo, mostrar, salir, iniciar, abrirPanelAgente, tabAgente, misPendientes, pintarBandeja, abrirCodificar, pideCitas, esVolver, cambioTipi, guardarCodificacion, misRell, pintarRellamadas, pitar, revisarRellamadas, pintarGestionados, tabSup, pintarBase, leerArchivo, procesarCarga, casosDeCarga, pedirBorrarCarga, borrarCarga, descargarCarga, descargarPlantilla, procesarEstados, descargarPlantillaEstado, revisarHistorico, resumenHistorico, confirmarHistorico, cancelarHistorico, exportarExcel, contar, pintarAsignar, togglePend, pendDe, selDe, pintarPendTodos, selUno, selCantidad, selTodos, devolverSel, pasarSel, selAgente, disponibles, filtrar, opciones, msHTML, toggleMs, filtrarMs, msTodos, msNormalizar, msTexto, msRefrescarTexto, marcarMs, limpiarMs, cerrarMs, todoMs, setF, actualizarConteo, limpiarFiltros, pintarPanelAsig, asignar, avisoCantidad, aceptarExistentes, ejecutarAsignacion, quitarPendientes, tipShow, mesActualSta, rangoMes, mesesConGestion, llenarMeses, ponerRango, elegirMes, llenarSelects, limpiarGr, gestFiltradas, diasHabiles, nice, corta, leyenda, colTipi, hbarSVG, donaSVG, agrupar, lineaSVG, colSVG, pintarGraficas, cambiosEstado, pintarCambios, gestSupLista, pintarGestSup, marcarGest, marcarGestTodos, regresarPorTipi, regresarSel, exportarGestionados, pintarTipis, marcarEfectiva, crearTipi, moverTipi, borrarTipi, $: $ };
+var STAapp = { estadoVacio, cargarEstado, accion, refrescar, isoLocal, ahora, aFecha, verFecha, verValor, normClave, normHeader, nombreAgente, cerrarModal, dialogo, mostrar, salir, iniciar, abrirPanelAgente, tabAgente, misPendientes, pintarBandeja, abrirCodificar, pideCitas, esVolver, cambioTipi, guardarCodificacion, misRell, pintarRellamadas, pitar, revisarRellamadas, pintarGestionados, tabSup, pintarBase, leerArchivo, procesarCarga, casosDeCarga, pedirBorrarCarga, borrarCarga, descargarCarga, descargarPlantilla, procesarEstados, descargarPlantillaEstado, revisarHistorico, resumenHistorico, confirmarHistorico, cancelarHistorico, exportarExcel, contar, pintarAsignar, togglePend, pendDe, selDe, pintarPendTodos, selUno, selCantidad, selTodos, devolverSel, pasarSel, selAgente, disponibles, filtrar, opciones, msHTML, toggleMs, filtrarMs, msTodos, msNormalizar, msTexto, msRefrescarTexto, marcarMs, limpiarMs, cerrarMs, todoMs, setF, actualizarConteo, limpiarFiltros, pintarPanelAsig, asignar, avisoCantidad, aceptarExistentes, ejecutarAsignacion, quitarPendientes, tipShow, mesActualSta, rangoMes, mesesConGestion, llenarMeses, ponerRango, elegirMes, llenarSelects, limpiarGr, gestHistCuenta, gestFiltradas, diasHabiles, nice, corta, leyenda, colTipi, hbarSVG, donaSVG, agrupar, lineaSVG, colSVG, pintarGraficas, cambiosEstado, pintarCambios, gestSupLista, pintarGestSup, marcarGest, marcarGestTodos, regresarPorTipi, regresarSel, exportarGestionados, pintarTipis, marcarEfectiva, crearTipi, moverTipi, borrarTipi, $: $ };
 if (typeof window !== 'undefined') window.STAapp = STAapp;
 return { iniciar: iniciar, refrescar: refrescar, vista: function(){ return VISTA; }, activar: function(){ if (typeof window !== 'undefined') window.STAapp = STAapp; } };
 }
