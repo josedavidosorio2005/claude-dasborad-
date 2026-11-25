@@ -158,6 +158,7 @@ function createApp() {
     '/api/calidad/llamadas-no-conectadas/carga', '/api/calidad/llamadas-no-conectadas/carga/impacto', // Fase 194
     '/api/calidad/whatsapp-tiempos/carga', '/api/calidad/whatsapp-tiempos/carga/impacto',
     '/api/orlant/sta/cargas', // Fase STA: base de Gestión STA (filas leídas + Excel original)
+    '/api/orlant/sta/historico', // STA13 (25/11): histórico con gestión; septiembre (4.933 filas) pesa ≈2,4 MB
     '/api/orlant/equidad/cargas/polizas', '/api/orlant/equidad/cargas/prepagada', '/api/orlant/equidad/cargas/particulares', // Equidad profesionales (24/11)
     '/api/tickets', // pedido 7 de Edwin (23/11/2026): ticket con 1 adjunto de hasta 3 MB (≈4 MB en base64)
   ];
