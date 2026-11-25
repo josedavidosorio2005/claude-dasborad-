@@ -24,7 +24,15 @@ function _tkPintarContador(n) {
     b.classList.toggle('hidden', !txt);
   });
   var lbl = ticketsBotonEtiqueta(n);
-  document.querySelectorAll('.tk-menu-btn').forEach(function (b) { b.setAttribute('aria-label', lbl); });
+  // 25/11 (axe, label-content-name-mismatch): la tarjeta del menú (.dash-btn) ya muestra su nombre y su
+  // descripción; un aria-label los tapaba. Ahí los nuevos van en un texto solo para el lector de pantalla.
+  document.querySelectorAll('.tk-menu-btn').forEach(function (b) {
+    if (b.classList.contains('dash-btn')) {
+      b.removeAttribute('aria-label');
+      var sr = b.querySelector('[data-tk-sr]');
+      if (sr) sr.textContent = Number(n) > 0 ? ' ' + lbl.replace('Sugerencias / Tickets ', '') : '';
+    } else b.setAttribute('aria-label', lbl);
+  });
   document.querySelectorAll('.navbar-profile-toggle').forEach(function (b) { b.setAttribute('aria-label', Number(n) > 0 ? 'Cuenta (' + lbl.replace('Sugerencias / Tickets ', 'tickets ') + ')' : 'Cuenta'); });
 }
 async function ticketsActualizarContador() {

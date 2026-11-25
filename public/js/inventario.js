@@ -13,16 +13,8 @@ var _invEditId = null;
 // ═══════════════════════════════════════════════════════════
 // APERTURA / CIERRE
 // ═══════════════════════════════════════════════════════════
-async function openInventario(){
-  if(!(isFullAdmin() || (currentUser && currentUser.perms && currentUser.perms.Inventario))){
-    showToast('No tienes acceso al modulo de Inventario'); return;
-  }
-  document.getElementById('inventario-overlay').classList.add('show');
-  await loadInvData();
-  renderInvFiltros();
-  renderInvKpis();
-  renderInvTabla();
-}
+// 25/11: se quitó la función openInventario. Abría la ventana del Inventario anterior (retirado en la Fase 383),
+// cuyas rutas responden 410; ninguna tarjeta ni menú vigente llegaba a ella. El vigente es activos.js.
 function closeInventario(){
   document.getElementById('inventario-overlay').classList.remove('show');
 }
