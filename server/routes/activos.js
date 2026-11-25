@@ -8,6 +8,7 @@ const A = require('../activos');
 const F = require('../activos-formularios'); // Fase 372 (E4)
 const NGH = require('../gh-novedades'); // Fase GH4
 const { wrap, actorLabel, logEvent } = require('./shared');
+const { rateLimit } = require('express-rate-limit');
 
 const router = express.Router();
 router.use('/activos', (req, res, next) => { res.set('Cache-Control', 'no-store'); next(); });
@@ -24,6 +25,27 @@ router.get('/activos/config', requireActor, wrap((req, res) => {
   res.json({ ambito, estados: A.ESTADOS, rendimientos: A.RENDIMIENTOS, /* Fase 377 */ tipos: A.tipos(db, { ambito }), listas: Object.fromEntries(Object.keys(A.LISTAS).map((k) => [k, A.lista(db, k)])),
     // Fase 372 (E4): para Ajustes › Formularios (todos los tipos, también los desactivados) y los textos del acta.
     tiposTodos: A.tipos(db, { todos: true, ambito }), textos: F.textos(db), textosNombres: Object.fromEntries(Object.entries(F.TEXTOS).map(([k, t]) => [k, t.nombre])) });
+}));
+
+// ── Pedido de Edwin (25/11/2026): nombre desde Talento humano al escribir la cédula de un agente nuevo ──
+// Solo ADMIN y SISTEMAS (los que ya ven el Inventario). Coincidencia exacta; devuelve solo el nombre. La cédula va
+// en el cuerpo (nunca en la URL, que es lo único que registra el log de accesos), no se escribe en el Historial ni
+// en los errores, y la búsqueda tiene su propio límite bajo, por usuario, para que no sirva para averiguar nombres.
+const GH_NOMBRE_VENTANA_MS = 10 * 60 * 1000;
+const GH_NOMBRE_MAX = 20;
+const ghNombreLimite = rateLimit({
+  windowMs: GH_NOMBRE_VENTANA_MS,
+  max: GH_NOMBRE_MAX,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => 'gh-nombre:' + String(req.actor && (req.actor.id != null ? req.actor.id : req.actor.user)),
+  message: { error: 'Demasiadas búsquedas de cédula. Espera unos minutos.' },
+});
+router.post('/activos/gh-nombre', requireActor, (req, res, next) => (permitido(req, res) ? next() : undefined), ghNombreLimite, wrap((req, res) => {
+  const d = typeof (req.body || {}).documento === 'string' ? req.body.documento.trim() : '';
+  if (!/^[A-Za-z0-9.\- ]{3,20}$/.test(d)) return res.status(400).json({ error: 'Documento inválido' });
+  const nombre = NGH.nombrePorDocumento(db, d);
+  res.json(nombre ? { encontrado: true, nombre } : { encontrado: false });
 }));
 
 // ── Fase 372 (E4): formularios editables (tipos y sus campos) y textos del acta. Historial sin datos personales.

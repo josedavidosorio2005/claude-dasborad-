@@ -81,4 +81,15 @@ function novedades(db, opts) {
   return R;
 }
 
-module.exports = { novedades, estadoHoy, proxima, hoyColombia, doc, norm, DIAS_PROXIMOS };
+// Pedido de Edwin (25/11/2026): al escribir la cédula de un agente nuevo en el Inventario, su nombre desde Talento
+// humano. Coincidencia EXACTA del documento (sin puntos ni espacios, igual que el cruce de arriba); devuelve SOLO el
+// nombre, nada más del empleado. Sin documento o sin coincidencia: null.
+function nombrePorDocumento(db, documento) {
+  const d = doc(documento);
+  if (!d) return null;
+  const e = leer(db, BASE).find((x) => x && typeof x === 'object' && doc(x.numId) === d);
+  const nombre = e ? String(e.nombre == null ? '' : e.nombre).replace(/\s+/g, ' ').trim().slice(0, 80) : '';
+  return nombre || null;
+}
+
+module.exports = { novedades, estadoHoy, proxima, hoyColombia, doc, norm, DIAS_PROXIMOS, nombrePorDocumento };

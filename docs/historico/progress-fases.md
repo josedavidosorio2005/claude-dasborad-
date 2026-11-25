@@ -22836,3 +22836,25 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - se ajustaron fase144-a5 (un uso más del token verde), fase283 («Acceso a clientes» también para GERENCIA), faseSTA-app y faseSTA (GERENCIA ya no gestiona el STA);
   - suite completa en verde.
 - **Después del merge, con OK y la sesión del usuario:** marcarle a Jairo todos los clientes, Gerencia y Tickets, quitarle Calidad y verificar con «Ver como».
+
+## Inventario: la cédula del agente nuevo trae el nombre desde Talento humano (v1.272.0, 2026-11-25, PR sin mergear)
+
+- **Pedido de Edwin** (llamada del 25/11): al poner la cédula de un agente en el Inventario, que traiga el nombre desde Talento humano. Antes no existía: el cruce por documento solo lo usaban las «Novedades de Gestión Humana».
+- **Servidor:**
+  - `gh-novedades.nombrePorDocumento`: coincidencia **exacta** del documento sin puntos ni espacios. Devuelve **solo el nombre**, nada más del empleado.
+  - `POST /api/activos/gh-nombre`: solo ADMIN y SISTEMAS. La cédula va en el cuerpo; el log de accesos registra solo la ruta.
+  - **Límite propio**: 20 búsquedas por usuario cada 10 minutos.
+  - Sin Historial. Los errores no repiten la cédula.
+- **Regla si no está en Talento humano:** `CEDULA_SIN_GH = 'avisar'` (decisión del usuario). Se crea el agente con el nombre escrito a mano y aviso. Pasar a `'bloquear'` es cambiar esa constante; la rama ya está en `crearAgente`, por donde pasan las dos formas de crear un agente.
+- **Navegador:** los dos formularios de agente nuevo («Agentes» y «Agente nuevo…» al asignar) buscan al cambiar la cédula.
+  - Llenan el nombre, que se puede corregir, con un aviso verde («Nombre tomado de Talento humano») o ámbar («No se encontró en Talento humano»).
+  - Un nombre corregido a mano no se pisa con otra búsqueda (encontrado en la revisión local).
+- **Pruebas:** `faseGH9-cedula-nombre-inventario.test.js` (7), con cédulas y nombres inventados. Cubren:
+  - encuentra el nombre;
+  - no encontrada: aviso y deja crear;
+  - 403 para otros roles y 401 sin sesión;
+  - formato inválido sin eco;
+  - el límite corta por usuario;
+  - la cédula no aparece en consola ni en el Historial.
+  - **Fallan las 7 contra `main`** (comprobado en un worktree).
+- **Revisión local** (base de demostración y un empleado inventado), a 375, 768 y 1440 px, en claro y oscuro: encontrado, no encontrado y nombre conservado; 0 errores de consola y sin desborde. Capturas fuera del repo, ya borradas.

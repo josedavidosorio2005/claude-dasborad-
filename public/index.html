@@ -2074,7 +2074,7 @@
       <div id="ac-ag-zona">
         <form id="ac-ag-form" class="ac-filtros" onsubmit="activosCrearAgente(event)" novalidate>
           <div class="ig"><label for="ac-ag-nombre">Nombre del agente</label><input type="text" id="ac-ag-nombre" maxlength="80" required></div>
-          <div class="ig"><label for="ac-ag-documento">Documento (opcional)</label><input type="text" id="ac-ag-documento" maxlength="20" inputmode="numeric"></div>
+          <div class="ig"><label for="ac-ag-documento">Documento (opcional)</label><input type="text" id="ac-ag-documento" maxlength="20" inputmode="numeric" autocomplete="off" aria-describedby="ac-ag-doc-aviso" onchange="activosCedulaGh('ac-ag-documento','ac-ag-nombre','ac-ag-doc-aviso')"><p class="ac-gh-aviso" id="ac-ag-doc-aviso" role="status" aria-live="polite"></p></div>
           <div class="ig"><label for="ac-ag-sede">Sede</label><select id="ac-ag-sede"></select></div>
           <div class="ig"><label for="ac-ag-operacion">Operación</label><select id="ac-ag-operacion"></select></div>
           <button type="submit" class="btn-primary ac-btn">Agregar agente</button>

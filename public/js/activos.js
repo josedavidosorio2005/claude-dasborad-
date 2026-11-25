@@ -290,8 +290,33 @@ function activosAgenteSelectHtml(agentes, excluirId, operaciones) {
     agentes.filter(function (g) { return g.id !== excluirId; }).map(function (g) { return '<option value="' + Number(g.id) + '">' + esc(g.nombre) + (g.documento ? ' · ' + esc(g.documento) : '') + '</option>'; }).join('') +
     '<option value="__nuevo">➕ Agente nuevo…</option></select></div>' +
     '<div class="ac-g-nuevo hidden" id="ac-g-nuevo"><div class="ig"><label for="ac-g-nombre">Nombre completo</label><input type="text" id="ac-g-nombre" maxlength="80" autocomplete="off"></div>' +
-    '<div class="ig"><label for="ac-g-doc">Cédula</label><input type="text" id="ac-g-doc" maxlength="20" inputmode="numeric" autocomplete="off"></div>' +
+    '<div class="ig"><label for="ac-g-doc">Cédula</label><input type="text" id="ac-g-doc" maxlength="20" inputmode="numeric" autocomplete="off" aria-describedby="ac-g-doc-aviso" onchange="activosCedulaGh(\'ac-g-doc\',\'ac-g-nombre\',\'ac-g-doc-aviso\')"><p class="ac-gh-aviso" id="ac-g-doc-aviso" role="status" aria-live="polite"></p></div>' +
     '<div class="ig"><label for="ac-g-op">Operación</label><select id="ac-g-op">' + _acOpciones(operaciones || [], null, '—') + '</select></div></div>';
+}
+// Pedido de Edwin (25/11/2026): al cambiar la cédula de un agente nuevo, su nombre desde Talento humano. Si no está,
+// se deja escribir el nombre a mano con el aviso «No se encontró en Talento humano». El nombre traído se puede
+// corregir; si el usuario ya había escrito otro, no se pisa. Nada de la cédula va a la consola ni a un toast.
+function activosCedulaAviso(r) { // puro (pruebas): texto y clase del aviso
+  if (!r) return { texto: '', clase: '' };
+  if (r.error) return { texto: r.error, clase: 'no' };
+  return r.encontrado ? { texto: 'Nombre tomado de Talento humano.', clase: 'si' } : { texto: 'No se encontró en Talento humano. Escribe el nombre a mano.', clase: 'no' };
+}
+async function activosCedulaGh(idDoc, idNombre, idAviso) {
+  var doc = _acEl(idDoc), nom = _acEl(idNombre), av = _acEl(idAviso);
+  if (!doc || !nom || !av) return;
+  var v = String(doc.value || '').trim();
+  var pintar = function (r) { var a = activosCedulaAviso(r); av.textContent = a.texto; av.className = 'ac-gh-aviso' + (a.clase ? ' ' + a.clase : ''); };
+  if (v.length < 3) { pintar(null); return; }
+  var r;
+  try { r = await apiRequest('POST', '/activos/gh-nombre', { documento: v }); }
+  catch (e) { pintar({ error: e.status === 429 ? 'Demasiadas búsquedas de cédula. Espera unos minutos.' : 'No se pudo buscar en Talento humano.' }); return; }
+  if (String(doc.value || '').trim() !== v) return; // cambió mientras buscaba
+  if (r && r.encontrado && (!nom.value.trim() || nom.dataset.gh === '1')) {
+    nom.value = r.nombre; nom.dataset.gh = '1';
+    // Si después lo corrigen a mano, ya no es «de Talento humano»: otra búsqueda no lo pisa.
+    nom.oninput = function () { nom.dataset.gh = ''; };
+  }
+  pintar(r);
 }
 function activosAgenteNuevoToggle() { _acEl('ac-g-nuevo').classList.toggle('hidden', _acEl('ac-g-agente').value !== '__nuevo'); }
 // Cuerpo de la petición con el agente elegido o el nuevo (exportada para las pruebas).
@@ -1268,3 +1293,4 @@ function activosEditarFormulario(codigo) { activosTab('ajustes'); activosEditarT
 function activosNuevaTecnologia() { activosTab('ajustes'); activosEditarTipo(null); }
 function activosIrImportar() { activosTab('ajustes'); var s = _acEl('ac-imp-tipo'); if (s) { try { s.scrollIntoView({ block: 'center' }); } catch (e) { /* */ } s.focus(); } }
 if (typeof module !== 'undefined' && module.exports) { module.exports.activosPanel2Html = activosPanel2Html; module.exports.activosRegistrarTarjetasHtml = activosRegistrarTarjetasHtml; module.exports.activosConteoTexto = activosConteoTexto; module.exports.activosListaHtml = activosListaHtml; module.exports.activosInvTiposHtml = activosInvTiposHtml; module.exports.activosActasPestanasHtml = activosActasPestanasHtml; module.exports.activosAjEstadosHtml = activosAjEstadosHtml; }
+if (typeof module !== 'undefined' && module.exports) module.exports.activosCedulaAviso = activosCedulaAviso; // 25/11: aviso de la cédula (pruebas)

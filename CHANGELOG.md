@@ -7,6 +7,14 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.272.0 — Noviembre 2026
+
+**Inventario: la cédula trae el nombre desde Talento humano (pedido de Edwin, 25/11).**
+
+- Al crear un agente nuevo en el Inventario (en «Agentes» o al asignar un elemento), al escribir la cédula se busca en Talento humano y se llena el nombre. Se puede corregir.
+- Si la cédula no está en Talento humano, sale el aviso «No se encontró en Talento humano» y se puede crear el agente con el nombre escrito a mano.
+- Solo lo pueden usar Sistemas y el administrador, con un límite de búsquedas. La cédula no queda en el Historial.
+
 ## v1.271.0 — Noviembre 2026
 
 **Usuarios de Gerencia: eligen sus clientes (pedido de Edwin, 25/11).**
