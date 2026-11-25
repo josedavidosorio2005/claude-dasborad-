@@ -1,7 +1,7 @@
 // faseQA-historial-ligero.test.js — 25/11/2026. Medición local con filas inventadas: con un año de Historial
 // (~44 mil filas) la respuesta pesaba 14 MB, el servidor tardaba 0,44 s en armarla y cada inicio de sesión del
 // administrador la esperaba. Ahora:
-//   - el servidor manda las 5.000 más recientes, con el total, y filtra por tipo y fecha (hora de Colombia);
+//   - el servidor manda las 1.000 más recientes (la más nueva primero, también en pantalla), con el total, y filtra por tipo y fecha (hora de Colombia);
 //   - al iniciar sesión solo se pide el número (/historial/total); las filas, al abrir la pestaña;
 //   - las alertas de seguridad no cambian.
 // Filas INVENTADAS.
@@ -36,12 +36,12 @@ before(async () => {
 const get = (url, t) => request(app).get('/api' + url).set(auth(t || admin));
 const totalTabla = () => db.prepare('SELECT COUNT(*) n FROM historial').get().n;
 
-test('sin parámetros: un arreglo (como antes) con las 5.000 más recientes, de la más nueva a la más vieja', async () => {
+test('sin parámetros: un arreglo (como antes) con las 1.000 más recientes, de la más nueva a la más vieja', async () => {
   const r = await get('/historial');
   assert.equal(r.status, 200);
   assert.ok(Array.isArray(r.body));
-  assert.equal(H.LIMITE, 5000);
-  assert.equal(r.body.length, 5000);
+  assert.equal(H.LIMITE, 1000);
+  assert.equal(r.body.length, 1000);
   for (let i = 1; i < r.body.length; i++) {
     const a = r.body[i - 1], b = r.body[i];
     assert.ok(a.ts > b.ts || (a.ts === b.ts && a.id > b.id), 'orden por ts y id descendente');
@@ -52,18 +52,21 @@ test('sin parámetros: un arreglo (como antes) con las 5.000 más recientes, de 
 test('con_total=1: filas, total, totalFiltrado y si se recortó', async () => {
   const r = await get('/historial?con_total=1');
   assert.equal(r.status, 200);
-  assert.equal(r.body.filas.length, 5000);
+  assert.equal(r.body.filas.length, 1000);
   assert.equal(r.body.total, totalTabla());
   assert.equal(r.body.totalFiltrado, r.body.total);
-  assert.equal(r.body.limite, 5000);
+  assert.equal(r.body.limite, 1000);
   assert.equal(r.body.recortado, true);
 });
 
 test('filtro por tipo en el servidor (uno exacto y el grupo «Inicios de sesión»)', async () => {
   const uno = await get('/historial?con_total=1&tipo=QA_HIST_INVENTADO');
-  assert.equal(uno.body.totalFiltrado, N / 4);
-  assert.equal(uno.body.filas.length, N / 4);
-  assert.equal(uno.body.recortado, false);
+  assert.equal(uno.body.totalFiltrado, N / 4, 'el tipo busca sobre todo el Historial');
+  assert.equal(uno.body.filas.length, 1000);
+  assert.equal(uno.body.recortado, true);
+  // Las 1.000 de ese tipo son las más recientes de las 1.300 (la más vieja que llega es la n.º 301 de ese tipo).
+  const tsMasViejaDelTipo = db.prepare("SELECT ts FROM historial WHERE accion = 'QA_HIST_INVENTADO' ORDER BY ts DESC LIMIT 1 OFFSET 999").get().ts;
+  assert.equal(Math.min(...uno.body.filas.map((f) => f.ts)), tsMasViejaDelTipo);
   assert.ok(uno.body.filas.every((f) => f.accion === 'QA_HIST_INVENTADO'));
   const logins = await get('/historial?con_total=1&tipo=__LOGINS__');
   assert.ok(logins.body.filas.every((f) => ['LOGIN_OK', 'LOGIN_FALLIDO', 'LOGIN_BLOQUEADO', 'LOGOUT'].includes(f.accion)));
@@ -131,7 +134,13 @@ test('interfaz: consulta al servidor y textos del conteo y del aviso', () => {
   assert.equal(L.histConsulta('LOGIN_OK', 'mal', ''), '/historial?con_total=1&tipo=LOGIN_OK');
   assert.equal(L.histTextoConteo({ total: 300, totalFiltrado: 300, recortado: false }, 300), '300 eventos en total');
   assert.equal(L.histTextoConteo({ total: 300, totalFiltrado: 1, recortado: false }, 1), '1 evento de 300 en total');
-  assert.equal(L.histTextoConteo({ total: 44096, totalFiltrado: 44096, recortado: true, limite: 5000 }, 5000), 'Se muestran 5.000 de 44.096 eventos');
+  assert.equal(L.histTextoConteo({ total: 44096, totalFiltrado: 44096, recortado: true, limite: 1000 }, 1000), 'Se muestran 1.000 de 44.096 eventos');
   assert.equal(L.histTextoRecorte({ recortado: false }), '');
-  assert.match(L.histTextoRecorte({ recortado: true, limite: 5000 }), /^Se muestran los 5\.000 eventos más recientes\./);
+  assert.match(L.histTextoRecorte({ recortado: true, limite: 1000 }), /^Se muestran los 1\.000 eventos más recientes\./);
+});
+
+test('interfaz: la tabla y la descarga muestran el orden del servidor (las más recientes arriba), sin invertirlo', () => {
+  const js = fs.readFileSync(path.join(PUB, 'js/historial.js'), 'utf8');
+  assert.doesNotMatch(js, /historial\.slice\(\)\.reverse\(\)/);
+  assert.equal((js.match(/_histApplyFilters\(historial\.slice\(\),filter,tipo\)/g) || []).length, 2, 'renderHist y exportHistorial');
 });

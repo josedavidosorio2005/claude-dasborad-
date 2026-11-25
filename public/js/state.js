@@ -6,10 +6,10 @@
 // STATE
 // ═══════════════════════════════════════════════════════════
 var users=[], historial=[], nextId=10, currentUser=null, currentRole=null;
-// 25/11/2026: el Historial ya no se descarga al iniciar sesión. Al abrir su pestaña llegan las 5.000
+// 25/11/2026: el Historial ya no se descarga al iniciar sesión. Al abrir su pestaña llegan las 1.000
 // filas más recientes que cumplan el tipo y las fechas (filtros del servidor). historialInfo trae los
 // totales; historialTotal es solo el número de la tarjeta «Eventos».
-var historialInfo = { total: 0, totalFiltrado: 0, limite: 5000, recortado: false }, historialTotal = null;
+var historialInfo = { total: 0, totalFiltrado: 0, limite: 1000, recortado: false }, historialTotal = null;
 
 // ═══════════════════════════════════════════════════════════
 // PERMISSIONS
@@ -94,9 +94,9 @@ async function loadHist() {
   try {
     var r = await apiRequest('GET', histConsulta(v('hist-filter'), v('hist-desde'), v('hist-hasta')));
     historial = (r && r.filas) || [];
-    historialInfo = { total: r.total || 0, totalFiltrado: r.totalFiltrado || 0, limite: r.limite || 5000, recortado: !!r.recortado };
+    historialInfo = { total: r.total || 0, totalFiltrado: r.totalFiltrado || 0, limite: r.limite || 1000, recortado: !!r.recortado };
     historialTotal = historialInfo.total;
-  } catch(e){ historial = []; historialInfo = { total: 0, totalFiltrado: 0, limite: 5000, recortado: false }; if (e && e.message) showToast(e.message, 'error'); }
+  } catch(e){ historial = []; historialInfo = { total: 0, totalFiltrado: 0, limite: 1000, recortado: false }; if (e && e.message) showToast(e.message, 'error'); }
 }
 // Solo el número de eventos (tarjeta «Eventos» del panel): una cuenta, sin descargar filas.
 async function loadHistTotal() {

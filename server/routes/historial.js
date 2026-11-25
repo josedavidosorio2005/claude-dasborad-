@@ -15,7 +15,7 @@ const { fechaLimitesAhoraColombiaStr } = require('../fecha-limites');
 
 const router = express.Router();
 
-const LIMITE = 5000;
+const LIMITE = 1000; // 25/11 (usuario): 1.000; los filtros de tipo y fecha buscan sobre todo el Historial
 // Fase 113 (tema A) + Fase 178: «Inicios de sesión» agrupa los eventos de autenticación.
 const LOGINS = ['LOGIN_OK', 'LOGIN_FALLIDO', 'LOGIN_BLOQUEADO', 'LOGOUT'];
 const RE_TIPO = /^(__LOGINS__|[A-Z][A-Z0-9_]{0,59})$/;

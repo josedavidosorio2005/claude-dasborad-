@@ -28,7 +28,7 @@ function renderHist(filter,tipo){
   filter=(filter||'').toLowerCase(); tipo=tipo||'';
   var tbody=document.getElementById('hist-tbody');
   var noRes=document.getElementById('hist-no-results');
-  var list=_histApplyFilters(historial.slice().reverse(),filter,tipo);
+  var list=_histApplyFilters(historial.slice(),filter,tipo); // 25/11: tal como llega del servidor, las más recientes arriba
   var countEl=document.getElementById('hist-count');
   if(countEl) countEl.textContent=histTextoConteo(historialInfo, historial.length);
   var aviso=document.getElementById('hist-aviso');
@@ -96,7 +96,7 @@ function exportHistorial(){
   if(typeof XLSX === 'undefined'){ showToast('No se pudo cargar el generador de Excel.'); return; }
   var filter=document.getElementById('hist-search').value;
   var tipo=document.getElementById('hist-filter').value;
-  var list=_histApplyFilters(historial.slice().reverse(),filter,tipo);
+  var list=_histApplyFilters(historial.slice(),filter,tipo); // 25/11: tal como llega del servidor, las más recientes arriba
   if(!list.length){ showToast('No hay eventos para descargar con el filtro actual.'); return; }
   var rows=list.map(function(h){
     return {

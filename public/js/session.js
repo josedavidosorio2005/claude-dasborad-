@@ -317,7 +317,7 @@ function doLogout(){
   if(typeof calReiniciarSesion === 'function') calReiniciarSesion(); // Fase 365: plantillas de Calidad del usuario anterior
   if(typeof ticketsAlSalir === 'function') ticketsAlSalir(); // Fase 356
   if(typeof cerrarVentanasAbiertas === 'function') cerrarVentanasAbiertas(); // Fase 362: toda ventana abierta (Calidad, etc.)
-  currentUser=null; authToken=null; users=[]; historial=[]; historialTotal=null; historialInfo={ total: 0, totalFiltrado: 0, limite: 5000, recortado: false };
+  currentUser=null; authToken=null; users=[]; historial=[]; historialTotal=null; historialInfo={ total: 0, totalFiltrado: 0, limite: 1000, recortado: false };
   seedDemoActivo=false; renderSeedDemoBanner();
   hideAllPages();
   document.getElementById('login-page').style.display='flex';
