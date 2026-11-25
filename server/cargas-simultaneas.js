@@ -37,7 +37,7 @@ const RUTAS_DE_CARGA = [
   { re: /^\/api\/calidad\/nivel-servicio\/carga-diaria$/, puede: adminOSupervisor }, // Fase 299
   { re: /^\/api\/admin\/borrado-rango$/, puede: (a) => isFullAdmin(a) },
   { re: /^\/api\/sura-televentas\/[^/]+\/bases\/[^/]+\/[^/]+$/, puede: adminOSupervisor }, // Fase 215; Fase 299: + supervisor
-  { re: /^\/api\/orlant\/sta\/cargas(\/\d+)?$/, puede: (a) => isFullAdmin(a) || a.rol === 'GERENCIA' || a.rol === 'SUPERVISOR' }, // Fase STA (la ruta exige ORLANT)
+  { re: /^\/api\/orlant\/sta\/cargas(\/\d+)?$/, puede: (a) => isFullAdmin(a) || a.rol === 'SUPERVISOR' }, // Fase STA (la ruta exige ORLANT); 25/11: sin GERENCIA
   { re: /^\/api\/orlant\/equidad\/cargas\/[^/]+$/, puede: (a) => isFullAdmin(a) || canLoadData(a) || a.rol === 'SUPERVISOR' }, // Equidad (24/11; la ruta exige ORLANT)
   { re: /\/carga(\/impacto)?$/, puede: (a) => canLoadAnyModule(a) },
   { re: /^\/api\/dashboard\/cargas(\/\d+)?$/, puede: (a) => canLoadAnyModule(a) },

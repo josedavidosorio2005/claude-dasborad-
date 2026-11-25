@@ -1,6 +1,6 @@
 // routes/orlant-sta.js — Fase STA (20/11/2026): «Gestión STA» de ORLANT (ver orlant-sta.js).
 // Quién puede qué (pedido del usuario):
-//  - GESTOR (supervisor de ORLANT, ADMIN, GERENCIA): todo — base, histórico de cargas (descargar y
+//  - GESTOR (supervisor de ORLANT y ADMIN; desde el 25/11/2026 ya no GERENCIA): todo — base, histórico de cargas (descargar y
 //    eliminar), asignar / devolver / pasar, gráficas, gestiones y tipificaciones.
 //  - ASESOR de ORLANT: SOLO sus casos (bandeja, codificar, volver a llamar, histórico, indicadores).
 //  - CLIENTE de ORLANT (CLIENTES_DASH): /resumen (agregados) y /estado?vista=cliente (la visual de
@@ -18,14 +18,15 @@ const BASE = '/orlant/sta';
 
 function esGestor(actor) {
   if (!actor) return false;
-  if (isFullAdmin(actor) || actor.rol === 'GERENCIA') return true;
+  if (isFullAdmin(actor)) return true; // 25/11 (pedido de Edwin): GERENCIA ya no gestiona el STA
   return actor.rol === 'SUPERVISOR' && campaignAccess(actor, STA.CAMPANA);
 }
 function esAsesorSta(actor) {
   return !!actor && actor.rol === 'ASESOR' && actor.asesorCampana === STA.CAMPANA && Number.isInteger(Number(actor.id));
 }
 function esClienteSta(actor) {
-  return !!actor && actor.rol === 'CLIENTES_DASH' && campaignAccess(actor, STA.CAMPANA);
+  // 25/11: GERENCIA con ORLANT ve el STA como el cliente (pestaña del Dashboard, solo lectura).
+  return !!actor && (actor.rol === 'CLIENTES_DASH' || actor.rol === 'GERENCIA') && campaignAccess(actor, STA.CAMPANA);
 }
 const soloGestor = (req, res, next) => (esGestor(req.actor) ? next() : res.status(403).json({ error: 'Solo el supervisor de ORLANT o un administrativo' }));
 const soloAsesor = (req, res, next) => (esAsesorSta(req.actor) ? next() : res.status(403).json({ error: 'Solo los asesores de ORLANT' }));

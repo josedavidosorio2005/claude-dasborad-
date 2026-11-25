@@ -47,7 +47,7 @@ test('la plataforma: overlay, scripts y tarjeta «Gestión STA» después de Cal
   assert.match(leer('public/js/dashboards-core.js'), /staVeTarjeta\(currentUser, isFullAdmin\(\)\)[\s\S]*onDashBtn\(\\'Calidad\\'\)[\s\S]*afterend/);
   const { staVeTarjeta } = require('../../public/js/orlant-sta.js');
   assert.equal(staVeTarjeta(null, true), true, 'admin maestro');
-  assert.equal(staVeTarjeta({ rol: 'GERENCIA', perms: {} }, false), true);
+  assert.equal(staVeTarjeta({ rol: 'GERENCIA', perms: { cliente_ORLANT: true } }, false), false, '25/11: GERENCIA ya no ve el STA operativo');
   assert.equal(staVeTarjeta({ rol: 'SUPERVISOR', perms: { supervisa_ORLANT: true } }, false), true);
   assert.equal(staVeTarjeta({ rol: 'SUPERVISOR', perms: { supervisa_MOBILIZE: true } }, false), false);
   assert.equal(staVeTarjeta({ rol: 'ASESOR', asesorCampana: 'ORLANT', perms: {} }, false), true);
