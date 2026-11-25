@@ -368,8 +368,16 @@ function agentes(db, q) {
     FROM activos_agentes g ${where.length ? 'WHERE ' + where.join(' AND ') : ''} ORDER BY g.activo DESC, g.nombre LIMIT 3000`).all(...p);
 }
 function agente(db, id) { return db.prepare('SELECT * FROM activos_agentes WHERE id = ?').get(id) || null; }
+// Pedido de Edwin (25/11/2026): una cédula que no está en Talento humano.
+//   'avisar' (hoy): se crea el agente con el nombre escrito a mano; el navegador muestra «No se encontró en
+//                   Talento humano».
+//   'bloquear':     no se crea (400). Cambiar a esto es cambiar esta constante.
+const CEDULA_SIN_GH = 'avisar';
 function crearAgente(db, v) {
   const dup = _agenteDuplicado(db, v); if (dup) return { error: dup, status: 409 };
+  if (CEDULA_SIN_GH === 'bloquear' && v.documento && !require('./gh-novedades').nombrePorDocumento(db, v.documento)) {
+    return { error: 'Esa cédula no está en Talento humano. Pide su registro primero.', status: 400 };
+  }
   const ahora = new Date().toISOString();
   const id = Number(db.prepare('INSERT INTO activos_agentes (nombre, documento, operacion, sede, activo, createdAt, updatedAt) VALUES (?,?,?,?,1,?,?)')
     .run(v.nombre, v.documento, v.operacion, v.sede, ahora, ahora).lastInsertRowid);
@@ -542,5 +550,5 @@ function importar(db, tipoCodigo, filas, confirmar, quien) {
   return Object.assign(resumen, { importadas: validas.length });
 }
 
-module.exports = { historialGeneral, mapaColumnas, importar, ADMIN_SUBTIPOS_I5, ADMIN_CODIGO_BASE, agregarCamposI5, siguienteCodigoAdmin, ipRepetida, reasignar, agenteParaAsignar, CAMPOS_I2, agregarCamposI2, RENDIMIENTOS, rendimientoDe, AMBITOS, TIPOS_INMUEBLES, ambitoDe, ESTADOS_AL_SOLTAR, validarAgente, agentes, agente, crearAgente, editarAgente, agenteDetalle, asignar, devolver, cambiarElemento,
+module.exports = { CEDULA_SIN_GH, historialGeneral, mapaColumnas, importar, ADMIN_SUBTIPOS_I5, ADMIN_CODIGO_BASE, agregarCamposI5, siguienteCodigoAdmin, ipRepetida, reasignar, agenteParaAsignar, CAMPOS_I2, agregarCamposI2, RENDIMIENTOS, rendimientoDe, AMBITOS, TIPOS_INMUEBLES, ambitoDe, ESTADOS_AL_SOLTAR, validarAgente, agentes, agente, crearAgente, editarAgente, agenteDetalle, asignar, devolver, cambiarElemento,
   ESTADOS, ESTADO_CODIGOS, LISTAS, TIPOS_BASE, puede, crearTablas, tipos, tipo, lista, guardarLista, validar, crear, obtener, editar, cambiarEstado, listar, resumen, historial };
