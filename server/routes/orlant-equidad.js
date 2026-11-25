@@ -53,7 +53,7 @@ router.get(BASE + '/resumen', requireActor, soloCarga, h((req, res) => res.json(
 router.post(BASE + '/cargas/:grupo', requireActor, soloCarga, h((req, res) => {
   const r = EQ.cargar(db, req.params.grupo, req.body || {}, actorLabel(req.actor));
   // Historial: solo la base, cuántas citas y el nombre del archivo (nunca el contenido).
-  logEvent('EQUIDAD_CARGA', null, actorLabel(req.actor), `ORLANT · ${r.grupo}: ${r.filas} citas (antes ${r.reemplazadas})`);
+  logEvent('EQUIDAD_CARGA', null, actorLabel(req.actor), `ORLANT · ${r.grupo} · ${r.mes}: ${r.filas} citas (antes ${r.reemplazadas})`);
   res.json(r);
 }));
 

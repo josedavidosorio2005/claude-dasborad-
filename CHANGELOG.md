@@ -7,6 +7,16 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.273.0 — Noviembre 2026
+
+**ORLANT, Equidad profesionales por mes (pedido de Edwin, 27/11).**
+
+- En «Cargar bases» → ORLANT → «Equidad profesionales», cada base (Pólizas, Medicina prepagada y Particulares) se carga por mes, con la misma cuadrícula de meses de las demás cargas. Subir un mes no borra los otros, y «Reemplazar» cambia solo esa base en ese mes.
+- Si el archivo trae citas de otro mes, no se carga nada y se dice de qué meses son.
+- En el dashboard, la Equidad tiene un filtro «Mes», que arranca en el último mes cargado. También se puede ver «Todos los meses (acumulado)».
+- Lo que ya estaba cargado queda en el mes de sus citas: no se pierde nada.
+- La pantalla de carga se ve como las demás: con márgenes, la cuadrícula de meses y un selector de base.
+
 ## v1.272.0 — Noviembre 2026
 
 **Inventario: la cédula trae el nombre desde Talento humano (pedido de Edwin, 25/11).**

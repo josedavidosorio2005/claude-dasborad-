@@ -75,12 +75,12 @@ test('Cálculos: promedio equitativo, 1 − Gini y la clasificación con ±20 % 
 
 test('Carga por base: cada archivo reemplaza SOLO su base; el servidor revisa cada fila', async () => {
   const filas = (n, ent) => Array.from({ length: n }, (_, i) => ({ sede: 'SEDE FICTICIA', esp: 'ESP', prof: 'DR INVENTADO ' + (i % 3), fecha: '2031-01-0' + ((i % 5) + 1), ent: ent || 'ENTIDAD FICTICIA A' }));
-  let r = await request(app).post(B + '/cargas/polizas').set(H(admin)).send({ archivoNombre: 'polizas.xlsx', hoja: 'Sheet', filas: filas(7) });
+  let r = await request(app).post(B + '/cargas/polizas').set(H(admin)).send({ mes: '2031-01', archivoNombre: 'polizas.xlsx', hoja: 'Sheet', filas: filas(7) });
   assert.equal(r.status, 200, JSON.stringify(r.body));
   assert.deepEqual([r.body.filas, r.body.reemplazadas], [7, 0]);
-  r = await request(app).post(B + '/cargas/particulares').set(H(sup)).send({ archivoNombre: 'part.xlsx', filas: filas(3, 'PACIENTE INVENTADO') });
+  r = await request(app).post(B + '/cargas/particulares').set(H(sup)).send({ mes: '2031-01', archivoNombre: 'part.xlsx', filas: filas(3, 'PACIENTE INVENTADO') });
   assert.equal(r.status, 200);
-  r = await request(app).post(B + '/cargas/polizas').set(H(admin)).send({ archivoNombre: 'polizas2.xlsx', filas: filas(4) });
+  r = await request(app).post(B + '/cargas/polizas').set(H(admin)).send({ mes: '2031-01', archivoNombre: 'polizas2.xlsx', filas: filas(4) });
   assert.deepEqual([r.body.filas, r.body.reemplazadas], [4, 7]);
   const e = await request(app).get(B + '/estado').set(H(admin));
   const g = Object.fromEntries(e.body.grupos.map((x) => [x.id, x]));
@@ -90,14 +90,14 @@ test('Carga por base: cada archivo reemplaza SOLO su base; el servidor revisa ca
   assert.equal(db.prepare("SELECT COUNT(*) n FROM equidad_citas WHERE entidad LIKE '%PACIENTE%'").get().n, 0);
   // Filas malas: todo o nada.
   for (const malo of [[{ sede: 'S', esp: 'E', prof: '', fecha: '2031-01-01' }], [{ sede: 'S', esp: 'E', prof: 'P', fecha: '2031-02-30' }], []]) {
-    const x = await request(app).post(B + '/cargas/prepagada').set(H(admin)).send({ filas: malo });
+    const x = await request(app).post(B + '/cargas/prepagada').set(H(admin)).send({ mes: '2031-01', filas: malo });
     assert.equal(x.status, 400);
   }
-  assert.equal((await request(app).post(B + '/cargas/otra').set(H(admin)).send({ filas: filas(1) })).status, 400);
+  assert.equal((await request(app).post(B + '/cargas/otra').set(H(admin)).send({ mes: '2031-01', filas: filas(1) })).status, 400);
   assert.equal(db.prepare("SELECT COUNT(*) n FROM equidad_citas WHERE grupo = 'prepagada'").get().n, 0);
   // El Historial guarda conteos, nunca contenido.
   const h = db.prepare("SELECT detalle FROM historial WHERE accion = 'EQUIDAD_CARGA' ORDER BY ts DESC LIMIT 1").get();
-  assert.match(h.detalle, /ORLANT · polizas: 4 citas \(antes 7\)/);
+  assert.match(h.detalle, /ORLANT · polizas · 2031-01: 4 citas \(antes 7\)/); // 26/11: con el mes
 });
 
 test('Permisos: ven admin, gerencia y el supervisor de ORLANT; el cliente y el asesor no (por ahora); cargan solo quien carga ORLANT', async () => {
@@ -105,7 +105,7 @@ test('Permisos: ven admin, gerencia y el supervisor de ORLANT; el cliente y el a
     assert.equal((await request(app).get(B + '/estado').set(H(t))).status, s);
   }
   const f = [{ sede: 'S', esp: 'E', prof: 'P', fecha: '2031-01-01', ent: '' }];
-  for (const t of [ger, cli, ase, supOtro, cargaOtro]) assert.equal((await request(app).post(B + '/cargas/prepagada').set(H(t)).send({ filas: f })).status, 403);
+  for (const t of [ger, cli, ase, supOtro, cargaOtro]) assert.equal((await request(app).post(B + '/cargas/prepagada').set(H(t)).send({ mes: '2031-01', filas: f })).status, 403);
   assert.equal((await request(app).get(B + '/resumen').set(H(ger))).status, 403);
   assert.equal((await request(app).put(B + '/entidades').set(H(cargaOtro)).send({ polizas: [], prepagada: [] })).status, 403, 'cargarDatos sin ORLANT: no'); // revisión de seguridad 24/11
   assert.equal((await request(app).get(B + '/estado')).status, 401);
@@ -117,7 +117,7 @@ test('Lista de entidades: configurable, sin repetidos entre listas, y avisa al c
   assert.deepEqual(r.body, { polizas: ['ENTIDAD FICTICIA A'], prepagada: ['Prepagada Inventada'] });
   r = await request(app).put(B + '/entidades').set(H(admin)).send({ polizas: ['X'], prepagada: ['x'] });
   assert.equal(r.status, 400);
-  r = await request(app).post(B + '/cargas/prepagada').set(H(admin)).send({ filas: [{ sede: 'S', esp: 'E', prof: 'P', fecha: '2031-01-01', ent: 'ENTIDAD FICTICIA A' }, { sede: 'S', esp: 'E', prof: 'P', fecha: '2031-01-02', ent: 'PREPAGADA INVENTADA' }] });
+  r = await request(app).post(B + '/cargas/prepagada').set(H(admin)).send({ mes: '2031-01', filas: [{ sede: 'S', esp: 'E', prof: 'P', fecha: '2031-01-01', ent: 'ENTIDAD FICTICIA A' }, { sede: 'S', esp: 'E', prof: 'P', fecha: '2031-01-02', ent: 'PREPAGADA INVENTADA' }] });
   assert.deepEqual(r.body.otraBase, [{ entidad: 'ENTIDAD FICTICIA A', citas: 1, base: 'polizas' }]);
   const res = await request(app).get(B + '/resumen').set(H(sup));
   assert.equal(res.status, 200);
@@ -158,12 +158,20 @@ test('Generador: la app de Edwin sin datos, con el filtro Profesional y sin Enti
 test('Centro de cargas: sección con las 3 bases, texto escapado y resultado de la carga', () => {
   global.esc = require('../../public/js/esc.js').esc;
   const C = require('../../public/js/centro-equidad.js');
-  const html = C.ccEquidadHtml({ grupos: [{ id: 'polizas', nombre: 'Pólizas', conEntidad: true, archivo: '<b>x</b>.xlsx', citas: 1200, profesionales: 7, desde: '2031-01-01', hasta: '2031-01-31', cargadoEn: '2031-02-01T10:00:00Z' },
-    { id: 'prepagada', nombre: 'Medicina prepagada', conEntidad: true, citas: 0 }, { id: 'particulares', nombre: 'Particulares', conEntidad: false, citas: 0 }], entidades: { polizas: ['A<i>'], prepagada: [] } });
+  // 26/11: por mes. Los ayudantes de la cuadrícula salen de centro-cargas-logic.js (como en el navegador).
+  Object.assign(global, require('../../public/js/centro-cargas-logic.js'));
+  const datos = { grupos: [{ id: 'polizas', nombre: 'Pólizas', conEntidad: true, meses: [{ mes: '2031-01', citas: 1200, archivo: '<b>x</b>.xlsx', cargadoEn: '2031-02-01T10:00:00Z', cargadoPor: 'Prueba' }] },
+    { id: 'prepagada', nombre: 'Medicina prepagada', conEntidad: true, meses: [] }, { id: 'particulares', nombre: 'Particulares', conEntidad: false, meses: [] }], entidades: { polizas: ['A<i>'], prepagada: [] } };
+  const html = C.ccEquidadHtml(datos, 2031, 'polizas', '2031-03', false);
   assert.ok(!html.includes('<b>x') && html.includes('&lt;b&gt;x'));
   assert.ok(html.includes('A&lt;i&gt;'));
-  assert.equal(html.split('class="btn-primary cc-eq-subir"').length - 1, 3);
-  assert.match(html, /Reemplazar base[\s\S]*Subir base[\s\S]*esta base no lleva entidad/);
+  assert.equal(html.split('class="cc-mes ').length - 1, 12, 'los 12 meses del año');
+  assert.match(html, /ccEquidadElegir\('polizas','2031-01'\)" aria-label="Reemplazar Pólizas de Enero"/);
+  assert.match(html, /ccEquidadElegir\('polizas','2031-02'\)" aria-label="Subir Pólizas de Febrero"/);
+  assert.ok(!/ccEquidadElegir\('polizas','2031-04'\)/.test(html), 'mes futuro sin botón');
+  assert.match(html, /Pólizas <span class="cc-eq-nmeses">· 1 mes<\/span>/);
+  assert.match(C.ccEquidadHtml(datos, 2031, 'particulares', '2031-03', false), /esta base no lleva entidad/);
+  assert.ok(!html.includes('cc-eq-visible-cliente'), 'la casilla de la cuenta cliente es solo del administrador');
   assert.match(html, /<label for="cc-eq-ent-polizas">Pólizas<\/label><textarea id="cc-eq-ent-polizas"/);
   const res = C.ccEquidadResultadoHtml('Pólizas', { filas: 10, reemplazadas: 4, otraBase: [{ entidad: '<x>', citas: 2, base: 'prepagada' }] }, ['Aviso <y>']);
   assert.ok(res.includes('10 citas cargadas (reemplazan 4)') && res.includes('&lt;x&gt;') && res.includes('Aviso &lt;y&gt;'));

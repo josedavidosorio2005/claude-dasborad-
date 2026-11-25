@@ -38,7 +38,7 @@ const ICONS={
 const state = {active:'poliza', view:'resultados', tabs:{}};
 TABS.forEach(t=>{
   state.tabs[t.id] = {name:t.name, rows:[], source:'', loadedAt:'', conEntidad:true,
-    f:{sede:'',esp:'',ent:'',prof:'',desde:'',hasta:'',min:0,tol:20}, sort:{k:'n',d:-1}};
+    f:{mes:'',sede:'',esp:'',ent:'',prof:'',desde:'',hasta:'',min:0,tol:20}, sort:{k:'n',d:-1}};
 });
 function persist(){} // los datos viven en el servidor (/api/orlant/equidad)
 
@@ -71,7 +71,7 @@ function gini(vals){
 }
 function filtered(T){
   const f=T.f;
-  return T.rows.filter(r=>(!f.sede||r.sede===f.sede)&&(!f.esp||r.esp===f.esp)&&(!f.ent||r.ent===f.ent)&&(!f.prof||r.prof===f.prof)
+  return T.rows.filter(r=>(!f.sede||r.sede===f.sede)&&(!f.esp||r.esp===f.esp)&&(!f.ent||r.ent===f.ent)&&(!f.prof||r.prof===f.prof)&&(!f.mes||String(r.fecha).slice(0,7)===f.mes)
     &&(!f.desde||r.fecha>=f.desde)&&(!f.hasta||r.fecha<=f.hasta));
 }
 function analyze(rows,T){
@@ -186,6 +186,7 @@ function renderResultados(){
 
   let html=titleRow+`
   <div class="toolbar">
+    <div class="field"><label>Mes</label><select data-f="mes" aria-label="Mes">${eqOpcionesMes(T,f.mes)}</select></div>
     <div class="field"><label>Sede</label><select data-f="sede" aria-label="Sede">${opts(uniq(T.rows,'sede'),f.sede,'Todas las sedes')}</select></div>
     <div class="field"><label>Especialidad</label><select data-f="esp" aria-label="Especialidad">${opts(uniq(T.rows,'esp'),f.esp,'Todas')}</select></div>
     ${T.conEntidad?`<div class="field"><label>Entidad</label><select data-f="ent" aria-label="Entidad">${opts(ents,f.ent,'Todas las entidades')}</select></div>`:''}
@@ -300,11 +301,17 @@ function heatHTML(rows,A){
   return `<table><thead><tr><th></th>${head}<th>Total</th></tr></thead><tbody>${body}<tr><td class="name"><b>Total día</b></td>${tot}<td class="num"><b>${rows.length}</b></td></tr></tbody></table>`;
 }
 
+// 26/11/2026 (pedido de Edwin): cada base se carga por mes; la pestaña filtra por mes y arranca en el último cargado.
+const EQ_NOMBRE_MES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+function eqMesesDeFilas(rows){ return [...new Set((rows||[]).map(r=>String(r.fecha||'').slice(0,7)).filter(m=>/^[0-9]{4}-[0-9]{2}$/.test(m)))].sort().reverse(); }
+function eqNombreMes(m){ return EQ_NOMBRE_MES[Number(m.slice(5,7))-1]+' '+m.slice(0,4); }
+function eqOpcionesMes(T,sel){ return eqMesesDeFilas(T.rows).map(m=>'<option value="'+m+'"'+(m===sel?' selected':'')+'>'+eqNombreMes(m)+'</option>').join('')+'<option value=""'+(!sel?' selected':'')+'>Todos los meses (acumulado)</option>'; }
 function aplicar(r){
   (r && r.grupos || []).forEach(g=>{
     const t=TABS.find(x=>x.grupo===g.id); if(!t) return;
     const T=state.tabs[t.id];
     T.rows=g.filas||[]; T.conEntidad=g.conEntidad!==false;
+    const meses=eqMesesDeFilas(T.rows); if(T.f.mes===''||meses.indexOf(T.f.mes)===-1) T.f.mes=meses[0]||'';
     T.source=g.archivo?(g.archivo+(g.hoja?' · hoja "'+g.hoja+'"':'')):'';
     T.loadedAt=g.cargadoEn?new Date(g.cargadoEn).toLocaleString('es-CO'):'';
   });
@@ -314,7 +321,7 @@ async function iniciar(){
   try{ aplicar(await API.estado()); render(); }
   catch(e){ $('#main').innerHTML='<div class="eq-error" role="alert">No se pudo leer Equidad profesionales.</div>'; throw e; }
 }
-return { iniciar: iniciar, aplicar: aplicar, render: render, state: state };
+return { iniciar: iniciar, aplicar: aplicar, render: render, state: state, filtered: filtered };
 }
 
 if (typeof module !== 'undefined' && module.exports) module.exports = { EQ_MARKUP: EQ_MARKUP, eqCrearApp: eqCrearApp };
