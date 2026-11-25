@@ -203,6 +203,8 @@ async function cargarEstado(){
         columnas:(cfg.columnas||CAMPOS).slice(), casos:{}, cargas:(r.cargas||[]).map(c=>Object.assign({},c,{id:String(c.id)})).reverse(), seq:1 };
   for(const c of (r.casos||[])){ c._agente = c._agente==null ? null : String(c._agente); c._cargaId = c._cargaId==null ? null : String(c._cargaId); S.casos[c._id]=c; }
   if(VISTA==='asesor' && r.yo){ YO=r.yo; S.agentes=[{id:String(r.yo.id),nombre:r.yo.nombre,activo:true}]; agenteActual=String(r.yo.id); }
+  // STA14: gestiones del histórico que cuentan a nombre de esta asesora (el caso puede estar disponible o con otra).
+  S.histCuenta = VISTA==='asesor' ? (r.histCuenta||[]).map((h,i)=>({_id:'h'+i,_virtual:true,_estado:'gestionado',_agente:agenteActual,'Numero Autorizacion':h.numero,_tipi:h.tipi||'',_fg:h.fg,_citas:h.citas||0})) : [];
 }
 // Cada acción guarda con su propia llamada a la API; esto solo vuelve a pintar con lo del servidor.
 async function accion(fn, msgError){ try{ return await fn(); }catch(e){ toast((msgError||'No se pudo guardar')+': '+e.message); return null; } }
@@ -570,6 +572,10 @@ function exportarExcel(){`);
 L("function gestFiltradas(ag,d,h){ return Object.values(S.casos).filter(c=>c._estado==='gestionado' && (!ag||c._agente===ag) && (!d||c._fg.slice(0,10)>=d) && (!h||c._fg.slice(0,10)<=h)); }",
   "function gestHistCuenta(){ const out=[]; for(const c of Object.values(S.casos)) (c._prev||[]).forEach((p,i)=>{ if(p&&p.cuenta&&p.fg) out.push(Object.assign({},c,{_id:c._id+'#h'+i,_virtual:true,_estado:'gestionado',_agente:p.agente==null?null:String(p.agente),_tipi:p.tipi||'',_obs:p.obs||'',_fg:p.fg,_citas:p.citas||0,_rell:null})); }); return out; }\n"
   + "function gestFiltradas(ag,d,h){ return Object.values(S.casos).filter(c=>c._estado==='gestionado').concat(gestHistCuenta()).filter(c=>(!ag||c._agente===ag) && (!d||c._fg.slice(0,10)>=d) && (!h||c._fg.slice(0,10)<=h)); }");
+
+// 8h) STA14 (25/11): «Gestionados» y «Mi efectividad» de la asesora suman sus gestiones del histórico que cuentan.
+L("const todos=Object.values(S.casos).filter(c=>c._agente===agenteActual && c._estado==='gestionado').sort(",
+  "const todos=Object.values(S.casos).filter(c=>c._agente===agenteActual && c._estado==='gestionado').concat(S.histCuenta||[]).sort(");
 
 // 9) Manejadores en línea (onclick, onchange, oninput, onkeydown): sus llamadas pasan a STAapp.<función>.
 const nombres = [...new Set([...js.matchAll(/(?:^|\n)(?:async )?function (\w+)\(/g)].map((m) => m[1]))];

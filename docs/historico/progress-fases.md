@@ -22970,3 +22970,10 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
 - **Equidad para el cliente y por mes:** en producción (#950 y #962).
 - **Pendiente:** verificar con «Ver como» los permisos de Jairo (clientes, Gerencia y Tickets, sin Calidad).
 - **Sin mergear:** #966 («Gestionados» de la asesora con el histórico, 1.276.0).
+
+## Gestión STA: «Gestionados» de la asesora con sus gestiones del histórico (v1.276.0, 2026-11-25, PR sin mergear)
+
+- **Faltaba:** la v1.275.0 sumaba las gestiones del histórico que cuentan en lo que ve la supervisora y en el resumen del cliente. La asesora solo recibía sus casos asignados (`estadoAsesor`), así que su «Gestionados», «Mi efectividad» y «Mis codificaciones» no las mostraban.
+- **Arreglo:** `estadoAsesor` devuelve `histCuenta`. Son las gestiones con `cuenta: true` cuyo `agente` es ella, de cualquier caso, y llevan solo número, codificación, fecha y citas. La app las suma (`S.histCuenta`) en «Gestionados».
+- **Riesgo bajo:** la asesora ve el número de autorización de casos que ya no tiene asignados. Ella misma los gestionó, y no recibe observación ni datos del caso. El caso no entra en su bandeja.
+- **Pruebas:** `faseSTA11-historico-gestion.test.js` (9). Revisión local con base demo y datos inventados a 375, 768 y 1440 px, en claro y oscuro: 10 reales + 5 del histórico = 15 en el contador, la lista y «Gestiones»; 0 errores de consola y sin desborde.
