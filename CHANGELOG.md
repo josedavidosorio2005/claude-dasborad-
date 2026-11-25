@@ -7,6 +7,13 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.275.1 — Noviembre 2026
+
+**ORLANT, Gestión STA: el histórico de septiembre ya se puede cargar.**
+
+- «Cargar histórico (con gestión)» rechazaba los archivos grandes con el aviso «Cuerpo de la petición demasiado grande» (le pasó a septiembre, con casi 5.000 filas). Ahora acepta lo mismo que la carga de la base del STA: hasta 8 MB.
+- Ese rechazo no guardó nada.
+
 ## v1.275.0 — Noviembre 2026
 
 **ORLANT, Gestión STA: la gestión del histórico de los casos disponibles también cuenta.**

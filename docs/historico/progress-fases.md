@@ -22936,3 +22936,14 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
 - La revisión (`dryRun`) informa `cuentanDisponibles`.
 - **Pruebas:** `faseSTA11-historico-gestion.test.js` (7).
 - **Fuera de alcance:** la pestaña «Gestionados» de la propia asesora sigue mostrando solo los casos que tiene a su nombre.
+
+## Gestión STA: límite de 8 MB para «Cargar histórico» (v1.275.1, 2026-11-25)
+
+- **Carga real del histórico (OK del usuario, 25/11)**, por la interfaz y con la sesión del usuario en Brave. Antes de confirmar cada archivo se comprobó que la revisión diera los números aprobados:
+  - Noviembre: 345 entran, todos disponibles y con su gestión contada, 117 citas, 99 ya existían. **Cargado**; cuadró igual en la revisión y en la carga.
+  - Octubre: 1.499 entran (1.132 gestionados y 367 disponibles que cuentan), 130 citas, 226 ya existían y 32 repetidas. **Cargado**; también cuadró.
+  - Septiembre: la revisión respondió 413 («Cuerpo de la petición demasiado grande»). Sus 4.933 filas pesan unos 2,4 MB y `/api/orlant/sta/historico` tenía el límite normal de 2 MB. No se escribió nada y la carga **se detuvo**.
+  - Producción quedó con 2.371 casos (527 + 345 + 1.499).
+- **Arreglo:** `/api/orlant/sta/historico` pasa a `RUTAS_LIMITE_MAYOR` (8 MB), igual que `/api/orlant/sta/cargas`.
+- **Pruebas:** `faseSTA13-limite-historico.test.js` (2): más de 2 MB entra; más de 8 MB sigue dando 413.
+- **Pendiente:** cargar septiembre después del deploy. Hay que recargar Brave y volver a iniciar sesión.
