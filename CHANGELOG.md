@@ -7,6 +7,14 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.267.2 — Noviembre 2026
+
+**«Ver como» ocupa menos en el celular.**
+
+- La franja de abajo que avisa «Viendo como …» pasa de 5 líneas a 2 y queda pegada al borde de la pantalla, con un botón «Volver».
+- En tablet ahora cabe en una sola fila.
+- En computador se ve igual que antes.
+
 ## v1.267.1 — Noviembre 2026
 
 **Botones más fáciles de tocar en el celular.**
