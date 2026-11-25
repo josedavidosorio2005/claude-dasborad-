@@ -136,7 +136,7 @@ function updateStats(){
   document.getElementById('stat-active').textContent=users.filter(function(u){return u.active;}).length;
   document.getElementById('stat-suspended').textContent=users.filter(function(u){return !u.active;}).length;
   document.getElementById('stat-total').textContent=users.length;
-  document.getElementById('stat-hist').textContent=historial.length;
+  document.getElementById('stat-hist').textContent=historialTotal==null?'-':Number(historialTotal).toLocaleString('es-CO'); // 25/11: total del servidor
 }
 
 // ═══════════════════════════════════════════════════════════

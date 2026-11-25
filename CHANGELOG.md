@@ -7,6 +7,15 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.267.4 — Noviembre 2026
+
+**El Historial ya no hace esperar al entrar.**
+
+- Al iniciar sesión, la plataforma ya no descarga todo el Historial: lo pide solo cuando abres su pestaña.
+- La pestaña muestra los 1.000 eventos más recientes, con el más nuevo arriba, y dice cuántos hay en total.
+- Nuevo: filtrar el Historial por fecha («Desde» y «Hasta»). El filtro por tipo de evento busca en todo el Historial, no solo en lo que está en pantalla.
+- Las alertas de seguridad no cambian.
+
 ## v1.267.3 — Noviembre 2026
 
 **Más fácil de usar con el teclado y con lector de pantalla.**

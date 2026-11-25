@@ -28,9 +28,11 @@ function renderHist(filter,tipo){
   filter=(filter||'').toLowerCase(); tipo=tipo||'';
   var tbody=document.getElementById('hist-tbody');
   var noRes=document.getElementById('hist-no-results');
-  var list=_histApplyFilters(historial.slice().reverse(),filter,tipo);
+  var list=_histApplyFilters(historial.slice(),filter,tipo); // 25/11: tal como llega del servidor, las más recientes arriba
   var countEl=document.getElementById('hist-count');
-  if(countEl) countEl.textContent=historial.length+' eventos totales';
+  if(countEl) countEl.textContent=histTextoConteo(historialInfo, historial.length);
+  var aviso=document.getElementById('hist-aviso');
+  if(aviso){ var t=histTextoRecorte(historialInfo); aviso.textContent=t; aviso.classList.toggle('hidden',!t); }
   if(!list.length){
     tbody.innerHTML='';
     noRes.innerHTML = (historial.length===0)
@@ -59,6 +61,34 @@ function renderHist(filter,tipo){
 function filterHist(){
   renderHist(document.getElementById('hist-search').value,document.getElementById('hist-filter').value);
 }
+// 25/11/2026: tipo y fechas se filtran en el servidor (vuelve a pedir); el texto, sobre lo que llegó.
+async function filterHistServidor(){
+  var d=document.getElementById('hist-desde'), h=document.getElementById('hist-hasta');
+  if(d && h && d.value && h.value && d.value>h.value){ showToast('La fecha «Desde» es posterior a «Hasta».'); return; }
+  await loadHist();
+  filterHist();
+}
+// Parámetros del servidor según los filtros de la pestaña (tipo y fechas). Puro, para las pruebas (state.js la usa en loadHist).
+function histConsulta(tipo, desde, hasta) {
+  var q = ['con_total=1'];
+  if (tipo) q.push('tipo=' + encodeURIComponent(tipo));
+  if (/^\d{4}-\d{2}-\d{2}$/.test(desde || '')) q.push('desde=' + desde);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(hasta || '')) q.push('hasta=' + hasta);
+  return '/historial?' + q.join('&');
+}
+// Textos del conteo y del aviso de recorte (puros, para las pruebas).
+function _histNum(n){ return Number(n||0).toLocaleString('es-CO'); }
+function histTextoConteo(info, cargadas){
+  info=info||{};
+  var filtrado=(info.totalFiltrado||0)!==(info.total||0);
+  if(info.recortado) return 'Se muestran '+_histNum(cargadas)+' de '+_histNum(info.totalFiltrado)+' eventos'+(filtrado?' (de '+_histNum(info.total)+' en total)':'');
+  return _histNum(info.totalFiltrado)+' evento'+(info.totalFiltrado===1?'':'s')+(filtrado?' de '+_histNum(info.total)+' en total':' en total');
+}
+function histTextoRecorte(info){
+  if(!info||!info.recortado) return '';
+  return 'Se muestran los '+_histNum(info.limite)+' eventos más recientes. Para ver los anteriores, elige un tipo de evento o un rango de fechas.';
+}
+if (typeof module !== 'undefined' && module.exports) module.exports = { histConsulta: histConsulta, histTextoConteo: histTextoConteo, histTextoRecorte: histTextoRecorte };
 
 // Descarga el historial (lo que este filtrado en pantalla) a un .xlsx.
 // Mismo patron que _gdExportExcel de dashboard-generic.js (XLSX ya cargado).
@@ -66,7 +96,7 @@ function exportHistorial(){
   if(typeof XLSX === 'undefined'){ showToast('No se pudo cargar el generador de Excel.'); return; }
   var filter=document.getElementById('hist-search').value;
   var tipo=document.getElementById('hist-filter').value;
-  var list=_histApplyFilters(historial.slice().reverse(),filter,tipo);
+  var list=_histApplyFilters(historial.slice(),filter,tipo); // 25/11: tal como llega del servidor, las más recientes arriba
   if(!list.length){ showToast('No hay eventos para descargar con el filtro actual.'); return; }
   var rows=list.map(function(h){
     return {
