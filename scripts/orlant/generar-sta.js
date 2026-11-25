@@ -91,6 +91,13 @@ ${css.trim()}
    (sin la cabecera «Visual de supervisor» ni las demás pestañas). */
 .sta-app.sta-cliente #vSupervisor > header.top,.sta-app.sta-cliente #vSupervisor nav.tabs{display:none}
 .sta-app.sta-cliente #vSupervisor main{padding-top:0}
+/* Pedido de Edwin (25/11/2026): «Cargar base de datos» y «Actualizar estado» lado a lado (uno debajo del otro en
+   el celular y la tableta angosta). */
+.sta-cargas-dos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}
+.sta-cargas-dos>.card{margin-top:0}
+.sta-cargas-dos .drop{padding:22px 14px}
+.sta-no-existen{display:block;max-height:140px;overflow:auto;margin-top:6px;font-size:12px;word-break:break-word}
+@media(max-width:820px){.sta-cargas-dos{grid-template-columns:minmax(0,1fr)}}
 `;
 
 // ── Marcado ────────────────────────────────────────────────────────────
@@ -108,6 +115,25 @@ M(`onclick="document.getElementById('archivo').click()"`, `onclick="STAapp.$('ar
 // que pide la carga (CAMPOS, los mismos que exige server/orlant-sta.js), sin filas de ejemplo.
 M(`        <input type="file" id="archivo" accept=".xlsx,.xls,.csv" class="hidden">`, `        <div class="fila sta-plantilla" style="margin-top:10px;align-items:center"><span class="muted" style="flex:1;min-width:200px">¿Primera vez? Descarga la plantilla con las 8 columnas que pide la carga.</span><button class="btn sm" type="button" onclick="descargarPlantilla()">Descargar plantilla</button></div>
         <input type="file" id="archivo" accept=".xlsx,.xls,.csv" class="hidden">`);
+// Pedido de Edwin (25/11/2026): «Cargar base de datos» y «Actualizar estado» en dos cuadros lado a lado.
+M(`      <div class="card">
+        <h3>Cargar base de datos</h3>`, `      <div class="sta-cargas-dos">
+      <div class="card sta-carga-base">
+        <h3>Cargar base de datos</h3>`);
+M(`        <div id="cargaMsg"></div>
+      </div>`, `        <div id="cargaMsg"></div>
+      </div>
+      <div class="card sta-act-estado">
+        <h3>Actualizar estado</h3>
+        <p class="muted" style="margin-top:0">Excel con 2 columnas: <b>Numero Autorizacion</b> y <b>Estado</b>. Cambia el estado de los casos que ya están en la base; los que no existan se reportan y no se crean. Solo <b>En proceso</b> y <b>Sin contacto</b> se gestionan: con otro estado, el caso sale de asignados, pendientes y sin asignar.</p>
+        <div class="drop" id="dropEst" onclick="STAapp.$('archivoEst').click()">
+          <b>Arrastra aquí el Excel</b> o haz clic para seleccionarlo<br><span class="muted">.xlsx, .xls o .csv</span>
+        </div>
+        <div class="fila sta-plantilla" style="margin-top:10px;align-items:center"><span class="muted" style="flex:1;min-width:200px">Plantilla con las 2 columnas.</span><button class="btn sm" type="button" onclick="STAapp.descargarPlantillaEstado()">Descargar plantilla</button></div>
+        <input type="file" id="archivoEst" accept=".xlsx,.xls,.csv" class="hidden" aria-label="Archivo para actualizar estado">
+        <div id="estadoMsg"></div>
+      </div>
+      </div>`);
 M('<input class="inp" id="nuevaTipi" placeholder="Nueva tipificación"', '<input class="inp" id="nuevaTipi" aria-label="Nueva tipificación" placeholder="Nueva tipificación"');
 // Pedido de Edwin (23/11/2026): «Regresar a disponibles» en Gestionados (por codificación o marcados).
 M(`      <p class="muted" id="gsInfo" style="margin:0 0 10px"></p>`, `      <div class="card fila gs-regresar" style="padding:12px 16px">
@@ -376,6 +402,63 @@ L(`function opciones(campo){ const m=new Map(); disponibles().forEach(c=>{ const
   if(k && F[k]) F[k].forEach(v=>{ if(!m.has(v)) m.set(v,0); });`);
 L(`function msNormalizar(k){ if(F[k] && F[k].size===msTodos(k).length) F[k]=null; }`,
   `function msNormalizar(k){ const t=msTodos(k); if(F[k] && F[k].size===t.length && t.every(v=>F[k].has(v))) F[k]=null; }`);
+
+// 8d) Pedidos de Edwin (llamada del 25/11/2026).
+//   - Solo «En proceso» y «Sin contacto» se gestionan: un caso con otro Estado queda «Fuera de gestión»
+//     (_estado 'fuera', server/orlant-sta.js) y no cuenta como sin asignar, pendiente ni asignado.
+//   - «Actualizar estado»: un segundo cuadro junto a «Cargar base de datos» que recibe un Excel con
+//     Numero Autorizacion y Estado; el servidor cambia el Estado de los casos existentes (los que no
+//     existan se reportan y no se crean).
+//   - «Agendas por asesor»: solo las asesoras con agendas o citas.
+L("function disponibles(){ return Object.values(S.casos).filter(c=>!c._agente); }",
+  "function disponibles(){ return Object.values(S.casos).filter(c=>!c._agente&&c._estado==='pendiente'); }");
+L("const sinAsig=v.filter(c=>!c._agente).length, pend=v.filter(c=>c._agente&&c._estado==='pendiente').length, gest=v.filter(c=>c._estado==='gestionado').length;\n  $('kpisBase').innerHTML = [['Total en base',v.length],['Sin asignar',sinAsig],['Asignados pendientes',pend],['Gestionados',gest]]",
+  "const sinAsig=v.filter(c=>!c._agente&&c._estado==='pendiente').length, pend=v.filter(c=>c._agente&&c._estado==='pendiente').length, gest=v.filter(c=>c._estado==='gestionado').length, fuera=v.filter(c=>c._estado==='fuera').length;\n  $('kpisBase').innerHTML = [['Total en base',v.length],['Sin asignar',sinAsig],['Asignados pendientes',pend],['Gestionados',gest],['Fuera de gestión',fuera]]");
+L("const sin=l.filter(c=>!c._agente).length, pen=", "const sin=l.filter(c=>!c._agente&&c._estado==='pendiente').length, pen=");
+L("o['Estado gestión']=!c._agente?'Sin asignar':", "o['Estado gestión']=c._estado==='fuera'?'Fuera de gestión':!c._agente?'Sin asignar':");
+L("libres=v.filter(c=>!c._agente).length, pendT=", "libres=v.filter(c=>!c._agente&&c._estado==='pendiente').length, pendT=");
+L("<small>Órdenes libres</small><b>${Object.values(S.casos).filter(c=>!c._agente).length", "<small>Órdenes libres</small><b>${Object.values(S.casos).filter(c=>!c._agente&&c._estado==='pendiente').length");
+L("['Sin asignar',fmt(todos.filter(c=>!c._agente).length)]", "['Sin asignar',fmt(todos.filter(c=>!c._agente&&c._estado==='pendiente').length)],['Fuera de gestión',fmt(todos.filter(c=>c._estado==='fuera').length)]");
+L("const C_UNIV={'Gestionado':'#2a78d6','Pendiente':'#eda100','Sin asignar':'#c3ccd1'};", "const C_UNIV={'Gestionado':'#2a78d6','Pendiente':'#eda100','Sin asignar':'#c3ccd1','Fuera de gestión':'#7a6a8f'};");
+L("const est=c=> c._estado==='gestionado'?'Gestionado':(c._agente?'Pendiente':'Sin asignar');\n  const SER = ['Gestionado','Pendiente','Sin asignar'].map(n=>({nombre:n,color:C_UNIV[n]}));\n  const parte = c=>['Gestionado','Pendiente','Sin asignar'].indexOf(est(c));",
+  "const est=c=> c._estado==='gestionado'?'Gestionado':c._estado==='fuera'?'Fuera de gestión':(c._agente?'Pendiente':'Sin asignar');\n  const SER = ['Gestionado','Pendiente','Sin asignar','Fuera de gestión'].map(n=>({nombre:n,color:C_UNIV[n]}));\n  const parte = c=>['Gestionado','Pendiente','Sin asignar','Fuera de gestión'].indexOf(est(c));");
+L("Las barras se dividen en gestionado, pendiente y sin asignar.", "Las barras se dividen en gestionado, pendiente, sin asignar y fuera de gestión (Estado distinto de «En proceso» o «Sin contacto»).");
+L("  if(!ases.length) $('grAgAs').innerHTML=vacioG('No hay asesores.');\n  else { const rows=ases.map(a=>{",
+  "  const asesAg=ases.filter(a=>{ const o=dat(a.id); return o.e>0||o.citas>0; }); // pedido de Edwin 25/11: solo con agendas o citas\n  if(!asesAg.length) $('grAgAs').innerHTML=vacioG(ases.length?'Ninguna asesora tiene agendas ni citas con estos filtros.':'No hay asesores.');\n  else { const rows=asesAg.map(a=>{");
+L("$('archivo').addEventListener('change',e=>{ const f=e.target.files[0]; if(f) procesarCarga(f); e.target.value=''; });",
+  "$('archivo').addEventListener('change',e=>{ const f=e.target.files[0]; if(f) procesarCarga(f); e.target.value=''; });\n"
+  + "const dropEst=$('dropEst');\n"
+  + "['dragenter','dragover'].forEach(e=>dropEst.addEventListener(e,ev=>{ev.preventDefault();dropEst.classList.add('on');}));\n"
+  + "['dragleave','drop'].forEach(e=>dropEst.addEventListener(e,ev=>{ev.preventDefault();dropEst.classList.remove('on');}));\n"
+  + "dropEst.addEventListener('drop',ev=>{ const f=ev.dataTransfer.files[0]; if(f) procesarEstados(f); });\n"
+  + "$('archivoEst').addEventListener('change',e=>{ const f=e.target.files[0]; if(f) procesarEstados(f); e.target.value=''; });");
+L("function exportarExcel(){", `// Pedido de Edwin (25/11): «Actualizar estado». Lee Numero Autorizacion y Estado; el resto lo hace el servidor.
+async function procesarEstados(file){
+  const box=$('estadoMsg'); box.innerHTML=\`<div class="msg warn">Leyendo \${esc(file.name)}…</div>\`;
+  let filas; try{ filas=await leerArchivo(file); }catch(e){ box.innerHTML=\`<div class="msg err">No se pudo leer el archivo: \${esc(e.message)}</div>\`; return; }
+  const hi=filas.findIndex(r=>r.some(h=>normHeader(h)==='numero autorizacion'));
+  if(hi<0){ box.innerHTML='<div class="msg err">No encontré la columna <b>Numero Autorizacion</b> en el archivo.</div>'; return; }
+  const iN=filas[hi].findIndex(h=>normHeader(h)==='numero autorizacion'), iE=filas[hi].findIndex(h=>normHeader(h)==='estado');
+  if(iE<0){ box.innerHTML='<div class="msg err">No encontré la columna <b>Estado</b> en el archivo.</div>'; return; }
+  const objs=[];
+  for(let r=hi+1;r<filas.length;r++){ const f=filas[r]; if(!f || f.every(v=>v===''||v==null)) continue;
+    const n=f[iN], e=f[iE]; objs.push({numero:typeof n==='number'?String(n):String(n??'').trim(), estado:String(e??'').trim()}); }
+  if(!objs.length){ box.innerHTML='<div class="msg err">El archivo no tiene filas.</div>'; return; }
+  box.innerHTML=\`<div class="msg warn">Actualizando \${objs.length.toLocaleString('es-CO')} estados…</div>\`;
+  let R; try{ R=await API.estados(file.name, objs); }catch(e){ box.innerHTML=\`<div class="msg err">No se pudo actualizar: \${esc(e.message)}</div>\`; return; }
+  await refrescar(); pintarBase();
+  const cambios=Object.entries(R.cambios||{});
+  box.innerHTML=\`<div class="msg ok">\${esc(R.mensaje)}.</div>\`
+    + (cambios.length?\`<div class="msg ok" style="font-size:13px">\${cambios.map(([k,n])=>\`\${esc(k)}: <b>\${n}</b>\`).join(' · ')}</div>\`:'')
+    + (R.sinNum||R.sinEstado||R.repetidos?\`<div class="msg warn">\${[R.sinNum?R.sinNum+' sin número':'',R.sinEstado?R.sinEstado+' sin estado':'',R.repetidos?R.repetidos+' repetidas en el archivo (cuenta la primera)':''].filter(Boolean).join(' · ')}.</div>\`:'')
+    + (R.noExisten?\`<div class="msg err"><b>\${R.noExisten.toLocaleString('es-CO')}</b> números de autorización no existen en la base y no se crearon:<br><span class="sta-no-existen">\${R.noExistenLista.map(esc).join(', ')}\${R.noExisten>R.noExistenLista.length?' …':''}</span></div>\`:'');
+}
+function descargarPlantillaEstado(){
+  if(typeof XLSX==='undefined'){ toast('No se pudo preparar el archivo de Excel'); return; }
+  const ws=XLSX.utils.aoa_to_sheet([['Numero Autorizacion','Estado']]); ws['!cols']=[{wch:22},{wch:18}];
+  const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Actualizar estado'); XLSX.writeFile(wb,'Plantilla_actualizar_estado_STA.xlsx');
+}
+function exportarExcel(){`);
 
 // 9) Manejadores en línea (onclick, onchange, oninput, onkeydown): sus llamadas pasan a STAapp.<función>.
 const nombres = [...new Set([...js.matchAll(/(?:^|\n)(?:async )?function (\w+)\(/g)].map((m) => m[1]))];

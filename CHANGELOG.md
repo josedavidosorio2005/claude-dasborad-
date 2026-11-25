@@ -7,6 +7,15 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.270.0 — Noviembre 2026
+
+**ORLANT, Gestión STA: «Actualizar estado» y agendas por asesora (pedidos de Edwin, 25/11).**
+
+- En «Cargar base» hay un cuadro nuevo, «Actualizar estado», al lado del de la base: recibe un Excel con «Numero Autorizacion» y «Estado» (con su plantilla para descargar) y cambia el estado de los casos que ya están cargados. Los números que no existen se muestran en una lista y no se crean.
+- Solo los casos «En proceso» y «Sin contacto» se gestionan. Si un caso pasa a otro estado (agendada, cumplida, anulada, facturado…), sale solo de asignados, pendientes y sin asignar, y no le cuenta productividad a la asesora que lo tenía. Queda como «Fuera de gestión» y se ve en la gráfica «Por Estado».
+- Si después la base normal lo trae otra vez «En proceso», vuelve a quedar disponible.
+- «Agendas por asesor» muestra solo las asesoras que tienen agendas o citas.
+
 ## v1.269.0 — Noviembre 2026
 
 **ORLANT, Equidad profesionales: la cuenta cliente ya puede verla (OK de Edwin, 25/11).**

@@ -674,6 +674,7 @@ mismo orden):
 - Historial ligero: no se descarga al entrar; las 1.000 más recientes (la más nueva arriba) con el total y filtros por tipo y fecha en el servidor, PR #956 (v1.267.4, 2026-11-25)
 - Equidad profesionales con el estilo de la plataforma (pedido de Edwin), PR #957 (v1.268.0, 2026-11-25)
 - Equidad profesionales visible para la cuenta cliente de ORLANT (OK de Edwin), PR #950, opción activada y verificada en producción (v1.269.0, 2026-11-25)
+- Gestión STA de ORLANT (pedidos de Edwin del 25/11): «Actualizar estado» (Numero Autorizacion + Estado), solo «En proceso» y «Sin contacto» se gestionan («Fuera de gestión» para el resto) y «Agendas por asesor» solo con agendas o citas (v1.270.0, 2026-11-25)
 - Fase 309 — Revisión de seguridad: el cliente ya no recibe el nombre de los líderes en `GET /metas`; resto en `docs/revision-seguridad-2026-11-09.md` (v1.154.1, 2026-11-10)
 - Fase 308 — Revisión antes de la reunión con clientes y pendientes del supervisor (solo docs, 2026-11-10)
 - Fase 307 — Calidad para que los líderes evalúen: ORLANT conserva su Calidad y suma «Resultado de los monitoreos» al final; Aurora ya lo tenía (se muestra con el primer monitoreo) (v1.154.0, 2026-11-10)

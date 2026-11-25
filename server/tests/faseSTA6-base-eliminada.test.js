@@ -12,7 +12,7 @@ const STA = require('../orlant-sta');
 const H = (t) => ({ Authorization: 'Bearer ' + t });
 const B = '/api/orlant/sta';
 let admin;
-const fila = (n) => ({ 'Fecha Ingreso Sta': '2026-11-02 08:00:00', Entidad: 'ENT', 'Numero Autorizacion': 'EL' + n, Estado: 'AUTORIZADA', 'Descripcion Cups': 'CUPS', 'Fecha Autorizacion': '2026-10-01 00:00:00', 'Fecha Expiracion': '2027-01-01 00:00:00', Servicio: 'SERV' });
+const fila = (n) => ({ 'Fecha Ingreso Sta': '2026-11-02 08:00:00', Entidad: 'ENT', 'Numero Autorizacion': 'EL' + n, Estado: 'En proceso', 'Descripcion Cups': 'CUPS', 'Fecha Autorizacion': '2026-10-01 00:00:00', 'Fecha Expiracion': '2027-01-01 00:00:00', Servicio: 'SERV' });
 
 before(async () => {
   admin = await tokenFor('admin', MASTER_PASSWORD);

@@ -35,7 +35,7 @@ before(async () => {
   id1 = Number(crear('sta4_as1', 'ASESOR', { campana_ORLANT: true }, 'ORLANT'));
   [sup, cli, cliOtro, as1] = await Promise.all(['sta4_sup', 'sta4_cli', 'sta4_cliotro', 'sta4_as1'].map(tok));
   // Base con una columna extra (nombre del paciente) que NUNCA debe llegar al cliente.
-  const filas = [1, 2, 3].map((n) => ({ 'Fecha Ingreso Sta': '2026-11-0' + n + ' 08:00:00', Entidad: 'ENTIDAD INVENTADA', 'Numero Autorizacion': SECRETO + n, Estado: 'AUTORIZADA', 'Descripcion Cups': 'CUPS INVENTADO', 'Fecha Autorizacion': '2026-10-01 00:00:00', 'Fecha Expiracion': '2027-01-01 00:00:00', Servicio: 'SERVICIO INVENTADO', Paciente: PACIENTE }));
+  const filas = [1, 2, 3].map((n) => ({ 'Fecha Ingreso Sta': '2026-11-0' + n + ' 08:00:00', Entidad: 'ENTIDAD INVENTADA', 'Numero Autorizacion': SECRETO + n, Estado: 'En proceso', 'Descripcion Cups': 'CUPS INVENTADO', 'Fecha Autorizacion': '2026-10-01 00:00:00', 'Fecha Expiracion': '2027-01-01 00:00:00', Servicio: 'SERVICIO INVENTADO', Paciente: PACIENTE }));
   const r = await request(app).post(B + '/cargas').set(H(admin)).send({ archivo: 'base-inventada.xlsx', columnas: STA.CAMPOS.concat(['Paciente']), filas });
   assert.equal(r.status, 200, JSON.stringify(r.body));
   assert.equal((await request(app).post(B + '/asignar').set(H(admin)).send({ agenteId: id1, cantidad: 2 })).status, 200);

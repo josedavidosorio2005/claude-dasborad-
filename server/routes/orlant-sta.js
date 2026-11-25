@@ -68,6 +68,13 @@ router.post(BASE + '/cargas', requireActor, soloGestor, h((req, res) => {
   log(req, 'STA_CARGA', `${STA.CAMPANA} · ${r.leidas} filas: ${r.nuevos} nuevos, ${r.dup} ya existían, ${r.actEst} actualizados, ${r.sinNum} sin número`);
   res.json(r);
 }));
+// Pedido de Edwin (25/11/2026): «Actualizar estado» (Numero Autorizacion + Estado), solo casos existentes.
+router.post(BASE + '/estados', requireActor, soloGestor, h((req, res) => {
+  const b = req.body || {};
+  const r = STA.actualizarEstados(db, { archivo: b.archivo, filas: b.filas });
+  log(req, 'STA_ESTADOS', `${STA.CAMPANA} · ${r.leidas} filas: ${r.actualizados} actualizados, ${r.sinCambio} sin cambio, ${r.salieron} salieron de la gestión, ${r.volvieron} volvieron, ${r.noExisten} no existen`);
+  res.json(r);
+}));
 router.get(BASE + '/cargas', requireActor, soloGestor, h((req, res) => res.json({ cargas: STA.cargas(db) })));
 router.get(BASE + '/cargas/:id/archivo', requireActor, soloGestor, h((req, res) => {
   const a = STA.archivoDeCarga(db, req.params.id);
