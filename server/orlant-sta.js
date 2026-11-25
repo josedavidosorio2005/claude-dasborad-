@@ -304,7 +304,8 @@ function actualizarEstados(db, { archivo, filas, por }) {
 //  - una autorización que ya existe se rechaza (sin duplicados). Se cargan en orden NOVIEMBRE → OCTUBRE →
 //    SEPTIEMBRE, así gana la más reciente; dentro de un archivo, la de fecha de gestión más reciente;
 //  - «En proceso» / «Sin contacto»: quedan disponibles (sin asesora) y la gestión vieja va a «Gestiones
-//    anteriores» (no suma en las gráficas);
+//    anteriores». Ajuste del usuario (25/11): si la fila trae codificación, esa gestión CUENTA (gráficas,
+//    Gestionados y productividad de su asesora, en su fecha) con la marca `cuenta`; sin codificación no suma;
 //  - otro estado: entran GESTIONADOS a nombre de su asesora, en su fecha y sin hora (00:00:00), y suman en las
 //    gráficas con su estado; «Agenda InConexion» (efectiva) cuenta 1 cita;
 //  - el asesor se reconoce por el nombre de su usuario ASESOR de ORLANT; si no coincide, la fila no entra;
@@ -325,7 +326,7 @@ function cargarHistorico(db, { archivo, filas, por, dryRun }) {
     .forEach((u) => { ases.set(normHeader(u.nombre), u.id); if (u.user) ases.set(normHeader(u.user), u.id); });
   const txt = (v, n) => (typeof v === 'string' || typeof v === 'number' ? String(v).trim().slice(0, n) : '');
   const res = { leidas: 0, nuevos: 0, disponibles: 0, gestionados: 0, citas: 0, existen: 0, repetidasArchivo: 0, sinNum: 0, sinFecha: 0,
-    sinAsesor: 0, asesoresSinUsuario: {}, codificacionDesconocida: {}, porEstado: {}, dryRun: !!dryRun };
+    sinAsesor: 0, cuentanDisponibles: 0, asesoresSinUsuario: {}, codificacionDesconocida: {}, porEstado: {}, dryRun: !!dryRun };
   // 1) Filas válidas; dentro del archivo, la de fecha de gestión más reciente.
   const elegidas = new Map();
   for (const f of filas) {
@@ -369,7 +370,9 @@ function cargarHistorico(db, { archivo, filas, por, dryRun }) {
       res.nuevos++;
       if (esGestionable(estadoBase)) {
         res.disponibles++;
-        const prev = JSON.stringify([{ tipi, obs, fg: fgHora, citas, agente: agenteId, historico: true }]);
+        const cuenta = !!tipi;
+        if (cuenta) { res.cuentanDisponibles++; res.citas += citas; }
+        const prev = JSON.stringify([Object.assign({ tipi, obs, fg: fgHora, citas: cuenta ? citas : 0, agente: agenteId, historico: true }, cuenta ? { cuenta: true } : {})]);
         if (!dryRun) ins.run(CAMPANA, k, JSON.stringify(d), cargaId, hoy, null, '', 'pendiente', '', '', '', 0, prev, hist);
       } else {
         res.gestionados++; res.citas += citas;
@@ -382,7 +385,8 @@ function cargarHistorico(db, { archivo, filas, por, dryRun }) {
     }
   };
   db.transaction(trabajo)();
-  res.mensaje = (dryRun ? 'Revisión (no se cargó nada): ' : '') + `${res.nuevos} casos nuevos (${res.gestionados} gestionados, ${res.disponibles} disponibles), ${res.existen} ya existían (rechazados)`
+  res.mensaje = (dryRun ? 'Revisión (no se cargó nada): ' : '') + `${res.nuevos} casos nuevos (${res.gestionados} gestionados, ${res.disponibles} disponibles`
+    + (res.cuentanDisponibles ? `, de ellos ${res.cuentanDisponibles} con su gestión contada` : '') + `), ${res.existen} ya existían (rechazados)`
     + (res.repetidasArchivo ? `, ${res.repetidasArchivo} repetidas en el archivo` : '') + (res.sinAsesor ? `, ${res.sinAsesor} sin asesora reconocida` : '');
   return res;
 }
@@ -610,22 +614,29 @@ const CAMPOS_CLIENTE = ['Entidad', 'Servicio', 'Estado', 'Descripcion Cups', 'Fe
 function estadoCliente(db) {
   asegurarTablas(db);
   const c = config(db);
-  const casos = db.prepare('SELECT datos, agenteId, estado, tipi, fg, citas FROM sta_casos WHERE campana = ? ORDER BY id').all(CAMPANA).map((r, i) => {
+  const casos = db.prepare('SELECT datos, agenteId, estado, tipi, fg, citas, prev FROM sta_casos WHERE campana = ? ORDER BY id').all(CAMPANA).map((r, i) => {
     const d = JSON.parse(r.datos);
     const o = { _id: 'c' + (i + 1), _agente: r.agenteId, _estado: r.estado, _tipi: r.estado === 'gestionado' ? r.tipi : '', _fg: r.estado === 'gestionado' ? r.fg : '', _citas: r.estado === 'gestionado' ? r.citas || 0 : 0 };
     for (const k of CAMPOS_CLIENTE) o[k] = d[k] === undefined ? '' : d[k];
+    const gh = prevQueCuenta(r.prev).map((p) => ({ cuenta: true, agente: p.agente, tipi: p.tipi, fg: p.fg, citas: p.citas || 0 }));
+    if (gh.length) o._prev = gh;
     return o;
   });
   return { casos, agentes: asesores(db, { incluirInactivos: true }), config: { tipis: c.tipis, efectivas: c.efectivas, columnas: CAMPOS_CLIENTE }, ahora: ahora() };
 }
 
+// Gestiones del histórico que cuentan aunque el caso esté disponible (ajuste del usuario, 25/11).
+function prevQueCuenta(prev) {
+  if (!prev) return [];
+  try { return (JSON.parse(prev) || []).filter((p) => p && p.cuenta && p.fg); } catch { return []; }
+}
 // Cliente de ORLANT (gráficas del STA en su Dashboard): SOLO agregados, sin números de
 // autorización, observaciones ni nombres de asesor.
 function resumen(db) {
   asegurarTablas(db);
   const c = config(db);
   const ef = new Set(c.efectivas);
-  const rows = db.prepare('SELECT datos, agenteId, estado, tipi, fg, citas FROM sta_casos WHERE campana = ?').all(CAMPANA);
+  const rows = db.prepare('SELECT datos, agenteId, estado, tipi, fg, citas, prev FROM sta_casos WHERE campana = ?').all(CAMPANA);
   const out = { total: rows.length, sinAsignar: 0, pendientes: 0, gestionados: 0, fueraGestion: 0, agendas: 0, citas: 0, porTipi: {}, porDia: {}, porEntidad: {}, porServicio: {}, porEstado: {}, efectivas: c.efectivas };
   const parte = (r) => (r.estado === 'gestionado' ? 'gestionado' : r.estado === 'fuera' ? 'fuera' : r.agenteId ? 'pendiente' : 'sinAsignar');
   const sumar = (m, k, p) => { const x = m[k] || (m[k] = { gestionado: 0, pendiente: 0, sinAsignar: 0, fuera: 0 }); x[p]++; };
@@ -644,8 +655,17 @@ function resumen(db) {
       if (ef.has(r.tipi)) out.agendas++;
       out.citas += r.citas || 0;
     }
+    for (const p of prevQueCuenta(r.prev)) {
+      out.gestionesHistorico = (out.gestionesHistorico || 0) + 1;
+      out.porTipi[p.tipi] = (out.porTipi[p.tipi] || 0) + 1;
+      const x = out.porDia[p.fg.slice(0, 10)] || (out.porDia[p.fg.slice(0, 10)] = { gestiones: 0, citas: 0 });
+      x.gestiones++; x.citas += p.citas || 0;
+      if (ef.has(p.tipi)) out.agendas++;
+      out.citas += p.citas || 0;
+    }
   }
-  out.efectividad = out.gestionados ? Math.round(out.citas * 1000 / out.gestionados) / 10 : 0;
+  const gestiones = out.gestionados + (out.gestionesHistorico || 0);
+  out.efectividad = gestiones ? Math.round(out.citas * 1000 / gestiones) / 10 : 0;
   return out;
 }
 

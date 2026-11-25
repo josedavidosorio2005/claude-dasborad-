@@ -22925,3 +22925,14 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - «Cambios de estado» muestra quién lo hizo y el buscador filtra;
   - 0 errores de consola y sin desborde.
 - **Pendiente:** la carga en producción espera el «OK cargar» del usuario, con un respaldo de menos de 24 horas.
+
+## Gestión STA: la gestión del histórico de los casos disponibles cuenta (v1.275.0, 2026-11-25)
+
+- **Ajuste del usuario (25/11)** a la carga del histórico (v1.274.0): si una fila «En proceso» o «Sin contacto» trae codificación, el caso sigue quedando **disponible**, pero su gestión **cuenta**:
+  - en las gráficas, en «Gestionados» y en la productividad de su asesora (supervisor), en su fecha;
+  - en el resumen del cliente de ORLANT (`/resumen`, `porTipi`, `porDia`, agendas, citas y efectividad).
+  - Sin codificación, la gestión no suma (igual que antes).
+- **Cómo:** la gestión vieja va a `prev` con la marca `cuenta: true` (y `citas` = 1 si es «Agenda InConexion»). La app la suma como una gestión «virtual» (`gestHistCuenta`); en «Gestionados» no se puede marcar ni regresar. La vista del cliente (`vista=cliente`) solo lleva esas gestiones recortadas (sin observación).
+- La revisión (`dryRun`) informa `cuentanDisponibles`.
+- **Pruebas:** `faseSTA11-historico-gestion.test.js` (7).
+- **Fuera de alcance:** la pestaña «Gestionados» de la propia asesora sigue mostrando solo los casos que tiene a su nombre.

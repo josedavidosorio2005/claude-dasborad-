@@ -7,6 +7,19 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.275.0 — Noviembre 2026
+
+**ORLANT, Gestión STA: la gestión del histórico de los casos disponibles también cuenta.**
+
+- En «Cargar histórico (con gestión)», un caso «En proceso» o «Sin contacto» que trae codificación sigue quedando disponible para asignar, pero ahora su gestión suma:
+  - en las gráficas y en «Gestionados»;
+  - en la productividad de su asesora;
+  - en la fecha de esa gestión.
+- Si «Agenda InConexion» es la codificación, cuenta 1 cita.
+- Si la fila no trae codificación, la gestión no suma.
+- En «Gestionados», esas gestiones no se pueden marcar ni regresar porque el caso ya está disponible.
+- La revisión previa dice cuántos casos disponibles llegan con su gestión contada.
+
 ## v1.274.0 — Noviembre 2026
 
 **ORLANT, Gestión STA: quién cambió cada estado, filtro por mes y carga del histórico (pedidos de Edwin, 25/11).**
