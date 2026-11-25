@@ -7,6 +7,14 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.268.0 — Noviembre 2026
+
+**ORLANT, Equidad profesionales con el estilo de la plataforma (pedido de Edwin).**
+
+- La pestaña «Equidad profesionales» ya no se ve distinta: usa los mismos colores, tarjetas, pestañas y botones que el resto de ORLANT, en tema claro y oscuro.
+- Las 3 pestañas (Pólizas, Medicina prepagada y Particulares), los cálculos y las cifras siguen iguales.
+- El mapa de calor se puede recorrer con el teclado.
+
 ## v1.267.4 — Noviembre 2026
 
 **El Historial ya no hace esperar al entrar.**
