@@ -22947,3 +22947,26 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
 - **Arreglo:** `/api/orlant/sta/historico` pasa a `RUTAS_LIMITE_MAYOR` (8 MB), igual que `/api/orlant/sta/cargas`.
 - **Pruebas:** `faseSTA13-limite-historico.test.js` (2): más de 2 MB entra; más de 8 MB sigue dando 413.
 - **Pendiente:** cargar septiembre después del deploy. Hay que recargar Brave y volver a iniciar sesión.
+
+## Cierre del 25/11 en la tarde: histórico del STA en producción y PR del día (solo docs, 2026-11-25)
+
+- **Estado de los PR del día:** las entradas de arriba quedaron con «PR sin mergear». Ya están mergeados y desplegados, y producción va en **1.275.1**:
+  - #959 (1.270.0);
+  - #960 (1.271.0, Gerencia para Jairo);
+  - #961 (1.272.0);
+  - #962 (1.273.0, Equidad por mes);
+  - #963 (1.274.0);
+  - #964 (1.275.0);
+  - #965 (1.275.1).
+  - Cada uno con CI verde, `git ls-remote` + `--match-head-commit` y `/api/health` comprobado. Los deploys salieron al primer intento.
+- **Respaldo antes de la carga:** el último era del 25/11 a las 03:17 UTC (menos de 24 h, subida a S3 OK), así que no hizo falta uno inmediato.
+- **Histórico del STA cargado** por la interfaz, con la sesión del usuario en un perfil aparte de Brave (borrado al terminar):
+  - noviembre: 345 casos (todos disponibles con su gestión contada) y 117 citas;
+  - octubre: 1.499 casos (1.132 gestionados y 367 disponibles que cuentan) y 130 citas;
+  - septiembre: 4.399 casos (4.009 gestionados y 390 disponibles que cuentan) y 1.418 citas;
+  - el script comparaba la revisión con la tabla aprobada antes de pulsar «Cargar», y la carga real dio lo mismo;
+  - resultado: 6.770 casos y resumen del cliente con 1.736 agendas, 1.738 citas y 26,6 % de efectividad;
+  - entre octubre y septiembre se asignaron 12 casos disponibles (actividad normal de la plataforma).
+- **Equidad para el cliente y por mes:** en producción (#950 y #962).
+- **Pendiente:** verificar con «Ver como» los permisos de Jairo (clientes, Gerencia y Tickets, sin Calidad).
+- **Sin mergear:** #966 («Gestionados» de la asesora con el histórico, 1.276.0).
