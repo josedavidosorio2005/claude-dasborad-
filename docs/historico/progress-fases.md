@@ -22695,6 +22695,17 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - `VISIBLE_PARA_CLIENTE` sigue en `false`.
   - Este mismo PR actualiza `PROGRESS.md` a 1.267.0.
 
+## Auditoría del 24/11: los bajos que quedaban (v1.267.1, 2026-11-24, PR sin mergear)
+
+- **Pedido (usuario, 24/11):** arreglar los hallazgos bajos de la auditoría que no hicieron #944 ni #946, sin tocar los HTML de Edwin (solo por sus generadores). Cada arreglo en su commit, con prueba (`faseQA-bajos-tactiles.test.js`).
+  1. **Talento humano:** las pestañas (41 px) y los botones (35 px) pasan a 44 px en ≤768 px. El bloque lo añade `scripts/gestion-humana/generar-talento-humano.js` al final de su hoja. Se regeneró con el HTML de siempre (`docs/gestion-humana/`, ignorado por git); sin el bloque, el generador reproducía exacto lo que había.
+  2. **Malla:** «+ Agregar novedad», «Horario especial», «Quitar todas las semanas» (30 px) y la «×» de los registros (32 px) pasan a 44 px en ≤768 px.
+  3. **Portal Asesor:** el «Ver» del aviso de monitoreos nuevos (36×24 px) pasa a 44 px en ≤768 px.
+- **Verificación local** (Brave, base desechable, personas inventadas):
+  - a 375 y 768 px, los tres controles miden 44 px;
+  - a 1440 px no cambian;
+  - sin desborde y 0 errores de consola.
+
 ## Equidad profesionales: opción para la cuenta cliente de ORLANT, apagada (v1.268.0, 2026-11-24, PR sin mergear)
 
 - **Pedido (usuario, 24/11):** dejar listo, en una rama aparte, que la cuenta cliente de ORLANT pueda ver la Equidad detrás de una opción, apagada por defecto, para activarla rápido si Edwin dice que sí.

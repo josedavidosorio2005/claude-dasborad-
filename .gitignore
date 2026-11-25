@@ -81,3 +81,13 @@ AGENTS.md
 
 # Plan de Gestión humana (23/11/2026): el HTML original de Edwin trae datos reales (plantilla del inventario). Nunca al repo.
 docs/gestion-humana/Plataforma_InConexion.html
+
+# 24/11/2026: archivos locales que nunca se suben.
+# - Revisión de bugs del 03/11 (local, sin seguimiento): entró por error en 6a18e592 (#949) y se sacó antes del merge.
+docs/revision-bugs-2026-11-03.md
+# - Equidad profesionales de ORLANT: el HTML de Edwin trae las bases reales pegadas adentro y sus 3 Excel son
+#   reales; viven fuera del repo (Descargas) y el generador los lee de ahí (scripts/orlant/generar-equidad.js).
+**/Equidad_Profesionales_InConexion.html
+**/POLIZAS.xlsx
+**/MEDICINA PREPAGADA.xlsx
+**/PARTICULARES.xlsx

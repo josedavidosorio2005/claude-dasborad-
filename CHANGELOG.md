@@ -15,6 +15,15 @@ sepan que hay nuevo, que se corrigio y que falta.
 - Viene apagada: el cliente no ve la pestaña hasta que alguien la marque. Se enciende y se apaga al instante, sin actualizar la plataforma.
 - El cliente solo puede verla, nunca cargar.
 
+## v1.267.1 — Noviembre 2026
+
+**Botones más fáciles de tocar en el celular.**
+
+- En Talento humano, las pestañas y los botones ahora miden lo mismo que en el resto de la plataforma.
+- En la malla, «+ Agregar novedad», «Horario especial», «Quitar todas las semanas» y la «×» de cada registro son más grandes.
+- En el Portal Asesor, el botón «Ver» del aviso de monitoreos nuevos también.
+- En computador no cambia nada.
+
 ## v1.267.0 — Noviembre 2026
 
 **ORLANT: nueva pestaña «Equidad profesionales», con el diseño de Edwin.**
