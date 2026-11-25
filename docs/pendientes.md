@@ -7,19 +7,20 @@ decidir nada, solo priorizar cuándo invertir el tiempo). Lo ya cerrado
 no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 ítem tiene prioridad, cómo se cierra, y la fecha en que se anotó.
 
-## Estado al 25/11/2026 (producción 1.267.1)
+## Estado al 25/11/2026 (producción 1.269.0)
 
 - **Lectura del 25/11** (solo lectura, solo conteos, sesión del administrador en un perfil aparte de Brave, borrado al terminar):
   - La consulta automática de Wolkvox de las **00:05** salió igual que la del 24/11: los **6 módulos bien** en la réplica y en el MOBILIZE real, sin errores y con respaldo. Los números de la réplica y del real son idénticos.
   - Noviembre (24/11 → 25/11): Flujo 23 → 24 días, 16 → 17 filas · Flujo por hora 58 → 61 · Tipificación 124 → 131 llamadas (salida 55 → 58, únicas 57 → 61) · Encuesta 78 → 83 · No conectadas 48 → 50 · Abandonadas 1 → 1.
   - La corrida de las 7:00 del 25/11 dio los mismos números. Cada corrida gasta unas 58 consultas (29 la réplica y 29 el real), lejos del tope de 2.800.
-- **PR abiertos, sin mergear:**
-  - **#950** (v1.268.0): opción para que la cuenta cliente de ORLANT vea la Equidad, apagada. El 25/11 se le trajo main (1.268.0 encima de 1.267.1). **Espera el sí de Edwin.**
-  - **#902** (B1, citas asignadas en Total tráfico): espera a Edwin.
-  - **#952** (v1.267.2): la franja de «Ver como» más compacta en el celular. Espera el OK del merge.
-- **Equidad profesionales:** las 3 bases reales ya están cargadas en producción (24/11). **No recargar.**
+- **Mergeados y desplegados el 25/11** (con OK del usuario, de a uno): #953 y #954 (docs y prueba), #952 «Ver como» en el celular (1.267.2), #955 accesibilidad (1.267.3), #956 Historial ligero (1.267.4), #957 Equidad con el estilo de la plataforma (1.268.0) y #950 Equidad para el cliente (1.269.0).
+- **PR abiertos, sin mergear:** **#902** (B1, citas asignadas en Total tráfico): espera a Edwin.
+- **Equidad profesionales:**
+  - Las 3 bases reales están cargadas en producción (24/11). **No recargar.**
+  - **Visible para la cuenta cliente de ORLANT desde el 25/11** (OK de Edwin). La opción se activó por la interfaz, con la sesión del usuario.
+  - Se verificó con «Ver como»: la pestaña aparece justo después de «Gestión de la base STA», con 403 / 305 / 256 citas e índices de 44,7 / 39,6 / 53,7 %.
 - **WhatsApp de ORLANT por API (N3):** sigue **apagado**. No se crea nada en SSM sin OK explícito.
-- **Esperan a Edwin:** #950, #902, el mapa de skills de ORLANT, los nombres completos de las 14 asesoras de SURA con nombre estilo login y la lista de entidades de Isa (Equidad).
+- **Esperan a Edwin:** #902, el mapa de skills de ORLANT, los nombres completos de las 14 asesoras de SURA con nombre estilo login y la lista de entidades de Isa (Equidad).
 
 ## Estado al 24/11/2026 (producción 1.260.0)
 
