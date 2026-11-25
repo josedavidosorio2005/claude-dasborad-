@@ -22858,3 +22858,34 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - la cédula no aparece en consola ni en el Historial.
   - **Fallan las 7 contra `main`** (comprobado en un worktree).
 - **Revisión local** (base de demostración y un empleado inventado), a 375, 768 y 1440 px, en claro y oscuro: encontrado, no encontrado y nombre conservado; 0 errores de consola y sin desborde. Capturas fuera del repo, ya borradas.
+
+## Equidad profesionales por mes (v1.273.0, 2026-11-26, PR sin mergear)
+
+- **Pedido de Edwin** (para el 27/11):
+  - cada base se carga por mes, con el selector de mes de las demás cargas;
+  - cargar un mes reemplaza solo ese mes de esa base;
+  - el dashboard filtra por mes, con el último cargado por defecto;
+  - lo ya cargado en producción queda en su mes;
+  - la pantalla de carga «le quedó como rara».
+- **Servidor** (`server/orlant-equidad.js`):
+  - `equidad_citas` gana la columna `mes` (AAAA-MM) y un índice por base y mes;
+  - nueva tabla `equidad_cargas_mes` (base y mes: archivo, citas, fecha y quién cargó);
+  - la carga exige el mes y reemplaza solo esa base en ese mes; si alguna cita no es de ese mes, no carga nada y dice de qué meses son.
+- **Migración idempotente:** cada cita existente toma el mes de **su fecha**, y cada base cargada se registra en los meses que trae. No borra nada; la tabla `equidad_cargas` queda.
+  - Si un archivo traía varios meses, sus citas quedan repartidas por fecha. Es una propuesta: falta decidirlo.
+- **Pantalla de carga** (`centro-equidad.js`):
+  - selector de las 3 bases (con cuántos meses tiene cada una) y la cuadrícula de 12 meses del año elegido arriba, con «Subir» o «Reemplazar» por mes, igual que las demás cargas;
+  - arreglos de lo que se veía raro: la sección no tenía márgenes (vive fuera de `#cc-body`), las tarjetas eran desiguales y el bloque de entidades y la casilla tenían otro estilo.
+- **Dashboard** (por el generador, `scripts/orlant/generar-equidad.js`): filtro «Mes» en la barra de la pestaña. Arranca en el último mes cargado de cada base, y «Todos los meses (acumulado)» suma todos. Los cálculos usan las citas filtradas.
+- **Pruebas:**
+  - `faseEQ5-equidad-por-mes.test.js` (7), con datos inventados. Cubren:
+    - dos meses no se borran;
+    - reemplazar un mes no toca los demás;
+    - una cita de otro mes rechaza la carga;
+    - el estado del dashboard y el filtro de mes de la app generada;
+    - la migración desde el esquema anterior conserva todo y se puede repetir.
+  - **Fallan las 7 contra `main`** (comprobado en un worktree).
+  - EQ2 y EQ3 se ajustaron: las cargas llevan mes y la pantalla tiene cuadrícula.
+- **Revisión local** (base de demostración y citas inventadas de octubre y noviembre), a 375, 768 y 1440 px, en claro y oscuro:
+  - el filtro arranca en noviembre (90 citas); octubre da 120 y «Todos», 210;
+  - 0 errores de consola y sin desborde.

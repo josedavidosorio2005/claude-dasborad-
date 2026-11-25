@@ -21,7 +21,7 @@ before(async () => {
   crear('feq3_cli', 'CLIENTES_DASH', { ClientesDash: true, cliente_ORLANT: true });
   crear('feq3_cliotro', 'CLIENTES_DASH', { ClientesDash: true, cliente_MOBILIZE: true });
   [sup, cli, cliOtro] = await Promise.all(['feq3_sup', 'feq3_cli', 'feq3_cliotro'].map(tok));
-  await request(app).post(B + '/cargas/polizas').set(H(admin)).send({ filas: [{ sede: 'S', esp: 'E', prof: 'DR INVENTADO', fecha: '2031-01-01', ent: 'ENT' }] });
+  await request(app).post(B + '/cargas/polizas').set(H(admin)).send({ mes: '2031-01', filas: [{ sede: 'S', esp: 'E', prof: 'DR INVENTADO', fecha: '2031-01-01', ent: 'ENT' }] });
 });
 
 test('Apagada por defecto: el cliente de ORLANT no ve la Equidad y el resumen lo dice', async () => {
@@ -38,7 +38,7 @@ test('Solo el administrador la cambia; encendida, la ve el cliente de ORLANT (no
   assert.equal(e.status, 200);
   assert.equal(e.body.total, 1);
   assert.equal((await request(app).get(B + '/estado').set(H(cliOtro))).status, 403);
-  assert.equal((await request(app).post(B + '/cargas/polizas').set(H(cli)).send({ filas: [] })).status, 403, 'ver no es cargar');
+  assert.equal((await request(app).post(B + '/cargas/polizas').set(H(cli)).send({ mes: '2031-01', filas: [] })).status, 403, 'ver no es cargar');
   assert.match(db.prepare("SELECT detalle FROM historial WHERE accion = 'EQUIDAD_OPCIONES' ORDER BY ts DESC LIMIT 1").get().detalle, /la cuenta cliente VE/);
   r = await request(app).put(B + '/opciones').set(H(admin)).send({ visibleCliente: false });
   assert.equal(r.body.visibleCliente, false);

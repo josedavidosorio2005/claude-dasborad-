@@ -3001,6 +3001,15 @@ circle.acp-l-ingresos{fill:var(--c-brand-blue)}circle.acp-l-asignaciones{fill:va
 #cc-horarios[hidden]{display:none}
 .cc-horarios{margin-top:16px}
 .cc-equidad{margin-top:16px} /* Equidad profesionales (ORLANT, 24/11) */
+/* 26/11 (pedido de Edwin, «le quedó como rara»): la sección vive fuera de #cc-body y no tenía márgenes; ahora usa
+   los mismos que el resto del Centro de cargas y la cuadrícula de meses (.cc-meses) de las demás cargas. */
+#cc-equidad{padding:0 22px 26px}
+.cc-eq-nmeses{font-weight:500;color:var(--c-text-2)}
+.cc-selector-op.on .cc-eq-nmeses{color:inherit}
+.cc-eq-cols{margin:0 0 12px;font-size:var(--fs-small);color:var(--c-text-2)}
+.cc-equidad .cc-mes-cab{flex-wrap:wrap}
+.cc-eq-check span{flex:1;min-width:0}
+@media (max-width:600px){#cc-equidad{padding:0 16px 22px}}
 .cc-eq-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(260px,100%),1fr));gap:12px}
 .cc-eq-card{border:1px solid var(--c-border-soft);border-radius:var(--r-md);padding:12px 14px;display:flex;flex-direction:column;gap:8px;background:var(--c-surface)}
 .cc-eq-cab{display:flex;justify-content:space-between;align-items:center;gap:8px}

@@ -155,8 +155,25 @@ function eqAnalizar(filas, tol) {
 
 var EQ_ESTADO_TEXTO = { ok: 'Equitativo', over: 'Sobreasignado', under: 'Baja asignación' };
 
+// ── Pedido de Edwin (26/11/2026): cada base se carga POR MES ──
+// Mes = «AAAA-MM» de la fecha de la cita. eqMesesDe cuenta las citas por mes; eqFiltrarMeses deja las de los meses
+// pedidos (lista vacía = todos, el acumulado).
+function eqMesValido(m) { return typeof m === 'string' && /^\d{4}-(0[1-9]|1[0-2])$/.test(m); }
+function eqMesDe(fecha) { var m = String(fecha || '').slice(0, 7); return eqMesValido(m) ? m : ''; }
+function eqMesesDe(filas) {
+  var c = {};
+  (filas || []).forEach(function (f) { var m = eqMesDe(f && f.fecha); if (m) c[m] = (c[m] || 0) + 1; });
+  return c;
+}
+function eqFiltrarMeses(filas, meses) {
+  if (!meses || !meses.length) return (filas || []).slice();
+  var s = {}; meses.forEach(function (m) { s[m] = true; });
+  return (filas || []).filter(function (f) { return s[eqMesDe(f && f.fecha)]; });
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { EQ_GRUPOS: EQ_GRUPOS, EQ_COLS: EQ_COLS, EQ_MAX_FILAS: EQ_MAX_FILAS, EQ_TOLERANCIA: EQ_TOLERANCIA, EQ_ESTADO_TEXTO: EQ_ESTADO_TEXTO,
     eqGrupo: eqGrupo, eqNorm: eqNorm, eqFecha: eqFecha, eqFechaValida: eqFechaValida, eqLeerHoja: eqLeerHoja, eqLeerLibro: eqLeerLibro,
-    eqValidarFilas: eqValidarFilas, eqEntidadesDeOtraBase: eqEntidadesDeOtraBase, eqGini: eqGini, eqAnalizar: eqAnalizar };
+    eqValidarFilas: eqValidarFilas, eqEntidadesDeOtraBase: eqEntidadesDeOtraBase, eqGini: eqGini, eqAnalizar: eqAnalizar,
+    eqMesValido: eqMesValido, eqMesDe: eqMesDe, eqMesesDe: eqMesesDe, eqFiltrarMeses: eqFiltrarMeses };
 }

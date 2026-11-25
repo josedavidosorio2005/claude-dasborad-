@@ -145,7 +145,7 @@ L(`const state = {active:'poliza', view:'home', tabs:{}};`, `const state = {acti
 L(`state.tabs[t.id] = {name:t.name, rows:t.seed||[], source:t.seed?t.seedName:'', loadedAt:'',
     f:{sede:'',esp:'',ent:'',desde:'',hasta:'',min:0,tol:20}, sort:{k:'n',d:-1}};`,
 `state.tabs[t.id] = {name:t.name, rows:[], source:'', loadedAt:'', conEntidad:true,
-    f:{sede:'',esp:'',ent:'',prof:'',desde:'',hasta:'',min:0,tol:20}, sort:{k:'n',d:-1}};`);
+    f:{mes:'',sede:'',esp:'',ent:'',prof:'',desde:'',hasta:'',min:0,tol:20}, sort:{k:'n',d:-1}};`);
 // 3) Sin localStorage: los datos viven en el servidor.
 L(`try{
   const saved = JSON.parse(localStorage.getItem(LS_KEY)||'null');
@@ -174,7 +174,7 @@ js = todas(js, 'document.querySelectorAll(', 'ROOT.querySelectorAll(');
   js = js.slice(0, a);
 }
 // 7) Filtro «Profesional» (pedido de Edwin) y sin «Entidad» en la base que no la trae (Particulares).
-L(`(!f.ent||r.ent===f.ent)`, `(!f.ent||r.ent===f.ent)&&(!f.prof||r.prof===f.prof)`);
+L(`(!f.ent||r.ent===f.ent)`, `(!f.ent||r.ent===f.ent)&&(!f.prof||r.prof===f.prof)&&(!f.mes||String(r.fecha).slice(0,7)===f.mes)`); // 26/11: + mes
 L(`function render(){
   renderNav();
   $('#tabs').style.display=state.view==='resultados'?'flex':'none';
@@ -188,7 +188,8 @@ L(`function render(){
 L(`<button class="\${state.active===t.id?'active':''}" data-t="\${t.id}">`, `<button type="button" class="\${state.active===t.id?'active':''}" aria-pressed="\${state.active===t.id}" data-t="\${t.id}">`);
 L(`<input class="tabname" id="tabName" value="\${esc(T.name)}" title="Clic para renombrar la pestaña"><span class="hint">✎ clic en el nombre para renombrar la pestaña</span>`, `<h2 class="tabname">\${esc(T.name)}</h2>`);
 L(`<button class="btn primary" id="goLoad">Ir a Cargar bases</button>`, `<p>Se carga en <b>Cargar bases</b> → ORLANT → «Equidad profesionales».</p>`);
-L(`<div class="field"><label>Sede</label><select data-f="sede">`, `<div class="field"><label>Sede</label><select data-f="sede" aria-label="Sede">`);
+L(`<div class="field"><label>Sede</label><select data-f="sede">`, `<div class="field"><label>Mes</label><select data-f="mes" aria-label="Mes">\${eqOpcionesMes(T,f.mes)}</select></div>
+    <div class="field"><label>Sede</label><select data-f="sede" aria-label="Sede">`); // 26/11: filtro de mes (pedido de Edwin)
 L(`<div class="field"><label>Especialidad</label><select data-f="esp">\${opts(uniq(T.rows,'esp'),f.esp,'Todas')}</select></div>`,
   `<div class="field"><label>Especialidad</label><select data-f="esp" aria-label="Especialidad">\${opts(uniq(T.rows,'esp'),f.esp,'Todas')}</select></div>
     \${T.conEntidad?\`<div class="field"><label>Entidad</label><select data-f="ent" aria-label="Entidad">\${opts(ents,f.ent,'Todas las entidades')}</select></div>\`:''}
@@ -245,11 +246,17 @@ var EQ_MARKUP = ${JSON.stringify(markup)};
 function eqCrearApp(ROOT, API){
 ${js.trim()}
 
+// 26/11/2026 (pedido de Edwin): cada base se carga por mes; la pestaña filtra por mes y arranca en el último cargado.
+const EQ_NOMBRE_MES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+function eqMesesDeFilas(rows){ return [...new Set((rows||[]).map(r=>String(r.fecha||'').slice(0,7)).filter(m=>/^[0-9]{4}-[0-9]{2}$/.test(m)))].sort().reverse(); }
+function eqNombreMes(m){ return EQ_NOMBRE_MES[Number(m.slice(5,7))-1]+' '+m.slice(0,4); }
+function eqOpcionesMes(T,sel){ return eqMesesDeFilas(T.rows).map(m=>'<option value="'+m+'"'+(m===sel?' selected':'')+'>'+eqNombreMes(m)+'</option>').join('')+'<option value=""'+(!sel?' selected':'')+'>Todos los meses (acumulado)</option>'; }
 function aplicar(r){
   (r && r.grupos || []).forEach(g=>{
     const t=TABS.find(x=>x.grupo===g.id); if(!t) return;
     const T=state.tabs[t.id];
     T.rows=g.filas||[]; T.conEntidad=g.conEntidad!==false;
+    const meses=eqMesesDeFilas(T.rows); if(T.f.mes===''||meses.indexOf(T.f.mes)===-1) T.f.mes=meses[0]||'';
     T.source=g.archivo?(g.archivo+(g.hoja?' · hoja "'+g.hoja+'"':'')):'';
     T.loadedAt=g.cargadoEn?new Date(g.cargadoEn).toLocaleString('es-CO'):'';
   });
@@ -259,7 +266,7 @@ async function iniciar(){
   try{ aplicar(await API.estado()); render(); }
   catch(e){ $('#main').innerHTML='<div class="eq-error" role="alert">No se pudo leer Equidad profesionales.</div>'; throw e; }
 }
-return { iniciar: iniciar, aplicar: aplicar, render: render, state: state };
+return { iniciar: iniciar, aplicar: aplicar, render: render, state: state, filtered: filtered };
 }
 
 if (typeof module !== 'undefined' && module.exports) module.exports = { EQ_MARKUP: EQ_MARKUP, eqCrearApp: eqCrearApp };
