@@ -25,8 +25,8 @@ function buildPerms(rol, clientChecks, campaignChecks) {
   var defMod = ROLE_DEFAULT[rol];
   p = {}; // Fase 239: sin "var" repetido (la de arriba ya la declara; ESLint no-redeclare)
   DASH_MODULES.forEach(function(m){ p[m.key] = (m.key === defMod); });
-  if (rol === 'GERENCIA') { p['Calidad'] = true; } // ve resultados de Calidad, solo lectura
-  if (rol === 'CLIENTES_DASH' || rol === 'SUPERVISOR') {
+  // 25/11/2026 (pedido de Edwin, usuario de Jairo): GERENCIA ya no recibe Calidad a la fuerza y elige sus clientes.
+  if (rol === 'CLIENTES_DASH' || rol === 'SUPERVISOR' || rol === 'GERENCIA') {
     CLIENTES_LIST.forEach(function(c){
       p['cliente_' + c] = clientChecks ? (clientChecks[c] === true) : false; // Fase 222: sin casillas, ninguno
     });
@@ -49,8 +49,7 @@ function ensurePerms(u) {
   }
   var defMod = ROLE_DEFAULT[u.rol];
   DASH_MODULES.forEach(function(m){ if(u.perms[m.key]===undefined) u.perms[m.key]=(m.key===defMod); });
-  if (u.rol==='GERENCIA') { u.perms.Calidad = true; }
-  if (u.rol==='CLIENTES_DASH' || u.rol==='SUPERVISOR') {
+  if (u.rol==='CLIENTES_DASH' || u.rol==='SUPERVISOR' || u.rol==='GERENCIA') { // 25/11: GERENCIA sin Calidad forzada, con clientes
     CLIENTES_LIST.forEach(function(c){ if(u.perms['cliente_'+c]===undefined) u.perms['cliente_'+c]=false; });
   }
   if (u.rol==='CALIDAD' || u.rol==='REPORTES' || u.rol==='SUPERVISOR') {

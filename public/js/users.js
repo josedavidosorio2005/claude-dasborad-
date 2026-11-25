@@ -46,7 +46,11 @@ function renderUsers(filter){
       var sup=supervisorClientes(u.perms);
       extra='<div style="font-size:var(--fs-note);color:'+(sup.length?'var(--c-success-text)':'var(--c-danger-dark)')+';margin-top:2px">'+
         calEstadoHtml(sup.length? '✅ Supervisa: '+sup.join(', ') : '⚠ No supervisa ningún cliente', { sinColor:true })+'</div>';
-    } else if(u.rol==='CALIDAD' || u.rol==='REPORTES' || u.rol==='SUPERVISOR' || u.rol==='GERENCIA'){
+    } else if(u.rol==='GERENCIA'){ // 25/11: sus clientes
+      var cli=CLIENTES_LIST.filter(function(c){return u.perms['cliente_'+c]===true;});
+      extra='<div style="font-size:var(--fs-note);color:'+(cli.length?'var(--c-success-text)':'var(--c-danger-dark)')+';margin-top:2px">'+
+        calEstadoHtml(cli.length? '✅ Clientes: '+cli.join(', ') : '⚠ Sin clientes asignados', { sinColor:true })+'</div>';
+    } else if(u.rol==='CALIDAD' || u.rol==='REPORTES' || u.rol==='SUPERVISOR'){
       var asignadas=CAMPANAS_CALIDAD.filter(function(c){return u.perms['campana_'+c]===true;});
       extra='<div style="font-size:var(--fs-note);color:'+(asignadas.length?'var(--c-success-text)':'var(--c-danger-dark)')+';margin-top:2px">'+
         calEstadoHtml(asignadas.length? '✅ '+asignadas.join(', ') : '⚠ Sin campanas asignadas', { sinColor:true })+'</div>';
@@ -156,7 +160,7 @@ function openEditModal(id){
   document.getElementById('mu-rol').value=u.rol;
   document.getElementById('mu-pass-hint').style.display='block';
   syncSupervisa(u.rol, u); // Fase 283
-  if (u.rol==='CLIENTES_DASH'){
+  if (u.rol==='CLIENTES_DASH' || u.rol==='GERENCIA'){ // 25/11: GERENCIA también elige clientes
     buildClientCheckboxes(u.perms);
     document.getElementById('mu-client-perms').style.display='block';
   } else {
@@ -189,7 +193,7 @@ function onRolChange(){
   syncRolDescripcion(rol);
   // Fase 283: "Acceso a clientes" es solo de las cuentas de cliente; el SUPERVISOR
   // tiene su lista propia ("Clientes que supervisa").
-  var show=(rol==='CLIENTES_DASH');
+  var show=(rol==='CLIENTES_DASH' || rol==='GERENCIA'); // 25/11: GERENCIA también
   document.getElementById('mu-client-perms').style.display=show?'block':'none';
   if(show) buildClientCheckboxes(null);
   syncSupervisa(rol, null);
@@ -375,7 +379,7 @@ async function saveUserModal(){
   if(rol==='SUPERVISOR' && !algunoMarcado(getSupervisaChecks())){ // Fase 283
     showToast('Marca al menos un cliente que supervisa');return;
   }
-  if((rol==='CALIDAD'||rol==='REPORTES'||rol==='GERENCIA') && !algunoMarcado(getCampaignChecks())){
+  if((rol==='CALIDAD'||rol==='REPORTES') && !algunoMarcado(getCampaignChecks())){ // 25/11: GERENCIA sin campaña obligatoria
     showToast('Marca al menos una campaña');return;
   }
 
@@ -384,7 +388,7 @@ async function saveUserModal(){
     if(!pass || pass.length < PASSWORD_MIN){
       showToast('Define una contrasena de al menos '+PASSWORD_MIN+' caracteres para el nuevo usuario');return;
     }
-    var clientChecks=(rol==='CLIENTES_DASH')?getClientChecks():null;
+    var clientChecks=(rol==='CLIENTES_DASH'||rol==='GERENCIA')?getClientChecks():null;
     var campaignChecks=(rol==='CALIDAD'||rol==='REPORTES'||rol==='GERENCIA')?getCampaignChecks():null;
     var payload={ nombre:nombre, user:user, password:pass, rol:rol,
                    perms:buildPerms(rol,clientChecks,campaignChecks) };
@@ -409,7 +413,7 @@ async function saveUserModal(){
     var u=users.find(function(x){return x.id===id;}); if(!u) return;
     var prevRol=u.rol;
     var newPerms = (prevRol!==rol) ? buildPerms(rol,null,null) : Object.assign({},u.perms);
-    if(rol==='CLIENTES_DASH'){
+    if(rol==='CLIENTES_DASH' || rol==='GERENCIA'){ // 25/11
       var cc=getClientChecks();
       CLIENTES_LIST.forEach(function(c){newPerms['cliente_'+c]=cc[c]===true;});
     }

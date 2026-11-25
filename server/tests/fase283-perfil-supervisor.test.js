@@ -102,7 +102,7 @@ test('navegador: formulario "Clientes que supervisa", portal con "Cargar bases" 
   assert.match(html, /id="gd-vista-sup" class="navbar-role gd-vista-sup hidden">Vista de supervisor</);
   assert.ok(html.indexOf('js/perfil-supervisor-logic.js') < html.indexOf('js/state.js'));
   const users = pub('js/users.js');
-  assert.match(users, /var show=\(rol==='CLIENTES_DASH'\);/, '"Acceso a clientes" solo para cuentas de cliente');
+  assert.match(users, /var show=\(rol==='CLIENTES_DASH' \|\| rol==='GERENCIA'\);/, '"Acceso a clientes" para cuentas de cliente y (25/11) GERENCIA, nunca para el SUPERVISOR');
   assert.match(users, /aplicarSupervisa\(newPerms, rol\);/);
   assert.match(users, /Marca al menos un cliente que supervisa/);
 });

@@ -94,7 +94,7 @@ var ROL_DESCRIPCION = {
   ADMIN: 'Acceso completo a la plataforma.',
   CALIDAD: 'Califica monitoreos en Calidad, solo en las campañas y plantillas que marques abajo.',
   INVENTARIO: 'Maneja el módulo de Inventario.',
-  GERENCIA: 'Ve los resultados de Calidad y el módulo de Gerencia (solo lectura).',
+  GERENCIA: 'Ve los dashboards de los clientes que se le marquen y el módulo de Gerencia (solo lectura). Calidad, solo si se le da.',
   GESTION_HUMANA: 'Maneja el módulo de Gestión Humana.',
   CLIENTES_DASH: 'Ve los dashboards de los clientes que marques.',
   REPORTES: 'Ve los reportes de Calidad y puede corregir o eliminar monitoreos.',

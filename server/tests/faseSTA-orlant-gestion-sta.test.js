@@ -44,8 +44,9 @@ test('el HTML de Edwin está en docs/orlant/sta tal cual (nunca se edita)', () =
   assert.equal(h.slice(0, 16), 'ec4f895773815749', 'si Edwin manda una versión nueva, se reemplaza el archivo y esta huella');
 });
 
-test('permisos: estado por rol (supervisor/admin/gerencia todo, asesor lo suyo, cliente y otros 403)', async () => {
-  for (const t of [admin, sup, ger]) assert.equal((await request(app).get(B + '/estado').set(H(t))).body.vista, 'supervisor');
+test('permisos: estado por rol (supervisor/admin todo, asesor lo suyo; cliente, gerencia y otros 403)', async () => {
+  for (const t of [admin, sup]) assert.equal((await request(app).get(B + '/estado').set(H(t))).body.vista, 'supervisor');
+  assert.equal((await request(app).get(B + '/estado').set(H(ger))).status, 403, '25/11: GERENCIA ya no gestiona el STA');
   const a = await request(app).get(B + '/estado').set(H(as1));
   assert.equal(a.body.vista, 'asesor');
   assert.equal(a.body.yo.id, id1);
@@ -53,7 +54,7 @@ test('permisos: estado por rol (supervisor/admin/gerencia todo, asesor lo suyo, 
   for (const t of [cli, cliOtro, supOtro, asOtro]) assert.equal((await request(app).get(B + '/estado').set(H(t))).status, 403);
   assert.equal((await request(app).get(B + '/estado')).status, 401);
   // Escribir la base o asignar: solo gestores.
-  for (const t of [as1, cli, supOtro, asOtro]) {
+  for (const t of [as1, cli, supOtro, asOtro, ger]) {
     assert.equal((await cargar(t, [fila(1)])).status, 403);
     assert.equal((await request(app).post(B + '/asignar').set(H(t)).send({ agenteId: id1, cantidad: 1 })).status, 403);
     assert.equal((await request(app).put(B + '/config/tipis').set(H(t)).send({ tipis: ['X'], efectivas: [] })).status, 403);

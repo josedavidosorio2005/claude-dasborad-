@@ -22820,3 +22820,19 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - «Agendas por asesor» muestra solo la asesora con agendas;
   - 0 errores de consola y sin desborde.
 - **Antes de mergear, revisar en producción (solo lectura) qué valores trae la columna Estado de la base real.** Si el estado «de trabajo» no se llama «En proceso» ni «Sin contacto», la próxima carga dejaría esos casos fuera de gestión. Los casos que ya están en producción no cambian hasta la próxima carga o «Actualizar estado».
+
+## Usuarios de Gerencia: clientes propios, sin Calidad forzada ni STA operativo (v1.271.0, 2026-11-25, PR sin mergear)
+
+- **Diagnóstico (solo lectura en producción, 25/11, con la sesión del usuario):** el usuario de Jairo (id 49) es GERENCIA. Tiene Calidad, «Dashboard Clientes» y campañas de Calidad de los 5 clientes, pero **ningún `cliente_*`**: el menú «Dashboard Clientes» lista solo los clientes con ese permiso, así que no le salía ninguno.
+  - El formulario de usuario no ofrecía «Acceso a clientes» a GERENCIA (solo a CLIENTES_DASH).
+  - El rol, además, forzaba Calidad y daba el módulo operativo de Gestión STA.
+- **Pedido de Edwin:** que Jairo vea solo Clientes (dashboards), Tickets y Gerencia, con todos los clientes.
+- **Cambio (autorizado por el usuario):**
+  - `state.js`: GERENCIA sin Calidad forzada y con sus `cliente_*`.
+  - `users.js`: casillas «Acceso a clientes» para GERENCIA al crear, editar y cambiar de rol; la campaña de Calidad ya no es obligatoria; la lista de usuarios muestra sus clientes.
+  - `routes/orlant-sta.js`, `cargas-simultaneas.js` y `orlant-sta.js`: GERENCIA ya no es gestor del STA ni ve su tarjeta. Con ORLANT ve las gráficas del STA dentro del Dashboard del cliente, como el cliente: solo lectura.
+- **Pruebas:**
+  - `faseQA-gerencia-clientes.test.js` (4);
+  - se ajustaron fase144-a5 (un uso más del token verde), fase283 («Acceso a clientes» también para GERENCIA), faseSTA-app y faseSTA (GERENCIA ya no gestiona el STA);
+  - suite completa en verde.
+- **Después del merge, con OK y la sesión del usuario:** marcarle a Jairo todos los clientes, Gerencia y Tickets, quitarle Calidad y verificar con «Ver como».

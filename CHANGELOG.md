@@ -7,6 +7,14 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.271.0 — Noviembre 2026
+
+**Usuarios de Gerencia: eligen sus clientes (pedido de Edwin, 25/11).**
+
+- Al crear o editar un usuario de Gerencia ahora aparece «Acceso a clientes», como en las cuentas de cliente: los clientes marcados son los dashboards que ve en «Dashboard Clientes».
+- Gerencia ya no recibe Calidad a la fuerza ni necesita una campaña de Calidad marcada.
+- Gerencia ya no ve el módulo operativo de «Gestión STA». Si tiene ORLANT, ve sus gráficas dentro del dashboard del cliente, de solo lectura.
+
 ## v1.270.0 — Noviembre 2026
 
 **ORLANT, Gestión STA: «Actualizar estado» y agendas por asesora (pedidos de Edwin, 25/11).**

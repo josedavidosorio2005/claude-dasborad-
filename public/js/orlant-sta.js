@@ -136,12 +136,11 @@ async function staMontarCliente(contenedor) {
 }
 
 // ¿Quién ve la tarjeta «Gestión STA»? (el servidor vuelve a revisar cada ruta)
-// Supervisor con ORLANT, ADMIN, GERENCIA y los ASESOR de ORLANT. Nunca el cliente.
+// Supervisor con ORLANT, ADMIN y los ASESOR de ORLANT. Nunca el cliente ni (desde el 25/11) GERENCIA.
 function staVeTarjeta(user, esFullAdmin) {
   if (esFullAdmin) return true;
   if (!user) return false;
   var p = user.perms || {};
-  if (user.rol === 'GERENCIA') return true;
   if (user.rol === 'SUPERVISOR') return p.campana_ORLANT === true || p.cliente_ORLANT === true || p.supervisa_ORLANT === true;
   if (user.rol === 'ASESOR') return user.asesorCampana === 'ORLANT';
   return false;
