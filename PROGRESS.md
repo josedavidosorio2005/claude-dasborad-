@@ -199,6 +199,7 @@ desde la Fase 130 (ver `docs/pendientes.md`, sección 1).
 
 | Indicador | Valor | Fase |
 |---|---|---|
+| Gestión STA de ORLANT, tras el histórico (25/11) | 6.770 casos: 5.425 gestionados (sep 4.009 · oct 1.132 · nov 284), 1.102 disponibles y 243 asignados; 1.102 gestiones del histórico de disponibles que cuentan (nov 345 · oct 367 · sep 390) | STA12 / STA13 |
 | MESES en ORLANT (v1.94.0, Ago+Sep suman) | Tráfico de Llamadas 20.891 / 19.638 / 1.253 · WhatsApp 15.358 · Agendas 24.186, 40,52 % · Inasistencia 7,03 % · Efectividad de Citas 72,12 % (ago 70,57 % · sep 73,54 %; fórmula anterior, ver la fila de la Fase 212) · Tipificación 34.661 llamadas / 25.319 WhatsApp; verificado en producción | 207 |
 | Tipificación de Llamadas (ORLANT) | Ago 14.940 · Sep 19.721 (recargado del CDR, mismas filas) | 116 / 174 |
 | Llamadas de salida en Tipificación (ORLANT, sep) | 10.791 = 5.687 conectadas + 5.104 no conectadas (regla anterior) | 174 / 177 |
@@ -681,6 +682,7 @@ mismo orden):
 - Gestión STA: «Cambios de estado» con quién lo hizo, filtro «Mes» (mes actual por defecto) y «Cargar histórico (con gestión)» con revisión previa (v1.274.0, 2026-11-26)
 - Gestión STA: en el histórico, la gestión de un caso «En proceso» o «Sin contacto» con codificación cuenta (gráficas, Gestionados, productividad) y el caso queda disponible (v1.275.0, 2026-11-25)
 - Gestión STA: «Cargar histórico» acepta archivos grandes (hasta 8 MB, como la carga de la base); septiembre daba «Cuerpo demasiado grande» (v1.275.1, 2026-11-25)
+- Cierre del 25/11 en la tarde — histórico del STA cargado en producción (6.770 casos), #959–#965 en producción y pendientes al día (solo docs, 2026-11-25)
 - Gestión STA: «Gestionados» y «Mi efectividad» de la asesora suman sus gestiones del histórico que cuentan (v1.276.0, 2026-11-25)
 - Fase 309 — Revisión de seguridad: el cliente ya no recibe el nombre de los líderes en `GET /metas`; resto en `docs/revision-seguridad-2026-11-09.md` (v1.154.1, 2026-11-10)
 - Fase 308 — Revisión antes de la reunión con clientes y pendientes del supervisor (solo docs, 2026-11-10)

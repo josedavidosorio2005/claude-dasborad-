@@ -7,6 +7,44 @@ decidir nada, solo priorizar cuándo invertir el tiempo). Lo ya cerrado
 no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 ítem tiene prioridad, cómo se cierra, y la fecha en que se anotó.
 
+## Estado al 25/11/2026, cierre de la tarde (producción 1.275.1)
+
+- **Mergeados y desplegados el 25/11 en la tarde** (CI verde, `--match-head-commit`, `/api/health` comprobado):
+  - #959, «Actualizar estado» del STA (1.270.0);
+  - #960, usuarios de Gerencia con «Acceso a clientes», para Jairo (1.271.0);
+  - #961, cédula y nombre en el Inventario (1.272.0);
+  - #962, Equidad por mes (1.273.0);
+  - #963, trazabilidad, filtro «Mes» e histórico del STA (1.274.0);
+  - #964, la gestión del histórico de los disponibles con codificación cuenta (1.275.0);
+  - #965, «Cargar histórico» hasta 8 MB (1.275.1).
+- **Equidad profesionales:**
+  - visible para la cuenta cliente de ORLANT (#950, OK de Edwin);
+  - desde la 1.273.0 se carga por base y mes, con filtro «Mes» en el dashboard;
+  - lo ya cargado quedó en el mes de sus citas, por migración.
+- **Gestión STA de ORLANT:**
+  - «Actualizar estado»: solo «En proceso» y «Sin contacto» se gestionan, el resto queda «Fuera de gestión»;
+  - «Cambios de estado» dice quién hizo cada cambio;
+  - «Gráficas» y «Gestionados» tienen filtro «Mes».
+- **Histórico del STA cargado en producción** (OK del usuario, por la interfaz, con su sesión, en el orden noviembre → octubre → septiembre). Cada archivo cuadró con la revisión aprobada antes de confirmarlo.
+  - La base quedó con **6.770 casos**:
+    - 5.425 gestionados (septiembre 4.009, octubre 1.132, noviembre 284);
+    - 1.102 disponibles sin asignar;
+    - 243 asignados pendientes.
+  - Las gestiones del histórico de casos disponibles que cuentan son **1.102** (noviembre 345, octubre 367, septiembre 390).
+  - Septiembre primero dio 413 por tamaño, sin escribir nada; se cargó después de #965.
+- **Jairo (Gerencia):**
+  - el código está en producción desde la 1.271.0;
+  - marcarle los clientes, Gerencia y Tickets se hace con la sesión del usuario;
+  - **falta dejar anotada la verificación con «Ver como»**.
+- **PR abiertos, sin mergear:**
+  - **#966** (1.276.0): «Gestionados» y «Mi efectividad» de la asesora suman sus gestiones del histórico. Espera el OK del usuario.
+  - **#902** (B1): espera a Edwin.
+- **Para revisar (bajo):** en una captura a 375 px del portal de la asesora, una gráfica de Calidad salió montada sobre «Mis codificaciones» del STA. Parece un efecto de la captura por elemento, pero no se ha confirmado a mano.
+- **Sigue igual:**
+  - WhatsApp de ORLANT por API (N3) apagado;
+  - el buscador de autorización del STA más visible, para después;
+  - esperan a Edwin: #902, el mapa de skills de ORLANT, los nombres de las 14 asesoras de SURA y la lista de entidades de Isa.
+
 ## Estado al 25/11/2026 (producción 1.269.0)
 
 - **Lectura del 25/11** (solo lectura, solo conteos, sesión del administrador en un perfil aparte de Brave, borrado al terminar):
