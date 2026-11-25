@@ -23,7 +23,7 @@ test('Usuarios: «Ver como este usuario» solo para ADMIN, nunca hacia un ADMIN 
 test('página: franja con «Volver a mi sesión», script cargado y salida segura', () => {
   const i = leer('index.html');
   assert.match(i, /id="ver-como-banner" class="ver-como-banner hidden" role="status"/);
-  assert.match(i, /onclick="verComoVolver\(\)">Volver a mi sesión<\/button>/);
+  assert.match(i, /onclick="verComoVolver\(\)">Volver<span class="ver-como-volver-mas"> a mi sesión<\/span><\/button>/);
   assert.ok(i.indexOf('js/session.js') < i.indexOf('js/ver-como.js'));
   const s = leer('js/session.js');
   assert.match(s, /_loginDatos = data;/);

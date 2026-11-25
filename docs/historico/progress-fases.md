@@ -22706,6 +22706,41 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - a 1440 px no cambian;
   - sin desborde y 0 errores de consola.
 
+
+## Después del cierre del 24/11 — #949 y #951 mergeados (2026-11-24)
+
+- **#949** (los bajos de la auditoría, v1.267.1) mergeado con OK del usuario. Deploy verde y `/api/health` en **1.267.1**.
+  - Un `git add -A` de la carpeta `docs` metió por error el archivo local `docs/revision-bugs-2026-11-03.md` en un commit de la rama.
+  - Con OK del usuario, otro commit lo sacó antes del merge: no está en `main`, pero queda en el historial de GitHub. Se revisó: 0 correos, teléfonos, IPs, tokens o cédulas.
+  - Lección: agregar archivo por archivo y revisar `git status` antes de commitear; nunca `git add -A <carpeta>`.
+- **#951** (solo `.gitignore`) mergeado con OK: ignora ese archivo local y los originales de Equidad de Edwin. Producción sigue en 1.267.1.
+
+## Arranque del 25/11 — Corrida de las 00:05, #950 al día y dos PR nuevos (2026-11-25)
+
+- **Corrida de Wolkvox de las 00:05** (solo lectura, solo conteos):
+  - Se leyó el Historial con la sesión del administrador, en un perfil aparte de Brave que se borró al terminar.
+  - Los 6 módulos (Flujo, Flujo por hora, Tipificación, Encuesta, No conectadas y Abandonadas) salieron bien en la réplica y en el MOBILIZE real, igual que el 24/11, con respaldo y sin errores.
+  - Réplica y real con los mismos números. Noviembre, del 24/11 al 25/11:
+
+    | Módulo | 24/11 00:05 | 25/11 00:05 |
+    |---|---|---|
+    | Flujo | 23 días, 16 filas | 24 días, 17 filas |
+    | Flujo por hora | 58 | 61 |
+    | Tipificación | 124 (55 de salida, 57 únicas) | 131 (58 de salida, 61 únicas) |
+    | Encuesta | 78 | 83 |
+    | No conectadas | 48 | 50 |
+    | Abandonadas | 1 | 1 |
+
+  - La corrida de las 7:00 del 25/11 dio lo mismo. Unas 58 consultas por corrida.
+- **Producción:** `/api/health` en 1.267.1; `main` limpio.
+- **#950** (Equidad para el cliente, apagada): se le trajo `main` con un merge, sin force. Conflictos resueltos con 1.268.0 encima de 1.267.1 (versión, CHANGELOG y bitácora). Suite 3.589 en verde y `npm audit` limpio. **Sigue sin mergear hasta el sí de Edwin**; `visibleCliente` sigue apagado por defecto.
+- **#952** (v1.267.2): la franja de «Ver como» en el celular.
+  - En ≤600 px es una barra pegada abajo, de 2 líneas, con el botón «Volver» de 44 px. El lector de pantalla sigue leyendo «Volver a mi sesión».
+  - Se centra con márgenes en vez de `left:50%` + `translate`, que la dejaba en media pantalla de ancho y en tablet la partía en 2 filas.
+  - Verificado en local (base de demostración, Brave sin ventana) en claro y oscuro: 375 px 178 → 58 px, 768 px 116 → 68 px y 1440 px sin cambios (68 px). 0 errores de consola y sin desborde.
+  - Sin colores nuevos: los tokens de aviso de siempre. 4 pruebas nuevas (`faseQA-ver-como-movil.test.js`). Sin mergear.
+- **Esperan a Edwin:** #950, #902, el mapa de skills, los 14 nombres de SURA y la lista de entidades de Isa. WhatsApp de ORLANT sigue apagado (nada en SSM).
+
 ## Equidad profesionales: opción para la cuenta cliente de ORLANT, apagada (v1.268.0, 2026-11-24, PR sin mergear)
 
 - **Pedido (usuario, 24/11):** dejar listo, en una rama aparte, que la cuenta cliente de ORLANT pueda ver la Equidad detrás de una opción, apagada por defecto, para activarla rápido si Edwin dice que sí.
