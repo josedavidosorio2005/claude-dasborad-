@@ -53,3 +53,15 @@ test('(b) la tarjeta «Sugerencias / Tickets» no tapa su texto visible con aria
   assert.equal(sin.srTarjeta.textContent, '');
   assert.equal(sin.enlace.attrs['aria-label'], 'Sugerencias / Tickets');
 });
+
+test('(c) openInventario() (Inventario anterior, retirado en la Fase 383) ya no existe ni se llama', () => {
+  const js = fs.readdirSync(path.join(PUB, 'js')).filter((f) => f.endsWith('.js'));
+  for (const f of js) assert.doesNotMatch(fs.readFileSync(path.join(PUB, 'js', f), 'utf8'), /openInventario\s*\(/, f);
+  assert.doesNotMatch(html, /openInventario/);
+  // El vigente sigue: «Inventario de sistemas» e «Inventario de inmuebles» abren activos.js.
+  const logic = fs.readFileSync(path.join(PUB, 'js/dashboards-logic.js'), 'utf8');
+  assert.match(logic, /key: 'activos', label: 'Inventario de sistemas'/);
+  assert.match(fs.readFileSync(path.join(PUB, 'js/activos.js'), 'utf8'), /async function activosAbrir\(ambito\)/);
+  // Ninguna tarjeta del menú abre el módulo «Inventario» anterior.
+  assert.doesNotMatch(fs.readFileSync(path.join(PUB, 'js/constants.js'), 'utf8'), /\{key:'Inventario'/);
+});

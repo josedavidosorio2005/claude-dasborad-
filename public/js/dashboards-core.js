@@ -78,7 +78,6 @@ function onDashBtn(key){
   }
   if(key==='ClientesDash'){openClientsModal();return;}
   if(key==='Calidad'){openCalidad();return;}
-  if(key==='Inventario'){openInventario();return;}
   if(key==='Gerencia'){openGerencia();return;}
   showToast('El modulo '+(m?m.label:key)+' todavia no esta disponible.');
 }
