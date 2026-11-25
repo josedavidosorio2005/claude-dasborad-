@@ -41,6 +41,7 @@ function renderDashGrid(){
       (esTk?'<span class="tk-badge tk-badge-tarjeta hidden" data-tk-badge aria-hidden="true"></span>':'')+
       '<div class="dash-icon"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#'+t.icon+'"></use></svg></div>'+
       '<div class="dash-label">'+t.label+'</div>'+
+      (esTk?'<span class="sr-only" data-tk-sr></span>':'')+ // 25/11: los nuevos, para el lector de pantalla (sin aria-label que tape el texto visible)
       '<div class="dash-sub">'+t.sub+'</div></div>';
   };
   // «Administración» y «Mi portal» primero; «Cargar Datos» al final, como antes.
