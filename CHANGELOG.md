@@ -7,13 +7,21 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
-## v1.268.0 — Noviembre 2026
+## v1.269.0 — Noviembre 2026
 
-**ORLANT, Equidad profesionales: lista para mostrársela al cliente cuando Edwin diga.**
+**ORLANT, Equidad profesionales: la cuenta cliente ya puede verla (OK de Edwin, 25/11).**
 
 - En «Cargar bases» → ORLANT → «Equidad profesionales» hay una casilla, solo para el administrador: «La cuenta cliente de ORLANT ve “Equidad profesionales”».
 - Viene apagada: el cliente no ve la pestaña hasta que alguien la marque. Se enciende y se apaga al instante, sin actualizar la plataforma.
 - El cliente solo puede verla, nunca cargar.
+
+## v1.268.0 — Noviembre 2026
+
+**ORLANT, Equidad profesionales con el estilo de la plataforma (pedido de Edwin).**
+
+- La pestaña «Equidad profesionales» ya no se ve distinta: usa los mismos colores, tarjetas, pestañas y botones que el resto de ORLANT, en tema claro y oscuro.
+- Las 3 pestañas (Pólizas, Medicina prepagada y Particulares), los cálculos y las cifras siguen iguales.
+- El mapa de calor se puede recorrer con el teclado.
 
 ## v1.267.4 — Noviembre 2026
 

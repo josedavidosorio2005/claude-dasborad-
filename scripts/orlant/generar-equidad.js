@@ -44,11 +44,59 @@ css = una(css, '.sedes{display:grid;grid-template-columns:repeat(auto-fit,minmax
 if (/:root|(^|\n)body\{|(^|\n)html\{|(^|\n)main\{/.test(css)) throw new Error('quedó :root, body, html o main en el CSS');
 css = css.replace(/font-weight:\s*(800|900)/g, 'font-weight:700'); // Quicksand trae 400–700 (Fase 132)
 css = css.replace(/font-size:\s*(10|11)px/g, 'font-size:12px'); // texto de 12 px como mínimo (Fase 144, WCAG)
+// Estilo de la plataforma (pedido de Edwin, 25/11/2026): los colores del HTML (tema oscuro fijo) pasan a los
+// tokens de la plataforma, que entran al Shadow DOM porque las variables CSS se heredan: paleta.css (acento,
+// botones, series) y los de estado de styles.css (verde / ámbar / rojo, solo para estados, como en el resto de
+// la plataforma, docs/sistema-de-diseno.md). Así sigue el tema claro y el oscuro. Estructura, pestañas y
+// cálculos no cambian. Falla si un color del HTML no está en la tabla o si queda alguno fijo.
+{
+  const a = css.indexOf(':host{display:block;');
+  const b = css.indexOf('}', a);
+  if (a !== 0 || b < 0) throw new Error('el bloque de variables del HTML cambió');
+  css = `:host{display:block;
+  --bg:var(--c-bg); --card:var(--c-surface); --card2:var(--c-surface-subtle); --line:var(--c-border); --track:var(--c-border-soft);
+  --ink:var(--c-text); --muted:var(--c-text-muted); --title:var(--acento-texto);
+  --green:var(--c-success); --sky:var(--serie-1); --amber:var(--c-warning); --red:var(--c-danger); --gray:var(--c-text-muted);
+  --teal:var(--c-text);
+}` + css.slice(b + 1);
+  const T = (x, y) => { css = todas(css, x, y); };
+  T('color:#fff', 'color:var(--c-text)');
+  T('background:#12293A', 'background:var(--acento-suave)');
+  T('background:var(--title);color:#06131C', 'background:var(--btn-primario-bg);color:var(--btn-primario-fg)');
+  T('color:#C9D5DC', 'color:var(--c-text-2)');
+  T('#182D3B', 'var(--c-border-soft)');
+  T('background:#14293A', 'background:var(--c-hover-bg)');
+  T('background:rgba(93,185,90,.15);color:#7ED17B', 'background:var(--c-success-bg);color:var(--c-success-text)');
+  T('background:rgba(232,96,95,.15);color:#F08584', 'background:var(--c-danger-bg);color:var(--c-danger-text)');
+  T('background:rgba(240,160,75,.15);color:#F5B672', 'background:var(--c-warning-bg);color:var(--c-warning-text)');
+  T('background:rgba(240,160,75,.1);border:1px solid rgba(240,160,75,.4);color:#F5B672', 'background:var(--c-warning-bg);border:1px solid var(--c-warning);color:var(--c-warning-text)');
+  T('rgba(77,179,240,.12)', 'var(--acento-suave)');
+  T('#2C4A5E', 'var(--c-border)');
+  T('rgba(77,179,240,.04)', 'var(--c-surface-subtle)');
+  T('rgba(77,179,240,.1)', 'var(--acento-suave)');
+  T('color-scheme:dark', 'color-scheme:inherit'); // el tema lo pone la plataforma (styles.css, en html)
+  const quedan = css.match(/#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(/g);
+  if (quedan) throw new Error('quedaron colores fijos en el CSS: ' + [...new Set(quedan)].join(' '));
+}
 css = `/* orlant-equidad-app.css — «Equidad profesionales» de ORLANT (HTML de Edwin) dentro de su Shadow DOM.
    Generado por scripts/orlant/generar-equidad.js desde el HTML de Edwin (fuera del repo): no editar a mano. */
 ${css.trim()}
-/* Plataforma: foco visible, pestañas que se desplazan de lado y ajustes para el celular (375 / 768 px). */
-button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--title);outline-offset:2px}
+/* Plataforma (pedido de Edwin, 25/11): tarjetas, pestañas, botones y tablas como las demás pestañas de ORLANT. */
+.eq-app{background:transparent;border-radius:0}
+.card,.toolbar,.kpi,.empty{background:var(--c-surface);border:1px solid var(--c-border);border-radius:var(--r-md);box-shadow:var(--shadow-sm)}
+.kpi{border-left:3px solid var(--acento)}
+.kpi .v{color:var(--c-text)}
+.card h3{color:var(--c-text);border-bottom-color:var(--acento)}
+nav.tabs button{font:inherit;font-weight:600;background:var(--c-surface);border:1px solid var(--c-border);color:var(--c-text-2);border-radius:var(--r-pill)}
+nav.tabs button.active{background:var(--acento-suave);border-color:var(--acento);color:var(--acento-texto)}
+nav.tabs button:hover:not(.active){color:var(--c-text);border-color:var(--acento)}
+.btn{background:var(--btn-secundario-bg);border:1px solid var(--btn-secundario-borde);color:var(--btn-secundario-fg);border-radius:var(--r-sm)}
+.btn.ghost{background:var(--btn-suave-bg);border-color:var(--btn-suave-borde);color:var(--btn-suave-fg)}
+.btn:hover{filter:none;border-color:var(--acento)}
+select,input[type=date],input[type=number]{background:var(--c-surface);border-color:var(--c-border);color:var(--c-text)}
+th{color:var(--c-text-2);background:var(--c-surface-subtle)}
+/* Foco visible, pestañas que se desplazan de lado y ajustes para el celular (375 / 768 px). */
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--c-focus);outline-offset:2px}
 nav.tabs{overflow-x:auto;scrollbar-width:thin}
 nav.tabs button{flex:0 0 auto;white-space:nowrap}
 .sedes>div{min-width:0;overflow-x:auto}
@@ -152,6 +200,34 @@ L(`<button class="btn ghost" id="btnClear">Limpiar filtros</button>`, `<button t
 L(`Object.assign(T.f,{sede:'',esp:'',ent:'',desde:'',hasta:''})`, `Object.assign(T.f,{sede:'',esp:'',ent:'',prof:'',desde:'',hasta:''})`);
 L(`  const tn=$('#tabName'); tn.onchange=()=>{T.name=tn.value.trim()||T.name;persist();renderTabs();};\n`, '');
 js = js.replace(/font-size:(10|11)px/g, 'font-size:12px').replace(/font-size="(10|11)"/g, 'font-size="12"'); // 12 px como mínimo (Fase 144)
+// Estilo de la plataforma (25/11): colores de las gráficas y tablas con los tokens (ver el CSS más arriba).
+{
+  const T = (x, y) => { js = todas(js, x, y); };
+  T('stroke="${c}"', 'style="stroke:${c}"');
+  T('stroke="var(--track)"', 'style="stroke:var(--track)"');
+  T('fill="#fff"', 'style="fill:var(--c-text)"');
+  T('fill="#93A6B3"', 'style="fill:var(--c-text-muted)"');
+  T('stroke="#1C3242"', 'style="stroke:var(--c-border-soft)"');
+  T('fill="#7F93A0"', 'style="fill:var(--c-text-muted)"');
+  T('fill="#5DB95A" opacity=".12"', 'style="fill:var(--c-success);opacity:.12"');
+  T("fill=\"${p.inc?'#DCE5EA':'#5E707C'}\"", "style=\"fill:${p.inc?'var(--c-text)':'var(--c-text-muted)'}\"");
+  T('fill="#1A2E3C"', 'style="fill:var(--track)"');
+  T('fill="${COLOR[p.estado]}"', 'style="fill:${COLOR[p.estado]}"');
+  T('stroke="#E8EEF2"', 'style="stroke:var(--c-text)"');
+  T('color:#5E707C', 'color:var(--c-text-muted)');
+  T('<b style="color:#fff">', '<b style="color:var(--c-text)">');
+  T("'var(--green)':A.eq>=.65?'var(--amber)':'var(--red)'", "'var(--c-success-text)':A.eq>=.65?'var(--c-warning-text)':'var(--c-danger-text)'");
+  // Mapa de calor: la serie 1 de la paleta, con opacidad hasta .5 (el texto sigue con el color de la plataforma y
+  // pasa AA en claro y oscuro); la celda vacía, transparente.
+  T("`rgba(60,158,224,${a.toFixed(2)})`:'#15283400'};color:#fff", "`color-mix(in srgb, var(--serie-1) ${Math.round(a*100)}%, transparent)`:'transparent'};color:var(--c-text)");
+  T('const a=v?0.18+0.82*v/mx:0;', 'const a=v?0.12+0.38*v/mx:0;');
+  // En el tema oscuro las celdas con más citas se ven más claras: «más intensas» vale para los dos temas.
+  T('celdas más oscuras = más citas', 'celdas más intensas = más citas');
+  // El mapa de calor se desplaza de lado: con el teclado también (axe, scrollable-region-focusable).
+  T('<div class="heat">', '<div class="heat" tabindex="0" role="region" aria-label="Mapa de calor: citas por profesional y día (se desplaza con las flechas)">');
+  const quedan = js.match(/#[0-9a-fA-F]{6}\b|#[0-9a-fA-F]{3}\b(?![0-9a-zA-Z])|rgba?\(|hsla?\(/g);
+  if (quedan) throw new Error('quedaron colores fijos en el JS: ' + [...new Set(quedan)].join(' '));
+}
 if (/SEED_\w+ = \[[^\]]/.test(js) || /"sede":/.test(js) || /localStorage|FileReader|XLSX\./.test(js)) throw new Error('quedaron datos, localStorage o la carga del HTML');
 
 const app = `// orlant-equidad-app.js — «Equidad profesionales» de ORLANT (HTML de Edwin dentro de la plataforma).

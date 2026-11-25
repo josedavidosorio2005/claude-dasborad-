@@ -22771,3 +22771,4 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - la casilla arranca apagada, se enciende y se apaga, y mide 44 px o más;
   - sin desborde y 0 errores de consola.
 
+- **25/11:** Edwin dio el OK para que la cuenta cliente de ORLANT vea la Equidad (autorización escrita del usuario). Al mergear, este PR pasó a **v1.269.0** (la 1.268.0 la tomó #957, el estilo de la plataforma). La opción se activa por la interfaz, solo para ORLANT.
