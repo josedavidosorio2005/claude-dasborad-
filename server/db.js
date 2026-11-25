@@ -82,6 +82,10 @@ CREATE TABLE IF NOT EXISTS historial (
   actor TEXT,
   detalle TEXT
 );
+-- 25/11/2026: el Historial se pide por páginas (las 5.000 más recientes, filtros por tipo y fecha en el
+-- servidor). Índices solo de lectura: no cambian ninguna fila.
+CREATE INDEX IF NOT EXISTS idx_historial_ts ON historial(ts, id);
+CREATE INDEX IF NOT EXISTS idx_historial_accion_ts ON historial(accion, ts);
 
 CREATE TABLE IF NOT EXISTS schema_migrations (
   name TEXT PRIMARY KEY,

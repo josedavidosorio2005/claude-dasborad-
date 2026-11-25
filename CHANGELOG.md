@@ -15,6 +15,23 @@ sepan que hay nuevo, que se corrigio y que falta.
 - Viene apagada: el cliente no ve la pestaña hasta que alguien la marque. Se enciende y se apaga al instante, sin actualizar la plataforma.
 - El cliente solo puede verla, nunca cargar.
 
+## v1.267.4 — Noviembre 2026
+
+**El Historial ya no hace esperar al entrar.**
+
+- Al iniciar sesión, la plataforma ya no descarga todo el Historial: lo pide solo cuando abres su pestaña.
+- La pestaña muestra los 1.000 eventos más recientes, con el más nuevo arriba, y dice cuántos hay en total.
+- Nuevo: filtrar el Historial por fecha («Desde» y «Hasta»). El filtro por tipo de evento busca en todo el Historial, no solo en lo que está en pantalla.
+- Las alertas de seguridad no cambian.
+
+## v1.267.3 — Noviembre 2026
+
+**Más fácil de usar con el teclado y con lector de pantalla.**
+
+- En el Historial, la tabla se puede mover con las flechas del teclado en el celular y en tablet.
+- La tarjeta «Sugerencias / Tickets» del menú se anuncia con su mismo texto, y dice cuántos tickets nuevos hay.
+- Se quitó un resto del Inventario anterior que ya no se usaba.
+
 ## v1.267.2 — Noviembre 2026
 
 **«Ver como» ocupa menos en el celular.**

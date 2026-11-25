@@ -168,7 +168,7 @@ declarar(['GET /orlant/equidad/estado', 'GET /orlant/equidad/resumen', 'POST /or
 declarar(['POST /api/wolkvox/agente/flujo'], 'skip');
 declarar(['PUT /auth/password', 'POST /auth/logout', 'GET /seed-demo/estado', 'GET /guia-uso'], 'open');
 declarar(['GET /users'], 'open'); // ver routes/usuarios.js: perms/lastLogin se redactan adentro, no 403
-declarar(['GET /historial', 'GET /seguridad/alertas'], 'admin');
+declarar(['GET /historial', 'GET /historial/total' /* 25/11: el número de la tarjeta «Eventos» */, 'GET /seguridad/alertas'], 'admin');
 // Fase N1 (21/11/2026): tablero nuevo de ORLANT, en prueba, solo el administrador completo.
 declarar(['GET /orlant/tablero'], 'admin');
 // Fase N6 (23/11/2026): mapa de skills de ORLANT a línea, solo el administrador completo.

@@ -22741,6 +22741,22 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - Sin colores nuevos: los tokens de aviso de siempre. 4 pruebas nuevas (`faseQA-ver-como-movil.test.js`). Sin mergear.
 - **Esperan a Edwin:** #950, #902, el mapa de skills, los 14 nombres de SURA y la lista de entidades de Isa. WhatsApp de ORLANT sigue apagado (nada en SSM).
 
+## Merges del 25/11 y prueba del cambio de mes de Wolkvox (solo pruebas, 2026-11-25, PR sin mergear)
+
+- **Merges con OK del usuario**, de a uno y con `--match-head-commit`:
+  - **#953** (docs): CI y deploy en verde.
+  - **#952** («Ver como» en el celular): CI y deploy en verde; **producción 1.267.2** (`/api/health`).
+  - Ningún deploy tuvo timeout.
+- **#950:** se le volvió a traer `main`; 1.268.0 queda encima de 1.267.2. CI en verde, **sigue sin mergear** hasta el sí de Edwin.
+- **Prueba nueva** `faseQA-wolkvox-cambio-mes.test.js` (3 pruebas). Usa el programador real (`iniciar`/`tick`), un Wolkvox falso y datos inventados, con la réplica y el MOBILIZE real encendidos y los 5 módulos.
+  - **01/12 a las 00:05:** cada destino cierra noviembre completo (30 días) en las 6 tablas.
+  - **Consultas:** 70 (2 × (30 de `skill_1` + 5 módulos)), todas de noviembre; ninguna fila ni respaldo de diciembre.
+  - **El real:** respalda noviembre antes de reemplazarlo, reemplaza el día manual sin duplicar y deja octubre intacto.
+  - **Las 12 corridas** quedan en «ok».
+  - **A las 7:00 del mismo día:** vuelve a cerrar noviembre con las mismas filas, y la franja de las 00:05 no se repite.
+  - **Resultado:** no encontró ningún fallo; no se cambió código de la app.
+- **`PROGRESS.md`** pasa a 1.267.2.
+
 ## Equidad profesionales: opción para la cuenta cliente de ORLANT, apagada (v1.268.0, 2026-11-24, PR sin mergear)
 
 - **Pedido (usuario, 24/11):** dejar listo, en una rama aparte, que la cuenta cliente de ORLANT pueda ver la Equidad detrás de una opción, apagada por defecto, para activarla rápido si Edwin dice que sí.

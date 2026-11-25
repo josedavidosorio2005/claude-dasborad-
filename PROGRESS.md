@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.267.1` (ver `server/package.json`, expuesta en
+- **Versión**: `1.267.2` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -668,6 +668,8 @@ mismo orden):
 - Auditoría del 24/11 — Los bajos que quedaban: 44 px en el celular en Talento humano, la malla y el «Ver» del Portal Asesor, PR #949 (v1.267.1, 2026-11-24)
 - `.gitignore` — La revisión de bugs local del 03/11 y los originales de Equidad de Edwin quedan fuera de git, PR #951 (solo `.gitignore`, 2026-11-24)
 - Arranque del 25/11 — Lectura de la corrida de Wolkvox de las 00:05 (6/6 módulos bien, réplica = real), #950 al día con main y pendientes al día (solo docs, 2026-11-25)
+- «Ver como» en el celular: barra de 2 líneas pegada abajo (178 → 58 px a 375 px) y una sola fila en tablet, PR #952 (v1.267.2, 2026-11-25)
+- Prueba de punta a punta de la corrida de Wolkvox del 01/12 a las 00:05 (cambio de mes): noviembre completo en la réplica y el real, nada de diciembre (solo pruebas, 2026-11-25)
 - Fase 309 — Revisión de seguridad: el cliente ya no recibe el nombre de los líderes en `GET /metas`; resto en `docs/revision-seguridad-2026-11-09.md` (v1.154.1, 2026-11-10)
 - Fase 308 — Revisión antes de la reunión con clientes y pendientes del supervisor (solo docs, 2026-11-10)
 - Fase 307 — Calidad para que los líderes evalúen: ORLANT conserva su Calidad y suma «Resultado de los monitoreos» al final; Aurora ya lo tenía (se muestra con el primer monitoreo) (v1.154.0, 2026-11-10)
