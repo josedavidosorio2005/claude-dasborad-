@@ -33,7 +33,7 @@ before(async () => {
   id1 = crear('sta5_as1', 'ASESOR', { campana_ORLANT: true }, 'ORLANT');
   id2 = crear('sta5_as2', 'ASESOR', { campana_ORLANT: true }, 'ORLANT');
   [sup, cli, as1, as2] = await Promise.all(['sta5_sup', 'sta5_cli', 'sta5_as1', 'sta5_as2'].map(tok));
-  const filas = Array.from({ length: 6 }, (_, n) => ({ 'Fecha Ingreso Sta': '2026-11-0' + (n + 1) + ' 08:00:00', Entidad: 'ENTIDAD INVENTADA', 'Numero Autorizacion': 'RG' + (100 + n), Estado: 'AUTORIZADA', 'Descripcion Cups': 'CUPS', 'Fecha Autorizacion': '2026-10-01 00:00:00', 'Fecha Expiracion': '2027-01-01 00:00:00', Servicio: 'SERV' }));
+  const filas = Array.from({ length: 6 }, (_, n) => ({ 'Fecha Ingreso Sta': '2026-11-0' + (n + 1) + ' 08:00:00', Entidad: 'ENTIDAD INVENTADA', 'Numero Autorizacion': 'RG' + (100 + n), Estado: 'En proceso', 'Descripcion Cups': 'CUPS', 'Fecha Autorizacion': '2026-10-01 00:00:00', 'Fecha Expiracion': '2027-01-01 00:00:00', Servicio: 'SERV' }));
   assert.equal((await request(app).post(B + '/cargas').set(H(admin)).send({ archivo: 'rg.xlsx', columnas: STA.CAMPOS, filas })).status, 200);
   // El agendado tiene que ser efectivo (pide citas).
   const cfg = STA.config(db);

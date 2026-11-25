@@ -22797,3 +22797,26 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - Pólizas 403 citas y 44,7 %; Medicina prepagada 305 y 39,6 %; Particulares 256 y 53,7 %; 0 errores de consola.
   - Solo conteos, sin nombres ni capturas. Las bases no se recargaron.
 - **`PROGRESS.md`** pasa a 1.269.0; en **`docs/pendientes.md`** sale «#950 espera a Edwin».
+
+## Gestión STA de ORLANT: «Actualizar estado», estados gestionables y «Agendas por asesor» (v1.270.0, 2026-11-25, PR sin mergear)
+
+- **Pedidos de Edwin** (llamada del 25/11, 11:30 a. m.). Los cambios de la app van por `scripts/orlant/generar-sta.js`; el HTML de Edwin no se tocó.
+  1. **«Actualizar estado»:** en «Cargar base», un cuadro nuevo junto al de la base, con su plantilla (2 columnas: Numero Autorizacion y Estado). `POST /api/orlant/sta/estados` (solo quien gestiona el STA, Historial `STA_ESTADOS`) busca cada fila por Numero Autorizacion y le cambia el Estado. Los números que no existen se reportan (lista de hasta 500) y **no se crean**; también se cuentan las filas sin número, sin estado y las repetidas.
+  2. **Solo «En proceso» y «Sin contacto» se gestionan** (sin importar mayúsculas ni tildes):
+     - con otro Estado, un caso pendiente o sin asignar pasa a `fuera` («Fuera de gestión»): sin asesora, fuera de asignados, pendientes, sin asignar y disponibles, y sin contar productividad para la asesora que lo tenía (el historial del caso guarda de quién era);
+     - un caso **ya gestionado conserva su gestión**; solo se cierra su «volver a llamar» pendiente;
+     - la base normal aplica la misma regla a los casos del archivo (también sin cambio de Estado), y los nuevos con otro Estado entran «fuera»;
+     - si la base o «Actualizar estado» lo traen otra vez «En proceso» o «Sin contacto», vuelve a quedar disponible;
+     - Estado vacío: no decide nada;
+     - el resumen del cliente lleva `fueraGestion` aparte, y la gráfica «Por Estado» refleja el cambio.
+  3. **«Agendas por asesor»** muestra solo las asesoras con agendas o citas.
+- **Pruebas:**
+  - `faseSTA9-actualizar-estado.test.js` (9);
+  - las pruebas STA anteriores pasan los estados inventados de «AUTORIZADA» a «En proceso» (con la regla nueva, «AUTORIZADA» queda fuera de gestión);
+  - suite completa en verde.
+- **Revisión local** (base de demostración + 40 casos inventados, 2 asesoras inventadas), a 375, 768 y 1440 px, en claro y oscuro:
+  - los dos cuadros quedan lado a lado a 1440 px y uno debajo del otro a 375 y 768 px;
+  - con el CSV: 3 actualizados, 3 fuera de gestión y 1 que no existe (no creado); 40 = 23 + 10 + 4 + 3;
+  - «Agendas por asesor» muestra solo la asesora con agendas;
+  - 0 errores de consola y sin desborde.
+- **Antes de mergear, revisar en producción (solo lectura) qué valores trae la columna Estado de la base real.** Si el estado «de trabajo» no se llama «En proceso» ni «Sin contacto», la próxima carga dejaría esos casos fuera de gestión. Los casos que ya están en producción no cambian hasta la próxima carga o «Actualizar estado».

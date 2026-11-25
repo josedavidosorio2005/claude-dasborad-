@@ -21,7 +21,7 @@ function crear(user, rol, perms, asesorCampana) {
   return r.lastInsertRowid;
 }
 const tok = (u) => tokenFor(u, 'Clave#2026x');
-const fila = (n, extra) => Object.assign({ 'Fecha Ingreso Sta': '2026-11-0' + ((n % 9) + 1) + ' 08:00:00', Entidad: n % 2 ? 'ENTIDAD FICTICIA A' : 'ENTIDAD FICTICIA B', 'Numero Autorizacion': 'F' + String(1000 + n), Estado: 'AUTORIZADA', 'Descripcion Cups': 'CUPS FICTICIO', 'Fecha Autorizacion': '2026-10-01 00:00:00', 'Fecha Expiracion': '2027-01-01 00:00:00', Servicio: n % 3 ? 'SERVICIO X' : 'SERVICIO Y' }, extra || {});
+const fila = (n, extra) => Object.assign({ 'Fecha Ingreso Sta': '2026-11-0' + ((n % 9) + 1) + ' 08:00:00', Entidad: n % 2 ? 'ENTIDAD FICTICIA A' : 'ENTIDAD FICTICIA B', 'Numero Autorizacion': 'F' + String(1000 + n), Estado: 'En proceso', 'Descripcion Cups': 'CUPS FICTICIO', 'Fecha Autorizacion': '2026-10-01 00:00:00', 'Fecha Expiracion': '2027-01-01 00:00:00', Servicio: n % 3 ? 'SERVICIO X' : 'SERVICIO Y' }, extra || {});
 const COLS = STA.CAMPOS.slice();
 const cargar = (t, filas, extra) => request(app).post(B + '/cargas').set(H(t)).send(Object.assign({ archivo: 'base-ficticia.xlsx', columnas: COLS, filas }, extra || {}));
 
@@ -77,8 +77,8 @@ test('carga: el número de autorización es la llave; mensaje nuevos / ya exist�
   assert.equal(r1.body.sinNum, 1);
   assert.equal(r1.body.mensaje, 'Se cargaron 4 nuevos, 1 ya existían, 0 actualizados');
   const r2 = await cargar(sup, [fila(1), fila(2, { Estado: 'ANULADA' }), fila(6)]);
-  assert.equal(r2.body.mensaje, 'Se cargaron 1 nuevos, 2 ya existían, 1 actualizados');
-  assert.deepEqual(r2.body.cambios, { 'AUTORIZADA → ANULADA': 1 });
+  assert.equal(r2.body.mensaje, 'Se cargaron 1 nuevos, 2 ya existían, 1 actualizados; 1 fuera de gestión (Estado distinto de «En proceso» o «Sin contacto»)'); // 25/11: ANULADA sale de la gestión
+  assert.deepEqual(r2.body.cambios, { 'En proceso → ANULADA': 1 });
   const caso = (await request(app).get(B + '/estado').set(H(sup))).body.casos.find((c) => c._id === 'F1002');
   assert.equal(caso.Estado, 'ANULADA');
   assert.equal(caso._hist.length, 1);

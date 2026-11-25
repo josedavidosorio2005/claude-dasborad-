@@ -91,6 +91,46 @@ function normClave(v) { return String(v == null ? '' : v).trim().replace(/\.0+$/
 function normHeader(h) { return String(h == null ? '' : h).normalize('NFD').replace(/[̀-ͯ]/g, '').trim().toLowerCase().replace(/\s+/g, ' '); }
 function esVolver(t) { return normHeader(t).includes('volver a llamar'); }
 const RE_FECHA = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/;
+
+// ── Pedido de Edwin (llamada del 25/11/2026): solo se gestionan los casos «En proceso» y «Sin contacto» ──
+// Con otro Estado (agendada, cumplida, anulada, facturado…) el caso sale de la gestión: estado 'fuera'
+// («Fuera de gestión»), sin asesora, y no cuenta en asignados, pendientes ni sin asignar. Si una carga
+// posterior lo trae otra vez «En proceso» o «Sin contacto», vuelve a quedar disponible (siempre por
+// Numero Autorizacion). Un caso ya GESTIONADO conserva su gestión (es trabajo hecho); solo se cierra su
+// «volver a llamar» pendiente. Estado vacío: no decide nada (el caso sigue como está).
+const ESTADOS_GESTION = ['en proceso', 'sin contacto'];
+function esGestionable(estado) { const n = normHeader(estado); return !n || ESTADOS_GESTION.includes(n); }
+// Cambios de la fila según el Estado nuevo. r: fila de sta_casos. Devuelve null si no cambia la gestión.
+function efectoEstado(r, nuevoEstado) {
+  const n = normHeader(nuevoEstado);
+  if (!n) return null;
+  const gestionable = ESTADOS_GESTION.includes(n);
+  if (!gestionable && r.estado === 'pendiente') return { estado: 'fuera', agenteId: null, asignado: '', rell: r.rell, sale: true, agenteAntes: r.agenteId };
+  if (!gestionable && r.estado === 'gestionado' && r.rell) {
+    const rell = JSON.parse(r.rell);
+    if (rell && rell.estado === 'pendiente') return { estado: r.estado, agenteId: r.agenteId, asignado: r.asignado, rell: JSON.stringify(Object.assign(rell, { estado: 'cerrada' })), rellCerrada: true };
+  }
+  if (gestionable && r.estado === 'fuera') return { estado: 'pendiente', agenteId: null, asignado: '', rell: r.rell, vuelve: true };
+  return null;
+}
+// Aplica un Estado nuevo a una fila existente (dato de la base + gestión). Devuelve { cambio, efecto } o null.
+function aplicarEstado(db, r, nuevoEstado, hoy, origen) {
+  const d = JSON.parse(r.datos);
+  const antes = String(d['Estado'] == null ? '' : d['Estado']).trim();
+  const nuevo = String(nuevoEstado == null ? '' : nuevoEstado).trim();
+  const cambio = !!nuevo && antes !== nuevo;
+  const ef = efectoEstado(r, nuevo);
+  if (!cambio && !ef) return null;
+  const h = { fecha: hoy, de: antes, a: nuevo || antes, origen };
+  if (ef && ef.sale) { h.sale = true; if (ef.agenteAntes) h.agente = ef.agenteAntes; }
+  if (ef && ef.vuelve) h.vuelve = true;
+  const hist = (r.hist ? JSON.parse(r.hist) : []).concat([h]);
+  if (cambio) d['Estado'] = nuevo;
+  const e = ef || { estado: r.estado, agenteId: r.agenteId, asignado: r.asignado, rell: r.rell };
+  db.prepare('UPDATE sta_casos SET datos = ?, hist = ?, estado = ?, agenteId = ?, asignado = ?, rell = ? WHERE id = ?')
+    .run(JSON.stringify(d), JSON.stringify(hist), e.estado, e.agenteId, e.asignado, e.rell || null, r.id);
+  return { cambio, antes, nuevo, efecto: ef };
+}
 class StaError extends Error { constructor(status, msg) { super(msg); this.status = status; } }
 
 function config(db) {
@@ -156,7 +196,7 @@ function cargar(db, { archivo, filas, columnas, archivoB64, por }) {
     gz = zlib.gzipSync(Buffer.from(archivoB64, 'base64'));
   }
   const hoy = ahora();
-  const res = { leidas: 0, nuevos: 0, dup: 0, sinNum: 0, actEst: 0, cambios: {}, faltan };
+  const res = { leidas: 0, nuevos: 0, dup: 0, sinNum: 0, actEst: 0, cambios: {}, faltan, salieron: 0, volvieron: 0, nuevosFuera: 0 };
   db.transaction(() => {
     const c = config(db);
     for (const k of cols) if (!c.columnas.includes(k)) c.columnas.push(k);
@@ -164,9 +204,9 @@ function cargar(db, { archivo, filas, columnas, archivoB64, por }) {
     guardarConfig(db, c);
     const cargaId = db.prepare('INSERT INTO sta_cargas (campana, fecha, archivo, archivoGz, cargadoPorNombre, createdAt) VALUES (?,?,?,?,?,?)')
       .run(CAMPANA, hoy, nombre, gz, por || null, new Date().toISOString()).lastInsertRowid;
-    const leer = db.prepare('SELECT id, datos, hist FROM sta_casos WHERE campana = ? AND numero = ?');
-    const actualizar = db.prepare('UPDATE sta_casos SET datos = ?, hist = ? WHERE id = ?');
-    const insertar = db.prepare('INSERT INTO sta_casos (campana, numero, datos, cargaId, cargaFecha) VALUES (?,?,?,?,?)');
+    const leer = db.prepare('SELECT * FROM sta_casos WHERE campana = ? AND numero = ?');
+    const insertar = db.prepare('INSERT INTO sta_casos (campana, numero, datos, cargaId, cargaFecha, estado) VALUES (?,?,?,?,?,?)');
+    const conEstado = cols.includes('Estado');
     const vistos = new Set();
     for (const f of filas) {
       if (!f || typeof f !== 'object' || Array.isArray(f)) continue;
@@ -186,29 +226,74 @@ function cargar(db, { archivo, filas, columnas, archivoB64, por }) {
       if (ex || vistos.has(k)) {
         res.dup++;
         const nuevoEst = String(o['Estado'] == null ? '' : o['Estado']).trim();
-        if (ex && !vistos.has(k) && cols.includes('Estado') && nuevoEst) {
-          const d = JSON.parse(ex.datos);
-          const antes = String(d['Estado'] == null ? '' : d['Estado']).trim();
-          if (antes !== nuevoEst) {
-            const clave = `${d['Estado'] || '(vacío)'} → ${nuevoEst}`;
+        if (ex && !vistos.has(k) && conEstado && nuevoEst) {
+          // Pedido de Edwin (25/11): también sin cambio de Estado, para que la regla se cumpla con la base del día.
+          const a = aplicarEstado(db, ex, nuevoEst, hoy, 'carga');
+          if (a && a.cambio) {
+            const clave = `${a.antes || '(vacío)'} → ${a.nuevo}`;
             res.cambios[clave] = (res.cambios[clave] || 0) + 1;
-            const hist = (ex.hist ? JSON.parse(ex.hist) : []).concat([{ fecha: hoy, de: d['Estado'] || '', a: nuevoEst }]);
-            d['Estado'] = nuevoEst;
-            actualizar.run(JSON.stringify(d), JSON.stringify(hist), ex.id);
             res.actEst++;
           }
+          if (a && a.efecto && a.efecto.sale) res.salieron++;
+          if (a && a.efecto && a.efecto.vuelve) res.volvieron++;
         }
         vistos.add(k);
         continue;
       }
       vistos.add(k);
-      insertar.run(CAMPANA, k, JSON.stringify(o), cargaId, hoy);
+      const fuera = conEstado && !esGestionable(o['Estado']);
+      insertar.run(CAMPANA, k, JSON.stringify(o), cargaId, hoy, fuera ? 'fuera' : 'pendiente');
       res.nuevos++;
+      if (fuera) res.nuevosFuera++;
     }
     db.prepare('UPDATE sta_cargas SET leidas = ?, nuevos = ?, dup = ?, sinNum = ?, actEst = ? WHERE id = ?').run(res.leidas, res.nuevos, res.dup, res.sinNum, res.actEst, cargaId);
     res.cargaId = Number(cargaId);
   })();
-  res.mensaje = `Se cargaron ${res.nuevos} nuevos, ${res.dup} ya existían, ${res.actEst} actualizados`;
+  res.mensaje = `Se cargaron ${res.nuevos} nuevos, ${res.dup} ya existían, ${res.actEst} actualizados`
+    + (res.salieron || res.nuevosFuera ? `; ${res.salieron + res.nuevosFuera} fuera de gestión (Estado distinto de «En proceso» o «Sin contacto»)` : '')
+    + (res.volvieron ? `; ${res.volvieron} volvieron a quedar disponibles` : '');
+  return res;
+}
+
+// ── Pedido de Edwin (25/11/2026): «Actualizar estado» ──
+// filas: [{ numero, estado }] leídas por el navegador. Cada fila busca su caso por Numero Autorizacion y le
+// cambia el Estado (con la regla de arriba). Las que no existan se reportan y NO se crean.
+const MAX_NO_EXISTEN = 500;
+function actualizarEstados(db, { archivo, filas }) {
+  asegurarTablas(db);
+  const nombre = String(archivo || '').trim().slice(0, 200);
+  if (!nombre) throw new StaError(400, 'Falta el nombre del archivo');
+  if (!Array.isArray(filas) || !filas.length) throw new StaError(400, 'El archivo está vacío');
+  if (filas.length > MAX_FILAS) throw new StaError(400, 'Máximo ' + MAX_FILAS + ' filas por archivo');
+  const hoy = ahora();
+  const res = { leidas: 0, actualizados: 0, sinCambio: 0, sinNum: 0, sinEstado: 0, repetidos: 0, noExisten: 0, noExistenLista: [], salieron: 0, volvieron: 0, cambios: {} };
+  const texto = (v) => (typeof v === 'string' || typeof v === 'number' ? String(v) : '');
+  db.transaction(() => {
+    const leer = db.prepare('SELECT * FROM sta_casos WHERE campana = ? AND numero = ?');
+    const vistos = new Set();
+    for (const f of filas) {
+      if (!f || typeof f !== 'object' || Array.isArray(f)) continue;
+      const k = normClave(texto(f.numero));
+      const est = texto(f.estado).trim().slice(0, 80);
+      if (!k && !est) continue;
+      res.leidas++;
+      if (!k || k.length > 80) { res.sinNum++; continue; }
+      if (!est) { res.sinEstado++; continue; }
+      if (vistos.has(k)) { res.repetidos++; continue; }
+      vistos.add(k);
+      const r = leer.get(CAMPANA, k);
+      if (!r) { res.noExisten++; if (res.noExistenLista.length < MAX_NO_EXISTEN) res.noExistenLista.push(k); continue; }
+      const a = aplicarEstado(db, r, est, hoy, 'actualizar');
+      if (!a) { res.sinCambio++; continue; }
+      res.actualizados++;
+      if (a.cambio) { const clave = `${a.antes || '(vacío)'} → ${a.nuevo}`; res.cambios[clave] = (res.cambios[clave] || 0) + 1; }
+      if (a.efecto && a.efecto.sale) res.salieron++;
+      if (a.efecto && a.efecto.vuelve) res.volvieron++;
+    }
+  })();
+  res.mensaje = `${res.actualizados} casos actualizados, ${res.sinCambio} sin cambio`
+    + (res.salieron ? `; ${res.salieron} salieron de la gestión` : '') + (res.volvieron ? `; ${res.volvieron} volvieron a quedar disponibles` : '')
+    + (res.noExisten ? `; ${res.noExisten} no existen en la base (no se crearon)` : '');
   return res;
 }
 
@@ -262,7 +347,7 @@ function disponiblesFiltrados(db, filtros) {
   const f = filtros || {};
   const ent = _lista(f.entidad), serv = _lista(f.servicio), cups = _lista(f.cups);
   const rangos = [['Fecha Ingreso Sta', _dia(f.ingD), _dia(f.ingH)], ['Fecha Autorizacion', _dia(f.autD), _dia(f.autH)], ['Fecha Expiracion', _dia(f.expD), _dia(f.expH)]];
-  return db.prepare('SELECT numero, datos FROM sta_casos WHERE campana = ? AND agenteId IS NULL').all(CAMPANA)
+  return db.prepare("SELECT numero, datos FROM sta_casos WHERE campana = ? AND agenteId IS NULL AND estado = 'pendiente'").all(CAMPANA)
     .map((r) => ({ numero: r.numero, d: JSON.parse(r.datos) }))
     .filter(({ d }) => {
       if (ent && !ent.has(String(d['Entidad'] || ''))) return false;
@@ -343,13 +428,13 @@ function regresarGestionados(db, { tipi, numeros, por }) {
   const quien = String(por || '').slice(0, 120);
   let n = 0;
   db.transaction(() => {
-    const up = db.prepare("UPDATE sta_casos SET estado = 'pendiente', agenteId = NULL, asignado = '', tipi = '', obs = '', fg = '', citas = 0, rell = NULL, prev = ? WHERE id = ? AND estado = 'gestionado'");
+    const up = db.prepare("UPDATE sta_casos SET estado = ?, agenteId = NULL, asignado = '', tipi = '', obs = '', fg = '', citas = 0, rell = NULL, prev = ? WHERE id = ? AND estado = 'gestionado'");
     for (const r of filas) {
       const prev = r.prev ? JSON.parse(r.prev) : [];
       const rell = r.rell ? JSON.parse(r.rell) : null;
       prev.push(Object.assign({ tipi: r.tipi, obs: r.obs, fg: r.fg, citas: r.citas || 0, agente: r.agenteId, regresado: hoy, por: quien },
         rell ? { rell: rell.cuando, rellEstado: rell.estado === 'pendiente' ? 'regresado' : rell.estado } : {}));
-      n += up.run(JSON.stringify(prev), r.id).changes;
+      n += up.run(esGestionable(JSON.parse(r.datos)['Estado']) ? 'pendiente' : 'fuera', JSON.stringify(prev), r.id).changes; // 25/11: si ya no se gestiona, «fuera»
     }
   })();
   return { regresados: n, pedidos: porLista ? numeros.length : n };
@@ -451,13 +536,13 @@ function resumen(db) {
   const c = config(db);
   const ef = new Set(c.efectivas);
   const rows = db.prepare('SELECT datos, agenteId, estado, tipi, fg, citas FROM sta_casos WHERE campana = ?').all(CAMPANA);
-  const out = { total: rows.length, sinAsignar: 0, pendientes: 0, gestionados: 0, agendas: 0, citas: 0, porTipi: {}, porDia: {}, porEntidad: {}, porServicio: {}, porEstado: {}, efectivas: c.efectivas };
-  const parte = (r) => (r.estado === 'gestionado' ? 'gestionado' : r.agenteId ? 'pendiente' : 'sinAsignar');
-  const sumar = (m, k, p) => { const x = m[k] || (m[k] = { gestionado: 0, pendiente: 0, sinAsignar: 0 }); x[p]++; };
+  const out = { total: rows.length, sinAsignar: 0, pendientes: 0, gestionados: 0, fueraGestion: 0, agendas: 0, citas: 0, porTipi: {}, porDia: {}, porEntidad: {}, porServicio: {}, porEstado: {}, efectivas: c.efectivas };
+  const parte = (r) => (r.estado === 'gestionado' ? 'gestionado' : r.estado === 'fuera' ? 'fuera' : r.agenteId ? 'pendiente' : 'sinAsignar');
+  const sumar = (m, k, p) => { const x = m[k] || (m[k] = { gestionado: 0, pendiente: 0, sinAsignar: 0, fuera: 0 }); x[p]++; };
   for (const r of rows) {
     const d = JSON.parse(r.datos);
     const p = parte(r);
-    out[p === 'gestionado' ? 'gestionados' : p === 'pendiente' ? 'pendientes' : 'sinAsignar']++;
+    out[p === 'gestionado' ? 'gestionados' : p === 'pendiente' ? 'pendientes' : p === 'fuera' ? 'fueraGestion' : 'sinAsignar']++;
     sumar(out.porEntidad, String(d['Entidad'] || '(vacío)'), p);
     sumar(out.porServicio, String(d['Servicio'] || '(vacío)'), p);
     sumar(out.porEstado, String(d['Estado'] || '(vacío)'), p);
@@ -478,4 +563,5 @@ module.exports = {
   CAMPANA, CAMPOS, CAMPOS_FECHA, TIPIS_BASE, HIST_ASESOR, StaError, asegurarTablas, ahora, normClave, esVolver,
   config, cambiarTipis, asesores, esAsesorSta, cargar, cargas, archivoDeCarga, borrarCarga, disponiblesFiltrados,
   asignar, devolver, pasar, codificar, avisoRellamada, estadoSupervisor, estadoAsesor, resumen, estadoCliente, CAMPOS_CLIENTE, regresarGestionados,
+  ESTADOS_GESTION, esGestionable, actualizarEstados,
 };

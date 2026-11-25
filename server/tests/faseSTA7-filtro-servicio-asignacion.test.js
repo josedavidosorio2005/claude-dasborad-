@@ -27,7 +27,7 @@ function crear(casos) {
   vm.runInContext(['disponibles', 'filtrar', 'opciones', 'msTodos', 'msNormalizar'].map(fuente).join('\n'), ctx);
   return ctx;
 }
-const C = (ent, serv, cups, extra) => Object.assign({ Entidad: ent, Servicio: serv, 'Descripcion Cups': cups, 'Fecha Ingreso Sta': '2026-11-10' }, extra || {});
+const C = (ent, serv, cups, extra) => Object.assign({ Entidad: ent, Servicio: serv, 'Descripcion Cups': cups, 'Fecha Ingreso Sta': '2026-11-10', _estado: 'pendiente' }, extra || {}); // 25/11: disponible = libre y pendiente
 const CASOS = [
   C('ENTIDAD A', 'AUDIFONOS', 'CUPS 1'), C('ENTIDAD A', 'AUDIFONOS', 'CUPS 2'), C('ENTIDAD A', 'CONSULTA', 'CUPS 3'),
   C('ENTIDAD B', 'TERAPIA', 'CUPS 4'), C('ENTIDAD B', 'TERAPIA', 'CUPS 4'), C('ENTIDAD B', 'AUDIFONOS', 'CUPS 1', { _agente: 'x' }), // asignado: no cuenta

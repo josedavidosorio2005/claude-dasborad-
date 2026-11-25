@@ -28,6 +28,8 @@ function _staApi(vista) {
       var b64 = await _staBase64(buf);
       return apiRequest('POST', STA_BASE + '/cargas', { archivo: file.name, columnas: columnas, filas: filas, archivoB64: b64 });
     },
+    // Pedido de Edwin (25/11): «Actualizar estado» (Numero Autorizacion + Estado).
+    estados: function (archivo, filas) { return apiRequest('POST', STA_BASE + '/estados', { archivo: archivo, filas: filas }); },
     borrarCarga: function (id, conservar) { return apiRequest('DELETE', STA_BASE + '/cargas/' + encodeURIComponent(id) + (conservar ? '?conservar=1' : '')); },
     descargar: async function (id) {
       try {
