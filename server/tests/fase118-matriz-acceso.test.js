@@ -159,7 +159,7 @@ declarar(['GET /health', 'POST /auth/login'], 'skip');
 declarar(['GET /orlant/sta/estado', 'GET /orlant/sta/resumen', 'POST /orlant/sta/cargas', 'GET /orlant/sta/cargas', 'GET /orlant/sta/cargas/:id/archivo',
   'DELETE /orlant/sta/cargas/:id', 'POST /orlant/sta/asignar', 'POST /orlant/sta/devolver', 'POST /orlant/sta/pasar', 'PUT /orlant/sta/config/tipis',
   'POST /orlant/sta/casos/:numero/codificar', 'POST /orlant/sta/casos/:numero/rellamada',
-  'POST /orlant/sta/gestionados/regresar', 'POST /orlant/sta/estados' /* pedido de Edwin 25/11: soloGestor, probado en faseSTA9 */], 'skip'); // pedido 2 de Edwin (23/11): soloGestor, probado en faseSTA5
+  'POST /orlant/sta/gestionados/regresar', 'POST /orlant/sta/estados' /* pedido de Edwin 25/11: soloGestor, probado en faseSTA9 */, 'POST /orlant/sta/historico' /* 25/11 2:45 p. m.: soloGestor, probado en faseSTA11 */], 'skip'); // pedido 2 de Edwin (23/11): soloGestor, probado en faseSTA5
 // Equidad profesionales de ORLANT (24/11/2026): ver = admin, gerencia y supervisor de ORLANT; cargar = admin,
 // cargarDatos y supervisor de ORLANT. Probado rol por rol en faseEQ2-equidad-profesionales.test.js.
 declarar(['GET /orlant/equidad/estado', 'GET /orlant/equidad/resumen', 'POST /orlant/equidad/cargas/:grupo', 'PUT /orlant/equidad/entidades', 'PUT /orlant/equidad/opciones'], 'skip'); // opciones: solo admin (faseEQ3)

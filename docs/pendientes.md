@@ -20,6 +20,7 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
   - **Visible para la cuenta cliente de ORLANT desde el 25/11** (OK de Edwin). La opción se activó por la interfaz, con la sesión del usuario.
   - Se verificó con «Ver como»: la pestaña aparece justo después de «Gestión de la base STA», con 403 / 305 / 256 citas e índices de 44,7 / 39,6 / 53,7 %.
 - **WhatsApp de ORLANT por API (N3):** sigue **apagado**. No se crea nada en SSM sin OK explícito.
+- **Gestión STA, para después (pedido de Edwin, 25/11):** que el buscador de autorización se vea más (hoy está en «Gestionados», arriba de la tabla).
 - **Esperan a Edwin:** #902, el mapa de skills de ORLANT, los nombres completos de las 14 asesoras de SURA con nombre estilo login y la lista de entidades de Isa (Equidad).
 
 ## Estado al 24/11/2026 (producción 1.260.0)

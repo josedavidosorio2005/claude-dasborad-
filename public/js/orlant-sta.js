@@ -30,6 +30,8 @@ function _staApi(vista) {
     },
     // Pedido de Edwin (25/11): «Actualizar estado» (Numero Autorizacion + Estado).
     estados: function (archivo, filas) { return apiRequest('POST', STA_BASE + '/estados', { archivo: archivo, filas: filas }); },
+    // Pedido de Edwin (25/11, 2:45 p. m.): histórico con gestión; dryRun = revisar sin escribir.
+    historico: function (archivo, filas, dryRun) { return apiRequest('POST', STA_BASE + '/historico', { archivo: archivo, filas: filas, dryRun: !!dryRun }); },
     borrarCarga: function (id, conservar) { return apiRequest('DELETE', STA_BASE + '/cargas/' + encodeURIComponent(id) + (conservar ? '?conservar=1' : '')); },
     descargar: async function (id) {
       try {
