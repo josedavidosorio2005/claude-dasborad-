@@ -7,6 +7,20 @@ decidir nada, solo priorizar cuándo invertir el tiempo). Lo ya cerrado
 no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 ítem tiene prioridad, cómo se cierra, y la fecha en que se anotó.
 
+## Estado al 25/11/2026 (producción 1.267.1)
+
+- **Lectura del 25/11** (solo lectura, solo conteos, sesión del administrador en un perfil aparte de Brave, borrado al terminar):
+  - La consulta automática de Wolkvox de las **00:05** salió igual que la del 24/11: los **6 módulos bien** en la réplica y en el MOBILIZE real, sin errores y con respaldo. Los números de la réplica y del real son idénticos.
+  - Noviembre (24/11 → 25/11): Flujo 23 → 24 días, 16 → 17 filas · Flujo por hora 58 → 61 · Tipificación 124 → 131 llamadas (salida 55 → 58, únicas 57 → 61) · Encuesta 78 → 83 · No conectadas 48 → 50 · Abandonadas 1 → 1.
+  - La corrida de las 7:00 del 25/11 dio los mismos números. Cada corrida gasta unas 58 consultas (29 la réplica y 29 el real), lejos del tope de 2.800.
+- **PR abiertos, sin mergear:**
+  - **#950** (v1.268.0): opción para que la cuenta cliente de ORLANT vea la Equidad, apagada. El 25/11 se le trajo main (1.268.0 encima de 1.267.1). **Espera el sí de Edwin.**
+  - **#902** (B1, citas asignadas en Total tráfico): espera a Edwin.
+  - **#952** (v1.267.2): la franja de «Ver como» más compacta en el celular. Espera el OK del merge.
+- **Equidad profesionales:** las 3 bases reales ya están cargadas en producción (24/11). **No recargar.**
+- **WhatsApp de ORLANT por API (N3):** sigue **apagado**. No se crea nada en SSM sin OK explícito.
+- **Esperan a Edwin:** #950, #902, el mapa de skills de ORLANT, los nombres completos de las 14 asesoras de SURA con nombre estilo login y la lista de entidades de Isa (Equidad).
+
 ## Estado al 24/11/2026 (producción 1.260.0)
 
 - **Hecho del 20 al 24/11** (detalle en `PROGRESS.md` y `docs/historico/progress-fases.md`):
@@ -25,12 +39,12 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 - **Mergeados el 24/11 con OK del usuario:** #932 (estos pendientes), #930 GH8 (v1.259.1) y #931 Fase M1, malla «casos especiales» A+B+C (v1.260.0).
 - **Malla, festivos (Fase M1):** con «festivo = descanso» no cambió ningún número. Lectura en producción del 24/11: la réplica no tiene malla en semanas con festivo; SURA tiene malla en las semanas del 02/11 y el 16/11 (lunes), pero ningún grupo trabaja los lunes.
   **Al armar diciembre:** a los grupos de SURA que trabajen el **08/12** o el **25/12**, marcarles la fila «Festivos» (con su horario). Si no, ese día les sale descanso.
-- **Esperan a Edwin:** **#902** (ORLANT, citas asignadas en Total tráfico) y **N2** (rama local).
+- **Esperan a Edwin:** **#902** (ORLANT, citas asignadas en Total tráfico). ~~**N2** (rama local).~~ N2 está en producción desde la v1.264.0 (#941).
 - **Mobilize, Calidad de encuestas sin ID desde noviembre (causa encontrada el 24/11, solo lectura):**
   - Desde el 21/11 la consulta automática reemplaza la Encuesta de noviembre del MOBILIZE real, y ese módulo guardaba las encuestas **sin CONN_ID**.
   - Por eso noviembre tiene 16 mal calificadas «sin ID» y 0 pendientes.
   - Los 5 monitoreos de noviembre que se calificaron con el archivo manual quedaron sin su encuesta: 25 monitoreos de origen «encuesta» contra 20 resueltas.
-  - **Decisión del usuario (24/11, opción a):** el módulo de Encuesta del MOBILIZE real guarda el CONN_ID (solo el ID de la llamada; teléfono y comentarios se siguen descartando). Va en un PR aparte, que espera el OK del merge.
+  - **Decisión del usuario (24/11, opción a):** el módulo de Encuesta del MOBILIZE real guarda el CONN_ID (solo el ID de la llamada; teléfono y comentarios se siguen descartando). Va en un PR aparte, que espera el OK del merge. **Hecho:** #933, en producción desde la v1.260.1 (24/11). Falta mirar en «Calidad de encuestas» que las encuestas de noviembre ya traen el ID.
 - **Auditoría del 24/11, puntos de prioridad baja (solo anotados):**
   - ~~Talento humano: en el celular, las pestañas miden 41 px y los botones 35 px.~~ Arreglado en v1.267.1 (24/11) por su generador; el HTML de Edwin no se tocó.
   - ~~Botones chicos (`.btn-sm`) de la malla y el «Ver» del aviso de monitoreos nuevos del Portal Asesor (36×24 px).~~ Arreglado en v1.267.1 (24/11): 44 px en ≤768 px.
@@ -49,8 +63,8 @@ no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
     noviembre ni diciembre a MOBILIZE, y decidir los alias de MOBILIZE (2/2/1 nombres). Ver `docs/plan-api-wolkvox.md` §10.24.
   - **Para después (24/11, decisión del usuario):** H-08 (llave de AWS y sudo), inventario de la cuenta AWS vieja y la política IAM, y las decisiones pequeñas del bloque 1.
   - **Pregunta para Edwin:** si quiere ver el nivel de servicio a 10 s y a 30 s (ya se guarda).
-- **Detalle visual menor, sin arreglar:** la franja de «Ver como» mide 178 px de alto a 375 px (el texto ocupa
-  5 líneas). No tapa el botón «Cerrar» de las ventanas.
+- ~~**Detalle visual menor, sin arreglar:** la franja de «Ver como» mide 178 px de alto a 375 px (el texto ocupa
+  5 líneas). No tapa el botón «Cerrar» de las ventanas.~~ Arreglado en el PR #952 (v1.267.2, 25/11, sin mergear): 58 px a 375 px y una sola fila en tablet.
 - **Inventario anterior:** retirado (Fase 383); las tablas se quedan. Opcional: quitar el rol INVENTARIO (sin usuarios) y el código de su ventana.
 - **Malla fase 2 (puntualidad, Fase 363):**
   - **réplica por la API:** sigue apagada (`WOLKVOX_LOGIN_ACTIVO`) hasta el OK del usuario;
