@@ -22772,3 +22772,28 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
   - sin desborde y 0 errores de consola.
 
 - **25/11:** Edwin dio el OK para que la cuenta cliente de ORLANT vea la Equidad (autorización escrita del usuario). Al mergear, este PR pasó a **v1.269.0** (la 1.268.0 la tomó #957, el estilo de la plataforma). La opción se activa por la interfaz, solo para ORLANT.
+
+## Cierre del 25/11 — Accesibilidad, Historial ligero y Equidad para el cliente de ORLANT (v1.267.3 → v1.269.0, 2026-11-25)
+
+- **Merges con OK del usuario**, de a uno, con `git ls-remote` + `--match-head-commit`, trayendo main antes a cada uno. CI y deploy en verde, sin timeouts de SSH.
+  - **#955** (v1.267.3), accesibilidad, a partir de la revisión con axe-core:
+    - la tabla del Historial se desplaza con el teclado;
+    - la tarjeta «Sugerencias / Tickets» se anuncia con su texto visible;
+    - se quitó `openInventario()`, después de comprobar que nada vigente la usaba.
+  - **#956** (v1.267.4), Historial ligero:
+    - al iniciar sesión solo se pide el total (`/historial/total`);
+    - la pestaña trae las 1.000 más recientes, la más nueva arriba (decisión del usuario), con el total;
+    - los filtros por tipo y por fecha se aplican en el servidor; las alertas de seguridad no cambian.
+    - Medición local con un año inventado: el inicio de sesión baja de 0,77 a ~0,3 s y abrir la pestaña, de 1,5 a ~0,7 s.
+  - **#957** (v1.268.0), Equidad profesionales con el estilo de la plataforma (pedido de Edwin), por el generador:
+    - los colores del HTML pasan a los tokens de `paleta.css` y a los de estado de `styles.css` (aprobados por el usuario);
+    - 0 colores fijos;
+    - axe 0 en 18 casos, con datos inventados, y cifras idénticas a la versión anterior.
+    - GitHub dio error 500 al crear el PR durante unos 20 minutos; se creó en un reintento a los 10 minutos.
+  - **#950** (v1.269.0): la opción `visibleCliente`. Pasó de 1.268.0 a 1.269.0 porque #957 tomó la 1.268.0.
+- **Equidad visible para la cuenta cliente de ORLANT** (OK de Edwin, 25/11; autorización escrita del usuario):
+  - la casilla se activó por la interfaz («Cargar bases» → ORLANT → «Equidad profesionales»), con la sesión del usuario en Brave (perfil aparte, borrado al terminar);
+  - verificado con «Ver como» (solo lectura) la única cuenta cliente activa de ORLANT: la pestaña está justo después de «Gestión de la base STA»;
+  - Pólizas 403 citas y 44,7 %; Medicina prepagada 305 y 39,6 %; Particulares 256 y 53,7 %; 0 errores de consola.
+  - Solo conteos, sin nombres ni capturas. Las bases no se recargaron.
+- **`PROGRESS.md`** pasa a 1.269.0; en **`docs/pendientes.md`** sale «#950 espera a Edwin».
