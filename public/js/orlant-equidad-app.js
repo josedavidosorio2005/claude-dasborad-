@@ -200,9 +200,9 @@ function renderResultados(){
     <div class="kpi"><div class="l"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>Citas en el filtro</div><div class="v">${fmt(A.total)}</div><div class="h">${fmt(uniq(rows,'fecha').length)} días con agenda</div></div>
     <div class="kpi"><div class="l"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.5 3.4-5.5 6.5-5.5s5.7 2 6.5 5.5"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14.8c1.8.8 3 2.5 3.5 5.2"/></svg>Profesionales medidos</div><div class="v">${A.incl.length}</div><div class="h">${A.all.length} con citas en el filtro</div></div>
     <div class="kpi"><div class="l"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg>Promedio equitativo</div><div class="v">${fmt(A.ideal,1)}</div><div class="h">citas por profesional</div></div>
-    <div class="kpi"><div class="l"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M5 21h14M4 8h16M7 8l-3 7a3 3 0 0 0 6 0L7 8zM17 8l-3 7a3 3 0 0 0 6 0l-3-7z"/></svg>Índice de equidad</div><div class="v" style="color:${A.eq>=.8?'var(--green)':A.eq>=.65?'var(--amber)':'var(--red)'}">${fmt(A.eq*100,1)}%</div><div class="h">100% = reparto idéntico (1 − Gini)</div></div>
+    <div class="kpi"><div class="l"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M5 21h14M4 8h16M7 8l-3 7a3 3 0 0 0 6 0L7 8zM17 8l-3 7a3 3 0 0 0 6 0l-3-7z"/></svg>Índice de equidad</div><div class="v" style="color:${A.eq>=.8?'var(--c-success-text)':A.eq>=.65?'var(--c-warning-text)':'var(--c-danger-text)'}">${fmt(A.eq*100,1)}%</div><div class="h">100% = reparto idéntico (1 − Gini)</div></div>
   </div>
-  <div class="card"><h3>Mapa de calor: citas por profesional y día</h3><div class="desc">Muestra cómo se distribuye la agenda en el periodo; celdas más oscuras = más citas ese día.</div><div class="heat">${heatHTML(rows,A)}</div></div>  <div class="grid2">
+  <div class="card"><h3>Mapa de calor: citas por profesional y día</h3><div class="desc">Muestra cómo se distribuye la agenda en el periodo; celdas más intensas = más citas ese día.</div><div class="heat" tabindex="0" role="region" aria-label="Mapa de calor: citas por profesional y día (se desplaza con las flechas)">${heatHTML(rows,A)}</div></div>  <div class="grid2">
     <div class="card"><h3>¿Cómo está el reparto?</h3>
       <div class="desc">Profesionales según qué tan lejos están del promedio equitativo (±${f.tol}%).</div>
       ${donutHTML(A)}</div>
@@ -228,8 +228,8 @@ function bindCommon(){
 function donutHTML(A){
   const cats=[['over','Sobreasignados','var(--red)'],['ok','Equitativos','var(--green)'],['under','Baja asignación','var(--amber)'],['excl','No medidos','var(--gray)']];
   const tot=A.all.length||1; const R=62, C=2*Math.PI*R; let off=0;
-  let arcs=cats.map(([k,,c])=>{const n=A.all.filter(p=>p.estado===k).length; if(!n) return ''; const L=C*n/tot; const s=`<circle r="${R}" cx="80" cy="80" fill="none" stroke="${c}" stroke-width="20" stroke-dasharray="${Math.max(L-2,0.5)} ${C}" stroke-dashoffset="${-off}" transform="rotate(-90 80 80)"/>`; off+=L; return s;}).join('');
-  const svg=`<svg width="170" height="170" viewBox="0 0 160 160"><circle r="${R}" cx="80" cy="80" fill="none" stroke="var(--track)" stroke-width="20"/>${arcs}<text x="80" y="80" text-anchor="middle" fill="#fff" font-size="30" font-weight="800">${A.all.length}</text><text x="80" y="100" text-anchor="middle" fill="#93A6B3" font-size="12">profesionales</text></svg>`;
+  let arcs=cats.map(([k,,c])=>{const n=A.all.filter(p=>p.estado===k).length; if(!n) return ''; const L=C*n/tot; const s=`<circle r="${R}" cx="80" cy="80" fill="none" style="stroke:${c}" stroke-width="20" stroke-dasharray="${Math.max(L-2,0.5)} ${C}" stroke-dashoffset="${-off}" transform="rotate(-90 80 80)"/>`; off+=L; return s;}).join('');
+  const svg=`<svg width="170" height="170" viewBox="0 0 160 160"><circle r="${R}" cx="80" cy="80" fill="none" style="stroke:var(--track)" stroke-width="20"/>${arcs}<text x="80" y="80" text-anchor="middle" style="fill:var(--c-text)" font-size="30" font-weight="800">${A.all.length}</text><text x="80" y="100" text-anchor="middle" style="fill:var(--c-text-muted)" font-size="12">profesionales</text></svg>`;
   const rows=cats.map(([k,l,c])=>{const n=A.all.filter(p=>p.estado===k).length;return `<div class="row"><span class="dot" style="background:${c}"></span><span>${l}</span><span class="n">${n}</span><span class="p">${fmt(n/tot*100,1)}%</span></div>`;}).join('');
   const sobre=A.incl.filter(p=>p.estado==='over').reduce((a,p)=>a+p.n,0);
   return `<div class="donut-wrap">${svg}<div class="dl">${rows}</div></div><div class="foot"><span>Los sobreasignados concentran ${fmt(A.total?sobre/A.total*100:0,1)}% de las citas</span></div>`;
@@ -244,7 +244,7 @@ function tableHTML(A,T){
    <th class="num" data-k="dev">Desv.${arrow('dev')}</th><th class="num" data-k="devp">Desv. %${arrow('devp')}</th>
    <th class="num" data-k="ndias">Días${arrow('ndias')}</th><th class="num" data-k="cpd">Citas/día${arrow('cpd')}</th><th data-k="estado">Estado${arrow('estado')}</th></tr></thead><tbody>`+
    list.map(p=>{const e=ESTADO[p.estado];const sedes=Object.entries(p.sedes).map(([k,v])=>k+': '+v).join(' · ');
-    return `<tr style="${p.inc?'':'color:#5E707C'}" title="${esc(sedes)}"><td>${esc(p.prof)}</td><td class="num"><b>${fmt(p.n)}</b></td><td class="num">${fmt(p.share*100,1)}%</td>
+    return `<tr style="${p.inc?'':'color:var(--c-text-muted)'}" title="${esc(sedes)}"><td>${esc(p.prof)}</td><td class="num"><b>${fmt(p.n)}</b></td><td class="num">${fmt(p.share*100,1)}%</td>
     <td class="num">${p.dev==null?'—':(p.dev>0?'+':'')+fmt(p.dev,1)}</td><td class="num">${p.devp==null?'—':(p.devp>0?'+':'')+fmt(p.devp*100,0)+'%'}</td>
     <td class="num">${p.ndias}</td><td class="num">${fmt(p.cpd,1)}</td><td>${e[0]?`<span class="pill ${e[0]}">${e[1]}</span>`:e[1]}</td></tr>`;}).join('')+`</tbody></table>`;
 }
@@ -257,16 +257,16 @@ function chartSVG(A,T){
   let s=`<svg viewBox="0 0 ${W} ${H}" width="100%" style="font-family:inherit;font-size:12px">`;
   // ticks
   const step=Math.pow(10,Math.floor(Math.log10(maxV)))/(maxV/Math.pow(10,Math.floor(Math.log10(maxV)))>5?1:2);
-  for(let v=0;v<=maxV;v+=step){s+=`<line x1="${x(v)}" x2="${x(v)}" y1="${top}" y2="${H-20}" stroke="#1C3242"/><text x="${x(v)}" y="${H-6}" text-anchor="middle" fill="#7F93A0">${fmt(v)}</text>`;}
+  for(let v=0;v<=maxV;v+=step){s+=`<line x1="${x(v)}" x2="${x(v)}" y1="${top}" y2="${H-20}" style="stroke:var(--c-border-soft)"/><text x="${x(v)}" y="${H-6}" text-anchor="middle" style="fill:var(--c-text-muted)">${fmt(v)}</text>`;}
   if(A.ideal){
-    s+=`<rect x="${x(A.ideal*(1-tol))}" y="${top}" width="${x(A.ideal*(1+tol))-x(A.ideal*(1-tol))}" height="${H-20-top}" fill="#5DB95A" opacity=".12"/>`;
+    s+=`<rect x="${x(A.ideal*(1-tol))}" y="${top}" width="${x(A.ideal*(1+tol))-x(A.ideal*(1-tol))}" height="${H-20-top}" style="fill:var(--c-success);opacity:.12"/>`;
   }
   list.forEach((p,i)=>{const y=top+i*rowH;
-    s+=`<text x="${left-8}" y="${y+rowH/2+4}" text-anchor="end" fill="${p.inc?'#DCE5EA':'#5E707C'}">${esc(p.prof.length>30?p.prof.slice(0,29)+'…':p.prof)}</text>`;
-    s+=`<rect x="${left}" y="${y+7}" width="${W-left-right}" height="${rowH-14}" rx="6" fill="#1A2E3C"/><rect x="${left}" y="${y+7}" width="${Math.max(2,x(p.n)-left)}" height="${rowH-14}" rx="6" fill="${COLOR[p.estado]}"><title>${esc(p.prof)}: ${p.n} citas</title></rect>`;
-    s+=`<text x="${x(p.n)+5}" y="${y+rowH/2+4}" fill="#fff" font-weight="700">${p.n}</text>`;
+    s+=`<text x="${left-8}" y="${y+rowH/2+4}" text-anchor="end" style="fill:${p.inc?'var(--c-text)':'var(--c-text-muted)'}">${esc(p.prof.length>30?p.prof.slice(0,29)+'…':p.prof)}</text>`;
+    s+=`<rect x="${left}" y="${y+7}" width="${W-left-right}" height="${rowH-14}" rx="6" style="fill:var(--track)"/><rect x="${left}" y="${y+7}" width="${Math.max(2,x(p.n)-left)}" height="${rowH-14}" rx="6" style="fill:${COLOR[p.estado]}"><title>${esc(p.prof)}: ${p.n} citas</title></rect>`;
+    s+=`<text x="${x(p.n)+5}" y="${y+rowH/2+4}" style="fill:var(--c-text)" font-weight="700">${p.n}</text>`;
   });
-  if(A.ideal){s+=`<line x1="${x(A.ideal)}" x2="${x(A.ideal)}" y1="${top}" y2="${H-20}" stroke="#E8EEF2" stroke-dasharray="4 3" stroke-width="1.5"/>`;}
+  if(A.ideal){s+=`<line x1="${x(A.ideal)}" x2="${x(A.ideal)}" y1="${top}" y2="${H-20}" style="stroke:var(--c-text)" stroke-dasharray="4 3" stroke-width="1.5"/>`;}
   return s+'</svg>';
 }
 function sedesHTML(T,key='sede',asCards=false){
@@ -276,10 +276,10 @@ function sedesHTML(T,key='sede',asCards=false){
   return sedes.map(sd=>{
     const rows=base.filter(r=>r[key]===sd); const A=analyze(rows,T);
     const list=[...A.all].sort((a,b)=>b.n-a.n); const mx=list[0]?list[0].n:1;
-    const head=asCards?`<h3>${esc(sd)}</h3>`:`<b style="color:#fff">${esc(sd)}</b>`;
+    const head=asCards?`<h3>${esc(sd)}</h3>`:`<b style="color:var(--c-text)">${esc(sd)}</b>`;
     return `<div${asCards?' class="card" style="margin-top:0"':''}><div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px">${head}
-      <span class="desc" style="margin:0">${fmt(rows.length)} citas · ${A.incl.length} prof. · equidad <b style="color:${A.eq>=.8?'var(--green)':A.eq>=.65?'var(--amber)':'var(--red)'}">${fmt(A.eq*100,1)}%</b> · prom. ${fmt(A.ideal,1)}</span></div>
-      <table style="margin-top:6px">${list.map(p=>`<tr style="${p.inc?'':'color:#5E707C'}"><td style="width:48%">${esc(p.prof)}</td><td style="width:38%"><div class="track"><div class="bar-in" style="width:${p.n/mx*100}%;background:${COLOR[p.estado]}"></div></div></td><td class="num">${p.n}</td><td class="num">${fmt(p.share*100,0)}%</td></tr>`).join('')}</table></div>`;
+      <span class="desc" style="margin:0">${fmt(rows.length)} citas · ${A.incl.length} prof. · equidad <b style="color:${A.eq>=.8?'var(--c-success-text)':A.eq>=.65?'var(--c-warning-text)':'var(--c-danger-text)'}">${fmt(A.eq*100,1)}%</b> · prom. ${fmt(A.ideal,1)}</span></div>
+      <table style="margin-top:6px">${list.map(p=>`<tr style="${p.inc?'':'color:var(--c-text-muted)'}"><td style="width:48%">${esc(p.prof)}</td><td style="width:38%"><div class="track"><div class="bar-in" style="width:${p.n/mx*100}%;background:${COLOR[p.estado]}"></div></div></td><td class="num">${p.n}</td><td class="num">${fmt(p.share*100,0)}%</td></tr>`).join('')}</table></div>`;
   }).join('');
 }
 function entChartHTML(rows,T){
@@ -294,8 +294,8 @@ function heatHTML(rows,A){
   const list=[...A.all].sort((a,b)=>b.n-a.n); const cnt={}; let mx=1;
   rows.forEach(r=>{const k=r.prof+'|'+r.fecha;cnt[k]=(cnt[k]||0)+1;mx=Math.max(mx,cnt[k]);});
   const head=dias.map(d=>{const L=dLabel(d);return `<th>${L.w}<br>${L.d}</th>`;}).join('');
-  const body=list.map(p=>`<tr><td class="name">${esc(p.prof)}</td>`+dias.map(d=>{const v=cnt[p.prof+'|'+d]||0;const a=v?0.18+0.82*v/mx:0;
-    return `<td style="background:${v?`rgba(60,158,224,${a.toFixed(2)})`:'#15283400'};color:#fff">${v||''}</td>`;}).join('')+`<td class="num"><b>${p.n}</b></td></tr>`).join('');
+  const body=list.map(p=>`<tr><td class="name">${esc(p.prof)}</td>`+dias.map(d=>{const v=cnt[p.prof+'|'+d]||0;const a=v?0.12+0.38*v/mx:0;
+    return `<td style="background:${v?`color-mix(in srgb, var(--serie-1) ${Math.round(a*100)}%, transparent)`:'transparent'};color:var(--c-text)">${v||''}</td>`;}).join('')+`<td class="num"><b>${p.n}</b></td></tr>`).join('');
   const tot=dias.map(d=>`<td><b>${rows.filter(r=>r.fecha===d).length}</b></td>`).join('');
   return `<table><thead><tr><th></th>${head}<th>Total</th></tr></thead><tbody>${body}<tr><td class="name"><b>Total día</b></td>${tot}<td class="num"><b>${rows.length}</b></td></tr></tbody></table>`;
 }
