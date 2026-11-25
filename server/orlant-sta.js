@@ -600,8 +600,18 @@ function estadoAsesor(db, agenteId) {
   asegurarTablas(db);
   return {
     casos: db.prepare('SELECT * FROM sta_casos WHERE campana = ? AND agenteId = ? ORDER BY id').all(CAMPANA, Number(agenteId)).map(filaCaso),
-    config: config(db), ahora: ahora(), histMax: HIST_ASESOR,
+    config: config(db), ahora: ahora(), histMax: HIST_ASESOR, histCuenta: histCuentaDe(db, agenteId),
   };
+}
+// STA14 (25/11): las gestiones del histórico que cuentan («En proceso»/«Sin contacto» con codificación) son de su
+// asesora aunque el caso esté disponible o lo tenga otra. Para su «Gestionados» y «Mi efectividad» van SOLO el
+// número de autorización, la codificación, la fecha y las citas (nada más del caso ni la observación).
+function histCuentaDe(db, agenteId) {
+  const out = [];
+  for (const r of db.prepare(`SELECT numero, prev FROM sta_casos WHERE campana = ? AND prev LIKE '%"cuenta":true%' ORDER BY id`).all(CAMPANA)) {
+    for (const p of prevQueCuenta(r.prev)) if (p.agente != null && String(p.agente) === String(agenteId)) out.push({ numero: r.numero, tipi: p.tipi || '', fg: p.fg, citas: p.citas || 0 });
+  }
+  return out;
 }
 // Pedido de Edwin (23/11/2026): la pestaña STA del CLIENTE de ORLANT muestra la MISMA visual de
 // «Gráficas» del supervisor (el código de Edwin), de solo lectura. Para eso el navegador necesita los

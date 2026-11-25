@@ -32,6 +32,8 @@ async function cargarEstado(){
         columnas:(cfg.columnas||CAMPOS).slice(), casos:{}, cargas:(r.cargas||[]).map(c=>Object.assign({},c,{id:String(c.id)})).reverse(), seq:1 };
   for(const c of (r.casos||[])){ c._agente = c._agente==null ? null : String(c._agente); c._cargaId = c._cargaId==null ? null : String(c._cargaId); S.casos[c._id]=c; }
   if(VISTA==='asesor' && r.yo){ YO=r.yo; S.agentes=[{id:String(r.yo.id),nombre:r.yo.nombre,activo:true}]; agenteActual=String(r.yo.id); }
+  // STA14: gestiones del histórico que cuentan a nombre de esta asesora (el caso puede estar disponible o con otra).
+  S.histCuenta = VISTA==='asesor' ? (r.histCuenta||[]).map((h,i)=>({_id:'h'+i,_virtual:true,_estado:'gestionado',_agente:agenteActual,'Numero Autorizacion':h.numero,_tipi:h.tipi||'',_fg:h.fg,_citas:h.citas||0})) : [];
 }
 // Cada acción guarda con su propia llamada a la API; esto solo vuelve a pintar con lo del servidor.
 async function accion(fn, msgError){ try{ return await fn(); }catch(e){ toast((msgError||'No se pudo guardar')+': '+e.message); return null; } }
@@ -216,7 +218,7 @@ async function revisarRellamadas(){
 setInterval(revisarRellamadas,20000);
 
 function pintarGestionados(){
-  const todos=Object.values(S.casos).filter(c=>c._agente===agenteActual && c._estado==='gestionado').sort((a,b)=>b._fg.localeCompare(a._fg));
+  const todos=Object.values(S.casos).filter(c=>c._agente===agenteActual && c._estado==='gestionado').concat(S.histCuenta||[]).sort((a,b)=>b._fg.localeCompare(a._fg));
   $('cntGest').textContent=todos.length;
   // resumen del asesor
   const citas=todos.reduce((t,c)=>t+(c._citas||0),0), ag=todos.filter(c=>S.efectivas.includes(c._tipi)).length;

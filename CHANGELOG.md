@@ -7,6 +7,13 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.276.0 — Noviembre 2026
+
+**ORLANT, Gestión STA: la asesora ve en «Gestionados» sus gestiones del histórico.**
+
+- Las gestiones del histórico que cuentan («En proceso» o «Sin contacto» con codificación) ya aparecen en la pestaña «Gestionados» de su asesora y suman en «Mi efectividad» y en «Mis codificaciones», en su fecha.
+- El caso sigue disponible para asignar. La asesora solo ve el número de autorización, la fecha, la codificación y las citas, sin la observación.
+
 ## v1.275.1 — Noviembre 2026
 
 **ORLANT, Gestión STA: el histórico de septiembre ya se puede cargar.**

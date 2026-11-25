@@ -118,6 +118,31 @@ test('suman en el resumen del cliente las gestionadas y las disponibles con codi
   assert.ok(conPrev.length >= 2 && conPrev.every((c) => c._prev.every((p) => p.cuenta && !('obs' in p))), JSON.stringify(conPrev).slice(0, 200));
 });
 
+test('STA14: la asesora recibe SOLO sus gestiones del histórico que cuentan, recortadas', async () => {
+  const r = await request(app).get(B + '/estado').set(H(as1));
+  assert.equal(r.status, 200);
+  assert.equal(r.body.vista, 'asesor');
+  const nums = r.body.histCuenta.map((h) => h.numero);
+  assert.ok(nums.includes('HX-1'), 'HX-1: suya y con codificación');
+  assert.ok(!nums.includes('HX-6'), 'HX-6: sin codificación, no cuenta');
+  assert.ok(!nums.includes('HX-7'), 'HX-7: es de la otra asesora');
+  const h1 = r.body.histCuenta.find((h) => h.numero === 'HX-1');
+  assert.deepEqual(h1, { numero: 'HX-1', tipi: 'No contesta', fg: '2026-11-03 00:00:00', citas: 0 }, 'sin observación ni datos del caso');
+  assert.ok(!r.body.casos.some((c) => c._id === 'HX-1'), 'el caso sigue disponible: no aparece en su bandeja');
+  const b = await request(app).get(B + '/estado').set(H(await tokenFor('sta11_b', 'Clave#2026x')));
+  const hb = b.body.histCuenta.find((h) => h.numero === 'HX-7');
+  assert.deepEqual([hb.tipi, hb.citas], ['Agenda InConexion', 1]);
+  // El supervisor no recibe histCuenta (lo saca de los casos completos).
+  assert.equal((await request(app).get(B + '/estado').set(H(sup))).body.histCuenta, undefined);
+});
+
+test('STA14 app: «Gestionados» de la asesora suma S.histCuenta (y el supervisor no lo usa)', () => {
+  const fs = require('fs'), path = require('path');
+  const APP = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'js', 'orlant-sta-app.js'), 'utf8');
+  assert.match(APP, /c\._agente===agenteActual && c\._estado==='gestionado'\)\.concat\(S\.histCuenta\|\|\[\]\)\.sort\(/);
+  assert.match(APP, /S\.histCuenta = VISTA==='asesor' \? \(r\.histCuenta\|\|\[\]\)\.map\(/);
+});
+
 test('app: gestFiltradas suma la gestión del histórico de un caso disponible, a nombre de su asesora y en su fecha', () => {
   const fs = require('fs'), path = require('path'), vm = require('vm');
   const APP = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'js', 'orlant-sta-app.js'), 'utf8');
