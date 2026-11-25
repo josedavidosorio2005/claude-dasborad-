@@ -193,7 +193,7 @@
             <h3>Registro de eventos</h3>
             <div class="header-actions">
               <div class="search-bar"><span style="color:var(--c-text-muted)" aria-hidden="true"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-search"></use></svg></span><input type="text" id="hist-search" aria-label="Buscar en el historial" placeholder="Buscar..." oninput="filterHist()"></div>
-              <select class="hist-filter-sel" id="hist-filter" aria-label="Filtrar por tipo de evento" onchange="filterHist()">
+              <select class="hist-filter-sel" id="hist-filter" aria-label="Filtrar por tipo de evento" onchange="filterHistServidor()">
                 <option value="">Todos los eventos</option>
                 <option value="CREADO">Usuario creado</option>
                 <option value="EDITADO">Usuario editado</option>
@@ -238,9 +238,12 @@
                 <option value="GH_PERSONAL_EDIT">Gestión Humana: persona editada</option>
                 <option value="GH_PERSONAL_DEL">Gestión Humana: persona eliminada</option>
               </select>
+              <label class="hist-fecha">Desde <input type="date" class="hist-filter-sel" id="hist-desde" onchange="filterHistServidor()"></label>
+              <label class="hist-fecha">Hasta <input type="date" class="hist-filter-sel" id="hist-hasta" onchange="filterHistServidor()"></label>
               <button class="btn-secondary" id="hist-export-btn" onclick="exportHistorial()" title="Descargar el historial en Excel"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-download"></use></svg> Descargar</button>
             </div>
           </div>
+          <div class="hist-aviso hidden" id="hist-aviso" role="status"></div>
           <div class="table-wrap">
             <table><thead><tr>
               <th>Fecha y Hora</th><th>Usuario afectado</th><th>Rol</th>

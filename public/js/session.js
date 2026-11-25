@@ -53,7 +53,7 @@ async function doLogin() {
 async function _entrarTrasLogin(data) {
   if (data.user.isMasterAdmin) {
     currentUser = null; // null = admin maestro
-    await loadDashboardClientes(); await loadData(); await loadHist(); await loadSeedDemoEstado();
+    await loadDashboardClientes(); await loadData(); await loadHistTotal(); await loadSeedDemoEstado(); // 25/11: el Historial se pide al abrir su pestaña
     if(typeof cargarAlertasSeguridad==='function') await cargarAlertasSeguridad();
     enterUserDashboard(); // Fase 357 (B): menú único de tarjetas («Administración» lleva al panel)
     if(typeof calReiniciarSesion === 'function') calReiniciarSesion(); // Fase 365: Calidad sin datos del usuario anterior
@@ -71,7 +71,7 @@ async function _entrarTrasLogin(data) {
   // enterAdminPanel abajo) -- esto solo evita la peticion que de todas
   // formas iba a fallar.
   var puedeVerHistorial = data.user.rol === 'ADMIN';
-  await loadDashboardClientes(); await loadData(); if (puedeVerHistorial) await loadHist(); await loadSeedDemoEstado();
+  await loadDashboardClientes(); await loadData(); if (puedeVerHistorial) await loadHistTotal(); await loadSeedDemoEstado(); // 25/11: el Historial se pide al abrir su pestaña
   if (puedeVerHistorial && typeof cargarAlertasSeguridad==='function') await cargarAlertasSeguridad();
   var found = users.find(function(x){ return x.id === data.user.id; });
   // GET /users filtra perms a {} para quien no administra usuarios/permisos
@@ -317,7 +317,7 @@ function doLogout(){
   if(typeof calReiniciarSesion === 'function') calReiniciarSesion(); // Fase 365: plantillas de Calidad del usuario anterior
   if(typeof ticketsAlSalir === 'function') ticketsAlSalir(); // Fase 356
   if(typeof cerrarVentanasAbiertas === 'function') cerrarVentanasAbiertas(); // Fase 362: toda ventana abierta (Calidad, etc.)
-  currentUser=null; authToken=null; users=[]; historial=[];
+  currentUser=null; authToken=null; users=[]; historial=[]; historialTotal=null; historialInfo={ total: 0, totalFiltrado: 0, limite: 5000, recortado: false };
   seedDemoActivo=false; renderSeedDemoBanner();
   hideAllPages();
   document.getElementById('login-page').style.display='flex';
