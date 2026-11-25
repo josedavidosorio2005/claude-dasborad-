@@ -114,7 +114,7 @@ function efectoEstado(r, nuevoEstado) {
   return null;
 }
 // Aplica un Estado nuevo a una fila existente (dato de la base + gestión). Devuelve { cambio, efecto } o null.
-function aplicarEstado(db, r, nuevoEstado, hoy, origen) {
+function aplicarEstado(db, r, nuevoEstado, hoy, origen, por) {
   const d = JSON.parse(r.datos);
   const antes = String(d['Estado'] == null ? '' : d['Estado']).trim();
   const nuevo = String(nuevoEstado == null ? '' : nuevoEstado).trim();
@@ -122,6 +122,7 @@ function aplicarEstado(db, r, nuevoEstado, hoy, origen) {
   const ef = efectoEstado(r, nuevo);
   if (!cambio && !ef) return null;
   const h = { fecha: hoy, de: antes, a: nuevo || antes, origen };
+  if (por) h.por = String(por).slice(0, 120); // quién lo hizo (líder o administrador), nunca la asesora
   if (ef && ef.sale) { h.sale = true; if (ef.agenteAntes) h.agente = ef.agenteAntes; }
   if (ef && ef.vuelve) h.vuelve = true;
   const hist = (r.hist ? JSON.parse(r.hist) : []).concat([h]);
@@ -228,7 +229,7 @@ function cargar(db, { archivo, filas, columnas, archivoB64, por }) {
         const nuevoEst = String(o['Estado'] == null ? '' : o['Estado']).trim();
         if (ex && !vistos.has(k) && conEstado && nuevoEst) {
           // Pedido de Edwin (25/11): también sin cambio de Estado, para que la regla se cumpla con la base del día.
-          const a = aplicarEstado(db, ex, nuevoEst, hoy, 'carga');
+          const a = aplicarEstado(db, ex, nuevoEst, hoy, 'carga', por);
           if (a && a.cambio) {
             const clave = `${a.antes || '(vacío)'} → ${a.nuevo}`;
             res.cambios[clave] = (res.cambios[clave] || 0) + 1;
@@ -259,7 +260,7 @@ function cargar(db, { archivo, filas, columnas, archivoB64, por }) {
 // filas: [{ numero, estado }] leídas por el navegador. Cada fila busca su caso por Numero Autorizacion y le
 // cambia el Estado (con la regla de arriba). Las que no existan se reportan y NO se crean.
 const MAX_NO_EXISTEN = 500;
-function actualizarEstados(db, { archivo, filas }) {
+function actualizarEstados(db, { archivo, filas, por }) {
   asegurarTablas(db);
   const nombre = String(archivo || '').trim().slice(0, 200);
   if (!nombre) throw new StaError(400, 'Falta el nombre del archivo');
@@ -283,7 +284,7 @@ function actualizarEstados(db, { archivo, filas }) {
       vistos.add(k);
       const r = leer.get(CAMPANA, k);
       if (!r) { res.noExisten++; if (res.noExistenLista.length < MAX_NO_EXISTEN) res.noExistenLista.push(k); continue; }
-      const a = aplicarEstado(db, r, est, hoy, 'actualizar');
+      const a = aplicarEstado(db, r, est, hoy, 'actualizar', por);
       if (!a) { res.sinCambio++; continue; }
       res.actualizados++;
       if (a.cambio) { const clave = `${a.antes || '(vacío)'} → ${a.nuevo}`; res.cambios[clave] = (res.cambios[clave] || 0) + 1; }
@@ -294,6 +295,95 @@ function actualizarEstados(db, { archivo, filas }) {
   res.mensaje = `${res.actualizados} casos actualizados, ${res.sinCambio} sin cambio`
     + (res.salieron ? `; ${res.salieron} salieron de la gestión` : '') + (res.volvieron ? `; ${res.volvieron} volvieron a quedar disponibles` : '')
     + (res.noExisten ? `; ${res.noExisten} no existen en la base (no se crearon)` : '');
+  return res;
+}
+
+// ── Pedido de Edwin (25/11/2026, 2:45 p. m.): histórico con gestión (STA - SEPTIEMBRE / OCTUBRE / NOVIEMBRE) ──
+// filas: los campos de la base más { codificacion, observacion, fechaGestion: 'AAAA-MM-DD', asesor: nombre }.
+// Reglas (decisión del usuario, 26/11):
+//  - una autorización que ya existe se rechaza (sin duplicados). Se cargan en orden NOVIEMBRE → OCTUBRE →
+//    SEPTIEMBRE, así gana la más reciente; dentro de un archivo, la de fecha de gestión más reciente;
+//  - «En proceso» / «Sin contacto»: quedan disponibles (sin asesora) y la gestión vieja va a «Gestiones
+//    anteriores» (no suma en las gráficas);
+//  - otro estado: entran GESTIONADOS a nombre de su asesora, en su fecha y sin hora (00:00:00), y suman en las
+//    gráficas con su estado; «Agenda InConexion» (efectiva) cuenta 1 cita;
+//  - el asesor se reconoce por el nombre de su usuario ASESOR de ORLANT; si no coincide, la fila no entra;
+//  - todo o nada por archivo, con su propio registro de carga (se puede eliminar como cualquier carga);
+//  - dryRun: hace las mismas cuentas sin escribir nada.
+const RE_DIA_HIST = /^\d{4}-\d{2}-\d{2}$/;
+function cargarHistorico(db, { archivo, filas, por, dryRun }) {
+  asegurarTablas(db);
+  const nombre = String(archivo || '').trim().slice(0, 200);
+  if (!nombre) throw new StaError(400, 'Falta el nombre del archivo');
+  if (!Array.isArray(filas) || !filas.length) throw new StaError(400, 'El archivo está vacío');
+  if (filas.length > MAX_FILAS) throw new StaError(400, 'Máximo ' + MAX_FILAS + ' filas por carga');
+  const c = config(db);
+  const ef = new Set(c.efectivas);
+  const tipisNorm = new Map(c.tipis.map((t) => [normHeader(t), t]));
+  const ases = new Map();
+  db.prepare("SELECT id, nombre, user FROM users WHERE rol = 'ASESOR' AND asesorCampana = ?").all(CAMPANA)
+    .forEach((u) => { ases.set(normHeader(u.nombre), u.id); if (u.user) ases.set(normHeader(u.user), u.id); });
+  const txt = (v, n) => (typeof v === 'string' || typeof v === 'number' ? String(v).trim().slice(0, n) : '');
+  const res = { leidas: 0, nuevos: 0, disponibles: 0, gestionados: 0, citas: 0, existen: 0, repetidasArchivo: 0, sinNum: 0, sinFecha: 0,
+    sinAsesor: 0, asesoresSinUsuario: {}, codificacionDesconocida: {}, porEstado: {}, dryRun: !!dryRun };
+  // 1) Filas válidas; dentro del archivo, la de fecha de gestión más reciente.
+  const elegidas = new Map();
+  for (const f of filas) {
+    if (!f || typeof f !== 'object' || Array.isArray(f)) continue;
+    res.leidas++;
+    const k = normClave(txt(f['Numero Autorizacion'], 80));
+    if (!k) { res.sinNum++; continue; }
+    const fg = txt(f.fechaGestion, 10);
+    if (!RE_DIA_HIST.test(fg)) { res.sinFecha++; continue; }
+    const prev = elegidas.get(k);
+    if (prev) { res.repetidasArchivo++; if (prev.fg >= fg) continue; }
+    elegidas.set(k, { f, fg });
+  }
+  const hoy = ahora();
+  const quien = String(por || '').slice(0, 120);
+  const existe = db.prepare('SELECT 1 FROM sta_casos WHERE campana = ? AND numero = ?');
+  const trabajo = () => {
+    let cargaId = null;
+    if (!dryRun) {
+      cargaId = db.prepare('INSERT INTO sta_cargas (campana, fecha, archivo, cargadoPorNombre, createdAt) VALUES (?,?,?,?,?)')
+        .run(CAMPANA, hoy, 'Histórico · ' + nombre, quien || null, new Date().toISOString()).lastInsertRowid;
+    }
+    const ins = db.prepare('INSERT INTO sta_casos (campana, numero, datos, cargaId, cargaFecha, agenteId, asignado, estado, tipi, obs, fg, citas, prev, hist) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)');
+    for (const [k, { f, fg }] of elegidas) {
+      if (existe.get(CAMPANA, k)) { res.existen++; continue; }
+      const asesorTxt = txt(f.asesor, 120);
+      const agenteId = ases.get(normHeader(asesorTxt));
+      if (!agenteId) { res.sinAsesor++; res.asesoresSinUsuario[asesorTxt || '(vacío)'] = (res.asesoresSinUsuario[asesorTxt || '(vacío)'] || 0) + 1; continue; }
+      const codTxt = txt(f.codificacion, 200);
+      const tipi = tipisNorm.get(normHeader(codTxt)) || codTxt;
+      if (codTxt && !tipisNorm.has(normHeader(codTxt))) res.codificacionDesconocida[codTxt] = (res.codificacionDesconocida[codTxt] || 0) + 1;
+      const d = {};
+      for (const col of CAMPOS) d[col] = txt(f[col], MAX_TEXTO);
+      d['Numero Autorizacion'] = k;
+      const estadoBase = d['Estado'];
+      const obs = txt(f.observacion, MAX_OBS);
+      const fgHora = fg + ' 00:00:00';
+      const citas = ef.has(tipi) ? 1 : 0;
+      const hist = JSON.stringify([{ fecha: hoy, de: '', a: estadoBase, origen: 'historico', por: quien }]);
+      res.porEstado[estadoBase || '(vacío)'] = (res.porEstado[estadoBase || '(vacío)'] || 0) + 1;
+      res.nuevos++;
+      if (esGestionable(estadoBase)) {
+        res.disponibles++;
+        const prev = JSON.stringify([{ tipi, obs, fg: fgHora, citas, agente: agenteId, historico: true }]);
+        if (!dryRun) ins.run(CAMPANA, k, JSON.stringify(d), cargaId, hoy, null, '', 'pendiente', '', '', '', 0, prev, hist);
+      } else {
+        res.gestionados++; res.citas += citas;
+        if (!dryRun) ins.run(CAMPANA, k, JSON.stringify(d), cargaId, hoy, agenteId, fgHora, 'gestionado', tipi, obs, fgHora, citas, null, hist);
+      }
+    }
+    if (!dryRun) {
+      db.prepare('UPDATE sta_cargas SET leidas = ?, nuevos = ?, dup = ?, sinNum = ? WHERE id = ?').run(res.leidas, res.nuevos, res.existen + res.repetidasArchivo, res.sinNum, cargaId);
+      res.cargaId = Number(cargaId);
+    }
+  };
+  db.transaction(trabajo)();
+  res.mensaje = (dryRun ? 'Revisión (no se cargó nada): ' : '') + `${res.nuevos} casos nuevos (${res.gestionados} gestionados, ${res.disponibles} disponibles), ${res.existen} ya existían (rechazados)`
+    + (res.repetidasArchivo ? `, ${res.repetidasArchivo} repetidas en el archivo` : '') + (res.sinAsesor ? `, ${res.sinAsesor} sin asesora reconocida` : '');
   return res;
 }
 
@@ -563,5 +653,5 @@ module.exports = {
   CAMPANA, CAMPOS, CAMPOS_FECHA, TIPIS_BASE, HIST_ASESOR, StaError, asegurarTablas, ahora, normClave, esVolver,
   config, cambiarTipis, asesores, esAsesorSta, cargar, cargas, archivoDeCarga, borrarCarga, disponiblesFiltrados,
   asignar, devolver, pasar, codificar, avisoRellamada, estadoSupervisor, estadoAsesor, resumen, estadoCliente, CAMPOS_CLIENTE, regresarGestionados,
-  ESTADOS_GESTION, esGestionable, actualizarEstados,
+  ESTADOS_GESTION, esGestionable, actualizarEstados, cargarHistorico,
 };

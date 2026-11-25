@@ -72,8 +72,15 @@ router.post(BASE + '/cargas', requireActor, soloGestor, h((req, res) => {
 // Pedido de Edwin (25/11/2026): «Actualizar estado» (Numero Autorizacion + Estado), solo casos existentes.
 router.post(BASE + '/estados', requireActor, soloGestor, h((req, res) => {
   const b = req.body || {};
-  const r = STA.actualizarEstados(db, { archivo: b.archivo, filas: b.filas });
+  const r = STA.actualizarEstados(db, { archivo: b.archivo, filas: b.filas, por: actorLabel(req.actor) });
   log(req, 'STA_ESTADOS', `${STA.CAMPANA} · ${r.leidas} filas: ${r.actualizados} actualizados, ${r.sinCambio} sin cambio, ${r.salieron} salieron de la gestión, ${r.volvieron} volvieron, ${r.noExisten} no existen`);
+  res.json(r);
+}));
+// Pedido de Edwin (25/11/2026, 2:45 p. m.): histórico con gestión. dryRun = revisar sin escribir.
+router.post(BASE + '/historico', requireActor, soloGestor, h((req, res) => {
+  const b = req.body || {};
+  const r = STA.cargarHistorico(db, { archivo: b.archivo, filas: b.filas, por: actorLabel(req.actor), dryRun: b.dryRun === true });
+  if (!r.dryRun) log(req, 'STA_HISTORICO', `${STA.CAMPANA} · ${r.leidas} filas: ${r.nuevos} nuevos (${r.gestionados} gestionados, ${r.disponibles} disponibles), ${r.existen} ya existían, ${r.sinAsesor} sin asesora`);
   res.json(r);
 }));
 router.get(BASE + '/cargas', requireActor, soloGestor, h((req, res) => res.json({ cargas: STA.cargas(db) })));

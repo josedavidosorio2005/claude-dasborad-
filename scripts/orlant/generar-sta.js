@@ -115,6 +115,20 @@ M(`onclick="document.getElementById('archivo').click()"`, `onclick="STAapp.$('ar
 // que pide la carga (CAMPOS, los mismos que exige server/orlant-sta.js), sin filas de ejemplo.
 M(`        <input type="file" id="archivo" accept=".xlsx,.xls,.csv" class="hidden">`, `        <div class="fila sta-plantilla" style="margin-top:10px;align-items:center"><span class="muted" style="flex:1;min-width:200px">¿Primera vez? Descarga la plantilla con las 8 columnas que pide la carga.</span><button class="btn sm" type="button" onclick="descargarPlantilla()">Descargar plantilla</button></div>
         <input type="file" id="archivo" accept=".xlsx,.xls,.csv" class="hidden">`);
+// Pedidos de Edwin (25/11/2026, 2:45 p. m.): filtro por mes (arranca en el mes actual) junto a las fechas, y en
+// Gestionados el cuadro «Cambios de estado» con quién hizo cada cambio (buscable por Numero Autorizacion).
+M(`<label class="f">Gestión desde<input type="date" class="inp" id="grD" onchange="pintarGraficas()">`,
+  `<label class="f">Mes<select class="inp" id="grMes" aria-label="Mes de gestión" onchange="elegirMes('gr')"></select></label>
+        <label class="f">Gestión desde<input type="date" class="inp" id="grD" onchange="pintarGraficas()">`);
+M(`<label class="f">Desde<input type="date" class="inp" id="gsD" onchange="pintarGestSup()">`,
+  `<label class="f">Mes<select class="inp" id="gsMes" aria-label="Mes de gestión" onchange="elegirMes('gs')"></select></label>
+        <label class="f">Desde<input type="date" class="inp" id="gsD" onchange="pintarGestSup()">`);
+M(`      <div id="gsTabla"></div>`, `      <div id="gsTabla"></div>
+      <div class="card sta-cambios" style="margin-top:16px">
+        <h3>Cambios de estado</h3>
+        <p class="muted" style="margin-top:0;font-size:12px">Lo que cambió «Actualizar estado» o la carga de la base, con quién lo hizo (no la asesora). El buscador de arriba filtra por Numero Autorizacion.</p>
+        <div id="gsCambios"></div>
+      </div>`);
 // Pedido de Edwin (25/11/2026): «Cargar base de datos» y «Actualizar estado» en dos cuadros lado a lado.
 M(`      <div class="card">
         <h3>Cargar base de datos</h3>`, `      <div class="sta-cargas-dos">
@@ -133,6 +147,15 @@ M(`        <div id="cargaMsg"></div>
         <input type="file" id="archivoEst" accept=".xlsx,.xls,.csv" class="hidden" aria-label="Archivo para actualizar estado">
         <div id="estadoMsg"></div>
       </div>
+      </div>
+      <div class="card sta-historico">
+        <h3>Cargar histórico (con gestión)</h3>
+        <p class="muted" style="margin-top:0">Para los archivos de meses anteriores que ya traen la gestión: los campos de la base más <b>CODIFICACION</b>, <b>OBSERVACION</b>, <b>FECHA GESTION</b> (o FECHA) y <b>ASESOR</b>. Cárgalos del más reciente al más antiguo: una autorización que ya existe se rechaza. Primero se muestra la revisión; nada se guarda hasta que confirmes.</p>
+        <div class="drop" id="dropHist" onclick="STAapp.$('archivoHist').click()">
+          <b>Arrastra aquí el Excel</b> o haz clic para seleccionarlo<br><span class="muted">.xlsx, .xls o .csv</span>
+        </div>
+        <input type="file" id="archivoHist" accept=".xlsx,.xls,.csv" class="hidden" aria-label="Archivo del histórico">
+        <div id="histMsg"></div>
       </div>`);
 M('<input class="inp" id="nuevaTipi" placeholder="Nueva tipificación"', '<input class="inp" id="nuevaTipi" aria-label="Nueva tipificación" placeholder="Nueva tipificación"');
 // Pedido de Edwin (23/11/2026): «Regresar a disponibles» en Gestionados (por codificación o marcados).
@@ -246,6 +269,7 @@ funcion('descargarRespaldo', '');
 // Pedido de Edwin (23/11/2026): Gestionados con casillas y «Regresar a disponibles». Misma tabla de
 // Edwin (últimas 20, «Descargar todas»), más una columna de casillas y «marcar todos los mostrados».
 funcion('pintarGestSup', `function pintarGestSup(){
+  pintarCambios();
   const l=gestSupLista(), tot=Object.values(S.casos).filter(c=>c._estado==='gestionado').length;
   const max=20;
   const tis=[...new Set([...S.tipis,...Object.values(S.casos).filter(c=>c._estado==='gestionado'&&c._tipi).map(c=>c._tipi)])];
@@ -257,7 +281,7 @@ funcion('pintarGestSup', `function pintarGestSup(){
   if(!l.length){ $('gsTabla').innerHTML='<div class="card vacio">No hay gestiones para mostrar.</div>'; return; }
   const vis=l.slice(0,max), todos=vis.every(c=>selGest.has(c._id));
   $('gsTabla').innerHTML=\`<div class="tw"><table><thead><tr><th><input type="checkbox" aria-label="Marcar todos los mostrados" \${todos?'checked':''} onchange="marcarGestTodos(this.checked)"></th><th>Fecha</th><th>Hora</th><th>Numero Autorizacion</th><th>Codificación</th><th>Citas</th><th>Agente</th></tr></thead><tbody>
-    \${vis.map(c=>\`<tr><td><input type="checkbox" aria-label="Marcar \${esc(c['Numero Autorizacion'])}" \${selGest.has(c._id)?'checked':''} onchange="marcarGest(\${jsArg(c._id)},this.checked)"></td><td class="nw">\${verFecha(c._fg)}</td><td class="nw">\${c._fg.slice(11,19)}</td><td class="nw">\${esc(c['Numero Autorizacion'])}</td><td><span class="tag \${S.efectivas.includes(c._tipi)?'v':''}">\${esc(c._tipi)}</span></td><td>\${c._citas||''}</td><td>\${esc(nombreAgente(c._agente))}</td></tr>\`).join('')}
+    \${vis.map(c=>\`<tr><td><input type="checkbox" aria-label="Marcar \${esc(c['Numero Autorizacion'])}" \${selGest.has(c._id)?'checked':''} onchange="marcarGest(\${jsArg(c._id)},this.checked)"></td><td class="nw">\${verFecha(c._fg)}</td><td class="nw">\${c._fg.slice(11,19)==='00:00:00'?'':c._fg.slice(11,19)}</td><td class="nw">\${esc(c['Numero Autorizacion'])}</td><td><span class="tag \${S.efectivas.includes(c._tipi)?'v':''}">\${esc(c._tipi)}</span></td><td>\${c._citas||''}</td><td>\${esc(nombreAgente(c._agente))}</td></tr>\`).join('')}
   </tbody></table></div>\${l.length>max?\`<div class="fila" style="margin-top:10px"><span class="muted">Mostrando las últimas \${max} de \${l.length.toLocaleString('es-CO')}.</span><button class="btn pri sm" onclick="exportarGestionados()">Descargar todas (Excel)</button></div>\`:''}\`;
 }
 const selGest=new Set();
@@ -458,6 +482,86 @@ function descargarPlantillaEstado(){
   const ws=XLSX.utils.aoa_to_sheet([['Numero Autorizacion','Estado']]); ws['!cols']=[{wch:22},{wch:18}];
   const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Actualizar estado'); XLSX.writeFile(wb,'Plantilla_actualizar_estado_STA.xlsx');
 }
+function exportarExcel(){`);
+
+// 8e) Pedidos de Edwin (25/11/2026, 2:45 p. m.): «Mes» (arranca en el mes actual; llena Desde/Hasta) y trazabilidad.
+L("function limpiarGr(){ ['grAg','grEnt','grServ','grD','grH'].forEach(id=>$(id).value=''); pintarGraficas(); }",
+  "function limpiarGr(){ ['grAg','grEnt','grServ','grD','grH','grMes'].forEach(id=>$(id).value=''); pintarGraficas(); }");
+L("function llenarSelects(){", `const NOMBRE_MES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+function mesActualSta(){ return ahora().slice(0,7); }
+function rangoMes(m){ const [y,mm]=m.split('-').map(Number); const fin=new Date(y,mm,0).getDate(); return [m+'-01', m+'-'+p2(fin)]; }
+function mesesConGestion(){ const s=new Set([mesActualSta()]); Object.values(S.casos).forEach(c=>{ if(c._fg) s.add(c._fg.slice(0,7)); (c._prev||[]).forEach(g=>{ if(g&&g.fg) s.add(String(g.fg).slice(0,7)); }); }); return [...s].filter(m=>/^[0-9]{4}-[0-9]{2}$/.test(m)).sort().reverse(); }
+const mesIniciado={};
+function llenarMeses(pref){ const sel=$(pref+'Mes'); if(!sel) return; const v=mesIniciado[pref]?sel.value:mesActualSta();
+  sel.innerHTML=mesesConGestion().map(m=>\`<option value="\${m}">\${NOMBRE_MES[Number(m.slice(5,7))-1]} \${m.slice(0,4)}</option>\`).join('')+'<option value="">Todos los meses</option>';
+  sel.value=v; if(!mesIniciado[pref]){ mesIniciado[pref]=true; ponerRango(pref, v); } }
+function ponerRango(pref, m){ const r=m?rangoMes(m):['','']; $(pref+'D').value=r[0]; $(pref+'H').value=r[1]; }
+function elegirMes(pref){ ponerRango(pref, $(pref+'Mes').value); if(pref==='gr') pintarGraficas(); else pintarGestSup(); }
+function llenarSelects(){
+  llenarMeses('gr'); llenarMeses('gs');`);
+// Cambios de estado: del historial de cada caso (server/orlant-sta.js, aplicarEstado), con quién lo hizo.
+L("function gestSupLista(){", `function cambiosEstado(){
+  const q=$('gsQ').value.trim().toLowerCase(), d=$('gsD').value, h=$('gsH').value, out=[];
+  Object.values(S.casos).forEach(c=>(c._hist||[]).forEach(x=>{ if(!x||!x.fecha||!(x.origen==='actualizar'||x.origen==='carga')) return;
+    const f=String(x.fecha).slice(0,10); if((d&&f<d)||(h&&f>h)) return;
+    if(q&&!String(c['Numero Autorizacion']).toLowerCase().includes(q)) return;
+    out.push({c,x}); }));
+  return out.sort((a,b)=>String(b.x.fecha).localeCompare(String(a.x.fecha)));
+}
+function pintarCambios(){
+  const l=cambiosEstado(), max=50, box=$('gsCambios'); if(!box) return;
+  if(!l.length){ box.innerHTML='<p class="muted" style="margin:0">No hay cambios de estado con estos filtros.</p>'; return; }
+  box.innerHTML=\`<div class="tw"><table><thead><tr><th>Fecha</th><th>Hora</th><th>Numero Autorizacion</th><th>Cambio</th><th>Efecto</th><th>Hecho por</th><th>Cómo</th></tr></thead><tbody>
+    \${l.slice(0,max).map(({c,x})=>\`<tr><td class="nw">\${verFecha(x.fecha)}</td><td class="nw">\${String(x.fecha).slice(11,19)}</td><td class="nw">\${esc(c['Numero Autorizacion'])}</td><td>\${esc(x.de||'(vacío)')} → \${esc(x.a||'')}</td><td>\${x.sale?'Salió de la gestión'+(x.agente?' (era de '+esc(nombreAgente(String(x.agente)))+')':''):x.vuelve?'Volvió a disponibles':'—'}</td><td>\${esc(x.por||'—')}</td><td>\${x.origen==='actualizar'?'Actualizar estado':'Carga de la base'}</td></tr>\`).join('')}
+  </tbody></table></div>\${l.length>max?\`<p class="muted" style="margin:8px 0 0;font-size:12px">Se muestran los \${max} más recientes de \${l.length.toLocaleString('es-CO')}. Usa el buscador o las fechas para acotar.</p>\`:''}\`;
+}
+function gestSupLista(){`);
+
+// 8f) Pedido de Edwin (25/11/2026, 2:45 p. m.): histórico con gestión. Primero revisa (dryRun) y luego carga.
+L("$('archivo').addEventListener('change',e=>{ const f=e.target.files[0]; if(f) procesarCarga(f); e.target.value=''; });",
+  "$('archivo').addEventListener('change',e=>{ const f=e.target.files[0]; if(f) procesarCarga(f); e.target.value=''; });\n"
+  + "const dropHist=$('dropHist');\n"
+  + "['dragenter','dragover'].forEach(e=>dropHist.addEventListener(e,ev=>{ev.preventDefault();dropHist.classList.add('on');}));\n"
+  + "['dragleave','drop'].forEach(e=>dropHist.addEventListener(e,ev=>{ev.preventDefault();dropHist.classList.remove('on');}));\n"
+  + "dropHist.addEventListener('drop',ev=>{ const f=ev.dataTransfer.files[0]; if(f) revisarHistorico(f); });\n"
+  + "$('archivoHist').addEventListener('change',e=>{ const f=e.target.files[0]; if(f) revisarHistorico(f); e.target.value=''; });");
+L("function exportarExcel(){", `let histPendiente=null;
+async function revisarHistorico(file){
+  const box=$('histMsg'); histPendiente=null; box.innerHTML=\`<div class="msg warn">Leyendo \${esc(file.name)}…</div>\`;
+  let filas; try{ filas=await leerArchivo(file); }catch(e){ box.innerHTML=\`<div class="msg err">No se pudo leer el archivo: \${esc(e.message)}</div>\`; return; }
+  const hi=filas.findIndex(r=>r.some(h=>normHeader(h)==='numero autorizacion'));
+  if(hi<0){ box.innerHTML='<div class="msg err">No encontré la columna <b>Numero Autorizacion</b> en el archivo.</div>'; return; }
+  const enc=filas[hi].map(normHeader), col=(...ns)=>enc.findIndex(h=>ns.includes(h));
+  const iC=col('codificacion'), iO=col('observacion'), iF=col('fecha gestion','fecha'), iA=col('asesor');
+  const faltan=[[iC,'CODIFICACION'],[iF,'FECHA GESTION'],[iA,'ASESOR']].filter(([i])=>i<0).map(([,n])=>n);
+  if(faltan.length){ box.innerHTML=\`<div class="msg err">Faltan columnas de la gestión: <b>\${faltan.join(', ')}</b>.</div>\`; return; }
+  const base=CAMPOS.map(c=>[c,enc.indexOf(normHeader(c))]);
+  const objs=[];
+  for(let r=hi+1;r<filas.length;r++){ const f=filas[r]; if(!f || f.every(v=>v===''||v==null)) continue;
+    const o={}; base.forEach(([c,i])=>{ let v=i<0?'':f[i]; if(CAMPOS_FECHA.includes(c)) v=aFecha(v); else if(v instanceof Date) v=isoLocal(v); else v=typeof v==='string'?v.trim():v; o[c]=v; });
+    const fg=aFecha(f[iF]); o.fechaGestion=fg?String(fg).slice(0,10):''; o.codificacion=String(f[iC]??'').trim(); o.observacion=iO<0?'':(f[iO] instanceof Date?isoLocal(f[iO]).slice(0,10):String(f[iO]??'').trim()); o.asesor=String(f[iA]??'').trim();
+    objs.push(o); }
+  if(!objs.length){ box.innerHTML='<div class="msg err">El archivo no tiene filas.</div>'; return; }
+  box.innerHTML=\`<div class="msg warn">Revisando \${objs.length.toLocaleString('es-CO')} filas…</div>\`;
+  let R; try{ R=await API.historico(file.name, objs, true); }catch(e){ box.innerHTML=\`<div class="msg err">No se pudo revisar: \${esc(e.message)}</div>\`; return; }
+  histPendiente={ nombre:file.name, objs };
+  box.innerHTML=resumenHistorico(R)+(R.nuevos?\`<div class="fila" style="margin-top:8px"><button type="button" class="btn pri" onclick="STAapp.confirmarHistorico()">Cargar \${R.nuevos.toLocaleString('es-CO')} casos</button><button type="button" class="btn" onclick="STAapp.cancelarHistorico()">Cancelar</button></div>\`:'');
+}
+function resumenHistorico(R){
+  const lista=(o)=>Object.entries(o||{}).sort((a,b)=>b[1]-a[1]).map(([k,n])=>\`\${esc(k)}: <b>\${n}</b>\`).join(' · ');
+  return \`<div class="msg \${R.dryRun?'warn':'ok'}">\${esc(R.mensaje)}.</div>\`
+    + (Object.keys(R.porEstado||{}).length?\`<div class="msg ok" style="font-size:13px">Por estado: \${lista(R.porEstado)}. Citas (Agenda InConexion = 1): <b>\${R.citas}</b>.</div>\`:'')
+    + (R.sinAsesor?\`<div class="msg err">Asesoras sin usuario en la plataforma (no entran): \${lista(R.asesoresSinUsuario)}</div>\`:'')
+    + (Object.keys(R.codificacionDesconocida||{}).length?\`<div class="msg warn">Codificaciones que no están en la lista: \${lista(R.codificacionDesconocida)}</div>\`:'')
+    + (R.sinNum||R.sinFecha?\`<div class="msg warn">\${R.sinNum?R.sinNum+' sin número':''}\${R.sinNum&&R.sinFecha?' · ':''}\${R.sinFecha?R.sinFecha+' sin fecha de gestión':''}.</div>\`:'');
+}
+async function confirmarHistorico(){
+  if(!histPendiente) return; const box=$('histMsg'), p=histPendiente; histPendiente=null;
+  box.innerHTML=\`<div class="msg warn">Cargando \${esc(p.nombre)}…</div>\`;
+  let R; try{ R=await API.historico(p.nombre, p.objs, false); }catch(e){ box.innerHTML=\`<div class="msg err">No se pudo cargar: \${esc(e.message)}</div>\`; return; }
+  await refrescar(); pintarBase(); box.innerHTML=resumenHistorico(R);
+}
+function cancelarHistorico(){ histPendiente=null; $('histMsg').innerHTML='<div class="msg warn">No se cargó nada.</div>'; }
 function exportarExcel(){`);
 
 // 9) Manejadores en línea (onclick, onchange, oninput, onkeydown): sus llamadas pasan a STAapp.<función>.

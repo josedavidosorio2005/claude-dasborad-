@@ -22889,3 +22889,39 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
 - **Revisión local** (base de demostración y citas inventadas de octubre y noviembre), a 375, 768 y 1440 px, en claro y oscuro:
   - el filtro arranca en noviembre (90 citas); octubre da 120 y «Todos», 210;
   - 0 errores de consola y sin desborde.
+
+## Gestión STA: trazabilidad de «Actualizar estado», filtro por mes y carga del histórico (v1.274.0, 2026-11-26)
+
+- **Pedidos de Edwin** (llamada del 25/11, 2:45 p. m.). La app cambia solo por `scripts/orlant/generar-sta.js`.
+  1. **Trazabilidad:** cada cambio de estado («Actualizar estado» o la carga de la base) guarda en el historial del caso **quién lo hizo** (`por`: líder o administrador, nunca la asesora). En «Gestionados», el cuadro «Cambios de estado» los lista con fecha, número, cambio, efecto, quién y cómo, filtrado por el buscador de autorización y las fechas.
+  2. **Filtro «Mes»** en «Gráficas» y en «Gestionados», junto a las fechas. Arranca en el mes actual, llena «Desde» y «Hasta», ofrece los meses con gestión y «Todos los meses».
+  3. **Histórico con gestión:** `POST /api/orlant/sta/historico` (solo gestores; `dryRun` revisa sin escribir) y el cuadro «Cargar histórico (con gestión)», que primero muestra la revisión y carga al confirmar. Decisiones del usuario (26/11):
+     - gana la más reciente: orden noviembre → octubre → septiembre, se rechaza lo que ya existe y, dentro del archivo, gana la fecha de gestión más reciente;
+     - «En proceso» y «Sin contacto» quedan **disponibles**, con la gestión vieja en «Gestiones anteriores»: no suman;
+     - el resto entra **gestionado a nombre de su asesora**, en su fecha sin hora, y suma en las gráficas con su estado;
+     - «Agenda InConexion» cuenta **1 cita**;
+     - la asesora se reconoce por el nombre de su usuario de ORLANT;
+     - cada archivo es una carga propia, que se puede eliminar.
+- **Revisión en local, solo lectura** (archivos de Edwin fuera del repo; solo conteos):
+  - noviembre 444 filas, octubre 1.757 y septiembre 4.933;
+  - los 20 asesores coinciden con usuarias de ORLANT, y las 13 codificaciones existen en producción.
+- **Dry-run exacto** (copia local con los 527 casos, las asesoras y las codificaciones de producción, leídos en solo lectura):
+
+  | Archivo | Entran | Gestionados | Disponibles | Citas | Ya existían | Repetidas en el archivo |
+  |---|---|---|---|---|---|---|
+  | Noviembre | 345 | 0 | 345 | 0 | 99 | 0 |
+  | Octubre | 1.499 | 1.132 | 367 | 125 | 226 | 32 |
+  | Septiembre | 4.399 | 4.009 | 390 | 1.348 | 496 | 37 |
+
+  - En total entran **6.243** casos y la base queda con 6.770.
+  - En septiembre también queda fuera 1 fila sin fecha de gestión.
+  - **Ojo:** en noviembre todos los casos están «En proceso» o «Sin contacto», así que quedan disponibles y su gestión de noviembre no suma.
+- **Pruebas:**
+  - `faseSTA10-trazabilidad-mes.test.js` (3);
+  - `faseSTA11-historico-gestion.test.js` (6);
+  - la matriz de acceso declara `/historico`.
+- **Revisión local** (base de demostración y datos inventados), a 375, 768 y 1440 px, en claro y oscuro:
+  - el mes arranca en noviembre;
+  - «Cambios de estado» muestra quién lo hizo y el buscador filtra;
+  - 0 errores de consola y sin desborde.
+- **Pendiente:** la carga en producción espera el «OK cargar» del usuario, con un respaldo de menos de 24 horas.

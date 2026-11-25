@@ -7,6 +7,17 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.274.0 — Noviembre 2026
+
+**ORLANT, Gestión STA: quién cambió cada estado, filtro por mes y carga del histórico (pedidos de Edwin, 25/11).**
+
+- En «Gestionados» hay un cuadro nuevo, «Cambios de estado». Muestra cada cambio hecho con «Actualizar estado» o con la carga de la base, con la fecha y quién lo hizo (la líder o el administrador, no la asesora). El buscador de autorización también lo filtra.
+- En «Gráficas» y en «Gestionados» hay un filtro «Mes» al lado de las fechas. Arranca en el mes actual, y también permite elegir otro mes o ver todos.
+- Nuevo cuadro «Cargar histórico (con gestión)» para los archivos de meses anteriores que traen codificación, observación, fecha de gestión y asesor. Primero muestra la revisión y solo carga cuando se confirma.
+  - Una autorización que ya existe se rechaza.
+  - Los casos «En proceso» y «Sin contacto» quedan disponibles para asignar.
+  - Los demás entran gestionados a nombre de su asesora, en su fecha, y suman en las gráficas con su estado.
+
 ## v1.273.0 — Noviembre 2026
 
 **ORLANT, Equidad profesionales por mes (pedido de Edwin, 27/11).**
