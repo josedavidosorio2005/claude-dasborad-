@@ -7,6 +7,14 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.267.3 — Noviembre 2026
+
+**Más fácil de usar con el teclado y con lector de pantalla.**
+
+- En el Historial, la tabla se puede mover con las flechas del teclado en el celular y en tablet.
+- La tarjeta «Sugerencias / Tickets» del menú se anuncia con su mismo texto, y dice cuántos tickets nuevos hay.
+- Se quitó un resto del Inventario anterior que ya no se usaba.
+
 ## v1.267.2 — Noviembre 2026
 
 **«Ver como» ocupa menos en el celular.**
