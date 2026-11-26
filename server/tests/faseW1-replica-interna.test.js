@@ -12,6 +12,9 @@ const { test, before } = require('node:test');
 const assert = require('node:assert/strict');
 const { request, app, db, tokenFor, MASTER_PASSWORD } = require('./helpers');
 const dbMod = require('../db');
+// Fase W10: la réplica ya no se crea al arrancar (se borró de producción); la prueba la arma con la misma función
+// para seguir probando la protección de las campañas internas.
+dbMod.crearReplicaMobilizeApi();
 const { generarLayout, PERFILES_ACTUALES } = require('../plantillas-cliente');
 
 const R = 'MOBILIZE PRUEBAS API';
@@ -141,7 +144,8 @@ test('listas y enlace directo: solo el administrador la ve; quien gestiona usuar
   const la = (await request(app).get('/api/dashboard/clientes').set(H(admin))).body;
   // Fase W9 (26/11): retirada de los tableros (dashboard = 0): ya no está en listaClientes (las tarjetas), pero
   // su configuración y su registro (interno) siguen, y el administrador la puede abrir.
-  assert.ok(la.clientes.includes(R) && !la.listaClientes.includes(R) && la.registro.some((c) => c.nombre === R && c.parametros.interno === true));
+  // Fase W10: aquí la arma la prueba después de las migraciones (la W9 no la alcanza), así que sigue en los tableros.
+  assert.ok(la.clientes.includes(R) && la.registro.some((c) => c.nombre === R && c.parametros.interno === true));
   assert.ok(!la.campanasCalidad.includes(R), 'sin Calidad');
   assert.equal((await request(app).get('/api/dashboard/' + encodeURIComponent(R)).set(H(admin))).status, 200, 'el administrador la abre');
   // Mobilize real sigue igual para su cliente.

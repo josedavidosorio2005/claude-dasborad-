@@ -5,6 +5,7 @@ const { test, before } = require('node:test');
 const assert = require('node:assert/strict');
 const bcrypt = require('bcryptjs');
 const { request, app, db, tokenFor, MASTER_PASSWORD } = require('./helpers');
+require('./fixture-campana-ejemplo-malla').montar(); // Fase W10: la réplica solo como campaña de ejemplo
 const L = require('../../public/js/malla-logic.js');
 const M = require('../malla');
 const X = require('../malla-extra');

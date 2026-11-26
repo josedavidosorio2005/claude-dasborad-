@@ -64,7 +64,7 @@ test('destinos: la réplica de ORLANT es interna, de la operación ORLANT y con 
   assert.equal(D.destinoInterno(R), d);
   assert.equal(D.destinoInterno('ORLANT'), null, 'nunca el ORLANT real');
   assert.equal(D.destinoInterno('MOBILIZE'), null);
-  assert.equal(D.destinoInterno('MOBILIZE PRUEBAS API'), D.DESTINOS.replica);
+  assert.equal(D.destinoInterno('MOBILIZE PRUEBAS API'), null); // Fase W10: borrada
   assert.equal(D.campanaLista(db, d), true, 'la réplica existe (migración N5) y es interna');
 });
 
@@ -145,13 +145,13 @@ test('perfil del CDR: ORLANT sin teléfono, sin opciones y sin «Otros_motivos»
   const hoja = M.hojaCdr([cdr()], o);
   assert.ok(!hoja[0].includes('TELEPHONE'));
   assert.ok(!JSON.stringify(hoja).includes('3000000066'));
-  const m = M.perfilCdr('replica');
+  const m = M.perfilCdr('real'); // Fase W10: antes la réplica de MOBILIZE
   assert.deepEqual(m.opciones(), M.opcionesCdrMobilize());
   assert.ok(M.hojaCdr([cdr()])[0].includes('TELEPHONE'), 'MOBILIZE sigue leyendo el teléfono en memoria (únicas del día)');
   assert.equal(M.hojaCdr([cdr({ description_cod_act: '' })])[1][2], 'Otros_motivos');
   assert.equal(M.hojaCdr([cdr({ description_cod_act: '' })], o)[1][2], '');
   // La cuenta de pruebas de MOBILIZE: se quita en MOBILIZE, no en ORLANT.
-  assert.equal(M.quitarCuentasPrueba([cdr()], 'replica').quitadas, 1);
+  assert.equal(M.quitarCuentasPrueba([cdr()], 'real').quitadas, 1);
   assert.equal(M.quitarCuentasPrueba([cdr()], 'orlant_replica').quitadas, 0);
   assert.equal(M.quitarCuentasPrueba([cdr()]).quitadas, 1, 'sin destino: como siempre');
 });
@@ -163,7 +163,7 @@ test('estado de la réplica de ORLANT: su interruptor, sus módulos y su última
   assert.deepEqual(e.modulosPermitidos, ['flujo_hora', 'cdr', 'no_conectadas', 'whatsapp']); // Fase N3: + WhatsApp (chat_1)
   assert.equal(e.activoAlArrancar, false);
   assert.ok(!e.ultimaCorrida || e.ultimaCorrida.detalle.includes(R));
-  assert.ok(auto.estado(db).real, 'el de MOBILIZE sigue igual');
+  assert.equal(auto.estado(db, undefined, 'real').campana, 'MOBILIZE', 'el de MOBILIZE sigue igual'); // Fase W10: estado por destino
 });
 
 // ── Mapa de skills a línea ──

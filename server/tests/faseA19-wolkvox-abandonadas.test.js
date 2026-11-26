@@ -7,7 +7,7 @@ const assert = require('node:assert/strict');
 const { db } = require('./helpers');
 const M = require('../wolkvox-modulos');
 
-const R = 'MOBILIZE PRUEBAS API';
+const R = 'MOBILIZE'; // Fase W10: antes la réplica «MOBILIZE PRUEBAS API» (borrada); ahora el destino real
 const ENV = { NODE_ENV: 'test', WOLKVOX_MOBILIZE_TOKEN: 'TOKEN-FALSO-A19-no-es-real-0123456789', WOLKVOX_MOBILIZE_SERVIDOR: 'servidorfalsoa19' };
 const AHORA = new Date('2026-11-19T20:30:00Z');
 const TEL = '3000000191', TEL2 = '3000000192', CLIENTE = 'CC-INVENTADA-191', CONN = 'CONN-INVENTADO-191';
@@ -36,10 +36,10 @@ test('corrida: una consulta del mes, únicas por día+teléfono, reemplaza el me
   const ins = db.prepare("INSERT INTO llamadas_abandonadas (campana, fecha, skill, archivoNombre, cargadoPorNombre, createdAt) VALUES (?, ?, 'X', 'x', 'x', 'x')");
   ins.run(R, '2026-11-28'); // vieja del mes: sale (mes completo)
   ins.run(R, '2026-10-30'); // otro mes: se queda
-  ins.run('MOBILIZE', '2026-11-14');
+  ins.run('ORLANT', '2026-11-14');
   const versiones = db.prepare('SELECT COUNT(*) n FROM cargas_versiones WHERE campana = ?').get(R).n;
   const f = falso(DATA);
-  const r = await M.correrModulo('abandonadas', { db, env: ENV, ahora: AHORA, fetchImpl: f.fetch, franja: 'a19-1' });
+  const r = await M.correrModulo('abandonadas', { db, destino: 'real', env: ENV, ahora: AHORA, fetchImpl: f.fetch, franja: 'a19-1' });
   assert.equal(r.estado, 'ok', r.detalle);
   assert.equal(f.urls.length, 1);
   const u = new URL(f.urls[0]);
@@ -53,15 +53,15 @@ test('corrida: una consulta del mes, únicas por día+teléfono, reemplaza el me
   assert.match(r.detalle, /5 filas → 3 abandonadas únicas \(1 repetidas día\+teléfono, 1 avisos; reemplazó 1, con respaldo\)/);
   assert.ok(db.prepare('SELECT COUNT(*) n FROM cargas_versiones WHERE campana = ?').get(R).n > versiones, 'respaldo');
   assert.equal(db.prepare("SELECT COUNT(*) n FROM llamadas_abandonadas WHERE campana = ? AND fecha = '2026-10-30'").get(R).n, 1);
-  assert.equal(db.prepare("SELECT COUNT(*) n FROM llamadas_abandonadas WHERE campana = 'MOBILIZE'").get().n, 1);
+  assert.equal(db.prepare("SELECT COUNT(*) n FROM llamadas_abandonadas WHERE campana = 'ORLANT'").get().n, 1);
 });
 
 test('sin abandonadas válidas o sin filas: el mes no cambia y no es error', async () => {
   const antes = db.prepare('SELECT COUNT(*) n FROM llamadas_abandonadas WHERE campana = ?').get(R).n;
-  const r1 = await M.correrModulo('abandonadas', { db, env: ENV, ahora: AHORA, fetchImpl: falso([ab('2026-11-14 10:00:00', { result: 'ANSWER' })]).fetch, franja: 'a19-2' });
+  const r1 = await M.correrModulo('abandonadas', { db, destino: 'real', env: ENV, ahora: AHORA, fetchImpl: falso([ab('2026-11-14 10:00:00', { result: 'ANSWER' })]).fetch, franja: 'a19-2' });
   assert.equal(r1.estado, 'ok', r1.detalle);
   assert.match(r1.detalle, /0 abandonadas válidas/);
-  const r2 = await M.correrModulo('abandonadas', { db, env: ENV, ahora: AHORA, fetchImpl: falso([]).fetch, franja: 'a19-3' });
+  const r2 = await M.correrModulo('abandonadas', { db, destino: 'real', env: ENV, ahora: AHORA, fetchImpl: falso([]).fetch, franja: 'a19-3' });
   assert.equal(r2.estado, 'ok', r2.detalle);
   assert.match(r2.detalle, /no trajo abandonadas, sin cambios/);
   assert.equal(db.prepare('SELECT COUNT(*) n FROM llamadas_abandonadas WHERE campana = ?').get(R).n, antes);
@@ -69,7 +69,7 @@ test('sin abandonadas válidas o sin filas: el mes no cambia y no es error', asy
 
 test('una fila de otro mes: error, el mes no cambia', async () => {
   const antes = db.prepare('SELECT COUNT(*) n FROM llamadas_abandonadas WHERE campana = ?').get(R).n;
-  const r = await M.correrModulo('abandonadas', { db, env: ENV, ahora: AHORA, fetchImpl: falso([ab('2026-10-14 10:00:00')]).fetch, franja: 'a19-4' });
+  const r = await M.correrModulo('abandonadas', { db, destino: 'real', env: ENV, ahora: AHORA, fetchImpl: falso([ab('2026-10-14 10:00:00')]).fetch, franja: 'a19-4' });
   assert.equal(r.estado, 'error');
   assert.equal(db.prepare('SELECT COUNT(*) n FROM llamadas_abandonadas WHERE campana = ?').get(R).n, antes);
 });

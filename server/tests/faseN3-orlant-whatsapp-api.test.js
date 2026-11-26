@@ -51,14 +51,12 @@ test('hojaWhatsapp: descarta los datos del cliente en memoria, deja fuera la sal
 test('solo la réplica de ORLANT tiene el módulo; MOBILIZE (réplica y real) no, y sin consultar a Wolkvox', async () => {
   assert.ok(M.MODULOS.whatsapp && M.MODULOS.whatsapp.api === 'chat_1');
   assert.equal(D.moduloPermitido('orlant_replica', 'whatsapp'), true);
-  assert.equal(D.moduloPermitido('replica', 'whatsapp'), false);
   assert.equal(D.moduloPermitido('real', 'whatsapp'), false);
   for (const m of ['flujo_hora', 'cdr', 'encuesta', 'no_conectadas', 'abandonadas']) {
-    assert.equal(D.moduloPermitido('replica', m), true, 'MOBILIZE réplica sigue con ' + m);
     assert.equal(D.moduloPermitido('real', m), true, 'MOBILIZE real sigue con ' + m);
   }
   const f = falso();
-  for (const destino of ['replica', 'real']) {
+  for (const destino of ['real']) { // Fase W10: sin la réplica de MOBILIZE
     const r = await M.correrModulo('whatsapp', { db, env: ENV, ahora: AHORA, mes: '2026-10', fetchImpl: f.fetch, destino, franja: 'prueba n3 ' + destino, logEvent: () => {} });
     assert.equal(r.estado, 'omitida', destino);
   }

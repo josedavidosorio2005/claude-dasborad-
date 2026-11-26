@@ -163,9 +163,7 @@ declarar(['GET /orlant/sta/estado', 'GET /orlant/sta/resumen', 'POST /orlant/sta
 // Equidad profesionales de ORLANT (24/11/2026): ver = admin, gerencia y supervisor de ORLANT; cargar = admin,
 // cargarDatos y supervisor de ORLANT. Probado rol por rol en faseEQ2-equidad-profesionales.test.js.
 declarar(['GET /orlant/equidad/estado', 'GET /orlant/equidad/resumen', 'POST /orlant/equidad/cargas/:grupo', 'PUT /orlant/equidad/entidades', 'PUT /orlant/equidad/opciones'], 'skip'); // opciones: solo admin (faseEQ3)
-// Plan B de Wolkvox (B1): agente de la oficina, sin sesion; se protege con su propia clave
-// (X-Agente-Clave, huella en SSM) -- cubierto en faseB1-wolkvox-ingesta.test.js.
-declarar(['POST /api/wolkvox/agente/flujo'], 'skip');
+// Fase W10: la entrada B1 (POST /api/wolkvox/agente/flujo) se retiró con la réplica de MOBILIZE.
 declarar(['PUT /auth/password', 'POST /auth/logout', 'GET /seed-demo/estado', 'GET /guia-uso'], 'open');
 declarar(['GET /users'], 'open'); // ver routes/usuarios.js: perms/lastLogin se redactan adentro, no 403
 declarar(['GET /historial', 'GET /historial/total' /* 25/11: el número de la tarjeta «Eventos» */, 'GET /seguridad/alertas'], 'admin');
@@ -195,7 +193,7 @@ declarar(['PUT /monitoreos/:id', 'DELETE /monitoreos/:id'], 'calidadManage');
 declarar(['PUT /monitoreos/:id/asesor'], 'admin');
 declarar(['POST /monitoreos/revisar-asesores'], 'calidadEval'); // Fase 353: vista previa de nombres sin usuario (solo lee)
 declarar(['GET /calidad/enlace', 'POST /calidad/enlace', 'POST /calidad/enlace/revertir'], 'admin'); // Fase 353
-declarar(['GET /wolkvox/estado', 'POST /wolkvox/probar', 'POST /wolkvox/diagnostico-red', 'POST /wolkvox/auto/ejecutar', 'POST /wolkvox/real/hueco', 'GET /wolkvox/agentes', 'PUT /wolkvox/agentes'], 'admin'); // AU2: + agentes de Inconexión (réplica de Aurora) // A3: + ejecutar ahora // A30: + hueco del real // W3: + diagnóstico de red // Fase W2: solo admin y solo la replica interna (404 para las demas)
+declarar(['GET /wolkvox/estado', 'POST /wolkvox/probar', 'POST /wolkvox/diagnostico-red', 'POST /wolkvox/auto/ejecutar', 'POST /wolkvox/real/hueco', 'GET /wolkvox/agentes', 'PUT /wolkvox/agentes', 'GET /wolkvox/replica-mobilize/inventario'], 'admin'); // W10: + dry-run del borrado de la réplica de MOBILIZE // AU2: + agentes de Inconexión (réplica de Aurora) // A3: + ejecutar ahora // A30: + hueco del real // W3: + diagnóstico de red // Fase W2: solo admin y solo la replica interna (404 para las demas)
 // Fase 356: «Sugerencias / Tickets». Crear, listar y ver: cualquier autenticado, auto-scoped por
 // autor (ajeno: 404). Contador y estado: ADMIN o REPORTES; borrar: solo ADMIN. Esas tres (y que
 // un ajeno no vea ni conteste) se prueban rol por rol en fase356-tickets.test.js.

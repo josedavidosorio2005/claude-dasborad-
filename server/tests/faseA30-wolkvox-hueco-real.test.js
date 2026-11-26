@@ -71,7 +71,7 @@ test('lista cerrada: solo julio de 2026 y solo Flujo, Flujo por hora, Tipificaci
   for (const [mes, mod] of [['2026-07', 'encuesta'], ['2026-08', 'flujo'], ['2026-06', 'cdr'], ['2026-10', 'cdr'], ['2026-11', 'flujo'], ['2025-11', 'flujo']]) {
     assert.deepEqual(auto.planDe({ ahora: AHORA, mes, destino: 'real', huecoReal: mod }), [], mes + ' ' + mod);
   }
-  assert.deepEqual(auto.planDe({ ahora: AHORA, mes: '2026-07', destino: 'replica', huecoReal: 'flujo' }), [], 'solo el real');
+  assert.deepEqual(auto.planDe({ ahora: AHORA, mes: '2026-07', destino: 'orlant_replica', huecoReal: 'flujo' }), [], 'solo el real'); // Fase W10: otra réplica
   assert.deepEqual(auto.planDe({ ahora: AHORA, mes: '2026-07', destino: 'real' }), [], 'sin hueco, el corte de 2026-11 sigue');
   assert.throws(() => D.filasEnHueco(db, '2026-08', 'flujo'), /no permitido/);
 });

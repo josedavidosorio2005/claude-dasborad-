@@ -59,7 +59,7 @@ test('sin ningun cliente: listas vacias', async () => {
 const sinInternos = (t) => { const fuera = (n) => n === 'MOBILIZE PRUEBAS API' || n === 'ORLANT PRUEBAS API' || n === 'CLINICA AURORA PRUEBAS API'; /* Fase N5 */ /* Fase AU1 */ return Object.fromEntries(Object.entries(t).map(([k, v]) => [k, v.filter((n) => !fuera(n))])); };
 test('el administrador ve todos; quien gestiona usuarios, todos menos los internos', async () => {
   assert.ok(todos().registro.length >= 2, 'el registro de prueba tiene varios clientes');
-  assert.ok(todos().registro.includes('MOBILIZE PRUEBAS API'));
+  assert.ok(todos().registro.includes('ORLANT PRUEBAS API')); // Fase W10: la réplica de MOBILIZE se borró
   assert.deepEqual(await clientesDe(signToken({ isMasterAdmin: true, rol: 'ADMIN' })), todos());
   assert.deepEqual(await clientesDe(tokenDe('f154aux', 'AUX_ADMIN', { editarUsuarios: true })), sinInternos(todos()));
   assert.deepEqual(await clientesDe(tokenDe('f154aux2', 'AUX_ADMIN', { gestionPermisos: true })), sinInternos(todos()));

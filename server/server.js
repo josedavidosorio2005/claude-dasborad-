@@ -301,9 +301,8 @@ function createApp() {
     responderSinLeerCuerpo,
   });
   // Fase 357 (D): con un token «ver como» (solo lectura) no pasa nada que no sea leer.
-  // Plan B de Wolkvox (B1): ingesta del agente de la oficina, con clave propia y sin sesion.
-  // Va ANTES de exigirSesionParaCuerpo; queda bajo el limitador por IP (anonLimiter).
-  require('./wolkvox-ingesta').montarIngesta(app, db, { responderSinLeerCuerpo });
+  // Fase W10 (26/11/2026): la entrada B1 del agente de la oficina (POST /api/wolkvox/agente/flujo) se retiró
+  // con la réplica «MOBILIZE PRUEBAS API», que era su único destino.
   app.use('/api', require('./auth').bloqueoSoloLecturaVerComo);
   app.use(exigirSesionParaCuerpo);
   app.use(topeCargas.middleware);
@@ -539,8 +538,8 @@ function start() {
     }
   }, 24 * 3600 * 1000);
   purgaVersiones.unref();
-  // Fase A1 (Plan A de Wolkvox): consulta automatica 7:00 y 13:00 (Colombia), solo la replica y
-  // solo Flujo. APAGADA salvo WOLKVOX_AUTO_ACTIVO=1 en SSM (se lee fresco antes de cada corrida).
+  // Fase A1 (Plan A de Wolkvox): consulta automatica 00:05, 7:00 y 13:00 (Colombia). Desde la Fase W10 corre
+  // el MOBILIZE real y las replicas de ORLANT y Aurora, cada uno con su interruptor en SSM (apagado por defecto).
   const wolkvoxAuto = config.isTest ? null : require('./wolkvox-auto').iniciar(db, { logEvent: require('./routes/shared').logEvent });
 
   let shuttingDown = false;

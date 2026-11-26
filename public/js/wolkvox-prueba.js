@@ -1,15 +1,25 @@
 // wolkvox-prueba.js — Fase W2 (docs/plan-api-wolkvox.md): botón «Probar conexión» con Wolkvox
 // en el encabezado del tablero. SOLO para el administrador completo y SOLO en una campaña interna
-// (las réplicas ocultas «MOBILIZE PRUEBAS API», «ORLANT PRUEBAS API» y, desde la Fase AU1,
-// «CLINICA AURORA PRUEBAS API»); el servidor lo vuelve a
-// exigir (403/404).
+// (las réplicas ocultas «ORLANT PRUEBAS API» y, desde la Fase AU1, «CLINICA AURORA PRUEBAS API») o,
+// desde la Fase W10 (la réplica «MOBILIZE PRUEBAS API» se borró), en el MOBILIZE real. El servidor lo
+// vuelve a exigir (403/404).
 // Muestra code, msg, cuántas filas y los NOMBRES de los campos: nunca un valor. Todo lo que llega
 // del servidor se pinta con textContent.
 
 function wvPruebaVisible(cliente) {
   var admin = typeof isFullAdmin === 'function' && isFullAdmin();
   var interno = typeof esClienteInterno === 'function' && esClienteInterno(cliente);
-  return !!(admin && interno);
+  return !!(admin && (interno || cliente === 'MOBILIZE')); // Fase W10: + el MOBILIZE real
+}
+
+// Fase W10 (26/11/2026): «Última consulta automática» del destino (el MOBILIZE real o la réplica). Puro (se prueba
+// en Node): fecha y hora de Colombia, estado y consultas; nunca el detalle.
+function wvUltimaTexto(auto) {
+  if (!auto) return '—';
+  var u = auto.ultimaCorrida;
+  if (!u || !u.inicio) return 'Ninguna todavía';
+  var t = new Date(new Date(u.inicio).getTime() - 5 * 3600 * 1000).toISOString();
+  return t.slice(8, 10) + '/' + t.slice(5, 7) + '/' + t.slice(0, 4) + ' ' + t.slice(11, 16) + ' · ' + (u.estado || '—') + ' · ' + (Number(u.consultas) || 0) + ' consultas';
 }
 
 function wvPruebaPintarBoton(cliente) {
@@ -29,6 +39,7 @@ function _wvPintarEstado(e) {
   var diag = _wvEl('wv-diagnostico');
   if (diag) diag.classList.toggle('hidden', !!e.configurado || !d);
   if (d) { _wvTexto('wv-d-token', sn(d.tokenEncontrado)); _wvTexto('wv-d-servidor', sn(d.servidorEncontrado)); _wvTexto('wv-d-formato', sn(d.servidorFormatoValido)); }
+  _wvTexto('wv-estado-ultima', wvUltimaTexto(e.auto));
   _wvTexto('wv-estado-uso', e.usoHoy + ' de ' + e.tope + ' (límite de Wolkvox: ' + e.limiteLicencia + ' por día)');
   var btn = _wvEl('wv-probar-btn');
   if (btn) btn.disabled = !e.configurado;
@@ -266,5 +277,5 @@ if (typeof document !== 'undefined') { // Fase W3: el archivo también se carga 
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { wvPruebaVisible: wvPruebaVisible, wvRedFilas: wvRedFilas, wvAutoFilas: wvAutoFilas, wvLlenarReportes: wvLlenarReportes, wvAgentesFilas: wvAgentesFilas };
+  module.exports = { wvUltimaTexto: wvUltimaTexto, wvPruebaVisible: wvPruebaVisible, wvRedFilas: wvRedFilas, wvAutoFilas: wvAutoFilas, wvLlenarReportes: wvLlenarReportes, wvAgentesFilas: wvAgentesFilas };
 }

@@ -18,7 +18,6 @@ const { respaldarAntesDeCambiar } = require('./cargas-versiones');
 const FH = require('../public/js/flujo-hora-logic.js');
 const D = require('./wolkvox-destinos'); // Fase A24: réplica o MOBILIZE real (lista cerrada)
 
-const CAMPANA = ing.CAMPANA_INGESTA;
 // Fase N5: la operación de Wolkvox sale del destino (D.operacionDe), ya no de una constante.
 const QUIEN = 'Consulta automática Wolkvox';
 
@@ -164,9 +163,10 @@ function ahtEsperaDiarios(data) {
   return out;
 }
 
-// Fase A24: `campana` (por defecto la réplica) solo de la lista cerrada de wolkvox-destinos.js.
+// Fase A24: `campana` solo de la lista cerrada de wolkvox-destinos.js. Fase W10: obligatoria (antes, sin ella,
+// era la réplica de MOBILIZE, que se borró).
 function _campanaPermitida(campana) {
-  const c = campana === undefined ? CAMPANA : campana;
+  const c = campana;
   if (!D.CAMPANAS_PERMITIDAS.includes(c)) throw new Error('Campaña no permitida para Wolkvox');
   return c;
 }
@@ -723,7 +723,7 @@ async function correrModulo(nombre, opts) {
     res.detalle = detalle;
     return res;
   };
-  if (!D.campanaLista(db, dest)) { res.estado = 'omitida'; partes.push(dest.clave === 'replica' ? 'la réplica no existe' : 'la campaña no existe o es interna'); return terminar(); }
+  if (!D.campanaLista(db, dest)) { res.estado = 'omitida'; partes.push(dest.interna ? 'la réplica no existe' : 'la campaña no existe o es interna'); return terminar(); }
   // Fase N6: cada destino solo corre sus módulos autorizados (ORLANT: flujo_hora, cdr, no_conectadas).
   if (!D.moduloPermitido(dest, nombre)) { res.estado = 'omitida'; partes.push('módulo no autorizado para esta campaña'); return terminar(); }
   const OPERACION = dest.operacion; // Fase N5: del destino

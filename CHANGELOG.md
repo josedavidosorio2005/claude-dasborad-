@@ -7,6 +7,18 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.284.0 — Noviembre 2026
+
+**MOBILIZE: se borra la copia de pruebas «MOBILIZE PRUEBAS API».**
+
+- La copia de pruebas de MOBILIZE ya cumplió su función: el MOBILIZE real se
+  actualiza solo con Wolkvox. Al desplegar esta versión, la plataforma guarda
+  un respaldo y después borra su tablero y sus datos. Nada del MOBILIZE real
+  cambia.
+- El panel de Wolkvox (estado, «Probar conexión» y «Diagnóstico de red») pasa
+  al tablero del MOBILIZE real, solo para el administrador, y muestra la
+  última consulta automática.
+
 ## v1.283.2 — Noviembre 2026
 
 **Clínica Aurora (copia de pruebas): el histórico se carga más rápido.**

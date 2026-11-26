@@ -2,8 +2,8 @@
 // Wolkvox. LISTA CERRADA de destinos (tres desde la Fase N6: + la réplica de ORLANT); cualquier otro valor lanza un error (nunca se escribe en
 // otra campaña por un parámetro mal puesto).
 //
-//  - replica: «MOBILIZE PRUEBAS API» (autorización del 18/11). Interruptores WOLKVOX_AUTO_ACTIVO y
-//    WOLKVOX_AUTO_MODULOS. Sin corte de fecha. También la usa «Ejecutar ahora».
+//  - (Fase W10, 26/11/2026: la réplica «MOBILIZE PRUEBAS API» se BORRÓ por pedido del usuario; su destino
+//    `replica` ya no existe. El MOBILIZE real se actualiza solo con su destino `real`.)
 //  - real: el MOBILIZE real (autorización escrita del usuario, 20/11/2026, ver CLAUDE.md y
 //    docs/plan-api-wolkvox.md §10.19). Solo desde NOVIEMBRE de 2026 (Fase A29: el usuario adelantó el
 //    corte de diciembre a noviembre el 20/11; nunca toca octubre ni meses anteriores) y solo desde el
@@ -12,7 +12,6 @@
 //    WOLKVOX_REAL_MODULOS. Sin el parámetro, o con otro valor que «1», no corre ni deja rastro.
 'use strict';
 
-const CAMPANA_REPLICA = 'MOBILIZE PRUEBAS API';
 // Fase N6 (autorización escrita del usuario, 23/11/2026, CLAUDE.md): réplica oculta de ORLANT.
 const CAMPANA_REPLICA_ORLANT = 'ORLANT PRUEBAS API';
 const CAMPANA_REAL = 'MOBILIZE';
@@ -40,7 +39,6 @@ const DESTINOS = Object.freeze({
   // las mismas de la carga manual de cada cliente (public/js/cargas.js).
   // Fase A33 (autorización escrita del usuario, 24/11/2026): `encuestaConnId` = la Encuesta (diagram_4) guarda el
   // CONN_ID (solo el ID de la llamada, para Calidad de encuestas). SOLO el MOBILIZE real; la réplica sigue sin él.
-  replica: Object.freeze({ clave: 'replica', campana: CAMPANA_REPLICA, operacion: 'MOBILIZE', interna: true, interruptor: 'WOLKVOX_AUTO_ACTIVO', modulos: 'WOLKVOX_AUTO_MODULOS', desdeMes: null, sufijoFranja: '', modulosPermitidos: MODULOS_MOBILIZE, cuentasPrueba: true, perfilCdr: 'mobilize', encuestaConnId: false }),
   real: Object.freeze({ clave: 'real', campana: CAMPANA_REAL, operacion: 'MOBILIZE', interna: false, interruptor: 'WOLKVOX_REAL_ACTIVO', modulos: 'WOLKVOX_REAL_MODULOS', desdeMes: DESDE_MES_REAL, sufijoFranja: ' real', modulosPermitidos: MODULOS_MOBILIZE, cuentasPrueba: true, perfilCdr: 'mobilize', encuestaConnId: true }),
   // Fase N3 (24/11/2026): + WhatsApp (chat_1), sin datos del cliente.
   // Fase N6 (23/11/2026): SOLO la réplica de ORLANT, y solo Flujo (skill_1), Flujo por hora (skill_7),
@@ -55,11 +53,13 @@ const DESTINOS = Object.freeze({
   // Fase AU4 (autorización escrita del usuario, 26/11/2026): «Ejecutar ahora» de esta réplica espera 2 min (no 10).
   aurora_replica: Object.freeze({ clave: 'aurora_replica', campana: CAMPANA_REPLICA_AURORA, operacion: 'AURORA', interna: true, interruptor: 'WOLKVOX_AURORA_AUTO_ACTIVO', modulos: 'WOLKVOX_AURORA_AUTO_MODULOS', desdeMes: null, sufijoFranja: ' aurora', modulosPermitidos: Object.freeze(['cdr', 'whatsapp']), cuentasPrueba: false, perfilCdr: 'orlant', encuestaConnId: false, flujoPorModulos: true, filtros: FILTROS_AURORA, cdrDiasPorConsulta: 7, esperaEjecutarMs: 2 * 60 * 1000 }),
 });
-const CAMPANAS_PERMITIDAS = Object.freeze([CAMPANA_REPLICA, CAMPANA_REAL, CAMPANA_REPLICA_ORLANT, CAMPANA_REPLICA_AURORA]);
+const CAMPANAS_PERMITIDAS = Object.freeze([CAMPANA_REAL, CAMPANA_REPLICA_ORLANT, CAMPANA_REPLICA_AURORA]);
 
-// Sin destino = la réplica (lo de siempre). Acepta la clave ('replica' | 'real') o el objeto de la lista.
+// Acepta la clave ('real' | 'orlant_replica' | 'aurora_replica') o el objeto de la lista.
+// Fase W10: SIN destino ya no hay valor por defecto (antes era la réplica de MOBILIZE, que se borró): lanza, así
+// ninguna llamada puede escribir en una campaña que no nombró.
 function destino(d) {
-  if (d === undefined || d === null) return DESTINOS.replica;
+  if (d === undefined || d === null) throw new Error('Falta el destino de Wolkvox');
   if (Object.values(DESTINOS).includes(d)) return d;
   if (typeof d === 'string' && Object.prototype.hasOwnProperty.call(DESTINOS, d)) return DESTINOS[d];
   throw new Error('Destino de Wolkvox no permitido');
@@ -137,4 +137,4 @@ function flujoConCargaManual(db, mes, archivoApi) {
   return db.prepare("SELECT COUNT(*) n FROM calidad_nivel_servicio_diario WHERE campana = ? AND substr(fecha, 1, 7) = ? AND COALESCE(archivoNombre, '') <> ?").get(CAMPANA_REAL, mes, archivoApi).n > 0;
 }
 
-module.exports = { DESTINOS, CAMPANAS_PERMITIDAS, flujoEnLista, CAMPANA_REPLICA, CAMPANA_REPLICA_ORLANT, CAMPANA_REPLICA_AURORA, FILTROS_AURORA, CAMPANA_REAL, DESDE_MES_REAL, destino, operacionDe, moduloPermitido, destinoInterno, recortarPlan, campanaLista, skillsMapeadas, HUECOS_REAL, huecoPermitido, filasEnHueco, flujoConCargaManual };
+module.exports = { DESTINOS, CAMPANAS_PERMITIDAS, flujoEnLista, CAMPANA_REPLICA_ORLANT, CAMPANA_REPLICA_AURORA, FILTROS_AURORA, CAMPANA_REAL, DESDE_MES_REAL, destino, operacionDe, moduloPermitido, destinoInterno, recortarPlan, campanaLista, skillsMapeadas, HUECOS_REAL, huecoPermitido, filasEnHueco, flujoConCargaManual };

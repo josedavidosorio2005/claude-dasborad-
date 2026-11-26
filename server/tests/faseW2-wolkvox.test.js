@@ -10,7 +10,7 @@ const { request, app, db, tokenFor, MASTER_PASSWORD } = require('./helpers');
 const wv = require('../wolkvox');
 const rutaWv = require('../routes/wolkvox');
 
-const R = 'MOBILIZE PRUEBAS API';
+const R = 'MOBILIZE'; // Fase W10: antes la réplica «MOBILIZE PRUEBAS API» (borrada); ahora el destino real
 const TOKEN = 'TOKEN-FALSO-W2-no-es-real-1234567890';
 const SERVIDOR = 'servidorfalso01';
 const CENTINELA_NOMBRE = 'Persona Inventada W2';
@@ -197,7 +197,7 @@ test('rutas: solo el administrador completo; otros roles 403 aunque tengan el pe
 
 test('rutas: el Mobilize real y los demas clientes no tienen conexion (404), ni para el admin', async () => {
   const antes = falso.llamadas;
-  for (const c of ['MOBILIZE', 'ORLANT', 'SURA', 'CLINICA AURORA', 'NO EXISTE', '']) {
+  for (const c of ['ORLANT', 'SURA', /* Fase W10: el MOBILIZE real ya tiene panel */ 'CLINICA AURORA', 'NO EXISTE', '']) {
     const e = await request(app).get('/api/wolkvox/estado?campana=' + encodeURIComponent(c)).set(H(admin));
     assert.equal(e.status, 404, c);
     const p = await request(app).post('/api/wolkvox/probar').set(H(admin)).send({ campana: c });
@@ -267,13 +267,6 @@ test('rutas: un error de Wolkvox llega al admin como texto fijo (502) y una fech
   rutaWv._reiniciarEspera();
   const f = await request(app).post('/api/wolkvox/probar').set(H(admin)).send({ campana: R, fecha: '2999-01-01' });
   assert.equal(f.status, 400);
-});
-
-test('la replica sigue sin verse para nadie mas: la lista de clientes no la trae', async () => {
-  for (const [rol, t] of Object.entries(actores)) {
-    const l = await request(app).get('/api/dashboard/clientes').set(H(t));
-    assert.ok(!JSON.stringify(l.body).includes(R), rol);
-  }
 });
 
 // ── SSM ──

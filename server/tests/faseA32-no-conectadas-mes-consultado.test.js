@@ -11,7 +11,7 @@ const LS = require('../llamadas-salida');
 
 const ENV = { NODE_ENV: 'test', WOLKVOX_MOBILIZE_TOKEN: 'TOKEN-FALSO-A32-no-es-real-0123456789', WOLKVOX_MOBILIZE_SERVIDOR: 'servidorfalsoa32' };
 const C = 'CAMPANA INVENTADA A32';
-const R = 'MOBILIZE PRUEBAS API';
+const R = 'MOBILIZE'; // Fase W10: antes la réplica «MOBILIZE PRUEBAS API» (borrada); ahora el destino real
 const nc = (date, id) => ({ agent_id: id || '3001', agent_name: id === '12319' ? 'CUENTA PRUEBA INVENTADA' : 'ASESORA INVENTADA A32', date, result: 'NO ANSWER', ring_time: '30', telephone: '3000000320', type_interaction: 'outbound_ma' });
 const falso = (data) => () => Promise.resolve({ status: 200, json: () => Promise.resolve({ code: 200, msg: data.length + ' records were found', data }) });
 function salidaCdr(campana, fecha) {
@@ -36,28 +36,29 @@ test('mes con CDR y sin no conectadas: Pendiente; marcado como consultado: 0 (y 
 });
 
 test('corrida de cdr_5: solo cuenta de pruebas -> mes consultado con 0; con llamadas -> filas y marca; sin datos -> 0', async () => {
-  const AHORA = new Date('2026-11-21T12:05:00Z');
+  const AHORA = new Date('2026-12-21T12:05:00Z');
+  // Fase W10: todo en noviembre de 2026 (el real empieza ahí y Wolkvox no trae fechas futuras), pedido como mes cerrado.
   // julio en la réplica con «Ejecutar ahora» (mes pasado): Wolkvox trae solo la cuenta de pruebas
-  salidaCdr(R, '2026-07-15');
-  let r = await M.correrModulo('no_conectadas', { db, env: ENV, ahora: AHORA, mes: '2026-07', fetchImpl: falso([nc('2026-07-15 09:00:00', '12319'), nc('2026-07-16 09:00:00', '12319')]), franja: 'a32-1' });
+  salidaCdr(R, '2026-11-15');
+  let r = await M.correrModulo('no_conectadas', { db, destino: 'real', env: ENV, ahora: AHORA, mes: '2026-11', fetchImpl: falso([nc('2026-11-15 09:00:00', '12319'), nc('2026-11-16 09:00:00', '12319')]), franja: 'a32-1' });
   assert.equal(r.estado, 'ok', r.detalle);
   assert.match(r.detalle, /solo filas de la cuenta de prueba/);
-  assert.deepEqual([mes(R, '2026-07').noConectadas, mes(R, '2026-07').total], [0, 1]);
-  assert.equal(db.prepare("SELECT COUNT(*) n FROM llamadas_no_conectadas WHERE campana = ? AND substr(fecha,1,7) = '2026-07'").get(R).n, 0, 'nada de la cuenta de pruebas');
+  assert.deepEqual([mes(R, '2026-11').noConectadas, mes(R, '2026-11').total], [0, 1]);
+  assert.equal(db.prepare("SELECT COUNT(*) n FROM llamadas_no_conectadas WHERE campana = ? AND substr(fecha,1,7) = '2026-11'").get(R).n, 0, 'nada de la cuenta de pruebas');
   // noviembre con llamadas: guarda y marca con su cantidad
-  r = await M.correrModulo('no_conectadas', { db, env: ENV, ahora: AHORA, fetchImpl: falso([nc('2026-11-02 08:00:00'), nc('2026-11-03 08:00:00'), nc('2026-11-03 09:00:00', '12319')]), franja: 'a32-2' });
+  r = await M.correrModulo('no_conectadas', { db, destino: 'real', env: ENV, ahora: AHORA, mes: '2026-11', fetchImpl: falso([nc('2026-11-02 08:00:00'), nc('2026-11-03 08:00:00'), nc('2026-11-03 09:00:00', '12319')]), franja: 'a32-2' });
   assert.equal(r.estado, 'ok', r.detalle);
   assert.equal(db.prepare("SELECT filas FROM llamadas_no_conectadas_meses WHERE campana = ? AND mes = '2026-11'").get(R).filas, 2);
   assert.equal(mes(R, '2026-11').noConectadas, 2);
   // un mes sin ninguna llamada en Wolkvox
-  r = await M.correrModulo('no_conectadas', { db, env: ENV, ahora: AHORA, mes: '2026-09', fetchImpl: falso([]), franja: 'a32-3' });
+  r = await M.correrModulo('no_conectadas', { db, destino: 'real', env: ENV, ahora: AHORA, mes: '2026-11', fetchImpl: falso([]), franja: 'a32-3' });
   assert.match(r.detalle, /mes consultado: 0/);
-  assert.equal(db.prepare("SELECT filas FROM llamadas_no_conectadas_meses WHERE campana = ? AND mes = '2026-09'").get(R).filas, 0);
+  assert.equal(db.prepare("SELECT filas FROM llamadas_no_conectadas_meses WHERE campana = ? AND mes = '2026-11'").get(R).filas, 0);
 });
 
 test('una consulta que falla no marca el mes (sigue Pendiente)', async () => {
   const roto = () => Promise.resolve({ status: 200, json: () => Promise.resolve({ code: 200, msg: 'x', data: 'no-es-lista' }) });
-  const r = await M.correrModulo('no_conectadas', { db, env: ENV, ahora: new Date('2026-11-21T12:05:00Z'), mes: '2026-06', fetchImpl: roto, franja: 'a32-4' });
+  const r = await M.correrModulo('no_conectadas', { db, destino: 'real', env: ENV, ahora: new Date('2026-11-21T12:05:00Z'), mes: '2026-06', fetchImpl: roto, franja: 'a32-4' });
   assert.notEqual(r.estado, 'ok');
   assert.equal(db.prepare("SELECT COUNT(*) n FROM llamadas_no_conectadas_meses WHERE campana = ? AND mes = '2026-06'").get(R).n, 0);
 });

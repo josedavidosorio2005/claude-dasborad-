@@ -48,7 +48,7 @@ test('A33: la hoja trae CONN_ID solo cuando se pide (el real); nunca teléfono, 
 test('A33: solo el destino real tiene encuestaConnId', () => {
   const D = require('../wolkvox-destinos');
   assert.equal(D.destino('real').encuestaConnId, true);
-  assert.equal(D.destino('replica').encuestaConnId, false);
+  assert.equal(D.destino('orlant_replica').encuestaConnId, false);
   assert.equal(D.DESTINOS.orlant_replica.encuestaConnId, false);
 });
 
@@ -69,11 +69,7 @@ test('A33: la corrida del real guarda el CONN_ID (sin teléfono ni comentarios);
   assert.ok(real.every((x) => x.telefono === '' && x.comentario === ''), 'sin teléfono ni comentario');
   const txt = JSON.stringify(db.prepare("SELECT * FROM encuestas WHERE campana = 'MOBILIZE'").all());
   for (const x of [ANI, DNI, CLIENTE, COMENTARIO]) assert.ok(!txt.includes(x), 'se guardó ' + x);
-
-  const f2 = falso(DATA);
-  const r2 = await M.correrModulo('encuesta', { db, env: ENV, ahora: AHORA, fetchImpl: f2.fetch, franja: 'a33-rep', destino: 'replica' });
-  assert.equal(r2.estado, 'ok', r2.detalle);
-  assert.ok(filas(REP).every((x) => x.connId === ''), 'la réplica sigue sin CONN_ID');
+  // Fase W10: la parte «la réplica de MOBILIZE sigue sin CONN_ID» se fue con la réplica.
 });
 
 test('A33: con el ID de la API, los monitoreos de antes vuelven a enlazarse (también con comilla adelante o número)', () => {

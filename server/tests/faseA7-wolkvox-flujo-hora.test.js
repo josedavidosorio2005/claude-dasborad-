@@ -1,5 +1,5 @@
 // faseA7-wolkvox-flujo-hora.test.js — llenar la réplica con la API, paso 1: skill_7 → Flujo por hora
-// + AHT y espera del Flujo diario. Solo la réplica; apagado salvo WOLKVOX_AUTO_MODULOS. Wolkvox
+// + AHT y espera del Flujo diario. Solo la réplica; apagado salvo WOLKVOX_REAL_MODULOS. Wolkvox
 // FALSO y datos INVENTADOS.
 'use strict';
 const { test } = require('node:test');
@@ -9,7 +9,7 @@ const M = require('../wolkvox-modulos');
 const auto = require('../wolkvox-auto');
 const { cargarNivelServicioDiario } = require('../nivel-servicio-diario');
 
-const R = 'MOBILIZE PRUEBAS API';
+const R = 'MOBILIZE'; // Fase W10: antes la réplica «MOBILIZE PRUEBAS API» (borrada); ahora el destino real
 const ENV = { NODE_ENV: 'test', WOLKVOX_MOBILIZE_TOKEN: 'TOKEN-FALSO-A7-no-es-real-0123456789', WOLKVOX_MOBILIZE_SERVIDOR: 'servidorfalsoa7' };
 const AHORA = new Date('2026-11-05T12:30:00Z'); // 05/11 07:30 Colombia: pide del 1 al 4
 const SK = 'SKILL INVENTADA A7';
@@ -43,14 +43,14 @@ test('corrida: una consulta del mes, reemplaza el Flujo por hora de la réplica 
   // Flujo diario de la réplica (lo escribe skill_1) y una fila vieja de flujo_hora que ya no vendrá.
   cargarNivelServicioDiario(db, { campana: R, sede: null, archivoNombre: 'prueba', cargadoPorNombre: 'Prueba', filas: [{ fecha: '2026-11-03', skillName: SK, totalLlamadas: 5, contestadas: 4 }] });
   db.prepare("INSERT INTO flujo_hora (campana, fecha, hora, skill, ingresadas, contestadas, abandonadas, archivoNombre, cargadoPorNombre, createdAt) VALUES (?, '2026-11-02', 7, 'VIEJA', 1, 1, 0, 'x', 'x', 'x')").run(R);
-  db.prepare("INSERT INTO flujo_hora (campana, fecha, hora, skill, ingresadas, contestadas, abandonadas, archivoNombre, cargadoPorNombre, createdAt) VALUES ('MOBILIZE', '2026-11-03', 8, 'REAL', 9, 9, 0, 'x', 'x', 'x')").run();
+  db.prepare("INSERT INTO flujo_hora (campana, fecha, hora, skill, ingresadas, contestadas, abandonadas, archivoNombre, cargadoPorNombre, createdAt) VALUES ('ORLANT', '2026-11-03', 8, 'REAL', 9, 9, 0, 'x', 'x', 'x')").run();
   const versiones = n('SELECT COUNT(*) n FROM cargas_versiones WHERE campana = ?', R);
   const f = falso([
     fila('20261103', '8', 4, 3, 1, { aht: '0:2:0', wait_time: '0:0:20' }),
     fila('20261103', '9', 1, 1, 0, { aht: '0:6:0', wait_time: '0:0:5' }),
     fila('20261104', '10', 0, 0, 0), // en cero: fuera
   ]);
-  const r = await M.correrModulo('flujo_hora', { db, env: ENV, ahora: AHORA, fetchImpl: f.fetch, franja: 'a7-1', logEvent: require('../routes/shared').logEvent });
+  const r = await M.correrModulo('flujo_hora', { db, destino: 'real', env: ENV, ahora: AHORA, fetchImpl: f.fetch, franja: 'a7-1', logEvent: require('../routes/shared').logEvent });
   assert.equal(r.estado, 'ok', r.detalle);
   assert.equal(f.urls.length, 1);
   assert.deepEqual(Object.fromEntries(new URL(f.urls[0]).searchParams), { api: 'skill_7', date_ini: '20261101000000', date_end: '20261104235959' });
@@ -61,7 +61,7 @@ test('corrida: una consulta del mes, reemplaza el Flujo por hora de la réplica 
   const d = db.prepare('SELECT ahtSegundos, waitTimeSegundos FROM calidad_nivel_servicio_diario WHERE campana = ? AND fecha = ? AND skillName = ?').get(R, '2026-11-03', SK);
   assert.deepEqual(d, { ahtSegundos: 180, waitTimeSegundos: 17 });
   assert.ok(n('SELECT COUNT(*) n FROM cargas_versiones WHERE campana = ?', R) > versiones, 'respaldo');
-  assert.equal(n("SELECT COUNT(*) n FROM flujo_hora WHERE campana = 'MOBILIZE' AND skill = 'REAL'"), 1);
+  assert.equal(n("SELECT COUNT(*) n FROM flujo_hora WHERE campana = 'ORLANT' AND skill = 'REAL'"), 1);
   const h = db.prepare("SELECT detalle FROM historial WHERE accion = 'WOLKVOX_MODULO' ORDER BY id DESC LIMIT 1").get().detalle;
   assert.match(h, /flujo_hora \(skill_7\) · 2026-11: 2 filas día-hora-skill \(1 en cero fuera\), reemplazó 1, AHT\/espera en 1 filas del Flujo, con respaldo · 1 consultas/);
   assert.ok(!h.includes(SK));
@@ -69,54 +69,32 @@ test('corrida: una consulta del mes, reemplaza el Flujo por hora de la réplica 
 
 test('respuesta rara (hora 25) o vacía: no cambia nada; error sin reintento', async () => {
   const antes = fh('2026-11');
-  const r = await M.correrModulo('flujo_hora', { db, env: ENV, ahora: AHORA, fetchImpl: falso([fila('20261103', '25', 1, 1, 0)]).fetch, franja: 'a7-2' });
+  const r = await M.correrModulo('flujo_hora', { db, destino: 'real', env: ENV, ahora: AHORA, fetchImpl: falso([fila('20261103', '25', 1, 1, 0)]).fetch, franja: 'a7-2' });
   assert.equal(r.error, 'respuesta_invalida');
   assert.match(r.detalle, /1 filas inválidas; campos: abandon_calls,aht,/);
-  const r2 = await M.correrModulo('flujo_hora', { db, env: ENV, ahora: AHORA, fetchImpl: falso([]).fetch, franja: 'a7-3' });
+  const r2 = await M.correrModulo('flujo_hora', { db, destino: 'real', env: ENV, ahora: AHORA, fetchImpl: falso([]).fetch, franja: 'a7-3' });
   assert.match(r2.detalle, /Wolkvox no trajo filas, sin cambios/);
   let k = 0;
   const caido = () => { k++; return Promise.reject(Object.assign(new Error('x'), { cause: { code: 'ECONNRESET' } })); };
-  const r3 = await M.correrModulo('flujo_hora', { db, env: ENV, ahora: AHORA, fetchImpl: caido, franja: 'a7-4' });
+  const r3 = await M.correrModulo('flujo_hora', { db, destino: 'real', env: ENV, ahora: AHORA, fetchImpl: caido, franja: 'a7-4' });
   assert.equal(r3.error, 'red');
   assert.equal(k, 1);
   assert.deepEqual(fh('2026-11'), antes);
 });
 
-test('apagado por defecto: el programador solo corre los módulos de WOLKVOX_AUTO_MODULOS', async () => {
+test('apagado por defecto: el programador solo corre los módulos de WOLKVOX_REAL_MODULOS', async () => {
   assert.deepEqual(M.modulosDe(' flujo_hora , cdr_inventado,FLUJO_HORA'), ['flujo_hora', 'flujo_hora']);
   assert.deepEqual(M.modulosDe(undefined), []);
   const apis = [];
   const fetchImpl = (url) => { apis.push(new URL(url).searchParams.get('api')); return ok({ code: 200, msg: '0 records were found', data: [] }); };
   const correr = async (valor, reloj) => {
-    const p = auto.iniciar(db, { env: ENV, reloj: () => new Date(reloj), leerInterruptor: async () => false, leerValor: async (e, nom) => (nom === 'WOLKVOX_AUTO_MODULOS' ? valor : undefined), fetchImpl, cadaMs: 3600 * 1000 });
+    const p = auto.iniciar(db, { env: ENV, reloj: () => new Date(reloj), leerInterruptor: async () => true, leerValor: async (e, nom) => (nom === 'WOLKVOX_REAL_MODULOS' ? valor : undefined), fetchImpl, cadaMs: 3600 * 1000 });
     try { await p.tick(); } finally { p.detener(); }
   };
   await correr(undefined, '2026-11-06T12:05:00Z');
-  assert.deepEqual(apis, []);
+  assert.deepEqual(apis.filter((a) => a !== 'skill_1'), []); // Fase W10: el real siempre pide su Flujo (skill_1)
+  apis.length = 0;
   await correr('flujo_hora', '2026-11-06T18:05:00Z');
-  assert.deepEqual(apis, ['skill_7']);
+  assert.deepEqual(apis.filter((a) => a !== 'skill_1'), ['skill_7']);
 });
 
-test('«Ejecutar ahora» de un módulo: solo si está en la lista; módulo desconocido 400', async () => {
-  const admin = await tokenFor('admin', MASTER_PASSWORD);
-  require('../routes/wolkvox')._reiniciarEspera();
-  process.env.WOLKVOX_MOBILIZE_TOKEN = ENV.WOLKVOX_MOBILIZE_TOKEN;
-  process.env.WOLKVOX_MOBILIZE_SERVIDOR = ENV.WOLKVOX_MOBILIZE_SERVIDOR;
-  let valor;
-  app.locals.wolkvoxValor = async () => valor;
-  const f = falso([fila('20261103', '8', 1, 1, 0)]);
-  app.locals.wolkvoxFetch = f.fetch;
-  const ej = (b) => request(app).post('/api/wolkvox/auto/ejecutar').set({ Authorization: 'Bearer ' + admin }).send({ campana: R, ...b });
-  assert.equal((await ej({ modulo: 'inventado' })).status, 400);
-  require('../routes/wolkvox')._reiniciarEspera();
-  const off = await ej({ modulo: 'flujo_hora' });
-  assert.equal(off.status, 409);
-  assert.match(off.body.error, /WOLKVOX_AUTO_MODULOS/);
-  assert.equal(f.urls.length, 0);
-  valor = 'flujo_hora';
-  require('../routes/wolkvox')._reiniciarEspera();
-  const on = await ej({ modulo: 'flujo_hora' });
-  assert.equal(on.status, 200, JSON.stringify(on.body));
-  assert.equal(f.urls.length, 1);
-  assert.match(on.body.detalle, /^Ejecutar ahora · MOBILIZE PRUEBAS API · flujo_hora/);
-});

@@ -7,7 +7,7 @@ const assert = require('node:assert/strict');
 const { request, app, db, tokenFor, MASTER_PASSWORD } = require('./helpers');
 const wv = require('../wolkvox');
 
-const R = 'MOBILIZE PRUEBAS API';
+const R = 'MOBILIZE'; // Fase W10: antes la réplica «MOBILIZE PRUEBAS API» (borrada); ahora el destino real
 const TOKEN = 'TOKEN-FALSO-DIAG-0987654321';
 const H = (t) => ({ Authorization: 'Bearer ' + t });
 let admin, supervisor;
@@ -62,7 +62,7 @@ test('estado: el diagnostico no sale para nadie mas (403) ni para el Mobilize re
   const s = await request(app).get('/api/wolkvox/estado?campana=' + encodeURIComponent(R)).set(H(supervisor));
   assert.equal(s.status, 403);
   assert.ok(!s.text.includes('diagnostico'));
-  const m = await request(app).get('/api/wolkvox/estado?campana=MOBILIZE').set(H(admin));
+  const m = await request(app).get('/api/wolkvox/estado?campana=ORLANT').set(H(admin)); // Fase W10: el MOBILIZE real ya tiene panel
   assert.equal(m.status, 404);
   assert.ok(!m.text.includes('diagnostico'));
 });

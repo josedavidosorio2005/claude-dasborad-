@@ -11,7 +11,8 @@ const { db } = require('./helpers');
 const auto = require('../wolkvox-auto');
 const M = require('../wolkvox-modulos');
 
-const R = 'MOBILIZE PRUEBAS API', REAL = 'MOBILIZE';
+// Fase W10: las pruebas de la réplica de MOBILIZE se fueron con ella; el mes vaciado del real lo cubre faseA32.
+const REAL = 'MOBILIZE';
 const ENV = { NODE_ENV: 'test', WOLKVOX_MOBILIZE_TOKEN: 'TOKEN-FALSO-A26-no-es-real-0123456789', WOLKVOX_MOBILIZE_SERVIDOR: 'servidorfalsoa26' };
 const PRUEBA = 'Cuenta Inventada De Prueba A26'; // nombre ficticio, solo en esta prueba
 const ASESORA = 'ASESORA INVENTADA A26';
@@ -51,56 +52,6 @@ test('reconoce la cuenta por agent_id o por nombre (sin importar mayúsculas, ti
   assert.equal(r.data.length, 1);
   assert.equal(r.quitadas, 3);
   assert.deepEqual(r.ids, ['4242', '7777'], 'solo ids con caracteres seguros');
-});
-
-test('réplica, un mes cerrado: Tipificación, salida y Encuesta sin la cuenta de prueba; el Historial no lleva el nombre', async () => {
-  const historial = [];
-  const logEvent = (accion, t, actor, detalle) => historial.push(detalle);
-  const f = falso({
-    cdr_1: [cdr(), cdr({ type_interaction: 'outbound_ma', skill_name: '', skill_id: '', date: '2026-10-26 12:00:00' }), cdr({ agent_name: PRUEBA, agent_id: '4242', type_interaction: 'outbound_ma', skill_name: '', skill_id: '', date: '2026-10-26 12:30:00' })],
-    cdr_5: [nc(), nc({ agent_name: PRUEBA, agent_id: '4242' })],
-    diagram_4: [enc(), enc({ agent_name: PRUEBA, agent_id: '4242', time: '10:00:00' })],
-  });
-  const base = { db, env: ENV, ahora: new Date('2026-11-20T15:00:00Z'), mes: '2026-10', fetchImpl: f.fetch, logEvent };
-  for (const m of ['cdr', 'no_conectadas', 'encuesta']) {
-    const r = await M.correrModulo(m, Object.assign({ franja: 'a26-r-' + m }, base));
-    assert.equal(r.estado, 'ok', r.detalle);
-  }
-  const mes = "fecha BETWEEN '2026-10-01' AND '2026-10-31'";
-  assert.equal(n(`SELECT COUNT(*) n FROM tipificaciones WHERE campana = ? AND canal = 'LLAMADAS' AND ${mes}`, R), 2);
-  assert.equal(n(`SELECT COUNT(*) n FROM tipificaciones WHERE campana = ? AND agente = ?`, R, PRUEBA), 0);
-  assert.equal(n(`SELECT COUNT(*) n FROM llamadas_no_conectadas WHERE campana = ? AND ${mes}`, R), 1);
-  assert.equal(n(`SELECT COUNT(*) n FROM encuestas WHERE campana = ? AND ${mes}`, R), 1);
-  assert.equal(n(`SELECT COUNT(*) n FROM encuestas WHERE campana = ? AND agente = ?`, R, PRUEBA), 0);
-  assert.equal(historial.length, 3);
-  for (const d of historial) {
-    assert.ok(d.includes('1 de la cuenta de prueba fuera (agent_id 4242)'), d);
-    assert.ok(!d.toUpperCase().includes(PRUEBA.toUpperCase()), 'sin el nombre en el Historial');
-  }
-});
-
-test('un mes con solo filas de la cuenta de prueba se vacía (con respaldo), no queda lo de antes', async () => {
-  // Primero el mes con una llamada normal; después Wolkvox solo trae la cuenta de prueba.
-  const ahora = new Date('2026-11-20T15:00:00Z');
-  const f1 = falso({ cdr_5: [nc({ date: '2026-07-23 09:00:00' })], diagram_4: [enc({ date: '2026-07-28' })], cdr_1: [cdr({ date: '2026-07-23 09:00:00' })] });
-  for (const m of ['cdr', 'no_conectadas', 'encuesta']) await M.correrModulo(m, { db, env: ENV, ahora, mes: '2026-07', fetchImpl: f1.fetch, franja: 'a26-v1-' + m });
-  const julio = (t, extra) => n(`SELECT COUNT(*) n FROM ${t} WHERE campana = ? AND fecha BETWEEN '2026-07-01' AND '2026-07-31'${extra || ''}`, R);
-  assert.equal(julio('llamadas_no_conectadas'), 1);
-  assert.equal(julio('encuestas'), 1);
-  assert.equal(julio('tipificaciones', " AND canal = 'LLAMADAS'"), 1);
-  const respaldos0 = n("SELECT COUNT(*) n FROM cargas_versiones WHERE campana = ? AND mes = '2026-07'", R);
-  const f2 = falso({ cdr_5: [nc({ agent_name: PRUEBA, date: '2026-07-23 09:00:00' })], diagram_4: [enc({ agent_name: PRUEBA, date: '2026-07-28' })], cdr_1: [cdr({ agent_name: PRUEBA, date: '2026-07-23 09:00:00' })] });
-  for (const m of ['cdr', 'no_conectadas', 'encuesta']) {
-    const r = await M.correrModulo(m, { db, env: ENV, ahora, mes: '2026-07', fetchImpl: f2.fetch, franja: 'a26-v2-' + m });
-    assert.equal(r.estado, 'ok', r.detalle);
-    assert.ok(/solo filas de la cuenta de prueba, 1 de la cuenta de prueba fuera \(agent_id 1001\), mes vaciado \(borró 1\), con respaldo/.test(r.detalle), r.detalle);
-  }
-  assert.equal(julio('llamadas_no_conectadas'), 0);
-  assert.equal(julio('encuestas'), 0);
-  assert.equal(julio('tipificaciones', " AND canal = 'LLAMADAS'"), 0);
-  assert.equal(n("SELECT COUNT(*) n FROM cargas_versiones WHERE campana = ? AND mes = '2026-07'", R), respaldos0 + 3, 'un respaldo por tabla');
-  assert.throws(() => M.vaciarMes(db, 'tipificaciones', 'ORLANT', '2026-07'), /no permitida/);
-  assert.throws(() => M.vaciarMes(db, 'users', R, '2026-07'), /no permitida/);
 });
 
 test('MOBILIZE real (programador, diciembre): también sin la cuenta de prueba', async (t) => {

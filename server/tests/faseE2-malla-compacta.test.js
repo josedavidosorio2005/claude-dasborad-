@@ -7,6 +7,7 @@ const fs = require('fs');
 const path = require('path');
 const bcrypt = require('bcryptjs');
 const { request, app, db, tokenFor, MASTER_PASSWORD } = require('./helpers');
+require('./fixture-campana-ejemplo-malla').montar(); // Fase W10: la réplica solo como campaña de ejemplo
 const P = require('../puntualidad');
 const L = require('../../public/js/malla-logic.js');
 

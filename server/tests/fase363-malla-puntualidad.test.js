@@ -7,6 +7,7 @@ const assert = require('node:assert/strict');
 const path = require('path');
 const bcrypt = require('bcryptjs');
 const { request, app, db, tokenFor, MASTER_PASSWORD } = require('./helpers');
+require('./fixture-campana-ejemplo-malla').montar(); // Fase W10: la réplica solo como campaña de ejemplo
 const P = require('../puntualidad');
 const auto = require('../wolkvox-auto');
 
@@ -79,56 +80,18 @@ test('la réplica usa las asesoras de MOBILIZE solo para leerlas; sus cuentas no
   assert.ok(mia.body.semanas.every((s) => s.turno === null));
 });
 
-test('consulta automática de agent_7: un tramo hasta ahora, guarda el resumen, Historial sin nombres', async () => {
-  const urls = [];
-  const fetchImpl = (url) => {
-    urls.push(url);
-    return Promise.resolve({ status: 200, json: () => Promise.resolve({ code: 200, msg: '3 records were found', data: [
-      { agent_id: '9001', agent_name: 'Persona Inventada f363_a1', date: '2030-02-04', login: '2030-02-04 07:59:58', logout: '2030-02-04 12:00:00', login_time: '4:00:02' },
-      { agent_id: '9001', agent_name: 'Persona Inventada f363_a1', date: '2030-02-04', login: '2030-02-04 12:30:00', logout: '2030-02-04 16:40:00', login_time: '4:10:00' },
-      { agent_id: '9002', agent_name: 'AGENTE INVENTADO SIN PAR', date: '2030-02-05', login: '2030-02-05 08:03:00', logout: '2030-02-05 17:00:00', login_time: '8:57:00' },
-    ] }) });
-  };
-  const ahora = new Date('2030-02-10T15:00:00Z'); // 10/02 10:00 Colombia
-  const r = await auto.correrLogin({ db, env: ENV, ahora, fetchImpl, franja: 'f363-1', logEvent: require('../routes/shared').logEvent });
-  assert.equal(r.estado, 'ok', r.detalle);
-  assert.equal(urls.length, 1);
-  const u = new URL(urls[0]);
-  assert.deepEqual(Object.fromEntries(u.searchParams), { api: 'agent_7', date_ini: '20300201000000', date_end: '20300210100000' });
+// Fase W10: el login por API (agent_7, correrLogin) se retiró con la réplica. Los mismos logins inventados se guardan
+// con el lector y el guardado de puntualidad.js (los que usa la carga por archivo), para las pruebas que siguen.
+test('logins inventados guardados con el lector de puntualidad (antes venían de agent_7)', () => {
+  const P = require('../puntualidad');
+  const r = P.resumirSesiones([
+    { agent_id: '9001', agent_name: 'Persona Inventada f363_a1', date: '2030-02-04', login: '2030-02-04 07:59:58', logout: '2030-02-04 12:00:00', login_time: '4:00:02' },
+    { agent_id: '9001', agent_name: 'Persona Inventada f363_a1', date: '2030-02-04', login: '2030-02-04 12:30:00', logout: '2030-02-04 16:40:00', login_time: '4:10:00' },
+    { agent_id: '9002', agent_name: 'AGENTE INVENTADO SIN PAR', date: '2030-02-05', login: '2030-02-05 08:03:00', logout: '2030-02-05 17:00:00', login_time: '8:57:00' },
+  ]);
+  assert.equal(r.dias.size, 2);
+  P.guardarResumen(db, 'MOBILIZE', '2030-02-01', '2030-02-10', r.dias, '2030-02-10 10:00:00', new Date().toISOString());
   assert.equal(db.prepare("SELECT COUNT(*) n FROM wolkvox_login_diario WHERE operacion = 'MOBILIZE'").get().n, 2);
-  assert.equal(db.prepare("SELECT hasta FROM wolkvox_login_hasta WHERE operacion = 'MOBILIZE'").get().hasta, '2030-02-10 10:00:00');
-  const h = db.prepare("SELECT detalle FROM historial WHERE accion = 'WOLKVOX_LOGIN' ORDER BY id DESC LIMIT 1").get().detalle;
-  assert.match(h, /2030-02: 3 sesiones, 2 agentes, 2 agente-días/);
-  assert.ok(!h.includes('Inventad') && !h.includes('9001'));
-  // Días 1 a 3: también el mes anterior (2 consultas).
-  assert.equal(auto.planLogin(new Date('2030-03-02T15:00:00Z')).length, 2);
-});
-
-test('agent_7 con error o respuesta rara: no cambia nada y no reintenta', async () => {
-  const antes = db.prepare('SELECT * FROM wolkvox_login_diario ORDER BY fecha, agentId').all();
-  let n = 0;
-  const raro = () => { n++; return Promise.resolve({ status: 200, json: () => Promise.resolve({ code: 200, msg: '1 records were found', data: [{ agente: 'x', entrada: 'y' }] }) }); };
-  const r = await auto.correrLogin({ db, env: ENV, ahora: new Date('2030-02-10T15:00:00Z'), fetchImpl: raro, franja: 'f363-2' });
-  assert.equal(r.estado, 'error');
-  assert.match(r.detalle, /campos: agente,entrada/);
-  let m = 0;
-  const caido = () => { m++; return Promise.reject(Object.assign(new Error('x'), { cause: { code: 'ECONNRESET' } })); };
-  const r2 = await auto.correrLogin({ db, env: ENV, ahora: new Date('2030-02-10T15:00:00Z'), fetchImpl: caido, franja: 'f363-3' });
-  assert.equal(r2.error, 'red');
-  assert.deepEqual([n, m], [1, 1]);
-  assert.deepEqual(db.prepare('SELECT * FROM wolkvox_login_diario ORDER BY fecha, agentId').all(), antes);
-});
-
-test('programador: el login corre solo con WOLKVOX_LOGIN_ACTIVO, aparte del Flujo', async () => {
-  let llamadas = [];
-  const fetchImpl = (url) => { llamadas.push(new URL(url).searchParams.get('api')); return Promise.resolve({ status: 200, json: () => Promise.resolve({ code: 200, msg: '0 records were found', data: [] }) }); };
-  const p = auto.iniciar(db, { env: ENV, reloj: () => new Date('2030-02-11T12:05:00Z'), leerInterruptor: async (e, n) => n === 'WOLKVOX_LOGIN_ACTIVO', fetchImpl, cadaMs: 3600 * 1000 });
-  try { await p.tick(); } finally { p.detener(); }
-  assert.deepEqual(llamadas, ['agent_7']);
-  llamadas = [];
-  const p2 = auto.iniciar(db, { env: ENV, reloj: () => new Date('2030-02-11T18:05:00Z'), leerInterruptor: async () => false, fetchImpl, cadaMs: 3600 * 1000 });
-  try { await p2.tick(); } finally { p2.detener(); }
-  assert.deepEqual(llamadas, []);
 });
 
 test('enlazar agentes: solo quien edita; una asesora, un agente; Historial', async () => {

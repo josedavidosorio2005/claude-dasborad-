@@ -7,6 +7,13 @@ decidir nada, solo priorizar cuándo invertir el tiempo). Lo ya cerrado
 no se deja aquí — queda en `docs/historico/progress-fases.md`. Cada
 ítem tiene prioridad, cómo se cierra, y la fecha en que se anotó.
 
+## Estado al 26/11/2026 (producción 1.283.2)
+
+- **Fase W10 (borrar la réplica «MOBILIZE PRUEBAS API», v1.284.0):** PR con CI verde, SIN mergear. Falta: revisar el
+  dry-run con las cifras de producción y el «OK borrar» escrito del usuario; el merge lo hace el usuario (respaldo de
+  menos de 24 h antes). Después, el usuario borra de SSM los parámetros que quedan sin uso: `WOLKVOX_AUTO_ACTIVO`,
+  `WOLKVOX_AUTO_MODULOS`, `WOLKVOX_LOGIN_ACTIVO`, `WOLKVOX_AGENTE_CLAVE_SHA256` y `WOLKVOX_AGENTE_IPS`.
+
 ## Estado al 25/11/2026, cierre de la tarde (producción 1.275.1)
 
 - **Mergeados y desplegados el 25/11 en la tarde** (CI verde, `--match-head-commit`, `/api/health` comprobado):

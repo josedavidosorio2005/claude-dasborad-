@@ -26,7 +26,7 @@ const { claveNombre } = require('./enlace-asesor');
 // Logout de Wolkvox, «HistAgent», mismas columnas que agent_7). SURA: solo por archivo, con sus
 // propias asesoras, y la asesora ve lo suyo (D3). La réplica: API y archivo.
 const CAMPANAS = {
-  'MOBILIZE PRUEBAS API': { operacion: 'MOBILIZE', asesorasDe: 'MOBILIZE', asesoraVe: false },
+  // Fase W10 (26/11/2026): la réplica «MOBILIZE PRUEBAS API» (API agent_7 y archivo) se borró; queda SURA.
   SURA: { operacion: 'ARCHIVO_SURA', asesorasDe: 'SURA', asesoraVe: true },
 };
 let _config = CAMPANAS;

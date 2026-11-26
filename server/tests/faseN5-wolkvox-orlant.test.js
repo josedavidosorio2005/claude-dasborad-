@@ -77,23 +77,20 @@ test('migración: crea la réplica interna de ORLANT con su tablero, vacía; ORL
   if (orl) assert.notEqual(JSON.parse(orl.parametros || '{}').interno, true, 'ORLANT real no es interno');
 });
 
-test('operación por campaña: solo las réplicas; los reales nunca', () => {
+test('operación por campaña: las réplicas y (Fase W10) el MOBILIZE real; el ORLANT real nunca', () => {
   assert.equal(wv.operacionDeCampana(R), 'ORLANT');
-  assert.equal(wv.operacionDeCampana('MOBILIZE PRUEBAS API'), 'MOBILIZE');
+  assert.equal(wv.operacionDeCampana('MOBILIZE PRUEBAS API'), null); // Fase W10: borrada
   assert.equal(wv.operacionDeCampana('ORLANT'), null);
-  assert.equal(wv.operacionDeCampana('MOBILIZE'), null);
+  assert.equal(wv.operacionDeCampana('MOBILIZE'), 'MOBILIZE'); // Fase W10: el panel pasó al real
   assert.ok(Object.isFrozen(wv.OPERACION_DE_CAMPANA));
 });
 
 // Fase N6 (23/11): la réplica de ORLANT pasa a ser un destino (apagado); MOBILIZE sigue igual.
 test('MOBILIZE sin cambios: sus dos destinos siguen de MOBILIZE; ORLANT solo como réplica', () => {
-  assert.deepEqual(Object.keys(D.DESTINOS), ['replica', 'real', 'orlant_replica', 'aurora_replica']); // Fase AU2: + la réplica de Aurora (apagada)
-  assert.equal(D.operacionDe(), 'MOBILIZE');
-  assert.equal(D.operacionDe('replica'), 'MOBILIZE');
+  assert.deepEqual(Object.keys(D.DESTINOS), ['real', 'orlant_replica', 'aurora_replica']); // Fase AU2: + la réplica de Aurora (apagada) // Fase W10: sin la réplica de MOBILIZE
   assert.equal(D.operacionDe('real'), 'MOBILIZE');
   assert.equal(D.operacionDe('orlant_replica'), 'ORLANT');
   assert.equal(wvAuto.OPERACION, 'MOBILIZE');
-  assert.equal(wvAuto.CAMPANA, 'MOBILIZE PRUEBAS API');
   assert.throws(() => D.destino('orlant'), /no permitido/);
   assert.ok(!D.CAMPANAS_PERMITIDAS.includes('ORLANT'), 'nunca el ORLANT real');
 });
@@ -119,11 +116,11 @@ test('estado de la réplica de ORLANT: sin token, consulta automática apagada, 
   assert.equal(r.body.auto.interruptor, 'WOLKVOX_ORLANT_AUTO_ACTIVO');
   assert.equal(r.body.auto.activoAlArrancar, false);
   assert.ok(!JSON.stringify(r.body).includes(SERVIDOR), 'nunca el servidor');
-  // La de MOBILIZE sigue con su consulta automática.
-  const m = await request(app).get('/api/wolkvox/estado').query({ campana: 'MOBILIZE PRUEBAS API' }).set(H(admin));
+  // Fase W10: el MOBILIZE real muestra su consulta automática, sin «Ejecutar ahora».
+  const m = await request(app).get('/api/wolkvox/estado').query({ campana: 'MOBILIZE' }).set(H(admin));
   assert.equal(m.status, 200);
-  assert.equal(m.body.autoDisponible, true);
-  assert.ok(m.body.auto);
+  assert.equal(m.body.autoDisponible, false);
+  assert.equal(m.body.auto.interruptor, 'WOLKVOX_REAL_ACTIVO');
 });
 
 test('«Diagnóstico de red» de ORLANT sin token: corre con el servidor, sin fetch y sin gastar consultas', async () => {

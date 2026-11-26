@@ -9,11 +9,14 @@ const auto = require('../wolkvox-auto');
 const wv = require('../wolkvox');
 const { cargarNivelServicioDiario } = require('../nivel-servicio-diario');
 
-const R = auto.CAMPANA;
+const R = 'MOBILIZE'; // Fase W10: antes la réplica «MOBILIZE PRUEBAS API» (borrada); ahora el destino real
 const TOKEN = 'TOKEN-FALSO-A1-no-es-real-0123456789';
 const SERVIDOR = 'servidorfalsoa1';
 const SKILL_A = 'SKILL INVENTADA A1 UNO';
 const SKILL_B = 'SKILL INVENTADA A1 DOS';
+// Fase W10: el real solo guarda skills mapeadas a MOBILIZE.
+auto.asegurarTablas(db);
+for (const sk of ['SKILL INVENTADA A1 UNO', 'SKILL INVENTADA A1 DOS']) db.prepare("INSERT OR IGNORE INTO trafico_skill_mapeo (skillName, campana, sede, createdAt, updatedAt) VALUES (?, 'MOBILIZE', NULL, 'x', 'x')").run(sk);
 const ENV = { NODE_ENV: 'test', WOLKVOX_MOBILIZE_TOKEN: TOKEN, WOLKVOX_MOBILIZE_SERVIDOR: SERVIDOR };
 // 18/11/2026 07:30 en Colombia (12:30 UTC): pide del 1 al 17 de noviembre.
 const AHORA = new Date('2026-11-18T12:30:00Z');
@@ -96,7 +99,7 @@ test('corrida completa: pide skill_1 un dia por consulta, reemplaza el mes de la
     { fecha: '2026-11-03', skillName: SKILL_A, totalLlamadas: 1, contestadas: 1, ahtSegundos: 200 },
     { fecha: '2026-11-05', skillName: 'SKILL VIEJA INVENTADA', totalLlamadas: 3, contestadas: 3 },
   ] });
-  const mobAntes = contar("SELECT COUNT(*) n FROM calidad_nivel_servicio_diario WHERE campana = 'MOBILIZE'");
+  const mobAntes = contar("SELECT COUNT(*) n FROM calidad_nivel_servicio_diario WHERE campana = 'ORLANT'");
   const octAntes = filasMes('2026-10').length;
   const versionesAntes = contar('SELECT COUNT(*) n FROM cargas_versiones WHERE campana = ?', R);
   const usoAntes = wv.usoDelDia(db, 'MOBILIZE', AHORA);
@@ -106,7 +109,7 @@ test('corrida completa: pide skill_1 un dia por consulta, reemplaza el mes de la
   console.log = (...a) => { logs.push(a.join(' ')); };
   let r;
   try {
-    r = await auto.correrUnaVez({ db, env: ENV, ahora: AHORA, fetchImpl: falso.fetch, franja: franja(), logEvent: require('../routes/shared').logEvent });
+    r = await auto.correrUnaVez({ db, destino: 'real', env: ENV, ahora: AHORA, fetchImpl: falso.fetch, franja: franja(), logEvent: require('../routes/shared').logEvent });
   } finally { console.log = logOrig; }
 
   assert.equal(r.estado, 'ok', r.detalle);
@@ -131,7 +134,7 @@ test('corrida completa: pide skill_1 un dia por consulta, reemplaza el mes de la
   );
   assert.equal(filas.find((f) => f.fecha === '2026-11-04' && f.skillName === SKILL_A).ahtSegundos, null); // sin archivo manual: vacio, no inventado
   assert.ok(contar('SELECT COUNT(*) n FROM cargas_versiones WHERE campana = ?', R) > versionesAntes, 'respaldo antes de reemplazar');
-  assert.equal(contar("SELECT COUNT(*) n FROM calidad_nivel_servicio_diario WHERE campana = 'MOBILIZE'"), mobAntes);
+  assert.equal(contar("SELECT COUNT(*) n FROM calidad_nivel_servicio_diario WHERE campana = 'ORLANT'"), mobAntes);
   assert.equal(filasMes('2026-10').length, octAntes);
   const mensual = db.prepare('SELECT llamadasTotales FROM calidad_nivel_servicio WHERE campana = ? AND mes = ?').get(R, '2026-11');
   assert.equal(mensual.llamadasTotales, 17 * 14);
@@ -147,9 +150,9 @@ test('corrida completa: pide skill_1 un dia por consulta, reemplaza el mes de la
 test('la misma franja no corre dos veces', async () => {
   const f = franja();
   const falso = crearFalso(diaNormal);
-  assert.equal((await auto.correrUnaVez({ db, env: ENV, ahora: AHORA, fetchImpl: falso.fetch, franja: f })).estado, 'ok');
+  assert.equal((await auto.correrUnaVez({ db, destino: 'real', env: ENV, ahora: AHORA, fetchImpl: falso.fetch, franja: f })).estado, 'ok');
   const n = falso.llamadas;
-  assert.equal((await auto.correrUnaVez({ db, env: ENV, ahora: AHORA, fetchImpl: falso.fetch, franja: f })).estado, 'ya_corrida');
+  assert.equal((await auto.correrUnaVez({ db, destino: 'real', env: ENV, ahora: AHORA, fetchImpl: falso.fetch, franja: f })).estado, 'ya_corrida');
   assert.equal(falso.llamadas, n);
 });
 
@@ -158,7 +161,7 @@ test('Wolkvox no responde (tiempo agotado): una sola consulta, lo registra, no r
   const falso = crearFalso((url, opts) => new Promise((_, mal) => {
     opts.signal.addEventListener('abort', () => mal(Object.assign(new Error('aborted'), { name: 'AbortError' })));
   }));
-  const r = await auto.correrUnaVez({ db, env: { ...ENV, WOLKVOX_TIEMPO_MAXIMO_MS: '30' }, ahora: AHORA, fetchImpl: falso.fetch, franja: franja(), logEvent: require('../routes/shared').logEvent });
+  const r = await auto.correrUnaVez({ db, destino: 'real', env: { ...ENV, WOLKVOX_TIEMPO_MAXIMO_MS: '30' }, ahora: AHORA, fetchImpl: falso.fetch, franja: franja(), logEvent: require('../routes/shared').logEvent });
   assert.equal(r.estado, 'error');
   assert.equal(r.error, 'tiempo_agotado');
   assert.equal(falso.llamadas, 1, 'no reintenta ni sigue con los otros dias');
@@ -171,12 +174,12 @@ test('Wolkvox no responde (tiempo agotado): una sola consulta, lo registra, no r
 test('falla a mitad de mes (sin conexion el dia 9): el mes no se reemplaza; 401 tampoco se reintenta', async () => {
   const antes = filasMes('2026-11');
   const falso = crearFalso((url, o, f) => (f.llamadas === 9 ? Promise.reject(Object.assign(new Error('x'), { cause: { code: 'ECONNRESET' } })) : diaNormal()));
-  const r = await auto.correrUnaVez({ db, env: ENV, ahora: AHORA, fetchImpl: falso.fetch, franja: franja() });
+  const r = await auto.correrUnaVez({ db, destino: 'real', env: ENV, ahora: AHORA, fetchImpl: falso.fetch, franja: franja() });
   assert.equal(r.error, 'red');
   assert.equal(falso.llamadas, 9);
   assert.deepEqual(filasMes('2026-11'), antes);
   const f401 = crearFalso(() => Promise.resolve({ status: 401, json: () => Promise.resolve({}) }));
-  const r2 = await auto.correrUnaVez({ db, env: ENV, ahora: AHORA, fetchImpl: f401.fetch, franja: franja() });
+  const r2 = await auto.correrUnaVez({ db, destino: 'real', env: ENV, ahora: AHORA, fetchImpl: f401.fetch, franja: franja() });
   assert.equal(r2.error, 'autorizacion');
   assert.equal(f401.llamadas, 1);
 });
@@ -184,7 +187,7 @@ test('falla a mitad de mes (sin conexion el dia 9): el mes no se reemplaza; 401 
 test('respuesta con campos desconocidos: el mes no cambia y el Historial dice solo los NOMBRES de los campos', async () => {
   const antes = filasMes('2026-11');
   const falso = crearFalso(() => ok({ code: 200, msg: '1 records were found', data: [{ skill_name: SKILL_A, llamadas_x: '5', otro_campo: 'valor secreto inventado' }] }));
-  const r = await auto.correrUnaVez({ db, env: ENV, ahora: AHORA, fetchImpl: falso.fetch, franja: franja(), logEvent: require('../routes/shared').logEvent });
+  const r = await auto.correrUnaVez({ db, destino: 'real', env: ENV, ahora: AHORA, fetchImpl: falso.fetch, franja: franja(), logEvent: require('../routes/shared').logEvent });
   assert.equal(r.error, 'respuesta_invalida');
   assert.equal(falso.llamadas, 1);
   assert.deepEqual(filasMes('2026-11'), antes);
@@ -196,7 +199,7 @@ test('respuesta con campos desconocidos: el mes no cambia y el Historial dice so
 test('validacion del mes: contestadas mayor que el total -> no reemplaza', async () => {
   const antes = filasMes('2026-11');
   const falso = crearFalso(() => ok({ code: 200, data: [{ skill_name: SKILL_A, inbound_calls: '3', answer_calls: '9' }] }));
-  const r = await auto.correrUnaVez({ db, env: ENV, ahora: AHORA, fetchImpl: falso.fetch, franja: franja() });
+  const r = await auto.correrUnaVez({ db, destino: 'real', env: ENV, ahora: AHORA, fetchImpl: falso.fetch, franja: franja() });
   assert.equal(r.estado, 'error');
   assert.equal(r.meses[0].estado, 'invalido');
   assert.deepEqual(filasMes('2026-11'), antes);
@@ -205,7 +208,7 @@ test('validacion del mes: contestadas mayor que el total -> no reemplaza', async
 test('tope diario: si lo que hay que pedir no cabe, no consulta nada', async () => {
   const falso = crearFalso(diaNormal);
   const usadas = wv.usoDelDia(db, 'MOBILIZE', AHORA);
-  const r = await auto.correrUnaVez({ db, env: { ...ENV, WOLKVOX_MAX_CONSULTAS_DIA: String(usadas + 16) }, ahora: AHORA, fetchImpl: falso.fetch, franja: franja() });
+  const r = await auto.correrUnaVez({ db, destino: 'real', env: { ...ENV, WOLKVOX_MAX_CONSULTAS_DIA: String(usadas + 16) }, ahora: AHORA, fetchImpl: falso.fetch, franja: franja() });
   assert.equal(r.estado, 'omitida');
   assert.equal(falso.llamadas, 0);
   assert.match(r.detalle, /no alcanza el tope del día/);
@@ -216,7 +219,7 @@ test('tope diario: si lo que hay que pedir no cabe, no consulta nada', async () 
 
 test('sin token/servidor: no consulta y lo registra', async () => {
   const falso = crearFalso(diaNormal);
-  const r = await auto.correrUnaVez({ db, env: { NODE_ENV: 'test' }, ahora: AHORA, fetchImpl: falso.fetch, franja: franja() });
+  const r = await auto.correrUnaVez({ db, destino: 'real', env: { NODE_ENV: 'test' }, ahora: AHORA, fetchImpl: falso.fetch, franja: franja() });
   assert.equal(r.estado, 'omitida');
   assert.equal(falso.llamadas, 0);
 });
@@ -228,7 +231,7 @@ test('programador: apagado no consulta ni deja rastro; encendido corre una vez p
   const falso = crearFalso(diaNormal);
   // Solo el interruptor de la réplica (Fase A29: desde que el real llena noviembre, un falso que
   // encendiera cualquier nombre también encendería WOLKVOX_REAL_ACTIVO y contaría sus consultas).
-  const p = auto.iniciar(db, { env: ENV, reloj: () => ahora, leerInterruptor: async (e, n) => (n === undefined || n === 'WOLKVOX_AUTO_ACTIVO' ? encendido : false), fetchImpl: falso.fetch, cadaMs: 3600 * 1000 });
+  const p = auto.iniciar(db, { env: ENV, reloj: () => ahora, leerInterruptor: async (e, n) => (n === undefined || n === 'WOLKVOX_REAL_ACTIVO' ? encendido : false), fetchImpl: falso.fetch, cadaMs: 3600 * 1000 });
   try {
     const n0 = filasCorridas();
     assert.equal(await p.tick(), null);
@@ -257,13 +260,14 @@ test('programador: apagado no consulta ni deja rastro; encendido corre una vez p
     assert.equal(await p2.tick(), null);
   } finally { p2.detener(); console.error = errOrig; }
   assert.equal(falso.llamadas, 18);
-  assert.ok(errores.some((e) => /no se pudo leer el interruptor en SSM \(AccessDeniedException\)/.test(e)));
+  // Fase W10: el aviso en consola era del bloque de la réplica; lo que importa (no corre) se revisa arriba.
+  void errores;
 });
 
 test('interruptor local (sin SSM): solo «1» enciende', async () => {
-  assert.equal(await auto.leerInterruptor({ WOLKVOX_AUTO_ACTIVO: '1' }), true);
-  assert.equal(await auto.leerInterruptor({ WOLKVOX_AUTO_ACTIVO: ' 1\n' }), true);
-  for (const v of [undefined, '', '0', 'si', 'true', '11']) assert.equal(await auto.leerInterruptor({ WOLKVOX_AUTO_ACTIVO: v }), false, String(v));
+  assert.equal(await auto.leerInterruptor({ WOLKVOX_REAL_ACTIVO: '1' }, 'WOLKVOX_REAL_ACTIVO'), true);
+  assert.equal(await auto.leerInterruptor({ WOLKVOX_REAL_ACTIVO: ' 1\n' }, 'WOLKVOX_REAL_ACTIVO'), true);
+  for (const v of [undefined, '', '0', 'si', 'true', '11']) assert.equal(await auto.leerInterruptor({ WOLKVOX_REAL_ACTIVO: v }, 'WOLKVOX_REAL_ACTIVO'), false, String(v));
 });
 
 test('estado del administrador: horarios y ultima corrida, sin secretos; el resto sigue sin acceso', async () => {
@@ -276,6 +280,6 @@ test('estado del administrador: horarios y ultima corrida, sin secretos; el rest
   assert.ok(r.body.reportes.includes('skill_1'));
   const txt = JSON.stringify(r.body);
   for (const s of [TOKEN, SERVIDOR, SKILL_A]) assert.ok(!txt.includes(s));
-  const m = await request(app).get('/api/wolkvox/estado?campana=MOBILIZE').set({ Authorization: 'Bearer ' + admin });
+  const m = await request(app).get('/api/wolkvox/estado?campana=ORLANT').set({ Authorization: 'Bearer ' + admin }); // Fase W10: el MOBILIZE real ya tiene panel
   assert.equal(m.status, 404);
 });

@@ -10,7 +10,9 @@ const { db } = require('./helpers');
 const auto = require('../wolkvox-auto');
 const ing = require('../wolkvox-ingesta');
 
-const R = auto.CAMPANA;
+const R = 'MOBILIZE'; // Fase W10: antes la réplica (borrada); el real solo guarda las skills mapeadas a MOBILIZE
+auto.asegurarTablas(db);
+for (const sk of ['SKILL INVENTADA ACTIVA', 'SKILL INVENTADA QUIETA', 'SKILL INVENTADA SIEMPRE CERO']) db.prepare("INSERT OR IGNORE INTO trafico_skill_mapeo (skillName, campana, sede, createdAt, updatedAt) VALUES (?, 'MOBILIZE', NULL, 'x', 'x')").run(sk);
 const ENV = { NODE_ENV: 'test', WOLKVOX_MOBILIZE_TOKEN: 'TOKEN-FALSO-A4-no-es-real-0123456789', WOLKVOX_MOBILIZE_SERVIDOR: 'servidorfalsoa4' };
 const ok = (cuerpo) => Promise.resolve({ status: 200, json: () => Promise.resolve(cuerpo) });
 const filasMes = (mes) => db.prepare('SELECT fecha, skillName, totalLlamadas, serviceLevel10secPct, serviceLevel20secPct, serviceLevel30secPct FROM calidad_nivel_servicio_diario WHERE campana = ? AND substr(fecha,1,7) = ? ORDER BY fecha, skillName').all(R, mes);
@@ -26,7 +28,7 @@ test('filas con 0 llamadas se descartan; una skill que empieza a recibir llamada
       { skill_name: 'SKILL INVENTADA SIEMPRE CERO', inbound_calls: '0', answer_calls: '0', abandon_calls: '0' },
     ] });
   };
-  const r = await auto.correrUnaVez({ db, env: ENV, ahora, fetchImpl, franja: 'a4-1' });
+  const r = await auto.correrUnaVez({ db, destino: 'real', env: ENV, ahora, fetchImpl, franja: 'a4-1' });
   assert.equal(r.estado, 'ok', r.detalle);
   assert.equal(r.meses[0].filas, 5); // 4 dias de ACTIVA + 1 de QUIETA
   assert.equal(r.meses[0].sinLlamadas, 7); // 3 de QUIETA + 4 de SIEMPRE CERO
@@ -43,7 +45,7 @@ test('filas con 0 llamadas se descartan; una skill que empieza a recibir llamada
 test('un mes con todas las filas en cero no se reemplaza', async () => {
   const antes = filasMes('2026-11');
   const fetchImpl = () => ok({ code: 200, msg: '1 records were found', data: [{ skill_name: 'SKILL INVENTADA SIEMPRE CERO', inbound_calls: '0', answer_calls: '0' }] });
-  const r = await auto.correrUnaVez({ db, env: ENV, ahora: new Date('2026-11-05T12:30:00Z'), fetchImpl, franja: 'a4-2' });
+  const r = await auto.correrUnaVez({ db, destino: 'real', env: ENV, ahora: new Date('2026-11-05T12:30:00Z'), fetchImpl, franja: 'a4-2' });
   assert.equal(r.meses[0].estado, 'sin_filas');
   assert.match(r.detalle, /Wolkvox no trajo filas con llamadas \(4 en cero\), mes sin cambios/);
   assert.deepEqual(filasMes('2026-11'), antes);

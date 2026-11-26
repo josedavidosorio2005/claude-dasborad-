@@ -94,13 +94,13 @@ test('operación por campaña: la réplica de Aurora es AURORA; Aurora real y lo
   assert.equal(wv.operacionDeCampana(R), 'AURORA');
   assert.equal(wv.operacionDeCampana(AU), null);
   assert.equal(wv.operacionDeCampana('ORLANT PRUEBAS API'), 'ORLANT');
-  assert.equal(wv.operacionDeCampana('MOBILIZE PRUEBAS API'), 'MOBILIZE');
+  assert.equal(wv.operacionDeCampana('MOBILIZE PRUEBAS API'), null); // Fase W10: borrada
   assert.ok(Object.isFrozen(wv.OPERACION_DE_CAMPANA));
 });
 
 // Fase AU2 (autorización escrita del usuario, 26/11): la réplica de Aurora pasa a ser un destino (apagado); el real no.
 test('la réplica de Aurora es un destino interno (AU2, apagado); el Aurora real nunca; MOBILIZE y ORLANT no cambian', () => {
-  assert.deepEqual(Object.keys(D.DESTINOS), ['replica', 'real', 'orlant_replica', 'aurora_replica']);
+  assert.deepEqual(Object.keys(D.DESTINOS), ['real', 'orlant_replica', 'aurora_replica']); // Fase W10
   assert.ok(D.CAMPANAS_PERMITIDAS.includes(R) && !D.CAMPANAS_PERMITIDAS.includes(AU));
   assert.equal(D.destinoInterno(R), D.DESTINOS.aurora_replica);
   assert.equal(D.destinoInterno(AU), null);
