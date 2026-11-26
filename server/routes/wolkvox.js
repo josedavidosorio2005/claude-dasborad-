@@ -236,5 +236,16 @@ router.put(
   })
 );
 
+// Fase W10a (26/11/2026): dry-run del borrado de la réplica «MOBILIZE PRUEBAS API». SOLO LECTURA: cuenta sus filas
+// por tabla y, como control, las del MOBILIZE real. Solo conteos, nunca datos; solo el administrador completo.
+router.get(
+  '/wolkvox/replica-mobilize/inventario',
+  requireActor,
+  wrap((req, res) => {
+    if (!isFullAdmin(req.actor)) return res.status(403).json({ error: 'Solo el administrador' });
+    res.json(require('../inventario-replica-mobilize').inventario(db));
+  })
+);
+
 module.exports = router;
 module.exports._reiniciarEspera = () => { _ultimaPrueba.clear(); _ultimoDiagnostico.clear(); _ultimaEjecucion.clear(); }; // solo pruebas
