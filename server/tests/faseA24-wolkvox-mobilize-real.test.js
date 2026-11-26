@@ -58,7 +58,7 @@ async function tick(ahora, deps) {
 }
 
 test('lista cerrada: la réplica, el MOBILIZE real y (Fase N6) la réplica de ORLANT; nunca el ORLANT real', () => {
-  assert.deepEqual([...D.CAMPANAS_PERMITIDAS], ['MOBILIZE PRUEBAS API', 'MOBILIZE', 'ORLANT PRUEBAS API']);
+  assert.deepEqual([...D.CAMPANAS_PERMITIDAS], ['MOBILIZE PRUEBAS API', 'MOBILIZE', 'ORLANT PRUEBAS API', 'CLINICA AURORA PRUEBAS API']); // Fase AU2: + la réplica de Aurora
   assert.equal(D.destino().campana, 'MOBILIZE PRUEBAS API');
   assert.equal(D.destino('real').campana, 'MOBILIZE');
   for (const malo of ['ORLANT', 'SURA', 'MOBILIZE', { campana: 'MOBILIZE' }, 'toString', 5]) assert.throws(() => D.destino(malo), /no permitido/, String(malo));

@@ -195,7 +195,7 @@ declarar(['PUT /monitoreos/:id', 'DELETE /monitoreos/:id'], 'calidadManage');
 declarar(['PUT /monitoreos/:id/asesor'], 'admin');
 declarar(['POST /monitoreos/revisar-asesores'], 'calidadEval'); // Fase 353: vista previa de nombres sin usuario (solo lee)
 declarar(['GET /calidad/enlace', 'POST /calidad/enlace', 'POST /calidad/enlace/revertir'], 'admin'); // Fase 353
-declarar(['GET /wolkvox/estado', 'POST /wolkvox/probar', 'POST /wolkvox/diagnostico-red', 'POST /wolkvox/auto/ejecutar', 'POST /wolkvox/real/hueco'], 'admin'); // A3: + ejecutar ahora // A30: + hueco del real // W3: + diagnóstico de red // Fase W2: solo admin y solo la replica interna (404 para las demas)
+declarar(['GET /wolkvox/estado', 'POST /wolkvox/probar', 'POST /wolkvox/diagnostico-red', 'POST /wolkvox/auto/ejecutar', 'POST /wolkvox/real/hueco', 'GET /wolkvox/agentes', 'PUT /wolkvox/agentes'], 'admin'); // AU2: + agentes de Inconexión (réplica de Aurora) // A3: + ejecutar ahora // A30: + hueco del real // W3: + diagnóstico de red // Fase W2: solo admin y solo la replica interna (404 para las demas)
 // Fase 356: «Sugerencias / Tickets». Crear, listar y ver: cualquier autenticado, auto-scoped por
 // autor (ajeno: 404). Contador y estado: ADMIN o REPORTES; borrar: solo ADMIN. Esas tres (y que
 // un ajeno no vea ni conteste) se prueban rol por rol en fase356-tickets.test.js.

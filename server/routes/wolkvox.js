@@ -55,6 +55,7 @@ router.get(
       reportesNombres: wv.REPORTES, // Fase A5: para la lista de «Probar»
       autoDisponible, // Fase N5
       auto: autoDisponible ? wvAuto.estado(db, undefined, dest) : null, // Fase A1: horarios, interruptor al arrancar, ultima corrida (sin secretos)
+      agentesDisponible: autoDisponible && !!(dest && dest.filtros && dest.filtros.agentes), // Fase AU2: lista de agentes de Inconexión
       servidorEncontrado: wv.servidorDe(op) !== null, // Fase N5: basta para el «Diagnóstico de red» (sin token)
     });
   })
@@ -195,6 +196,40 @@ router.post(
     if (r.estado === 'sin_interruptor') return res.status(503).json({ ok: false, codigo: 'sin_interruptor', error: 'No se pudo leer el interruptor en SSM; no se consultó' });
     if (r.estado === 'no_permitido') return res.status(400).json({ ok: false, codigo: 'parametro', error: 'Ese mes no está en la lista de huecos autorizados' });
     res.json({ ok: r.estado === 'ok', estado: r.estado, error: r.error || null, consultas: r.consultas, partes: r.partes, mes: b.mes, detalle: r.detalle, usoHoy: wv.usoDelDia(db, 'MOBILIZE'), tope: wv.topeDiario() });
+  })
+);
+
+// Fase AU2 (autorización escrita del usuario, 26/11/2026): lista EDITABLE de agentes de Inconexión de la réplica de
+// Aurora (solo nombres). Solo el administrador completo y solo un destino interno con filtro de agentes. La
+// Tipificación (llamadas y WhatsApp) de la consulta automática solo entra con los agentes elegidos aquí.
+function destinoConAgentes(req, res, campana) {
+  const op = operacionPermitida(req, res, campana);
+  if (!op) return null;
+  const D = require('../wolkvox-destinos');
+  const dest = D.destinoInterno(campana);
+  if (!dest || dest.operacion !== op || !(dest.filtros && dest.filtros.agentes)) { res.status(404).json({ error: 'Esta campaña no tiene lista de agentes' }); return null; }
+  return dest;
+}
+router.get(
+  '/wolkvox/agentes',
+  requireActor,
+  wrap((req, res) => {
+    const dest = destinoConAgentes(req, res, req.query.campana);
+    if (!dest) return;
+    res.json({ campana: dest.campana, agentes: require('../wolkvox-agentes').listar(db, dest.campana) });
+  })
+);
+router.put(
+  '/wolkvox/agentes',
+  requireActor,
+  wrap((req, res) => {
+    const b = req.body || {};
+    const dest = destinoConAgentes(req, res, b.campana);
+    if (!dest) return;
+    let r;
+    try { r = require('../wolkvox-agentes').guardar(db, dest.campana, b, actorLabel(req.actor)); } catch (e) { return res.status(400).json({ error: e.message, codigo: 'parametro' }); }
+    logEvent('WOLKVOX_AGENTES', null, actorLabel(req.actor), dest.campana + ' · ' + r.incluidos + ' de ' + r.total + ' agentes elegidos como de Inconexión');
+    res.json(Object.assign({ ok: true }, r, { agentes: require('../wolkvox-agentes').listar(db, dest.campana) }));
   })
 );
 

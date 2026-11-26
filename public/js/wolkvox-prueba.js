@@ -35,6 +35,58 @@ function _wvPintarEstado(e) {
   // Fase N5: «Ejecutar ahora» solo en la réplica de MOBILIZE (la de ORLANT no tiene consulta automática).
   var auto = _wvEl('wv-auto-btn');
   if (auto) auto.classList.toggle('hidden', e.autoDisponible === false);
+  // Fase AU2: lista de agentes de Inconexión (solo la réplica de Aurora).
+  var ag = _wvEl('wv-agentes');
+  if (ag) { ag.classList.toggle('hidden', !e.agentesDisponible); if (e.agentesDisponible) wvAgentesCargar(); }
+}
+
+// ── Fase AU2 (26/11/2026): agentes de Inconexión de la réplica de Aurora ──
+// La Tipificación de llamadas y de WhatsApp de la consulta automática solo entra con los agentes ELEGIDOS aquí. La
+// lista trae los agentes que vio cada corrida (solo el nombre) y los que se agregan a mano. Todo con textContent.
+var _wvAg = { lista: [], nuevos: [] };
+// Pura: filas para pintar (vistos + agregados a mano sin guardar), ordenadas por nombre, sin repetir.
+function wvAgentesFilas(lista, nuevos) {
+  var vistos = {};
+  var out = (lista || []).map(function (a) { vistos[String(a.nombre).toUpperCase()] = true; return { nombre: a.nombre, incluido: !!a.incluido, nuevo: false }; });
+  (nuevos || []).forEach(function (n) { if (!vistos[String(n).toUpperCase()]) { vistos[String(n).toUpperCase()] = true; out.push({ nombre: n, incluido: true, nuevo: true }); } });
+  return out.sort(function (a, b) { return a.nombre.localeCompare(b.nombre, 'es'); });
+}
+function _wvAgPintar() {
+  var cont = _wvEl('wv-agentes-lista');
+  if (!cont) return;
+  cont.textContent = '';
+  var filas = wvAgentesFilas(_wvAg.lista, _wvAg.nuevos);
+  if (!filas.length) { var p = document.createElement('p'); p.className = 'wv-ayuda'; p.textContent = 'Todavía no hay agentes: aparecen después de la primera corrida, o agrégalos a mano.'; cont.appendChild(p); }
+  filas.forEach(function (f, i) {
+    var l = document.createElement('label'); l.className = 'wv-agente';
+    var c = document.createElement('input'); c.type = 'checkbox'; c.checked = f.incluido; c.dataset.nombre = f.nombre; c.dataset.nuevo = f.nuevo ? '1' : ''; c.id = 'wv-ag-' + i;
+    l.appendChild(c); l.appendChild(document.createTextNode(' ' + f.nombre + (f.nuevo ? ' (nuevo)' : '')));
+    cont.appendChild(l);
+  });
+  var cuenta = filas.filter(function (f) { return f.incluido; }).length;
+  _wvTexto('wv-agentes-cuenta', cuenta + ' de ' + filas.length + ' elegidos');
+}
+async function wvAgentesCargar() {
+  try { var r = await apiRequest('GET', '/wolkvox/agentes?campana=' + encodeURIComponent(_wvCampana)); _wvAg.lista = r.agentes || []; _wvAg.nuevos = []; _wvAgPintar(); }
+  catch (e) { _wvTexto('wv-agentes-nota', 'No se pudo leer la lista: ' + e.message); }
+}
+function wvAgentesAgregar() {
+  var i = _wvEl('wv-agente-nuevo');
+  var n = i ? i.value.replace(/\s+/g, ' ').trim() : '';
+  if (!n) return;
+  if (n.length > 120) { _wvTexto('wv-agentes-nota', 'El nombre es muy largo (máximo 120 caracteres).'); return; }
+  _wvAg.nuevos.push(n); i.value = '';
+  _wvAgPintar(); _wvTexto('wv-agentes-nota', 'Agregado. Falta «Guardar agentes».');
+}
+async function wvAgentesGuardar() {
+  var marcas = Array.prototype.slice.call(document.querySelectorAll('#wv-agentes-lista input[type="checkbox"]'));
+  var incluidos = marcas.filter(function (c) { return c.checked && !c.dataset.nuevo; }).map(function (c) { return c.dataset.nombre; });
+  var agregar = marcas.filter(function (c) { return c.checked && c.dataset.nuevo; }).map(function (c) { return c.dataset.nombre; });
+  try {
+    var r = await apiRequest('PUT', '/wolkvox/agentes', { campana: _wvCampana, incluidos: incluidos, agregar: agregar });
+    _wvAg.lista = r.agentes || []; _wvAg.nuevos = []; _wvAgPintar();
+    _wvTexto('wv-agentes-nota', 'Guardado: ' + r.incluidos + ' de ' + r.total + ' agentes elegidos como de Inconexión.');
+  } catch (e) { _wvTexto('wv-agentes-nota', 'No se pudo guardar: ' + e.message); }
 }
 
 async function wvPruebaAbrir() {
@@ -214,5 +266,5 @@ if (typeof document !== 'undefined') { // Fase W3: el archivo también se carga 
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { wvPruebaVisible: wvPruebaVisible, wvRedFilas: wvRedFilas, wvAutoFilas: wvAutoFilas, wvLlenarReportes: wvLlenarReportes };
+  module.exports = { wvPruebaVisible: wvPruebaVisible, wvRedFilas: wvRedFilas, wvAutoFilas: wvAutoFilas, wvLlenarReportes: wvLlenarReportes, wvAgentesFilas: wvAgentesFilas };
 }
