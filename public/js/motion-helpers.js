@@ -190,6 +190,8 @@ var MOTION_MODALES_ESC = {
   'cargas-overlay': function () { if (typeof closeCargas === 'function') closeCargas(); },
   'dashcfg-overlay': function () { if (typeof closeDashCfgModal === 'function') closeDashCfgModal(); },
   'gd-overlay': function () { if (typeof closeGenericDashboard === 'function') closeGenericDashboard(); },
+  // Equidad profesionales (ORLANT, 26/11): la pantalla que abre su tarjeta del menú.
+  'eq-overlay': function () { if (typeof closeOrlantEquidad === 'function') closeOrlantEquidad(); },
 };
 // Fase 144 (A3b): Escape tambien cierra los 9 dialogos sin animacion
 // (MOTION_DIALOGOS_SIMPLES, mas abajo) -- se agregan al cargar el archivo.

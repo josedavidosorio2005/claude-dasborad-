@@ -7,6 +7,14 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.280.0 — Noviembre 2026
+
+**ORLANT, Equidad profesionales: ahora tiene su tarjeta en el menú principal.**
+
+- En el menú aparece la tarjeta «Equidad profesionales», como «Gestión STA». Al hacer clic abre la vista de siempre: por mes, con sus 3 pestañas (Pólizas, Medicina prepagada y Particulares).
+- La ve quien ya podía ver Equidad. La pestaña del Dashboard de ORLANT sigue igual.
+- No cambia la carga de las bases ni los datos.
+
 ## v1.279.0 — Noviembre 2026
 
 **MOBILIZE: se retira la copia de pruebas de la conexión con Wolkvox.**
