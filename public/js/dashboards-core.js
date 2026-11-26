@@ -61,6 +61,9 @@ function renderDashGrid(){
     var staT = grid.querySelector('[data-entrada="sta"]');
     if (staT) staT.insertAdjacentHTML('afterend', otHtml); else grid.insertAdjacentHTML('beforeend', otHtml);
   }
+  // Equidad profesionales (ORLANT, pedido de Edwin 26/11): tarjeta que abre la vista por mes; sale solo si el
+  // servidor la deja ver (la pone cuando responde, después de «Gestión STA» / «ORLANT · Tablero nuevo»).
+  if (typeof eqPintarTarjeta === 'function') eqPintarTarjeta(grid, tarjetaEntrada, currentUser, isFullAdmin());
   // Fase GH2: «Talento humano» para el rol GESTION_HUMANA, solo si el servidor lo deja (GH_ROL_ACTIVO).
   if (typeof talentoHumanoTarjetaRol === 'function') talentoHumanoTarjetaRol(rolActual, isFullAdmin(), grid, tarjetaEntrada);
   // Sin ningun modulo (ni tarjetas de entrada) -> mensaje claro, sin tarjetas.

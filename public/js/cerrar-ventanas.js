@@ -23,6 +23,7 @@ var CERRAR_VENTANAS_FUNCIONES = {
   'inventario-overlay': 'closeInventario',
   'activos-overlay': 'activosCerrar', // Fase 369
   'th-overlay': 'talentoHumanoCerrar', // Fase GH1
+  'eq-overlay': 'closeOrlantEquidad', // Equidad profesionales (ORLANT, 26/11)
 };
 
 // `doc` y `global` se pueden pasar en las pruebas; en el navegador son document y window.
