@@ -7,6 +7,14 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.282.0 — Noviembre 2026
+
+**Clínica Aurora (copia de pruebas): la conexión con Wolkvox ya puede traer datos solos, pero queda apagada.**
+
+- En «Clínica Aurora pruebas API» (oculta, solo el administrador) la plataforma podrá traer sola, a las 00:05, 7:00 y 13:00, el Flujo de llamadas, el Tráfico de WhatsApp y la Tipificación de llamadas y de WhatsApp, como lo definió Edwin: solo la línea de entrada, los 3 skills de WhatsApp y, en la Tipificación, solo los agentes de InConexión.
+- La lista de agentes de InConexión se elige en la ventana de Wolkvox («Agentes de Inconexión»). Mientras no se elija ninguno, la Tipificación no se guarda.
+- Queda **apagada** hasta que el usuario la encienda. No toca la Clínica Aurora real.
+
 ## v1.281.0 — Noviembre 2026
 
 **Malla de turnos: el horario y las pausas en un solo cuadro, con la duración de cada pausa.**

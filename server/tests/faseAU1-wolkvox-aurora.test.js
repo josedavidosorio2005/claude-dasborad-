@@ -98,10 +98,11 @@ test('operación por campaña: la réplica de Aurora es AURORA; Aurora real y lo
   assert.ok(Object.isFrozen(wv.OPERACION_DE_CAMPANA));
 });
 
-test('sin consulta automática: Aurora no es un destino; los destinos de MOBILIZE y ORLANT no cambian', () => {
-  assert.deepEqual(Object.keys(D.DESTINOS), ['replica', 'real', 'orlant_replica']);
-  assert.ok(!D.CAMPANAS_PERMITIDAS.includes(R) && !D.CAMPANAS_PERMITIDAS.includes(AU));
-  assert.equal(D.destinoInterno(R), null);
+// Fase AU2 (autorización escrita del usuario, 26/11): la réplica de Aurora pasa a ser un destino (apagado); el real no.
+test('la réplica de Aurora es un destino interno (AU2, apagado); el Aurora real nunca; MOBILIZE y ORLANT no cambian', () => {
+  assert.deepEqual(Object.keys(D.DESTINOS), ['replica', 'real', 'orlant_replica', 'aurora_replica']);
+  assert.ok(D.CAMPANAS_PERMITIDAS.includes(R) && !D.CAMPANAS_PERMITIDAS.includes(AU));
+  assert.equal(D.destinoInterno(R), D.DESTINOS.aurora_replica);
   assert.equal(D.destinoInterno(AU), null);
 });
 
@@ -112,8 +113,8 @@ test('estado de la réplica de Aurora: sin token, sin consulta automática, serv
   assert.equal(r.body.diagnostico.tokenEncontrado, false);
   assert.equal(r.body.diagnostico.servidorEncontrado, true);
   assert.equal(r.body.servidorEncontrado, true);
-  assert.equal(r.body.autoDisponible, false);
-  assert.equal(r.body.auto, null);
+  assert.equal(r.body.autoDisponible, true); // Fase AU2: con consulta automática, apagada
+  assert.equal(r.body.auto.activoAlArrancar, false);
   assert.ok(!JSON.stringify(r.body).includes(SERVIDOR), 'nunca el servidor');
 });
 
@@ -161,13 +162,14 @@ test('«Probar» de Aurora con token: 1 consulta con el token y el servidor de A
   for (const c of [R, AU]) assert.equal(db.prepare('SELECT COUNT(*) n FROM calidad_nivel_servicio_diario WHERE campana = ?').get(c).n, 0, c);
 });
 
-test('«Ejecutar ahora» no existe para Aurora (404) y no consulta nada', async () => {
+test('«Ejecutar ahora»: la réplica de Aurora apagada da 409 (AU2); el Aurora real 404; nada consulta', async () => {
   process.env.WOLKVOX_AURORA_TOKEN = TOKEN;
-  for (const campana of [R, AU]) {
-    rutaWv._reiniciarEspera();
-    const r = await request(app).post('/api/wolkvox/auto/ejecutar').set(H(admin)).send({ campana });
-    assert.equal(r.status, 404, campana);
-  }
+  rutaWv._reiniciarEspera();
+  const r = await request(app).post('/api/wolkvox/auto/ejecutar').set(H(admin)).send({ campana: R });
+  assert.equal(r.status, 409);
+  assert.match(r.body.error, /WOLKVOX_AURORA_AUTO_ACTIVO/);
+  rutaWv._reiniciarEspera();
+  assert.equal((await request(app).post('/api/wolkvox/auto/ejecutar').set(H(admin)).send({ campana: AU })).status, 404);
   assert.equal(fetchLlamadas.length, 0);
 });
 

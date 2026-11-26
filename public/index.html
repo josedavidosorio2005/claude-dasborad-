@@ -1984,6 +1984,18 @@
       <p class="wv-campos-titulo">Consulta automática ejecutada ahora (Flujo del mes, con respaldo):</p>
       <dl class="wv-estado" id="wv-auto-dl"></dl>
     </div>
+    <!-- Fase AU2: agentes de Inconexión de la réplica de Aurora (solo nombres; la Tipificación solo entra con los elegidos). -->
+    <details class="wv-agentes hidden" id="wv-agentes">
+      <summary>Agentes de Inconexión (Tipificación) · <span id="wv-agentes-cuenta"></span></summary>
+      <p class="wv-ayuda">La Tipificación de llamadas y de WhatsApp de la consulta automática solo entra con los agentes marcados. La lista trae los agentes que vio cada corrida (solo el nombre); el tráfico de WhatsApp no se filtra por agente.</p>
+      <div class="wv-agentes-lista" id="wv-agentes-lista" role="group" aria-label="Agentes de Inconexión" tabindex="0"></div>
+      <div class="wv-agentes-agregar">
+        <div class="ig"><label for="wv-agente-nuevo">Agregar a mano</label><input type="text" id="wv-agente-nuevo" maxlength="120" autocomplete="off"></div>
+        <button class="btn-cancel" type="button" onclick="wvAgentesAgregar()">Agregar</button>
+        <button class="btn-primary" type="button" onclick="wvAgentesGuardar()">Guardar agentes</button>
+      </div>
+      <p class="wv-ayuda" id="wv-agentes-nota" role="status" aria-live="polite"></p>
+    </details>
     <div class="modal-btns">
       <button class="btn-cancel" type="button" onclick="wvPruebaCerrar()">Cerrar</button>
       <button class="btn-cancel" type="button" id="wv-red-btn" onclick="wvDiagnosticoRed()">Diagnóstico de red</button>

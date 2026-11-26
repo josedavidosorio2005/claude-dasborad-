@@ -16,6 +16,17 @@ const CAMPANA_REPLICA = 'MOBILIZE PRUEBAS API';
 // Fase N6 (autorización escrita del usuario, 23/11/2026, CLAUDE.md): réplica oculta de ORLANT.
 const CAMPANA_REPLICA_ORLANT = 'ORLANT PRUEBAS API';
 const CAMPANA_REAL = 'MOBILIZE';
+// Fase AU2 (autorización escrita del usuario, 26/11/2026, CLAUDE.md): réplica oculta de Clínica Aurora.
+const CAMPANA_REPLICA_AURORA = 'CLINICA AURORA PRUEBAS API';
+// Mapeo de Edwin (26/11): qué skills entran en cada reporte de Aurora (nombres tal como los da Wolkvox; en el
+// «Probar» del 25/11 la skill de entrada se llama «LINEA DE ENTRADA»). «-» = salida (cdr_1 la trae sin skill).
+// Tipificación (llamadas y WhatsApp) solo con los agentes de Inconexión de la lista editable (wolkvox-agentes.js).
+const FILTROS_AURORA = Object.freeze({
+  flujoSkills: Object.freeze(['LINEA DE ENTRADA']),
+  cdrSkills: Object.freeze(['LINEA DE ENTRADA', '-']),
+  waSkills: Object.freeze(['CONFIRMACIONES WHATSAPP', 'RECORDACIONES 3 DIAS', 'WHATSAPP']),
+  agentes: true,
+});
 const DESDE_MES_REAL = '2026-11'; // Fase A29 (20/11/2026): antes '2026-12'
 
 // Fase N3 (autorización escrita del usuario, 24/11/2026): WhatsApp por API (chat_1) SOLO en la réplica de
@@ -36,8 +47,12 @@ const DESTINOS = Object.freeze({
   // Tipificación (cdr_1, sin datos sensibles) y No conectadas (cdr_5). Encuesta y abandonadas no están
   // autorizadas para ORLANT. Interruptor y lista de módulos propios; arranca apagada.
   orlant_replica: Object.freeze({ clave: 'orlant_replica', campana: CAMPANA_REPLICA_ORLANT, operacion: 'ORLANT', interna: true, interruptor: 'WOLKVOX_ORLANT_AUTO_ACTIVO', modulos: 'WOLKVOX_ORLANT_AUTO_MODULOS', desdeMes: null, sufijoFranja: ' orlant', modulosPermitidos: Object.freeze(['flujo_hora', 'cdr', 'no_conectadas', 'whatsapp']), cuentasPrueba: false, perfilCdr: 'orlant', encuestaConnId: false, flujoPorModulos: true }), // Fase N3b: el Flujo también va por la lista («flujo»)
+  // Fase AU2 (26/11/2026): SOLO la réplica de Aurora: Flujo (skill_1), Tipificación de llamadas (cdr_1) y WhatsApp
+  // (chat_1: tráfico, tiempos y Tipificación de WhatsApp). Con los filtros de Edwin. Arranca apagada; el Flujo
+  // también va por la lista («flujo»). El CDR con el perfil de ORLANT (Aurora usa su regla, provisional).
+  aurora_replica: Object.freeze({ clave: 'aurora_replica', campana: CAMPANA_REPLICA_AURORA, operacion: 'AURORA', interna: true, interruptor: 'WOLKVOX_AURORA_AUTO_ACTIVO', modulos: 'WOLKVOX_AURORA_AUTO_MODULOS', desdeMes: null, sufijoFranja: ' aurora', modulosPermitidos: Object.freeze(['cdr', 'whatsapp']), cuentasPrueba: false, perfilCdr: 'orlant', encuestaConnId: false, flujoPorModulos: true, filtros: FILTROS_AURORA }),
 });
-const CAMPANAS_PERMITIDAS = Object.freeze([CAMPANA_REPLICA, CAMPANA_REAL, CAMPANA_REPLICA_ORLANT]);
+const CAMPANAS_PERMITIDAS = Object.freeze([CAMPANA_REPLICA, CAMPANA_REAL, CAMPANA_REPLICA_ORLANT, CAMPANA_REPLICA_AURORA]);
 
 // Sin destino = la réplica (lo de siempre). Acepta la clave ('replica' | 'real') o el objeto de la lista.
 function destino(d) {
@@ -119,4 +134,4 @@ function flujoConCargaManual(db, mes, archivoApi) {
   return db.prepare("SELECT COUNT(*) n FROM calidad_nivel_servicio_diario WHERE campana = ? AND substr(fecha, 1, 7) = ? AND COALESCE(archivoNombre, '') <> ?").get(CAMPANA_REAL, mes, archivoApi).n > 0;
 }
 
-module.exports = { DESTINOS, CAMPANAS_PERMITIDAS, flujoEnLista, CAMPANA_REPLICA, CAMPANA_REPLICA_ORLANT, CAMPANA_REAL, DESDE_MES_REAL, destino, operacionDe, moduloPermitido, destinoInterno, recortarPlan, campanaLista, skillsMapeadas, HUECOS_REAL, huecoPermitido, filasEnHueco, flujoConCargaManual };
+module.exports = { DESTINOS, CAMPANAS_PERMITIDAS, flujoEnLista, CAMPANA_REPLICA, CAMPANA_REPLICA_ORLANT, CAMPANA_REPLICA_AURORA, FILTROS_AURORA, CAMPANA_REAL, DESDE_MES_REAL, destino, operacionDe, moduloPermitido, destinoInterno, recortarPlan, campanaLista, skillsMapeadas, HUECOS_REAL, huecoPermitido, filasEnHueco, flujoConCargaManual };

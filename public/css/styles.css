@@ -2595,6 +2595,15 @@ div.ca-bar-fila{cursor:default}
 .wv-estado dd{margin:0;color:var(--c-text);overflow-wrap:anywhere}
 .wv-error{color:var(--c-danger-text);background:var(--c-danger-bg);border-radius:var(--r-md);padding:10px 12px;font-size:var(--fs-body);margin:0 0 12px}
 .wv-resultado{border:1px solid var(--c-border);border-radius:var(--r-md);padding:12px 14px;margin:0 0 12px}
+.wv-agentes{border:1px solid var(--c-border);border-radius:var(--r-md);padding:8px 12px;margin:0 0 12px}
+.wv-agentes summary{cursor:pointer;min-height:44px;display:flex;flex-wrap:wrap;align-items:center;gap:0 6px;font-weight:600;color:var(--c-text)}
+.wv-agentes-lista{max-height:240px;overflow-y:auto;display:grid;grid-template-columns:minmax(0,1fr);gap:0 12px;margin:0 0 8px}
+@media (min-width:600px){.wv-agentes-lista{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.wv-agente{display:flex;align-items:center;gap:8px;min-height:44px;color:var(--c-text);overflow-wrap:anywhere}
+.wv-agente input{width:20px;height:20px;flex:0 0 auto}
+.wv-agentes-agregar{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end}
+.wv-agentes-agregar .ig{flex:1 1 220px;margin-bottom:0}
+.wv-agentes-agregar button{min-height:44px}
 .wv-campos-titulo{font-size:var(--fs-small);color:var(--c-text-muted);margin:4px 0 8px}
 .wv-campos{display:flex;flex-wrap:wrap;gap:6px;list-style:none;margin:0;padding:0;font-size:var(--fs-small)}
 .wv-campos .wv-campo{border:1px solid var(--c-border);border-radius:var(--r-pill);padding:3px 10px;color:var(--c-text);font-family:ui-monospace,Consolas,monospace}
