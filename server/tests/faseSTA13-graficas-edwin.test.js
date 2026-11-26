@@ -30,13 +30,14 @@ test('Codificación general: todas las codificaciones, sin «Otros»', () => {
   assert.doesNotMatch(SRC, /agrupar\(gs,c=>c\._tipi,7\)/);
 });
 
-test('números sobre porciones (dona), columnas (sin el tope de 14) y puntos de las líneas', () => {
+test('números sobre porciones (dona), columnas (también con más de 14 si caben) y puntos de las líneas; nunca bajo 12 px', () => {
   assert.match(SRC, /segs\+=etiquetasDona\(items,total,cx,cy,\(R\+r\)\/2\);/);
   assert.match(SRC, /class="val-dona"/);
-  assert.doesNotMatch(SRC, /tots\[i\]&&cats\.length<=14/);
-  assert.match(SRC, /if\(cats\.length<=45&&iw\/Math\.max\(1,cats\.length\)>=16\) series\.forEach\(\(s,k\)=>s\.vals\.forEach/);
+  assert.match(SRC, /if\(tots\[i\]&&\(cats\.length<=14\|\|iw\/cats\.length>=30\)\)/);
+  assert.match(SRC, /if\(cats\.length<=45&&iw\/Math\.max\(1,cats\.length\)>=26\) series\.forEach\(\(s,k\)=>s\.vals\.forEach/);
+  assert.doesNotMatch(SRC, /font-size:(9|10|11)px/);
   const css = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'css', 'orlant-sta-app.css'), 'utf8');
-  assert.match(css, /\.dona svg text\.val-dona\{/);
+  assert.match(css, /\.dona svg text\.val-dona\{fill:#fff;font-size:12px;/);
 });
 
 test('el archivo sigue cargando en Node y no toca la API (solo visual)', () => {

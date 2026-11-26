@@ -727,7 +727,7 @@ function lineaSVG(id,cats,series,{fmtX=dm,tipX=d=>`${dm(d)}/${d.slice(0,4)}`}={}
   const cw=cats.length<2? iw : iw/(cats.length-1);
   cats.forEach((d,i)=>{ const tip=`<b>${tipX(d)}</b><br>`+series.map(s=>`<span style="color:${s.color}">●</span> ${esc(s.nombre)}: <b>${fmt(s.vals[i])}</b>`).join('<br>');
     g+=`<rect x="${x(i)-cw/2}" y="${T}" width="${cw}" height="${ih}" fill="transparent" data-tip="${esc(tip)}"/>`; });
-  if(cats.length<=45&&iw/Math.max(1,cats.length)>=16) series.forEach((s,k)=>s.vals.forEach((v,i)=>{ if(series.length>2&&!v) return; g+=`<text x="${x(i)}" y="${k%2?y(v)+16:y(v)-8}" text-anchor="middle" class="val"${cats.length>20?' style="font-size:9px"':''}>${fmt(v)}</text>`; }));
+  if(cats.length<=45&&iw/Math.max(1,cats.length)>=26) series.forEach((s,k)=>s.vals.forEach((v,i)=>{ if(series.length>2&&!v) return; g+=`<text x="${x(i)}" y="${k%2?y(v)+16:y(v)-8}" text-anchor="middle" class="val">${fmt(v)}</text>`; }));
   else if(series.length<=4&&cats.length) series.forEach(s=>{ const v=s.vals[s.vals.length-1]; g+=`<text x="${x(cats.length-1)+8}" y="${y(v)-8}" class="val">${fmt(v)}</text>`; });
   return `<svg class="ch" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${g}</svg>`;
 }
@@ -744,7 +744,7 @@ function colSVG(id,cats,series,{fmtX=mesTxt}={}){
     vis.forEach((z,j)=>{ const y0=y(base), y1=y(base+z.v), h=Math.max(y0-y1-(j<vis.length-1?2:0),1);
       const tip=`<b>${fmtX(c)}</b><br><span style="color:${series[z.k].color}">●</span> ${esc(series[z.k].nombre)}: <b>${fmt(z.v)}</b>${series.length>1?`<br>Total: ${fmt(tots[i])}`:''}`;
       g+=`<rect x="${cx-bw/2}" y="${y1}" width="${bw}" height="${h}" rx="${j===vis.length-1?4:1}" fill="${series[z.k].color}" data-tip="${esc(tip)}"/>`; base+=z.v; });
-    if(tots[i]) g+=`<text x="${cx}" y="${y(tots[i])-6}" text-anchor="middle" class="val"${cats.length>14?' style="font-size:9px"':''}>${fmt(tots[i])}</text>`;
+    if(tots[i]&&(cats.length<=14||iw/cats.length>=30)) g+=`<text x="${cx}" y="${y(tots[i])-6}" text-anchor="middle" class="val">${fmt(tots[i])}</text>`;
     if(i%paso===0) g+=`<text x="${cx}" y="${H-10}" text-anchor="middle">${fmtX(c)}</text>`; });
   return `<svg class="ch" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${g}</svg>`;
 }

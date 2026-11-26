@@ -616,10 +616,10 @@ L(`    const cnt=agrupar(gs,c=>c._tipi,7);
 `    const cnt=agrupar(gs,c=>c._tipi,Infinity); // pedido de Edwin (26/11): TODAS las codificaciones, sin «Otros»
     $('grDona').innerHTML=donaSVG(cnt.map(([t,n],k)=>({nombre:t,n,color:colTipiN(t,k)})),gs.length,'gestiones');`);
 L('if(tots[i]&&cats.length<=14) g+=`<text x="${cx}" y="${y(tots[i])-6}" text-anchor="middle" class="val">${fmt(tots[i])}</text>`;',
-  'if(tots[i]) g+=`<text x="${cx}" y="${y(tots[i])-6}" text-anchor="middle" class="val"${cats.length>14?\' style="font-size:9px"\':\'\'}>${fmt(tots[i])}</text>`;');
+  'if(tots[i]&&(cats.length<=14||iw/cats.length>=30)) g+=`<text x="${cx}" y="${y(tots[i])-6}" text-anchor="middle" class="val">${fmt(tots[i])}</text>`;');
 L("  if(series.length<=4&&cats.length) series.forEach(s=>{ const v=s.vals[s.vals.length-1]; g+=`<text x=\"${x(cats.length-1)+8}\" y=\"${y(v)-8}\" class=\"val\">${fmt(v)}</text>`; });",
-  "  if(cats.length<=45&&iw/Math.max(1,cats.length)>=16) series.forEach((s,k)=>s.vals.forEach((v,i)=>{ if(series.length>2&&!v) return; g+=`<text x=\"${x(i)}\" y=\"${k%2?y(v)+16:y(v)-8}\" text-anchor=\"middle\" class=\"val\"${cats.length>20?' style=\"font-size:9px\"':''}>${fmt(v)}</text>`; }));\n  else if(series.length<=4&&cats.length) series.forEach(s=>{ const v=s.vals[s.vals.length-1]; g+=`<text x=\"${x(cats.length-1)+8}\" y=\"${y(v)-8}\" class=\"val\">${fmt(v)}</text>`; });");
-css = una(css, 'svg.ch text.val{fill:var(--txt);font-size:12px;font-weight:600}', 'svg.ch text.val{fill:var(--txt);font-size:12px;font-weight:600}\n.dona svg text.val-dona{fill:#fff;font-size:11px;font-weight:700;paint-order:stroke;stroke:rgba(0,0,0,.45);stroke-width:2.5px}');
+  "  if(cats.length<=45&&iw/Math.max(1,cats.length)>=26) series.forEach((s,k)=>s.vals.forEach((v,i)=>{ if(series.length>2&&!v) return; g+=`<text x=\"${x(i)}\" y=\"${k%2?y(v)+16:y(v)-8}\" text-anchor=\"middle\" class=\"val\">${fmt(v)}</text>`; }));\n  else if(series.length<=4&&cats.length) series.forEach(s=>{ const v=s.vals[s.vals.length-1]; g+=`<text x=\"${x(cats.length-1)+8}\" y=\"${y(v)-8}\" class=\"val\">${fmt(v)}</text>`; });");
+css = una(css, 'svg.ch text.val{fill:var(--txt);font-size:12px;font-weight:600}', 'svg.ch text.val{fill:var(--txt);font-size:12px;font-weight:600}\n.dona svg text.val-dona{fill:#fff;font-size:12px;font-weight:700;paint-order:stroke;stroke:rgba(0,0,0,.45);stroke-width:2.5px}');
 
 // 9) Manejadores en línea (onclick, onchange, oninput, onkeydown): sus llamadas pasan a STAapp.<función>.
 const nombres = [...new Set([...js.matchAll(/(?:^|\n)(?:async )?function (\w+)\(/g)].map((m) => m[1]))];
