@@ -85,23 +85,58 @@ function _mlGrupoDe(asesorId, menos) {
   return g ? g.nombre : null;
 }
 
+// Pedido de Edwin (reunión 26/11): horario y «Pausas, almuerzo y horas» en UN SOLO cuadro, para que el líder
+// programe todo en un lugar sin repetir los días: cada día es una fila con Trabaja, Entrada, Salida, Pausa activa 1,
+// Almuerzo, Pausa activa 2 y Horas. Cada pausa activa tiene su duración (la elige el líder; por defecto 15 y 10 min).
+// En el celular cada día se ve como una tarjeta. La cuenta de horas no cambia (salida − entrada − almuerzo).
+function _mlOpcionesHtml(opciones, actual, texto) {
+  return opciones.map(function (m) { return '<option value="' + m + '"' + (m === actual ? ' selected' : '') + '>' + texto(m) + '</option>'; }).join('');
+}
+function _mlMinTexto(m) { return m === 60 ? '1 h' : m + ' min'; }
+function mallaFilaDiaHtml(t, d, pre, dis) {
+  var dl = d.largo.toLowerCase();
+  var ds = t ? dis : ' disabled';
+  var p1 = mallaPausaMin(t, 1), p2 = mallaPausaMin(t, 2);
+  var am = t && t.almuerzo ? Number(t.almuerzoMin) : 60;
+  var pausa = function (n, dur, cuando) {
+    return '<td data-etq="Pausa ' + n + '" class="ml-celda-pausa"><span class="ml-alm"><input type="time" id="' + pre + '-p' + n + d.n + '" value="' + (t && t['pausa' + n] ? esc(t['pausa' + n]) : '') + '"' + ds +
+      ' aria-label="Pausa activa ' + n + ' del ' + dl + ' (' + cuando + ')">' +
+      '<select id="' + pre + '-d' + n + d.n + '"' + ds + ' aria-label="Duración de la pausa activa ' + n + ' del ' + dl + '">' +
+      _mlOpcionesHtml(MALLA_PAUSA_OPCIONES, dur, _mlMinTexto) + '</select></span></td>';
+  };
+  return '<tr data-dia="' + d.n + '"' + (t ? '' : ' class="ml-descanso"') + '><th scope="row"><span class="ml-dia-largo">' + d.largo + '</span><span class="ml-dia-corto" aria-hidden="true">' + d.corto + '</span></th>' +
+    '<td data-etq="Trabaja" class="ml-celda-trab"><input type="checkbox" id="' + pre + '-t' + d.n + '" data-dia="' + d.n + '" class="ml-trabaja"' + (t ? ' checked' : '') + dis + ' aria-label="Trabaja el ' + dl + '"></td>' +
+    '<td data-etq="Entrada" class="ml-celda-ent"><input type="time" id="' + pre + '-e' + d.n + '" value="' + (t ? esc(t.entrada) : '') + '"' + dis + ' aria-label="Entrada del ' + dl + '"></td>' +
+    '<td data-etq="Salida" class="ml-celda-sal"><input type="time" id="' + pre + '-s' + d.n + '" value="' + (t ? esc(t.salida) : '') + '"' + dis + ' aria-label="Salida del ' + dl + '"></td>' +
+    pausa(1, p1, 'en la mañana') +
+    '<td data-etq="Almuerzo" class="ml-celda-alm"><span class="ml-alm"><input type="time" id="' + pre + '-al' + d.n + '" value="' + (t && t.almuerzo ? esc(t.almuerzo) : '') + '"' + ds + ' aria-label="Hora del almuerzo del ' + dl + '">' +
+      '<select id="' + pre + '-am' + d.n + '"' + ds + ' aria-label="Duración del almuerzo del ' + dl + '">' + _mlOpcionesHtml(MALLA_ALMUERZO_OPCIONES, am, _mlMinTexto) + '</select></span></td>' +
+    pausa(2, p2, 'en la tarde') +
+    '<td data-etq="Horas" class="ml-horas-dia" id="' + pre + '-hd' + d.n + '">' + (t ? mallaHorasTexto(mallaMinutosDia(t)) : '—') + '</td></tr>';
+}
+function mallaHorarioTablaHtml(g, pre, dis) {
+  var h = g.horario || {};
+  var filas = MALLA_DIAS.map(function (d) { return mallaFilaDiaHtml(h[d.n] || h[String(d.n)] || null, d, pre, dis); }).join('');
+  // Fase M1 (B): horario del grupo en los festivos (sin marcar: el festivo descansa, por defecto). Sin pausas.
+  var fe = h.festivo || null;
+  filas += '<tr class="ml-fila-festivo"><th scope="row"><span class="ml-dia-largo">Festivos</span><span class="ml-dia-corto" aria-hidden="true">Fest.</span></th>' +
+    '<td data-etq="Trabaja" class="ml-celda-trab"><input type="checkbox" id="' + pre + '-tf" class="ml-trabaja"' + (fe ? ' checked' : '') + dis + ' aria-label="Trabaja los festivos (sin marcar: descansa)"></td>' +
+    '<td data-etq="Entrada" class="ml-celda-ent"><input type="time" id="' + pre + '-ef" value="' + (fe ? esc(fe.entrada) : '') + '"' + dis + ' aria-label="Entrada en festivo"></td>' +
+    '<td data-etq="Salida" class="ml-celda-sal"><input type="time" id="' + pre + '-sf" value="' + (fe ? esc(fe.salida) : '') + '"' + dis + ' aria-label="Salida en festivo"></td>' +
+    '<td class="ml-sin-pausa" colspan="4"><span class="ml-nota-fest">Sin pausas ni horas: el festivo no cuenta en la semana</span></td></tr>';
+  var s = mallaHorasSemana(h);
+  var aviso = mallaAvisoHoras(h);
+  return '<div class="table-wrap"><table class="ml-tabla ml-tabla-dia" aria-describedby="' + pre + '-fest-ayuda"><caption class="sr-only">Horario, pausas, almuerzo y horas de cada día</caption>' +
+    '<thead><tr><th scope="col">Día</th><th scope="col"><span class="ml-dia-largo">Trabaja</span><span class="ml-dia-corto" aria-hidden="true">Trab.</span></th><th scope="col">Entrada</th><th scope="col">Salida</th>' +
+    '<th scope="col">Pausa activa 1</th><th scope="col">Almuerzo</th><th scope="col">Pausa activa 2</th><th scope="col">Horas</th></tr></thead><tbody>' + filas + '</tbody></table></div>' +
+    '<p class="ml-horas-semana" id="' + pre + '-hs">Total de la semana: <strong>' + mallaHorasTexto(s.minutos) + '</strong></p>' +
+    '<p class="ml-horas-aviso' + (aviso ? '' : ' hidden') + '" id="' + pre + '-ha" role="status">' + esc(aviso) + '</p>' +
+    '<p class="vis-ayuda ml-fest-ayuda" id="' + pre + '-fest-ayuda">Festivos: si no se marca, el grupo descansa los festivos. Un festivo en un día que el grupo no trabaja sigue siendo descanso.</p>';
+}
+
 function mallaGrupoHtml(g, puedeEditar, asesoras, idx, datos) { // datos: la semana (por defecto _ml.datos)
   var dis = puedeEditar ? '' : ' disabled';
   var pre = 'ml-g' + idx;
-  var filas = MALLA_DIAS.map(function (d) {
-    var t = g.horario ? g.horario[d.n] || g.horario[String(d.n)] : null;
-    return '<tr><th scope="row"><span class="ml-dia-largo">' + d.largo + '</span><span class="ml-dia-corto" aria-hidden="true">' + d.corto + '</span></th>' +
-      '<td><input type="checkbox" id="' + pre + '-t' + d.n + '" data-dia="' + d.n + '" class="ml-trabaja"' + (t ? ' checked' : '') + dis + ' aria-label="Trabaja el ' + d.largo.toLowerCase() + '"></td>' +
-      '<td><input type="time" id="' + pre + '-e' + d.n + '" value="' + (t ? esc(t.entrada) : '') + '"' + dis + ' aria-label="Entrada del ' + d.largo.toLowerCase() + '"></td>' +
-      '<td><input type="time" id="' + pre + '-s' + d.n + '" value="' + (t ? esc(t.salida) : '') + '"' + dis + ' aria-label="Salida del ' + d.largo.toLowerCase() + '"></td></tr>';
-  }).join('');
-  // Fase M1 (B): horario del grupo en los festivos (sin marcar: el festivo descansa, por defecto).
-  var fe = g.horario && g.horario.festivo ? g.horario.festivo : null;
-  filas += '<tr class="ml-fila-festivo"><th scope="row"><span class="ml-dia-largo">Festivos</span><span class="ml-dia-corto" aria-hidden="true">Fest.</span></th>' +
-    '<td><input type="checkbox" id="' + pre + '-tf" class="ml-trabaja"' + (fe ? ' checked' : '') + dis + ' aria-label="Trabaja los festivos (sin marcar: descansa)"></td>' +
-    '<td><input type="time" id="' + pre + '-ef" value="' + (fe ? esc(fe.entrada) : '') + '"' + dis + ' aria-label="Entrada en festivo"></td>' +
-    '<td><input type="time" id="' + pre + '-sf" value="' + (fe ? esc(fe.salida) : '') + '"' + dis + ' aria-label="Salida en festivo"></td></tr>';
-  var pausas = mallaPausasTablaHtml(g.horario, pre, dis);
   var marcadas = {};
   (g.asesoras || []).forEach(function (a) { marcadas[a.id] = true; });
   var lista = asesoras.length ? asesoras.map(function (a) {
@@ -110,55 +145,28 @@ function mallaGrupoHtml(g, puedeEditar, asesoras, idx, datos) { // datos: la sem
       (otro && !marcadas[a.id] ? ' <span class="ml-otro">(en ' + esc(otro) + ')</span>' : '') + '</label>';
   }).join('') : '<p class="vis-vacio">No hay asesoras activas en esta campaña.</p>';
   var color = g.color || ((idx % 8) + 1); // Fase 373: cada grupo con su color (serie 1 a 8)
-  // Pedido de Edwin (24/11): más compacto. Cabecera (nombre + botones) en una fila y la lista en un cuadro con
-  // su propio scroll. Pedido de Edwin (24/11, 3:30 p. m.): la lista va justo debajo del horario (no al lado),
-  // en 2 o 3 columnas seguidas; la ayuda de festivos y las pausas quedan después.
+  // Pedido de Edwin (24/11): cabecera (nombre + botones) en una fila. Desde el 26/11, el horario con las pausas en un
+  // solo cuadro y la lista de asesoras debajo, en 2 o 3 columnas con su propio scroll.
   return '<section class="aurora-card ml-grupo ml-color-' + color + '" data-idx="' + idx + '" data-id="' + (g.id || '') + '" aria-labelledby="' + pre + '-tit"' +
     (puedeEditar ? ' oninput="mallaRecalcularHoras(' + idx + ')" onchange="mallaRecalcularHoras(' + idx + ')"' : '') + '>' +
     '<div class="ml-grupo-cab"><div class="ig"><label for="' + pre + '-nombre" id="' + pre + '-tit"><span class="ml-punto" aria-hidden="true"></span>Grupo</label><input type="text" id="' + pre + '-nombre" maxlength="' + MALLA_NOMBRE_MAX + '" value="' + esc(g.nombre || '') + '"' + dis + '></div>' +
     (puedeEditar ? '<div class="ml-grupo-btns"><button type="button" class="btn-cancel ml-borrar" onclick="mallaBorrarGrupo(' + idx + ')">' + (g.id ? 'Eliminar grupo' : 'Descartar') + '</button>' +
       '<button type="button" class="btn-primary" onclick="mallaGuardarGrupo(' + idx + ')">Guardar grupo</button></div>' : '') + '</div>' +
-    '<div class="ml-grupo-cuerpo"><div class="ml-grupo-horario"><div class="table-wrap"><table class="ml-tabla" aria-describedby="' + pre + '-fest-ayuda"><thead><tr><th scope="col">Día</th><th scope="col"><span class="ml-dia-largo">Trabaja</span><span class="ml-dia-corto" aria-hidden="true">Trab.</span></th><th scope="col">Entrada</th><th scope="col">Salida</th></tr></thead><tbody>' + filas + '</tbody></table></div></div>' +
-    '<fieldset class="ml-asesoras"><legend>Asesoras (' + (g.asesoras || []).length + ')</legend><div class="ml-asesoras-lista" tabindex="0" role="group" aria-label="Asesoras de la campaña (con scroll)">' + lista + '</div></fieldset>' +
-    '<div class="ml-grupo-extra"><p class="vis-ayuda ml-fest-ayuda" id="' + pre + '-fest-ayuda">Festivos: si no se marca, el grupo descansa los festivos. Un festivo en un día que el grupo no trabaja sigue siendo descanso.</p>' + pausas + '</div></div>' +
+    '<div class="ml-grupo-cuerpo"><div class="ml-grupo-horario">' + mallaHorarioTablaHtml(g, pre, dis) + '</div>' +
+    '<fieldset class="ml-asesoras"><legend>Asesoras (' + (g.asesoras || []).length + ')</legend><div class="ml-asesoras-lista" tabindex="0" role="group" aria-label="Asesoras de la campaña (con scroll)">' + lista + '</div></fieldset></div>' +
     (g.id && (g.asesoras || []).length ? mallaCasosHtml(g, idx, puedeEditar, datos) : '') +
     '</section>';
 }
 
-// Pedido de Edwin (24/11): pausa activa 1 (mañana, 15 min), almuerzo (hora y 30 min o 1 h) y pausa activa 2
-// (tarde, 10 min) por día, con las horas del día y el total de la semana (salida − entrada − almuerzo). Si la
-// semana no suma 42 h sale un aviso, sin bloquear. Todo opcional: los horarios ya guardados siguen igual.
-function mallaPausasTablaHtml(h, pre, dis) {
-  h = h || {};
-  var filas = MALLA_DIAS.map(function (d) {
-    var t = h[d.n] || h[String(d.n)] || null;
-    var ds = t ? dis : ' disabled';
-    var am = t && t.almuerzo ? Number(t.almuerzoMin) : 60;
-    var dl = d.largo.toLowerCase();
-    return '<tr data-dia="' + d.n + '"' + (t ? '' : ' class="ml-descanso"') + '><th scope="row"><span class="ml-dia-largo">' + d.largo + '</span><span class="ml-dia-corto" aria-hidden="true">' + d.corto + '</span></th>' +
-      '<td data-etq="Pausa 1"><input type="time" id="' + pre + '-p1' + d.n + '" value="' + (t && t.pausa1 ? esc(t.pausa1) : '') + '"' + ds + ' aria-label="Pausa activa 1 del ' + dl + ' (15 min, en la mañana)"></td>' +
-      '<td data-etq="Almuerzo"><span class="ml-alm"><input type="time" id="' + pre + '-al' + d.n + '" value="' + (t && t.almuerzo ? esc(t.almuerzo) : '') + '"' + ds + ' aria-label="Hora del almuerzo del ' + dl + '">' +
-        '<select id="' + pre + '-am' + d.n + '"' + ds + ' aria-label="Duración del almuerzo del ' + dl + '">' +
-        MALLA_ALMUERZO_OPCIONES.map(function (m) { return '<option value="' + m + '"' + (m === am ? ' selected' : '') + '>' + (m === 60 ? '1 h' : m + ' min') + '</option>'; }).join('') + '</select></span></td>' +
-      '<td data-etq="Pausa 2"><input type="time" id="' + pre + '-p2' + d.n + '" value="' + (t && t.pausa2 ? esc(t.pausa2) : '') + '"' + ds + ' aria-label="Pausa activa 2 del ' + dl + ' (10 min, en la tarde)"></td>' +
-      '<td data-etq="Horas" class="ml-horas-dia" id="' + pre + '-hd' + d.n + '">' + (t ? mallaHorasTexto(mallaMinutosDia(t)) : '—') + '</td></tr>';
-  }).join('');
-  var s = mallaHorasSemana(h);
-  var aviso = mallaAvisoHoras(h);
-  return '<details class="ml-pausas" open><summary>Pausas, almuerzo y horas</summary>' +
-    '<div class="table-wrap"><table class="ml-tabla ml-tabla-pausas"><thead><tr><th scope="col">Día</th><th scope="col">Pausa activa 1 <span class="ml-dur">15 min</span></th><th scope="col">Almuerzo</th><th scope="col">Pausa activa 2 <span class="ml-dur">10 min</span></th><th scope="col">Horas</th></tr></thead><tbody>' + filas + '</tbody></table></div>' +
-    '<p class="ml-horas-semana" id="' + pre + '-hs">Total de la semana: <strong>' + mallaHorasTexto(s.minutos) + '</strong></p>' +
-    '<p class="ml-horas-aviso' + (aviso ? '' : ' hidden') + '" id="' + pre + '-ha" role="status">' + esc(aviso) + '</p></details>';
-}
 // Lee del formulario el horario del grupo (también pausas y almuerzo) sin validar.
 function _mlLeerHorario(pre) {
   var h = {}, val = function (id) { var e = _mlEl(id); return e ? e.value : ''; };
   MALLA_DIAS.forEach(function (d) {
     if (!_mlEl(pre + '-t' + d.n).checked) { h[d.n] = null; return; }
     var t = { entrada: val(pre + '-e' + d.n), salida: val(pre + '-s' + d.n) };
-    if (val(pre + '-p1' + d.n)) t.pausa1 = val(pre + '-p1' + d.n);
+    if (val(pre + '-p1' + d.n)) { t.pausa1 = val(pre + '-p1' + d.n); t.pausa1Min = Number(val(pre + '-d1' + d.n)) || MALLA_PAUSA1_MIN; }
     if (val(pre + '-al' + d.n)) { t.almuerzo = val(pre + '-al' + d.n); t.almuerzoMin = Number(val(pre + '-am' + d.n)) || 60; }
-    if (val(pre + '-p2' + d.n)) t.pausa2 = val(pre + '-p2' + d.n);
+    if (val(pre + '-p2' + d.n)) { t.pausa2 = val(pre + '-p2' + d.n); t.pausa2Min = Number(val(pre + '-d2' + d.n)) || MALLA_PAUSA2_MIN; }
     h[d.n] = t;
   });
   return h;
@@ -170,7 +178,7 @@ function mallaRecalcularHoras(idx) {
   var h = _mlLeerHorario(pre);
   MALLA_DIAS.forEach(function (d) {
     var t = h[d.n];
-    ['-p1', '-al', '-am', '-p2'].forEach(function (k) { var e = _mlEl(pre + k + d.n); if (e) e.disabled = !t; });
+    ['-p1', '-d1', '-al', '-am', '-p2', '-d2'].forEach(function (k) { var e = _mlEl(pre + k + d.n); if (e) e.disabled = !t; });
     var fila = _mlEl(pre + '-hd' + d.n);
     if (fila) { fila.textContent = t ? mallaHorasTexto(mallaMinutosDia(t)) : '—'; fila.parentNode.classList.toggle('ml-descanso', !t); }
   });
@@ -469,5 +477,5 @@ async function mallaMiaRender() {
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { mallaFestivosHtml: mallaFestivosHtml, mallaFestivosSemanaTexto: mallaFestivosSemanaTexto, mallaMiaHtml: mallaMiaHtml, mallaGrupoHtml: mallaGrupoHtml, mallaPausasTablaHtml: mallaPausasTablaHtml, mallaCasosHtml: mallaCasosHtml, mallaNovedadesSemanaHtml: mallaNovedadesSemanaHtml, mallaMisNovedadesHtml: mallaMisNovedadesHtml };
+  module.exports = { mallaFestivosHtml: mallaFestivosHtml, mallaFestivosSemanaTexto: mallaFestivosSemanaTexto, mallaMiaHtml: mallaMiaHtml, mallaGrupoHtml: mallaGrupoHtml, mallaHorarioTablaHtml: mallaHorarioTablaHtml, mallaFilaDiaHtml: mallaFilaDiaHtml, mallaCasosHtml: mallaCasosHtml, mallaNovedadesSemanaHtml: mallaNovedadesSemanaHtml, mallaMisNovedadesHtml: mallaMisNovedadesHtml };
 }

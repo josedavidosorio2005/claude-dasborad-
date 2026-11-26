@@ -23010,3 +23010,11 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
 - **Cambio:** `public/js/orlant-equidad.js` suma `eqPintarTarjeta()` (la pone en el menú solo si `GET /api/orlant/equidad/estado` responde: el servidor decide quién la ve), `openOrlantEquidad()` / `closeOrlantEquidad()` y la pantalla `#eq-overlay` en `index.html` (mismo armazón que STA, cierra con Escape). La vista es la misma de la pestaña (`EQ_MARKUP` + `eqCrearApp`). La pestaña del Dashboard, la carga y los datos no cambian.
 - **Pruebas:** `faseEQ3-equidad-tarjeta.test.js` (5).
 - **Revisión visual local** (copia de la base demo + citas inventadas, Brave sin ventana): 375, 768 y 1440 px, claro y oscuro; la tarjeta aparece, abre la vista con sus 3 pestañas y «Noviembre 2026», sin desborde horizontal, cierra con Escape, 0 errores de consola.
+
+## Malla de turnos: horario y pausas en un solo cuadro, con duración de pausas (Fase M2, v1.281.0, 2026-11-26, PR sin mergear)
+
+- **Pedido de Edwin (reunión 26/11), OK del usuario a la propuesta:** «Pausas, almuerzo y horas» a la derecha del cuadro principal, en un solo lugar y sin duplicar; un campo de duración que elija el líder.
+- **Cambio:** `mallaHorarioTablaHtml()` / `mallaFilaDiaHtml()` (`public/js/malla.js`): una fila por día con Trabaja, Entrada, Salida, Pausa activa 1 (hora + duración), Almuerzo (hora + 30 min/1 h), Pausa activa 2 (hora + duración) y Horas; festivos sin pausas. Se quita el `<details>` aparte. `malla-logic.js`: `MALLA_PAUSA_OPCIONES` (5, 10, 15, 20, 30), `mallaPausaMin()`, `pausa1Min`/`pausa2Min` validados y guardados (sin elegir: 15 y 10, como antes); la duración cuenta para «dentro del turno» y el orden del día. El texto de la asesora muestra inicio y fin de cada pausa. Horas sin cambios. Sin migración: lo guardado antes se lee con 15 y 10.
+- **CSS:** `.ml-tabla-dia`; ≤900 px cada día es una tarjeta (un día de descanso muestra solo «Trabaja»); ≤600 px cada pausa en su fila; 44 px en el celular.
+- **Pruebas:** `faseM2-malla-pausas-un-cuadro.test.js` (6); ajustadas `faseE5-malla-pausas` y `faseQA-auditoria-24nov`.
+- **Revisión visual local** (copia de la base demo + un grupo inventado, Brave sin ventana): 375, 768 y 1440 px, claro y oscuro; una sola tabla, sin desborde, desmarcar un día deja solo «Trabaja», la duración elegida se lee bien, 0 errores de consola.
