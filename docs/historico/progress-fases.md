@@ -23055,6 +23055,7 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
 - **Por qué:** el PR del borrado (Fase W10, #978) necesita el inventario con las cifras de producción antes del «OK borrar». Este PR solo trae la lectura, para desplegarla antes.
 - **Cambio:** `server/inventario-replica-mobilize.js` (solo `SELECT COUNT(*)`) y `GET /api/wolkvox/replica-mobilize/inventario` (solo administrador completo): por tabla con `campana`/`cliente`, filas de la réplica y del MOBILIZE real; registro, login de agentes, asesoras, permisos e Historial que la nombra. Solo conteos.
 - **Pruebas:** `faseW10a-inventario-replica-mobilize.test.js` (3): no escribe nada (huella de toda la base antes y después, también por la ruta), el módulo no tiene escrituras, cliente 403 y sin sesión 401. `fase118` declara la ruta.
+
 ## Aurora réplica: abandonadas y ATA del WhatsApp desde skill_1 (Fase AU5, v1.284.0, 2026-11-26, PR SIN mergear)
 
 - **Pedido:** revisar Tráfico de Llamadas, Tráfico de WhatsApp y Tipificación de la réplica «CLINICA AURORA PRUEBAS API» contra el Aurora real y llenar lo que ya venga en `skill_1`, `cdr_1` o `chat_1` (sin consultas nuevas). Nivel de servicio fuera (Edwin: sale de otra base).
