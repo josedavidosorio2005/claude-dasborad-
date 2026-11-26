@@ -109,9 +109,10 @@ test('Pedido de Edwin (24/11, 3:30 p. m.): asesoras justo debajo del horario en 
   const UI = require('../../public/js/malla.js');
   const g = { id: 1, nombre: 'G', horario: HOR, asesoras: [{ id: 7, nombre: 'Persona Inventada' }] };
   const html = UI.mallaGrupoHtml(g, true, [{ id: 7, nombre: 'Persona Inventada' }], 0, { ajustes: [], novedades: [] });
-  // Orden: tabla del horario → lista de asesoras → ayuda de festivos y pausas (la lista ya no queda al lado).
+  // Orden: tabla del horario → lista de asesoras (la lista ya no queda al lado). Desde el 26/11 (pedido de Edwin, cuadro
+  // único con las pausas) el total de la semana y la ayuda de festivos van pegados a la tabla, antes de la lista.
   const iTabla = html.indexOf('</table>'), iLista = html.indexOf('class="ml-asesoras"'), iAyuda = html.indexOf('ml-fest-ayuda"');
-  assert.ok(iTabla > 0 && iLista > iTabla && iAyuda > iLista, 'tabla, lista y después la ayuda');
+  assert.ok(iTabla > 0 && iAyuda > iTabla && iLista > iAyuda, 'tabla, ayuda y después la lista');
   assert.match(html, /<summary class="ml-casos-btn">Novedades y horarios especiales<\/summary>/);
   const css = fs.readFileSync(path.join(PUB, 'css', 'styles.css'), 'utf8');
   assert.ok(!css.includes('.ml-grupo-cuerpo{grid-template-columns:minmax(0,1.05fr) minmax(0,1fr)'), 'sin el lado a lado');

@@ -7,6 +7,16 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.281.0 — Noviembre 2026
+
+**Malla de turnos: el horario y las pausas en un solo cuadro, con la duración de cada pausa.**
+
+- En cada grupo, cada día es una sola fila: Trabaja, Entrada, Salida, Pausa activa 1, Almuerzo, Pausa activa 2 y Horas. Ya no hay un segundo cuadro de pausas que repita los días.
+- El líder elige cuánto dura cada pausa activa: 5, 10, 15, 20 o 30 minutos. Si no elige, quedan 15 y 10 minutos, como antes. El almuerzo sigue siendo de 30 minutos o 1 hora.
+- La cuenta de horas no cambia (salida − entrada − almuerzo) ni el aviso si la semana no da 42 h.
+- En «Mi malla», la asesora ve cada pausa con su hora de inicio y de fin.
+- En el celular cada día se ve como una tarjeta. Las mallas ya guardadas siguen igual.
+
 ## v1.279.0 — Noviembre 2026
 
 **MOBILIZE: se retira la copia de pruebas de la conexión con Wolkvox.**

@@ -40,11 +40,12 @@ test('E5: un horario de antes (solo entrada y salida) se valida y se guarda igua
 test('E5: pausas y almuerzo se validan y se normalizan; las horas descuentan solo el almuerzo', () => {
   const v = L.mallaValidarHorario(Object.assign({}, HOR42, { 2: DIA({ almuerzoMin: '30', pausa1: '', pausa2: null }) }));
   assert.ok(v.ok, v.error);
-  assert.deepEqual(v.horario[1], { entrada: '08:00', salida: '17:00', pausa1: '10:00', almuerzo: '12:30', almuerzoMin: 60, pausa2: '15:30' });
+  // 26/11: cada pausa guarda su duración (sin elegir: 15 y 10 min, como antes).
+  assert.deepEqual(v.horario[1], { entrada: '08:00', salida: '17:00', pausa1: '10:00', pausa1Min: 15, almuerzo: '12:30', almuerzoMin: 60, pausa2: '15:30', pausa2Min: 10 });
   assert.deepEqual(v.horario[2], { entrada: '08:00', salida: '17:00', almuerzo: '12:30', almuerzoMin: 30 }, 'vacías no se guardan; 30 como número');
   assert.equal(L.mallaMinutosDia(v.horario[1]), 8 * 60);
   assert.equal(L.mallaMinutosDia(v.horario[2]), 8 * 60 + 30);
-  assert.equal(L.mallaPausasTexto(v.horario[1]), 'Pausa 10:00 · Almuerzo 12:30–13:30 · Pausa 15:30');
+  assert.equal(L.mallaPausasTexto(v.horario[1]), 'Pausa 10:00–10:15 · Almuerzo 12:30–13:30 · Pausa 15:30–15:40');
   assert.equal(L.mallaHorasTexto(510), '8 h 30 min');
   assert.equal(L.mallaHorasTexto(480), '8 h');
 });
@@ -79,7 +80,7 @@ test('E5: el supervisor guarda pausas y almuerzo; la asesora los ve en su vista,
   const lunes = L.mallaLunesDe(fechaLimitesHoyColombia());
   const r = await request(app).post('/api/malla/grupos').set(H(tk.sup)).send({ campana: C, semana: lunes, nombre: 'Con pausas', horario: HOR42 });
   assert.equal(r.status, 201, JSON.stringify(r.body));
-  assert.deepEqual(r.body.grupo.horario[1], DIA());
+  assert.deepEqual(r.body.grupo.horario[1], DIA({ pausa1Min: 15, pausa2Min: 10 }), '26/11: con la duracion de cada pausa (por defecto 15 y 10)');
   assert.equal((await request(app).put(`/api/malla/grupos/${r.body.grupo.id}/asesoras`).set(H(tk.sup)).send({ asesoras: [id.a1] })).status, 200);
   const mal = await request(app).put(`/api/malla/grupos/${r.body.grupo.id}`).set(H(tk.sup)).send({ horario: Object.assign({}, HOR42, { 1: DIA({ pausa1: '06:00' }) }) });
   assert.equal(mal.status, 400);
@@ -93,7 +94,7 @@ test('E5: el supervisor guarda pausas y almuerzo; la asesora los ve en su vista,
   Object.assign(global, L);
   const UI = require('../../public/js/malla.js');
   const html = UI.mallaMiaHtml(mia);
-  assert.ok(html.includes('<span class="ml-mia-pausas">Pausa 10:00 · Almuerzo 12:30–13:30 · Pausa 15:30</span>'));
+  assert.ok(html.includes('<span class="ml-mia-pausas">Pausa 10:00–10:15 · Almuerzo 12:30–13:30 · Pausa 15:30–15:40</span>'));
   if (!Object.keys(turno.festivos || {}).length) assert.ok(html.includes('Horas de la semana: <strong>42 h</strong>'));
 });
 
@@ -109,12 +110,12 @@ test('E5: un grupo guardado antes sigue igual en la API y en la vista (sin pausa
   assert.ok(html.includes('Horas de la semana: <strong>18 h</strong>'));
 });
 
-test('E5: editor del grupo — tabla de pausas con horas por día, total y aviso; deshabilitada en descanso', () => {
+test('E5: editor del grupo — pausas con horas por día, total y aviso; deshabilitadas en descanso (26/11: en el cuadro único)', () => {
   global.esc = require('../../public/js/esc.js').esc;
   Object.assign(global, L);
   const UI = require('../../public/js/malla.js');
-  const ed = UI.mallaPausasTablaHtml(Object.assign({}, HOR42, { 6: null }), 'ml-g0', '');
-  assert.match(ed, /<details class="ml-pausas" open><summary>Pausas, almuerzo y horas<\/summary>/);
+  const ed = UI.mallaHorarioTablaHtml({ horario: Object.assign({}, HOR42, { 6: null }) }, 'ml-g0', '');
+  assert.match(ed, /<table class="ml-tabla ml-tabla-dia"/);
   assert.match(ed, /id="ml-g0-p11" value="10:00"/);
   assert.match(ed, /id="ml-g0-al1" value="12:30"/);
   assert.match(ed, /<select id="ml-g0-am1"[^>]*><option value="30">30 min<\/option><option value="60" selected>1 h<\/option>/);
@@ -122,11 +123,11 @@ test('E5: editor del grupo — tabla de pausas con horas por día, total y aviso
   assert.match(ed, /id="ml-g0-hd1">8 h</);
   assert.match(ed, /Total de la semana: <strong>40 h<\/strong>/);
   assert.match(ed, /class="ml-horas-aviso" id="ml-g0-ha" role="status">La semana suma 40 h y debería sumar 42 h/);
-  const ok = UI.mallaPausasTablaHtml(HOR42, 'ml-g1', '');
+  const ok = UI.mallaHorarioTablaHtml({ horario: HOR42 }, 'ml-g1', '');
   assert.match(ok, /class="ml-horas-aviso hidden" id="ml-g1-ha"/);
-  const ro = UI.mallaPausasTablaHtml(HOR42, 'ml-g2', ' disabled');
+  const ro = UI.mallaHorarioTablaHtml({ horario: HOR42 }, 'ml-g2', ' disabled');
   assert.match(ro, /id="ml-g2-p11" value="10:00" disabled/, 'solo lectura');
   const g = UI.mallaGrupoHtml({ id: 1, nombre: 'G', horario: HOR42, asesoras: [] }, true, [], 0, { ajustes: [], novedades: [] });
-  assert.ok(g.includes('oninput="mallaRecalcularHoras(0)"') && g.includes('class="ml-pausas"'));
+  assert.ok(g.includes('oninput="mallaRecalcularHoras(0)"') && g.includes('class="ml-tabla ml-tabla-dia"'));
   assert.ok(!UI.mallaGrupoHtml({ id: 1, nombre: 'G', horario: HOR42, asesoras: [] }, false, [], 0, { ajustes: [], novedades: [] }).includes('oninput='), 'solo lectura: sin recálculo');
 });
