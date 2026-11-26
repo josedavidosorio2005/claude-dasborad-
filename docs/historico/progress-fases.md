@@ -23004,9 +23004,9 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
 - **Se pierde:** «Ejecutar ahora» (solo réplica), puntualidad por `agent_7` (apagada), entrada del agente de la oficina (apagada) y la tarjeta de la réplica. `/api/wolkvox/estado?campana=MOBILIZE PRUEBAS API` sigue sirviendo para revisar el real.
 - **Pruebas:** `faseW9-retirar-replica-mobilize.test.js` (3): migración sin borrar e idempotente; réplica en 0 y real en 1 corre una vez por franja, también tras un reinicio en la misma hora; `/wolkvox/estado` sigue. Ajustadas 5 pruebas de listas de clientes.
 
-## ORLANT, Equidad profesionales en un cuadro con título (Fase EQ3, v1.280.0, 2026-11-26, PR sin mergear)
+## ORLANT, tarjeta «Equidad profesionales» en el menú (Fase EQ3, v1.280.0, 2026-11-26, PR sin mergear)
 
-- **Pedido de Edwin (reunión 26/11):** que «Equidad profesionales» salga en un cuadro con su título, igual que las demás pestañas, y al entrar la vista por mes con sus 3 pestañas.
-- **Cambio:** `equidadMarcoHtml()` (`public/js/orlant-equidad.js`) arma `aurora-card` + `aurora-card-title` (como «Gestión de la base STA») y la vista de Edwin se monta adentro (`.eq-host`, Shadow DOM). Sin cambios en la carga, la ruta ni los datos.
-- **Pruebas:** `faseEQ3-equidad-cuadro.test.js` (3).
-- **Revisión visual local** (copia de la base demo + citas inventadas, Brave sin ventana): 375, 768 y 1440 px, claro y oscuro; título y 3 pestañas visibles, sin desborde horizontal, 0 errores de consola. A 375 px la fila de pestañas se desliza (como antes).
+- **Pedido de Edwin (reunión 26/11, aclarado por el usuario):** una tarjeta «Equidad profesionales», igual que las demás del menú (como «Gestión STA»), que al hacer clic abra la vista por mes con sus 3 pestañas.
+- **Cambio:** `public/js/orlant-equidad.js` suma `eqPintarTarjeta()` (la pone en el menú solo si `GET /api/orlant/equidad/estado` responde: el servidor decide quién la ve), `openOrlantEquidad()` / `closeOrlantEquidad()` y la pantalla `#eq-overlay` en `index.html` (mismo armazón que STA, cierra con Escape). La vista es la misma de la pestaña (`EQ_MARKUP` + `eqCrearApp`). La pestaña del Dashboard, la carga y los datos no cambian.
+- **Pruebas:** `faseEQ3-equidad-tarjeta.test.js` (5).
+- **Revisión visual local** (copia de la base demo + citas inventadas, Brave sin ventana): 375, 768 y 1440 px, claro y oscuro; la tarjeta aparece, abre la vista con sus 3 pestañas y «Noviembre 2026», sin desborde horizontal, cierra con Escape, 0 errores de consola.

@@ -2356,6 +2356,13 @@ div.ca-bar-fila{cursor:default}
 /* Fase STA: «Gestión STA» de ORLANT (mismo armazón que Televentas) */
 #sta-overlay{display:none;position:fixed;inset:0;z-index:var(--z-panel);background:var(--c-bg);}
 #sta-overlay.show{display:block;}
+/* Equidad profesionales (ORLANT, pedido de Edwin 26/11): la tarjeta del menú abre la vista en su pantalla, como STA */
+#eq-overlay{display:none;position:fixed;inset:0;z-index:var(--z-panel);background:var(--c-bg);}
+#eq-overlay.show{display:block;}
+#eq-modal{height:100dvh;overflow-y:auto;background:var(--c-bg);}
+#eq-modal .aurora-header{position:sticky;top:0;z-index:var(--z-sticky-header);border-radius:0;gap:12px;}
+#eq-host{padding:0 16px 24px;max-width:1440px;margin:0 auto;}
+@media(max-width:768px){#eq-modal .aurora-header{padding:10px 16px;flex-wrap:wrap;row-gap:8px;}#eq-host{padding:0 8px 16px;}}
 #sta-modal{height:100dvh;overflow-y:auto;background:var(--c-bg);}
 #sta-modal .aurora-header{position:sticky;top:0;z-index:var(--z-sticky-header);border-radius:0;gap:12px;}
 #stv-overlay.show{display:block;}
