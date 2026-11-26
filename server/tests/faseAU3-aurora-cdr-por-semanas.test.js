@@ -77,3 +77,21 @@ test('febrero (28 días): 4 consultas; nunca el Aurora real', async () => {
   assert.deepEqual(f.tramos.at(-1), ['2026-02-22', '2026-02-28']);
   assert.equal(n('SELECT COUNT(*) n FROM tipificaciones WHERE campana = ?', AU), 0);
 });
+
+// Fase AU3 (26/11, OK del usuario): chat_1 de octubre de Aurora trajo chats que empezaron en septiembre. Se descartan
+// y se dicen; el mes solo se rechaza si ningún chat cae dentro.
+test('WhatsApp: los chats de otro mes se descartan (y se dicen); solo si ninguno cae en el mes, sin cambios', async () => {
+  AG.registrarSkills(db, 'AURORA', [{ skill_id: '50', skill_name: 'WHATSAPP' }]);
+  const chat = (date) => ({ conn_id: 'c', channel: 'whatsapp', date, date_close: date, agent_id: '1', agent_name: UNO, skill_id: '50', first_response_time: '30', cod_act: '7', description_cod_act: 'CITA INVENTADA', customer_phone: '3000000000' });
+  const f = (data) => (url) => new URL(url).searchParams.get('api') === 'chat_1' ? ok({ code: 200, msg: 'x records were found', data }) : ok({ code: 200, msg: '0 records were found', data: [] });
+  const wa = (data) => M.correrModulo('whatsapp', { db, env: ENV, ahora: new Date('2026-11-26T20:00:00Z'), mes: '2026-10', fetchImpl: f(data), logEvent: () => {}, destino: 'aurora_replica' });
+  const traf = () => db.prepare("SELECT fechaInicio, totalWhatsapp FROM trafico_whatsapp WHERE campana = ? AND substr(fechaInicio, 1, 7) IN ('2026-09', '2026-10') ORDER BY fechaInicio").all(R);
+  let r = await wa([chat('2026-09-30 23:50:00'), chat('2026-10-02 08:00:00'), chat('2026-10-02 09:00:00')]);
+  assert.equal(r.estado, 'ok', r.detalle);
+  assert.match(r.detalle, /1 chats de otro mes fuera/);
+  assert.deepEqual(traf().map((t) => [t.fechaInicio, t.totalWhatsapp]), [['2026-10-02', 2]], 'septiembre no se escribe');
+  r = await wa([chat('2026-09-30 23:50:00')]);
+  assert.equal(r.estado, 'error');
+  assert.match(r.detalle, /ninguno dentro, sin cambios/);
+  assert.deepEqual(traf().map((t) => [t.fechaInicio, t.totalWhatsapp]), [['2026-10-02', 2]], 'el mes queda como estaba');
+});

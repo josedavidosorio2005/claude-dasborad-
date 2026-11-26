@@ -624,8 +624,14 @@ async function correrWhatsapp(opts, partes, res) {
     }
     let h = hojaWhatsapp(data, mapa);
     data = null; // datos del cliente y demás datos crudos no se guardan ni se quedan en memoria
-    const fuera = h.trafico.filter((t) => t.fechaInicio.slice(0, 7) !== mes).length;
-    if (fuera) { res.estado = 'error'; res.error = 'respuesta_invalida'; partes.push(mes + ': ' + fuera + ' grupos de chats fuera del mes, sin cambios'); return; }
+    // Fase AU3 (26/11, OK del usuario): Wolkvox puede traer chats que empezaron en otro mes (octubre de Aurora trajo 3
+    // grupos día-cola de otro mes, p. ej. abiertos el 30/09 y cerrados en octubre). Esos chats se descartan y se dicen;
+    // el mes solo se rechaza si NINGÚN chat cae en el mes pedido.
+    const enMes = h.trafico.filter((t) => t.fechaInicio.slice(0, 7) === mes);
+    const fuera = h.trafico.length - enMes.length;
+    const chatsFuera = h.trafico.filter((t) => t.fechaInicio.slice(0, 7) !== mes).reduce((a, t) => a + t.totalWhatsapp, 0);
+    if (fuera && !enMes.length) { res.estado = 'error'; res.error = 'respuesta_invalida'; partes.push(mes + ': ' + fuera + ' grupos de chats fuera del mes y ninguno dentro, sin cambios'); return; }
+    if (fuera) { h.trafico = enMes; h.tiempos = h.tiempos.filter((t) => String(t[1]).slice(0, 7) === mes); }
     if (!h.trafico.length) { partes.push(mes + ': ' + llegaron + ' chats, ninguno de entrada con fecha (' + h.salida + ' de salida, ' + h.sinFecha + ' sin fecha), sin cambios'); continue; }
     let wT = { insertadas: 0, borradas: 0 }, wTi = { insertadas: 0, borradas: 0 }, wTip = null;
     const tipFilas = tipAu ? tipificacionChatsMes(tipAu.hoja, mes) : null;
@@ -639,7 +645,7 @@ async function correrWhatsapp(opts, partes, res) {
     })();
     const recibidos = h.trafico.reduce((a, t) => a + t.totalWhatsapp, 0), contestados = h.trafico.reduce((a, t) => a + t.contestados, 0);
     res.meses.push({ mes, filas: h.trafico.length, tiempos: h.tiempos.length });
-    partes.push(mes + ': ' + llegaron + ' chats → ' + recibidos + ' de entrada (' + contestados + ' con asesor) en ' + h.trafico.length + ' filas día-cola, ' + h.tiempos.length + ' tiempos de primera respuesta; ' + h.salida + ' de salida y ' + h.sinFecha + ' sin fecha fuera, ' + h.sinTiempo + ' sin tiempo; abandono sin dato (¿Edwin?)' +
+    partes.push(mes + ': ' + llegaron + ' chats → ' + recibidos + ' de entrada (' + contestados + ' con asesor) en ' + h.trafico.length + ' filas día-cola, ' + h.tiempos.length + ' tiempos de primera respuesta; ' + h.salida + ' de salida y ' + h.sinFecha + ' sin fecha fuera, ' + h.sinTiempo + ' sin tiempo' + (chatsFuera ? ', ' + chatsFuera + ' chats de otro mes fuera' : '') + '; abandono sin dato (¿Edwin?)' +
       (tipAu ? '; ' + tipAu.otrasSkills + ' de otras skills fuera; tipificación: ' + (tipAu.sinAgentes ? tipAu.vistos + ' agentes vistos y ninguno elegido, sin escribir' : (wTip ? wTip.insertadas : 0) + ' chats de ' + tipAu.agentesElegidos + ' agentes (' + tipAu.otrosAgentes + ' de otros agentes fuera' + (tipFilas && tipFilas.fuera ? ', ' + tipFilas.fuera + ' de otro mes' : '') + ')') : '') + '; con respaldo');
     h = null;
   }
