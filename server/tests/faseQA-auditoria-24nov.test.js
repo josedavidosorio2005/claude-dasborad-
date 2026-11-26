@@ -60,7 +60,7 @@ test('Inventario, Panel general: filtros y botones (Excel, Registrar ingreso) de
 });
 
 test('Malla del supervisor: entrada y salida de 44 px en el celular (como las pausas)', () => {
-  assert.ok(CSS.includes('.ml-tabla-pausas input[type="time"],.ml-tabla input[type="time"]{min-height:44px}'));
+  assert.ok(CSS.includes('.ml-tabla-dia input[type="time"],.ml-tabla input[type="time"]{min-height:44px}')); // 26/11: el cuadro único
 });
 
 test('Calidad (Calificar y Calidad de encuestas): selectores de campaña y de mes de 44 px en el celular', () => {

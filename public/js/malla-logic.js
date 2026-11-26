@@ -69,8 +69,15 @@ function _mHora(s) { return typeof s === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/
 // Pedido de Edwin (24/11): pausas activas y almuerzo de cada día del grupo. Todo es OPCIONAL: un día sin
 // estos campos (como los horarios ya guardados) sigue igual. Horas del día = salida − entrada − almuerzo
 // (las pausas activas no se descuentan). La semana debería sumar MALLA_META_SEMANA_H; si no, solo se avisa.
-var MALLA_PAUSA1_MIN = 15; // pausa activa 1, en la mañana
-var MALLA_PAUSA2_MIN = 10; // pausa activa 2, en la tarde
+var MALLA_PAUSA1_MIN = 15; // pausa activa 1, en la mañana (duración por defecto)
+var MALLA_PAUSA2_MIN = 10; // pausa activa 2, en la tarde (duración por defecto)
+// Pedido de Edwin (26/11): el líder elige la duración de cada pausa activa. Los horarios guardados antes (sin
+// duración) siguen con 15 y 10 min.
+var MALLA_PAUSA_OPCIONES = [5, 10, 15, 20, 30];
+function mallaPausaMin(t, n) {
+  var v = t ? Number(t['pausa' + n + 'Min']) : NaN;
+  return MALLA_PAUSA_OPCIONES.indexOf(v) !== -1 ? v : (n === 1 ? MALLA_PAUSA1_MIN : MALLA_PAUSA2_MIN);
+}
 var MALLA_ALMUERZO_OPCIONES = [30, 60];
 var MALLA_META_SEMANA_H = 42;
 function _mMin(s) { return Number(s.slice(0, 2)) * 60 + Number(s.slice(3, 5)); }
@@ -85,18 +92,27 @@ function _mValidarPausas(v, largo) {
     return '';
   };
   var e;
-  if (!_mVacio(v.pausa1)) { if ((e = dentro(v.pausa1, MALLA_PAUSA1_MIN, 'la pausa activa 1'))) return { error: e }; dia.pausa1 = v.pausa1; }
+  var dur = function (n) {
+    var x = v['pausa' + n + 'Min'];
+    if (_mVacio(x)) return n === 1 ? MALLA_PAUSA1_MIN : MALLA_PAUSA2_MIN;
+    x = Number(x);
+    return MALLA_PAUSA_OPCIONES.indexOf(x) !== -1 ? x : null;
+  };
+  var d1 = dur(1), d2 = dur(2);
+  if (!_mVacio(v.pausa1) && d1 === null) return { error: largo + ': la pausa activa 1 dura ' + MALLA_PAUSA_OPCIONES.join(', ') + ' min' };
+  if (!_mVacio(v.pausa2) && d2 === null) return { error: largo + ': la pausa activa 2 dura ' + MALLA_PAUSA_OPCIONES.join(', ') + ' min' };
+  if (!_mVacio(v.pausa1)) { if ((e = dentro(v.pausa1, d1, 'la pausa activa 1'))) return { error: e }; dia.pausa1 = v.pausa1; dia.pausa1Min = d1; }
   if (!_mVacio(v.almuerzo)) {
     var am = Number(v.almuerzoMin);
     if (MALLA_ALMUERZO_OPCIONES.indexOf(am) === -1) return { error: largo + ': el almuerzo dura 30 min o 1 h' };
     if ((e = dentro(v.almuerzo, am, 'el almuerzo'))) return { error: e };
     dia.almuerzo = v.almuerzo; dia.almuerzoMin = am;
   }
-  if (!_mVacio(v.pausa2)) { if ((e = dentro(v.pausa2, MALLA_PAUSA2_MIN, 'la pausa activa 2'))) return { error: e }; dia.pausa2 = v.pausa2; }
+  if (!_mVacio(v.pausa2)) { if ((e = dentro(v.pausa2, d2, 'la pausa activa 2'))) return { error: e }; dia.pausa2 = v.pausa2; dia.pausa2Min = d2; }
   // Orden del día: pausa 1 (mañana) → almuerzo → pausa 2 (tarde), sin cruzarse.
-  if (dia.pausa1 && dia.almuerzo && _mMin(dia.pausa1) + MALLA_PAUSA1_MIN > _mMin(dia.almuerzo)) return { error: largo + ': la pausa activa 1 va antes del almuerzo' };
+  if (dia.pausa1 && dia.almuerzo && _mMin(dia.pausa1) + d1 > _mMin(dia.almuerzo)) return { error: largo + ': la pausa activa 1 va antes del almuerzo' };
   if (dia.pausa2 && dia.almuerzo && _mMin(dia.almuerzo) + dia.almuerzoMin > _mMin(dia.pausa2)) return { error: largo + ': la pausa activa 2 va después del almuerzo' };
-  if (dia.pausa1 && dia.pausa2 && _mMin(dia.pausa1) + MALLA_PAUSA1_MIN > _mMin(dia.pausa2)) return { error: largo + ': la pausa activa 1 va antes de la pausa activa 2' };
+  if (dia.pausa1 && dia.pausa2 && _mMin(dia.pausa1) + d1 > _mMin(dia.pausa2)) return { error: largo + ': la pausa activa 1 va antes de la pausa activa 2' };
   return { dia: dia };
 }
 // Minutos de trabajo de un día (null = descanso): salida − entrada − almuerzo.
@@ -127,16 +143,18 @@ function mallaAvisoHoras(h) {
   if (s.cumple) return '';
   return 'La semana suma ' + mallaHorasTexto(s.minutos) + ' y debería sumar ' + s.meta + ' h (salida − entrada − almuerzo). Puedes guardar igual.';
 }
-// Pausas del día en texto corto (para la asesora): «Pausa 09:30 · Almuerzo 12:00–13:00 · Pausa 15:30»; '' si no hay.
+// Pausas del día en texto corto (para la asesora): «Pausa 09:30–09:45 · Almuerzo 12:00–13:00 · Pausa 15:30–15:40»;
+// '' si no hay. Desde el 26/11 cada pausa muestra su fin (la duración la elige el líder).
+function _mFin(hora, min) { var f = _mMin(hora) + min; return _mPad(Math.floor(f / 60)) + ':' + _mPad(f % 60); }
 function mallaPausasTexto(t) {
   if (!t) return '';
   var out = [];
-  if (t.pausa1) out.push('Pausa ' + t.pausa1);
+  if (t.pausa1) out.push('Pausa ' + t.pausa1 + '–' + _mFin(t.pausa1, mallaPausaMin(t, 1)));
   if (t.almuerzo) {
     var fin = _mMin(t.almuerzo) + (Number(t.almuerzoMin) || 0);
     out.push('Almuerzo ' + t.almuerzo + '–' + _mPad(Math.floor(fin / 60)) + ':' + _mPad(fin % 60));
   }
-  if (t.pausa2) out.push('Pausa ' + t.pausa2);
+  if (t.pausa2) out.push('Pausa ' + t.pausa2 + '–' + _mFin(t.pausa2, mallaPausaMin(t, 2)));
   return out.join(' · ');
 }
 
@@ -225,7 +243,7 @@ if (typeof module !== 'undefined' && module.exports) {
     mallaSemanaTexto: mallaSemanaTexto, mallaValidarHorario: mallaValidarHorario, mallaNombreValido: mallaNombreValido, mallaTurnoTexto: mallaTurnoTexto,
     mallaFestivosColombia: mallaFestivosColombia, mallaAplicarFestivos: mallaAplicarFestivos, // Fase M1 (B)
     // Pedido de Edwin (24/11): pausas, almuerzo y horas.
-    MALLA_PAUSA1_MIN: MALLA_PAUSA1_MIN, MALLA_PAUSA2_MIN: MALLA_PAUSA2_MIN, MALLA_ALMUERZO_OPCIONES: MALLA_ALMUERZO_OPCIONES, MALLA_META_SEMANA_H: MALLA_META_SEMANA_H,
+    MALLA_PAUSA1_MIN: MALLA_PAUSA1_MIN, MALLA_PAUSA2_MIN: MALLA_PAUSA2_MIN, MALLA_PAUSA_OPCIONES: MALLA_PAUSA_OPCIONES, mallaPausaMin: mallaPausaMin, MALLA_ALMUERZO_OPCIONES: MALLA_ALMUERZO_OPCIONES, MALLA_META_SEMANA_H: MALLA_META_SEMANA_H,
     mallaMinutosDia: mallaMinutosDia, mallaHorasSemana: mallaHorasSemana, mallaHorasTexto: mallaHorasTexto, mallaAvisoHoras: mallaAvisoHoras, mallaPausasTexto: mallaPausasTexto,
   };
 }

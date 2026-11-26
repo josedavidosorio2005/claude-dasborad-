@@ -52,3 +52,65 @@ async function _gdExportarEquidad() {
   });
   return out;
 }
+
+// ── Pedido de Edwin (reunión 26/11/2026): tarjeta «Equidad profesionales» en el menú principal, igual que
+// «Gestión STA». Al hacer clic abre la vista de siempre (por mes, con sus 3 pestañas) en su propia pantalla.
+// No cambia la carga ni los datos, y la pestaña del Dashboard de ORLANT sigue igual. Quién la ve lo decide el
+// servidor: la tarjeta solo aparece si GET /orlant/equidad/estado responde (admin, gerencia, supervisor o
+// quien carga de ORLANT; el cliente de ORLANT solo si la opción está encendida).
+var EQ_TARJETA = { key: 'equidad', label: 'Equidad profesionales', sub: 'ORLANT: citas por profesional, por mes', icon: 'i-users', accion: 'openOrlantEquidad' };
+var _eqOv = { host: null, root: null, abierto: false };
+
+// Antes de preguntar al servidor: ¿podría verla? (así quien no tiene nada que ver con ORLANT no hace la consulta).
+function eqPodriaVerTarjeta(user, esFullAdmin) {
+  if (esFullAdmin) return true;
+  if (!user) return false;
+  if (user.rol === 'GERENCIA') return true;
+  var p = user.perms || {};
+  return p.campana_ORLANT === true || p.cliente_ORLANT === true || p.supervisa_ORLANT === true;
+}
+
+// La pone en el menú (después de «Gestión STA» / «ORLANT · Tablero nuevo» si están) cuando el servidor la deja ver.
+function eqPintarTarjeta(grid, tarjetaHtml, user, esFullAdmin) {
+  if (!grid || typeof tarjetaHtml !== 'function' || !eqPodriaVerTarjeta(user, esFullAdmin)) return Promise.resolve(false);
+  return _eqCargarEstado().then(function () {
+    if (!document.body.contains(grid) || grid.querySelector('[data-entrada="equidad"]')) return false;
+    var html = tarjetaHtml(EQ_TARJETA);
+    var ancla = grid.querySelector('[data-entrada="orlant_tablero"]') || grid.querySelector('[data-entrada="sta"]');
+    if (ancla) ancla.insertAdjacentHTML('afterend', html);
+    else {
+      var cal = grid.querySelector('[onclick="onDashBtn(\'Calidad\')"]');
+      if (cal) cal.insertAdjacentHTML('afterend', html); else grid.insertAdjacentHTML('beforeend', html);
+    }
+    return true;
+  }).catch(function () { return false; });
+}
+
+async function openOrlantEquidad() {
+  var overlay = document.getElementById('eq-overlay');
+  if (!overlay) return;
+  overlay.classList.add('show');
+  if (typeof motionAbrirDialogo === 'function') motionAbrirDialogo(overlay);
+  document.body.style.overflow = 'hidden';
+  _eqOv.abierto = true;
+  if (!_eqOv.host) {
+    _eqOv.host = document.getElementById('eq-host');
+    _eqOv.root = _eqOv.host.shadowRoot || _eqOv.host.attachShadow({ mode: 'open' });
+  }
+  if (typeof eqCrearApp !== 'function') { _eqOv.root.innerHTML = '<p role="status">No se pudo abrir Equidad profesionales.</p>'; return; }
+  // Cada vez que se abre: la vista de siempre, con los datos al día.
+  _eqOv.root.innerHTML = _eqHojaCss() + EQ_MARKUP;
+  var app = eqCrearApp(_eqOv.root, { estado: _eqCargarEstado });
+  try { await app.iniciar(); } catch (e) { if (typeof showToast === 'function') showToast('No se pudo abrir Equidad profesionales: ' + e.message); }
+}
+
+function closeOrlantEquidad() {
+  _eqOv.abierto = false;
+  var overlay = document.getElementById('eq-overlay');
+  if (!overlay) return;
+  overlay.classList.remove('show');
+  if (typeof motionCerrarDialogo === 'function') motionCerrarDialogo(overlay);
+  document.body.style.overflow = '';
+}
+
+if (typeof module !== 'undefined' && module.exports) module.exports = { EQ_TARJETA: EQ_TARJETA, eqPodriaVerTarjeta: eqPodriaVerTarjeta };
