@@ -23049,3 +23049,9 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
 - **Por qué:** autorización escrita del usuario (26/11) para acelerar el histórico de 2026 de la réplica «CLINICA AURORA PRUEBAS API».
 - **Cambio:** el destino `aurora_replica` lleva `esperaEjecutarMs: 2 min`; la ruta `POST /wolkvox/auto/ejecutar` usa la espera del destino (los demás, 10 min). El candado (una consulta detrás de otra) no cambia. Anotado en `CLAUDE.md` (ampliación de la excepción del histórico de Aurora).
 - **Pruebas:** `faseAU4-aurora-espera-2min.test.js` (2): Aurora pide 2 min, ORLANT réplica 10 min, Aurora real 404.
+
+## Dry-run del borrado de la réplica de MOBILIZE (Fase W10a, v1.283.3, 2026-11-26, SOLO LECTURA)
+
+- **Por qué:** el PR del borrado (Fase W10, #978) necesita el inventario con las cifras de producción antes del «OK borrar». Este PR solo trae la lectura, para desplegarla antes.
+- **Cambio:** `server/inventario-replica-mobilize.js` (solo `SELECT COUNT(*)`) y `GET /api/wolkvox/replica-mobilize/inventario` (solo administrador completo): por tabla con `campana`/`cliente`, filas de la réplica y del MOBILIZE real; registro, login de agentes, asesoras, permisos e Historial que la nombra. Solo conteos.
+- **Pruebas:** `faseW10a-inventario-replica-mobilize.test.js` (3): no escribe nada (huella de toda la base antes y después, también por la ruta), el módulo no tiene escrituras, cliente 403 y sin sesión 401. `fase118` declara la ruta.

@@ -7,6 +7,14 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.283.3 — Noviembre 2026
+
+**Administración: revisión previa al borrado de la copia de pruebas de MOBILIZE.**
+
+- Una consulta solo para el administrador cuenta cuántos datos tiene la copia
+  de pruebas «MOBILIZE PRUEBAS API» (y, para comparar, el MOBILIZE real). No
+  cambia ni borra nada.
+
 ## v1.283.2 — Noviembre 2026
 
 **Clínica Aurora (copia de pruebas): el histórico se carga más rápido.**
