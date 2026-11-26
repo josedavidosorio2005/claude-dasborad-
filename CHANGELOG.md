@@ -7,6 +7,18 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.283.0 — Noviembre 2026
+
+**ORLANT, Equidad profesionales: ahora es un cuadro dentro de su pestaña.**
+
+- Se quita la tarjeta «Equidad profesionales» del menú principal.
+- En la pestaña «Equidad profesionales» del Dashboard de ORLANT aparece un cuadro con ese título, las 3 bases y cuántas citas hay. Al hacer clic se abre la vista de siempre: por mes, con sus 3 pestañas. Se cierra con «X Cerrar» o Escape y se vuelve al Dashboard.
+- No cambia la carga de las bases ni los datos.
+
+**Conexión con Wolkvox: los botones de la ventana caben en el celular.**
+
+- A 375 px, «Probar» quedaba cortado. Ahora los 4 botones van en 2 columnas.
+
 ## v1.282.0 — Noviembre 2026
 
 **Clínica Aurora (copia de pruebas): la conexión con Wolkvox ya puede traer datos solos, pero queda apagada.**
