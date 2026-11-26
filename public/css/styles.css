@@ -2999,8 +2999,10 @@ circle.acp-l-ingresos{fill:var(--c-brand-blue)}circle.acp-l-asignaciones{fill:va
 /* Fase 376 (I1, diseño de Edwin): menú lateral del Inventario y el ciclo de un elemento. */
 .ac-layout{display:grid;grid-template-columns:230px minmax(0,1fr);gap:18px;align-items:start}
 .ac-menu{position:sticky;top:0;display:flex;flex-direction:column;gap:4px;padding:10px;border:1px solid var(--c-border-soft);border-radius:var(--r-md);background:var(--c-surface-subtle)}
-.ac-menu-sec{margin:10px 6px 2px;font-size:var(--fs-small);font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--c-text-2)}
+.ac-menu-sec{display:flex;justify-content:space-between;align-items:center;width:100%;min-height:44px;margin:10px 0 2px;padding:0 10px;border:0;border-radius:var(--r-sm);background:transparent;cursor:pointer;font-family:inherit;font-size:var(--fs-small);font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--c-text-2)}
 .ac-menu-sec:first-child{margin-top:0}
+.ac-menu-sec:hover{background:var(--c-hover-bg)}
+.ac-menu-oculto{display:none}
 .ac-menu-btn{display:flex;align-items:center;gap:8px;min-height:44px;width:100%;padding:8px 10px;border:0;border-radius:var(--r-sm);background:transparent;color:var(--c-text);font:inherit;font-size:var(--fs-body);text-align:left;cursor:pointer}
 .ac-menu-btn:hover{background:var(--c-surface)}
 .ac-menu-btn[aria-current="page"]{background:var(--c-brand);color:var(--c-on-brand);font-weight:600} /* auditoría 24/11: en oscuro --c-primary es claro y el blanco quedaba en 1,9:1 */
@@ -3021,6 +3023,7 @@ circle.acp-l-ingresos{fill:var(--c-brand-blue)}circle.acp-l-asignaciones{fill:va
   .ac-layout{grid-template-columns:minmax(0,1fr)}
   .ac-menu{position:static;flex-direction:row;flex-wrap:wrap}
   .ac-menu-sec{display:none}
+  .ac-menu-oculto{display:flex}
   .ac-menu-btn{width:auto;flex:1 1 calc(50% - 4px)}
 }
 /* Fase 372 (E4): editor de formularios por tipo. */

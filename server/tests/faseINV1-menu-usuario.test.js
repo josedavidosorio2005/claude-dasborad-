@@ -21,5 +21,5 @@ test('sin usuario no hay pie, y el resto del menú no cambia', () => {
 
 test('el menú se pinta con el nombre de currentUser', () => {
   const src = require('fs').readFileSync(path.join(__dirname, '..', '..', 'public', 'js', 'activos.js'), 'utf8');
-  assert.match(src, /activosMenuHtml\(_ac\.ambito, _ac\.tab, _ac\.resumen, typeof currentUser !== 'undefined' && currentUser \? currentUser\.nombre \|\| currentUser\.user : ''\)/);
+  assert.match(src, /activosMenuHtml\(_ac\.ambito, _ac\.tab, _ac\.resumen, typeof currentUser !== 'undefined' && currentUser \? currentUser\.nombre \|\| currentUser\.user : '', _ac\.plegadas\)/);
 });

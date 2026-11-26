@@ -49,14 +49,23 @@ async function activosAbrir(ambito) {
 function activosAbrirInmuebles() { return activosAbrir('inmuebles'); } // Fase 376: tarjeta «Inventario de inmuebles»
 // Menú lateral con los conteos de cada estado (del resumen).
 // Fase INV1 (pedido de Edwin): al pie del menú, el usuario de la sesión (como «Usuario: …» en su HTML).
-function activosMenuHtml(ambito, actual, resumen, usuario) {
+// Fase INV1: secciones plegables («Menú», «Ciclo de elementos», «Gestión»), como su HTML. `plegadas`: {sección: true}.
+// En una sección plegada solo queda a la vista la pantalla abierta. En el celular (≤ 760 px) no hay títulos de
+// sección: allí se ve todo siempre (CSS).
+function activosMenuHtml(ambito, actual, resumen, usuario, plegadas) {
+  plegadas = plegadas || {};
+  var sec = '';
   var pe = (resumen && resumen.porEstado) || {};
   var n = { libres: pe.libre, asignados: pe.en_uso, reparacion: pe.en_reparacion, malos: pe.malo, elementos: resumen ? resumen.total : null, actas: resumen && resumen.actasPorFirmar !== undefined ? resumen.actasPorFirmar : null,
     novedadesgh: resumen && resumen.novedadesGH ? resumen.novedadesGH.retirados + resumen.novedadesGH.ausentes : null }; // Fase GH4
   return (AC_MENU[ambito] || AC_MENU.sistemas).map(function (x) {
-    if (x[0] === 'sec') return '<p class="ac-menu-sec">' + esc(x[1]) + '</p>';
+    if (x[0] === 'sec') {
+      sec = x[1];
+      var pl = !!plegadas[sec];
+      return '<button type="button" class="ac-menu-sec" aria-expanded="' + !pl + '" onclick="activosPlegarSeccion(\'' + esc(sec) + '\')">' + esc(sec) + '<span aria-hidden="true">' + (pl ? '▸' : '▾') + '</span></button>';
+    }
     var c = n[x[0]];
-    return '<button type="button" class="ac-menu-btn" data-ac-vista="' + x[0] + '"' + (x[0] === actual ? ' aria-current="page"' : '') + ' onclick="activosTab(\'' + x[0] + '\')">' +
+    return '<button type="button" class="ac-menu-btn' + (plegadas[sec] && x[0] !== actual ? ' ac-menu-oculto' : '') + '" data-ac-vista="' + x[0] + '"' + (x[0] === actual ? ' aria-current="page"' : '') + ' onclick="activosTab(\'' + x[0] + '\')">' +
       (x[2] ? '<span class="ac-paso" aria-hidden="true">' + x[2] + '</span>' : '') + '<span class="ac-menu-txt">' + esc(x[1]) + '</span>' +
       (c !== undefined && c !== null ? '<span class="ac-menu-n">' + Number(c) + '</span>' : '') + '</button>';
   }).join('') + (usuario ? '<p class="ac-menu-pie">Usuario: <b>' + esc(usuario) + '</b></p>' : '');
@@ -71,7 +80,16 @@ function activosFlujoHtml(ambito) {
 }
 async function _acRefrescarMenu() {
   try { _ac.resumen = await apiRequest('GET', '/activos/resumen?ambito=' + _ac.ambito); } catch (e) { /* el menú sigue sin conteos */ }
-  _acEl('ac-menu').innerHTML = activosMenuHtml(_ac.ambito, _ac.tab, _ac.resumen, typeof currentUser !== 'undefined' && currentUser ? currentUser.nombre || currentUser.user : '');
+  _acPintarMenu();
+}
+function _acPintarMenu() {
+  _acEl('ac-menu').innerHTML = activosMenuHtml(_ac.ambito, _ac.tab, _ac.resumen, typeof currentUser !== 'undefined' && currentUser ? currentUser.nombre || currentUser.user : '', _ac.plegadas);
+}
+// Fase INV1: pliega o despliega una sección del menú (se recuerda mientras la página siga abierta).
+function activosPlegarSeccion(sec) {
+  _ac.plegadas = _ac.plegadas || {};
+  _ac.plegadas[sec] = !_ac.plegadas[sec];
+  _acPintarMenu();
 }
 // Fase INV1 (pedido de Edwin): desde la vista «Inventario», botón para volver a la pantalla de antes.
 function activosVolverHtml(prev) {
