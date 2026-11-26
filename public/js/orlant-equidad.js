@@ -23,13 +23,20 @@ function equidadDestapar(tabs) {
   }).catch(function () { return []; });
 }
 
+// Pedido de Edwin (26/11): igual que las demás pestañas (p. ej. «Gestión de la base STA»), Equidad va dentro de un
+// cuadro con su título; adentro, la vista de siempre (por mes, con sus 3 pestañas). No cambia la carga ni los datos.
+var EQ_TITULO = 'Equidad profesionales';
+function equidadMarcoHtml(titulo) {
+  var t = typeof titulo === 'string' && titulo.trim() ? titulo.trim() : EQ_TITULO;
+  var e = typeof esc === 'function' ? esc : function (v) { return String(v).replace(/[&<>"']/g, function (c) { return '&#' + c.charCodeAt(0) + ';'; }); };
+  return '<section class="aurora-card eq-cuadro" aria-label="' + e(t) + '"><div class="aurora-card-title">' + e(t) + '</div><div class="eq-host"></div></section>';
+}
+
 async function _equidadRenderPanel(p, i) {
   var host = document.getElementById('gd-p' + i); if (!host) return;
   if (typeof eqCrearApp !== 'function') { host.innerHTML = '<div class="aurora-card"><div class="gd-vacio" role="status">No se pudo abrir Equidad profesionales.</div></div>'; return; }
-  var cont = document.createElement('div');
-  cont.className = 'eq-host';
-  host.innerHTML = '';
-  host.appendChild(cont);
+  host.innerHTML = equidadMarcoHtml(p && p.titulo);
+  var cont = host.querySelector('.eq-host');
   var root = cont.attachShadow({ mode: 'open' });
   root.innerHTML = _eqHojaCss() + EQ_MARKUP;
   var datos = _eqTab.datos;
@@ -52,3 +59,5 @@ async function _gdExportarEquidad() {
   });
   return out;
 }
+
+if (typeof module !== 'undefined' && module.exports) module.exports = { equidadMarcoHtml: equidadMarcoHtml, EQ_TITULO: EQ_TITULO };

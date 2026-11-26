@@ -7,6 +7,13 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.280.0 — Noviembre 2026
+
+**ORLANT, Equidad profesionales: ahora va en un cuadro con su título, como las demás pestañas.**
+
+- Al entrar a «Equidad profesionales» se ve el cuadro con ese título y, adentro, la misma vista de siempre: por mes, con sus 3 pestañas (Pólizas, Medicina prepagada y Particulares).
+- No cambia la carga de las bases ni los datos.
+
 ## v1.279.0 — Noviembre 2026
 
 **MOBILIZE: se retira la copia de pruebas de la conexión con Wolkvox.**

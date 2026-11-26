@@ -23003,3 +23003,10 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
 - **Sin cambios en el programador ni en el código del real.** Revisado: sin la réplica no se escribe la marca de su franja, pero el real y cada módulo tienen la suya, así que un reinicio en la misma hora no repite consultas.
 - **Se pierde:** «Ejecutar ahora» (solo réplica), puntualidad por `agent_7` (apagada), entrada del agente de la oficina (apagada) y la tarjeta de la réplica. `/api/wolkvox/estado?campana=MOBILIZE PRUEBAS API` sigue sirviendo para revisar el real.
 - **Pruebas:** `faseW9-retirar-replica-mobilize.test.js` (3): migración sin borrar e idempotente; réplica en 0 y real en 1 corre una vez por franja, también tras un reinicio en la misma hora; `/wolkvox/estado` sigue. Ajustadas 5 pruebas de listas de clientes.
+
+## ORLANT, Equidad profesionales en un cuadro con título (Fase EQ3, v1.280.0, 2026-11-26, PR sin mergear)
+
+- **Pedido de Edwin (reunión 26/11):** que «Equidad profesionales» salga en un cuadro con su título, igual que las demás pestañas, y al entrar la vista por mes con sus 3 pestañas.
+- **Cambio:** `equidadMarcoHtml()` (`public/js/orlant-equidad.js`) arma `aurora-card` + `aurora-card-title` (como «Gestión de la base STA») y la vista de Edwin se monta adentro (`.eq-host`, Shadow DOM). Sin cambios en la carga, la ruta ni los datos.
+- **Pruebas:** `faseEQ3-equidad-cuadro.test.js` (3).
+- **Revisión visual local** (copia de la base demo + citas inventadas, Brave sin ventana): 375, 768 y 1440 px, claro y oscuro; título y 3 pestañas visibles, sin desborde horizontal, 0 errores de consola. A 375 px la fila de pestañas se desliza (como antes).
