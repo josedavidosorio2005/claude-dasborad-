@@ -23035,3 +23035,10 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
 - **De paso:** ventana de Wolkvox a ≤480 px: los botones en 2 columnas de 44 px (antes «Probar» quedaba cortado), en el orden de siempre.
 - **Pruebas:** `faseEQ4-equidad-cuadro-pestana.test.js` (6); se retira `faseEQ3-equidad-tarjeta.test.js`.
 - **Revisión visual local** (copia de la base demo + citas y agentes inventados, Brave sin ventana): 375, 768 y 1440 px, claro y oscuro; sin tarjeta en el menú, el cuadro abre la vista con Enter, Escape cierra solo la vista y el foco vuelve al cuadro, sin desborde; los botones de Wolkvox caben; 0 errores de consola.
+
+## Aurora réplica: CDR por semanas (Fase AU3, v1.283.1, 2026-11-26, PR sin mergear)
+
+- **Por qué:** en el histórico de 2026 de la réplica «CLINICA AURORA PRUEBAS API» (autorización escrita del usuario, 26/11), el `cdr_1` del mes completo de octubre pasó los 30 s (`tiempo_agotado`); junio tardó 27,7 s.
+- **Cambio:** el destino `aurora_replica` lleva `cdrDiasPorConsulta: 7`; `correrCdr` pide el mes en tramos de 7 días (`tramosCdr`), junta las filas en memoria y escribe el mes una sola vez. Si un tramo falla, el mes queda sin cambios y no se piden más tramos (sin reintentos). El tope del día cuenta 5 consultas por mes para el CDR de Aurora (`consultasCdrPorMes`). MOBILIZE (réplica y real) y ORLANT siguen con 1 consulta por mes. No se sube el tiempo máximo de 30 s.
+- **Consultas:** 5 por mes de 29–31 días, 4 en febrero; las corridas automáticas (00:05, 7:00 y 13:00) del mes en curso gastan hasta 5 en vez de 1.
+- **Pruebas:** `faseAU3-aurora-cdr-por-semanas.test.js` (4) con Wolkvox falso y datos inventados.
