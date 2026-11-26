@@ -23049,3 +23049,14 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
 - **Por qué:** autorización escrita del usuario (26/11) para acelerar el histórico de 2026 de la réplica «CLINICA AURORA PRUEBAS API».
 - **Cambio:** el destino `aurora_replica` lleva `esperaEjecutarMs: 2 min`; la ruta `POST /wolkvox/auto/ejecutar` usa la espera del destino (los demás, 10 min). El candado (una consulta detrás de otra) no cambia. Anotado en `CLAUDE.md` (ampliación de la excepción del histórico de Aurora).
 - **Pruebas:** `faseAU4-aurora-espera-2min.test.js` (2): Aurora pide 2 min, ORLANT réplica 10 min, Aurora real 404.
+
+## Aurora réplica: abandonadas y ATA del WhatsApp desde skill_1 (Fase AU5, v1.284.0, 2026-11-26, PR SIN mergear)
+
+- **Pedido:** revisar Tráfico de Llamadas, Tráfico de WhatsApp y Tipificación de la réplica «CLINICA AURORA PRUEBAS API» contra el Aurora real y llenar lo que ya venga en `skill_1`, `cdr_1` o `chat_1` (sin consultas nuevas). Nivel de servicio fuera (Edwin: sale de otra base).
+- **Revisión (por el código y los campos conocidos):**
+  - Tráfico de Llamadas (`skill_1`): total, contestadas, abandonadas, % abandono, ASA y ATA ya se llenan. **AHT (TMO) y WAIT_TIME vacíos:** no vienen en `skill_1` ni en `cdr_1` ni en `chat_1`; en MOBILIZE salen de `skill_7`, que no está autorizado para Aurora. `cdr_1` trae la duración de cada llamada (`time_seg`), pero no es el AHT de Wolkvox: no se usa.
+  - Tráfico de WhatsApp (`chat_1`): recibidos, contestados y ASA (primera respuesta) se llenan. **Abandonadas y ATA estaban vacíos** y sí vienen en `skill_1` (una fila por skill y día también para las skills de WhatsApp, como el archivo de Skills con el que se carga el Aurora real): se agregan. **AHT vacío:** `chat_1` trae `time_on_agent` y `chat_duration`, pero no se sabe cuál equivale al AHT del real: queda para Edwin.
+  - Tipificación (`cdr_1`, `chat_1`): pasa por el mismo lector que la carga manual; no hay indicadores vacíos (la pestaña no muestra duraciones; las «únicas» son solo de MOBILIZE).
+- **Cambio:** `server/wolkvox-wa-skill1.js`. El Flujo de Aurora guarda, antes de descartar las skills de WhatsApp de la lista, solo abandonadas y ATA por día y skill en `wolkvox_wa_skill1_dia`, y completa el Tráfico de WhatsApp ya cargado. El módulo WhatsApp completa sus filas día-cola con esos números antes de escribir. Sirve en los dos órdenes. Nunca recibidos − contestados; sin dato, vacío. ORLANT y MOBILIZE no cambian.
+- **Después del merge:** el histórico ya cargado necesita el Flujo de cada mes otra vez (31 consultas por mes) para completar el WhatsApp; las corridas automáticas lo hacen solas para el mes en curso.
+- **Pruebas:** `faseAU5-aurora-whatsapp-abandono.test.js` (4), Wolkvox falso y datos inventados.
