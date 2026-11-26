@@ -23027,3 +23027,11 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
 - **Pruebas:** `faseAU2-aurora-replica-auto.test.js` (8) con Wolkvox falso y datos inventados; ajustadas `faseAU1`, `faseN5`, `faseA24` y la matriz de acceso.
 - **Revisión visual local** (sección de agentes, agentes inventados): 375, 768 y 1440 px, claro y oscuro; agregar y guardar funcionan; 0 errores de consola. Visto de paso: en 375 px los 4 botones de abajo de la ventana de Wolkvox no caben («Probar» queda cortado); ya pasaba antes, no se tocó.
 - **Nada creado en SSM ni encendido.**
+
+## ORLANT Equidad: cuadro en la pestaña que abre la vista; botones de Wolkvox en el celular (Fase EQ4, v1.283.0, 2026-11-26, PR sin mergear)
+
+- **Pedido del usuario (26/11):** quitar la tarjeta «Equidad profesionales» del menú principal (v1.280.0); dentro del Dashboard de ORLANT, en su pestaña, un cuadro con ese título que al hacer clic abra la vista por mes con sus 3 pestañas. Sin cambiar la carga ni los datos.
+- **Cambio:** `equidadCuadroHtml()` (`public/js/orlant-equidad.js`): un `<button>` `aurora-card` con el título, las bases y el total de citas; abre `#eq-overlay` (la misma vista: `EQ_MARKUP` + `eqCrearApp`). Se quitan `eqPintarTarjeta`, `EQ_TARJETA` y el gancho de `dashboards-core.js`. Al cerrar encima del Dashboard, el fondo sigue sin scroll y el foco vuelve al cuadro.
+- **De paso:** ventana de Wolkvox a ≤480 px: los botones en 2 columnas de 44 px (antes «Probar» quedaba cortado), en el orden de siempre.
+- **Pruebas:** `faseEQ4-equidad-cuadro-pestana.test.js` (6); se retira `faseEQ3-equidad-tarjeta.test.js`.
+- **Revisión visual local** (copia de la base demo + citas y agentes inventados, Brave sin ventana): 375, 768 y 1440 px, claro y oscuro; sin tarjeta en el menú, el cuadro abre la vista con Enter, Escape cierra solo la vista y el foco vuelve al cuadro, sin desborde; los botones de Wolkvox caben; 0 errores de consola.
