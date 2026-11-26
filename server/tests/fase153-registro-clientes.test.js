@@ -28,7 +28,7 @@ const CON_AURORA = ANTES.concat([AURORA, 'HOSPITAL LA MARIA']);
 const CON_SURA = CON_AURORA.concat(['SURA']);
 // Fase W1: + la replica interna de Mobilize (solo admin), al final; sin Calidad.
 // Fase 354: + las 2 sedes de HLM justo despues de HLM (mismo orden, por nombre); sin Calidad todavia.
-const CON_REPLICA = CON_AURORA.concat(['HOSPITAL LA MARIA - CASTILLA', 'HOSPITAL LA MARIA - SEDE 33', 'SURA', 'MOBILIZE PRUEBAS API', 'ORLANT PRUEBAS API', 'CLINICA AURORA PRUEBAS API']); // Fase N5: + replica de ORLANT // Fase AU1: + replica de Aurora
+const CON_REPLICA = CON_AURORA.concat(['HOSPITAL LA MARIA - CASTILLA', 'HOSPITAL LA MARIA - SEDE 33', 'SURA', 'ORLANT PRUEBAS API', 'CLINICA AURORA PRUEBAS API']); // Fase N5: + replica de ORLANT // Fase AU1: + replica de Aurora // Fase W9: la de Mobilize sale de los tableros (dashboard = 0)
 
 function listaDeConstants(nombre) {
   const m = leer('constants.js').match(new RegExp('var ' + nombre + " = \\[([^\\]]*)\\];"));
@@ -49,7 +49,8 @@ test('el registro sembrado da exactamente las listas de antes', () => {
 
 test('la semilla describe los modulos y parametros reales de ORLANT y MOBILIZE', () => {
   const r = Object.fromEntries(reg.leerRegistro(db).map((c) => [c.nombre, c]));
-  assert.deepEqual(Object.keys(r), CON_REPLICA);
+  // Fase W9: el registro completo sigue teniendo la replica de Mobilize (no se borra nada; solo dashboard = 0).
+  assert.deepEqual(Object.keys(r), CON_REPLICA.slice(0, CON_REPLICA.indexOf('ORLANT PRUEBAS API')).concat(['MOBILIZE PRUEBAS API', 'ORLANT PRUEBAS API', 'CLINICA AURORA PRUEBAS API']));
   assert.ok(r.ORLANT.modulos.includes('whatsapp_tiempos'));
   assert.ok(!r.ORLANT.modulos.includes('llamadas_unicas'));
   assert.ok(r.MOBILIZE.modulos.includes('llamadas_unicas') && r.MOBILIZE.modulos.includes('encuesta'));

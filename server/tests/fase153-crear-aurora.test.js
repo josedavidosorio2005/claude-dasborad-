@@ -101,6 +101,7 @@ test('una base nueva termina todas las migraciones con Aurora, creada despues de
     'faseW1_replica_mobilize_api_v1', // Fase W1: replica interna de Mobilize (fila nueva; no toca Aurora/HLM)
     'faseN5_replica_orlant_api_v1', // Fase N5: replica interna de ORLANT (fila nueva; no toca Aurora/HLM)
     'faseAU1_replica_aurora_api_v1', // Fase AU1: replica interna de Aurora (fila nueva; solo LEE Aurora)
+    'faseW9_retirar_replica_mobilize_v1', // Fase W9: la replica de Mobilize sale de los tableros (no toca Aurora/HLM)
     'fase353_monitoreos_enlace_exacto_v1', // Fase 353: solo llena monitoreos.asesorUserId por nombre exacto (no toca Aurora/HLM)
     'fase353_monitoreos_enlace_exacto_v2', // Fase 353b
     'fase354_hlm_sedes_v1', 'fase354b_hlm_datos_anteriores_v1', 'fase376_inventario_listas_v1', 'fase377_inventario_campos_v1', 'fase380_inventario_administrables_v1', 'faseSTA_orlant_gestion_base_v1', 'faseA32_no_conectadas_meses_v1', 'faseEQ_orlant_equidad_tab_v1']; // Fase 354b: prende «Datos anteriores» en parametros del padre // Fase 354: crea las 2 sedes de HLM (filas nuevas) y agrega parametros.sedes al padre // Fase 353b: lo mismo con nombre_clave() (tildes, Ñ, espacios especiales)

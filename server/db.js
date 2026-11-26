@@ -5418,6 +5418,18 @@ function crearReplicaAuroraApi() {
 }
 runOnceMigration('faseAU1_replica_aurora_api_v1', crearReplicaAuroraApi);
 
+// Fase W9 (26/11/2026, pedido del usuario): se retira la replica «MOBILIZE PRUEBAS API». Sus corridas
+// ya se apagaron en SSM (WOLKVOX_AUTO_ACTIVO=0, WOLKVOX_AUTO_MODULOS=ninguno); aqui SOLO sale de los
+// tableros (`dashboard = 0`). NO borra nada: la fila del registro (sigue interna, asi /wolkvox/estado
+// y el Historial siguen sirviendo para revisar el MOBILIZE real), su tablero y todos sus datos se
+// quedan. El MOBILIZE real no cambia. Idempotente: si ya esta en 0 o no existe, no hace nada.
+function retirarReplicaMobilizeApi() {
+  const r = db.prepare('UPDATE clientes_registro SET dashboard = 0, updatedAt = ? WHERE nombre = ? AND dashboard <> 0')
+    .run(new Date().toISOString(), REPLICA_API.nombre);
+  if (!config.isTest) console.log('[db] Migracion faseW9_retirar_replica_mobilize_v1 aplicada (' + r.changes + ' fila).');
+}
+runOnceMigration('faseW9_retirar_replica_mobilize_v1', retirarReplicaMobilizeApi);
+
 // Fase 353 (C, aprobado por el usuario el 13/11 con dry-run): los monitoreos sin usuario cuyo
 // asesor coincide EXACTO (mayusculas y espacios al borde aparte) con un UNICO usuario ASESOR
 // activo de su campaña quedan enlazados por id. Hoy ya llegan al portal por nombre; con el id no
@@ -5705,6 +5717,7 @@ module.exports.crearReplicaMobilizeApi = crearReplicaMobilizeApi; // Fase W1
 module.exports.crearReplicaOrlantApi = crearReplicaOrlantApi; // Fase N5
 module.exports.crearReplicaAuroraApi = crearReplicaAuroraApi; // Fase AU1
 module.exports.REPLICA_API_AURORA = REPLICA_API_AURORA;
+module.exports.retirarReplicaMobilizeApi = retirarReplicaMobilizeApi; // Fase W9
 module.exports.REPLICA_API = REPLICA_API;
 module.exports.crearSedesHospitalLaMaria = crearSedesHospitalLaMaria; // Fase 354: prueba de idempotencia
 module.exports.prenderDatosAnterioresHlm = prenderDatosAnterioresHlm; // Fase 354b

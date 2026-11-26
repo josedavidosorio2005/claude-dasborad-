@@ -7,6 +7,14 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.279.0 — Noviembre 2026
+
+**MOBILIZE: se retira la copia de pruebas de la conexión con Wolkvox.**
+
+- «MOBILIZE PRUEBAS API» (la copia oculta que solo veía el administrador) ya no aparece entre los tableros, y sus consultas automáticas quedaron apagadas.
+- No se borró ningún dato: la copia y lo que tenía siguen guardados.
+- El MOBILIZE real sigue trayendo sus datos de Wolkvox igual que antes: a las 00:05, 7:00 y 13:00.
+
 ## v1.278.0 — Noviembre 2026
 
 **Clínica Aurora: primera conexión de prueba con Wolkvox (oculta).**
