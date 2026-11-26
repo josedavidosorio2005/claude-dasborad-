@@ -7,6 +7,17 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.284.0 — Noviembre 2026
+
+**Clínica Aurora (copia de pruebas): el Tráfico de WhatsApp trae las abandonadas y el ATA.**
+
+- En la copia de pruebas de Aurora, el Tráfico de WhatsApp ya no queda sin
+  abandonadas ni sin ATA: los toma del mismo reporte de skills de Wolkvox que
+  trae el Flujo (igual que el archivo con el que se carga el Aurora real).
+  Nunca se calculan restando contestados de recibidos.
+- El nivel de servicio sigue fuera (sale de otra base) y el AHT (TMO) y la
+  espera siguen vacíos: ese reporte no los trae.
+
 ## v1.283.3 — Noviembre 2026
 
 **Administración: revisión previa al borrado de la copia de pruebas de MOBILIZE.**

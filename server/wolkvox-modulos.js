@@ -636,6 +636,8 @@ async function correrWhatsapp(opts, partes, res) {
     let wT = { insertadas: 0, borradas: 0 }, wTi = { insertadas: 0, borradas: 0 }, wTip = null;
     const tipFilas = tipAu ? tipificacionChatsMes(tipAu.hoja, mes) : null;
     if (tipFilas && tipFilas.error) { res.estado = 'error'; res.error = 'respuesta_invalida'; partes.push(mes + ': tipificación de WhatsApp no esperada (' + String(tipFilas.error).slice(0, 120) + '), sin cambios'); return; }
+    // Fase AU5: en Aurora, abandonadas y ATA de cada día-cola salen de skill_1 (lo guardó el Flujo), nunca de una resta.
+    const completadas = dest.filtros && dest.filtros.waSkills ? require('./wolkvox-wa-skill1').completarTrafico(opts.db, opts.campana, mes, h.trafico) : null;
     opts.db.transaction(() => {
       wT = cargarTraficoWhatsapp(opts.db, { campana: opts.campana, archivoNombre: ARCHIVO, cargadoPorNombre: QUIEN, filas: h.trafico });
       if (h.tiempos.length) wTi = cargarWhatsappTiempos(opts.db, { campana: opts.campana, archivoNombre: ARCHIVO, cargadoPorNombre: QUIEN, filas: h.tiempos });
@@ -645,7 +647,8 @@ async function correrWhatsapp(opts, partes, res) {
     })();
     const recibidos = h.trafico.reduce((a, t) => a + t.totalWhatsapp, 0), contestados = h.trafico.reduce((a, t) => a + t.contestados, 0);
     res.meses.push({ mes, filas: h.trafico.length, tiempos: h.tiempos.length });
-    partes.push(mes + ': ' + llegaron + ' chats → ' + recibidos + ' de entrada (' + contestados + ' con asesor) en ' + h.trafico.length + ' filas día-cola, ' + h.tiempos.length + ' tiempos de primera respuesta; ' + h.salida + ' de salida y ' + h.sinFecha + ' sin fecha fuera, ' + h.sinTiempo + ' sin tiempo' + (chatsFuera ? ', ' + chatsFuera + ' chats de otro mes fuera' : '') + '; abandono sin dato (¿Edwin?)' +
+    if (completadas !== null) partes.push(mes + ': abandonadas y ATA de skill_1 en ' + completadas + ' de ' + h.trafico.length + ' filas día-cola' + (completadas ? '' : ' (corre el Flujo del mes para traerlas)'));
+    partes.push(mes + ': ' + llegaron + ' chats → ' + recibidos + ' de entrada (' + contestados + ' con asesor) en ' + h.trafico.length + ' filas día-cola, ' + h.tiempos.length + ' tiempos de primera respuesta; ' + h.salida + ' de salida y ' + h.sinFecha + ' sin fecha fuera, ' + h.sinTiempo + ' sin tiempo' + (chatsFuera ? ', ' + chatsFuera + ' chats de otro mes fuera' : '') + (completadas ? '' : '; abandono sin dato (¿Edwin?)') +
       (tipAu ? '; ' + tipAu.otrasSkills + ' de otras skills fuera; tipificación: ' + (tipAu.sinAgentes ? tipAu.vistos + ' agentes vistos y ninguno elegido, sin escribir' : (wTip ? wTip.insertadas : 0) + ' chats de ' + tipAu.agentesElegidos + ' agentes (' + tipAu.otrosAgentes + ' de otros agentes fuera' + (tipFilas && tipFilas.fuera ? ', ' + tipFilas.fuera + ' de otro mes' : '') + ')') : '') + '; con respaldo');
     h = null;
   }
