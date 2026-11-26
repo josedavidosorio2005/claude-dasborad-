@@ -343,6 +343,17 @@ function filtrarCdrAurora(db, dest, data) {
   return { data: out, otrasSkills, otrosAgentes: enSkill.length - out.length, aviso: out.length ? null : otrasSkills + ' de otras skills y ' + (enSkill.length - out.length) + ' de otros agentes fuera; ninguna de los agentes elegidos' };
 }
 
+// Fase AU3: los días del mes en tramos de `n` días seguidos (sin `n`: el mes completo en uno).
+function tramosCdr(dias, n) {
+  if (!n || !(n > 0)) return [dias];
+  const out = [];
+  for (let i = 0; i < dias.length; i += n) out.push(dias.slice(i, i + n));
+  return out;
+}
+// Consultas de cdr_1 que gasta un mes de 31 días en ese destino (para el tope del día).
+function consultasCdrPorMes(dest) {
+  return tramosCdr(new Array(31).fill(0), dest && dest.cdrDiasPorConsulta).length;
+}
 async function correrCdr(opts, partes, res) {
   const { cargarTipificaciones } = require('./tipificaciones');
   const meses = _auto().planDe(opts);
@@ -351,11 +362,13 @@ async function correrCdr(opts, partes, res) {
     let campos = [];
     // Fase A9 (18/11): cdr_1 acepta el mes completo (prueba autorizada: 1–17/11 en una consulta,
     // 80 filas): una sola consulta por mes, del 1 a ayer.
-    {
+    // Fase AU3 (26/11): si el destino lo pide (Aurora, cdrDiasPorConsulta), el mes va por tramos de N días;
+    // las filas se juntan en memoria y el mes se escribe una sola vez: si un tramo falla, el mes queda sin cambios.
+    for (const tramo of tramosCdr(dias, D.destino(opts.destino).cdrDiasPorConsulta)) {
       res.consultas++;
-      const r = await _pedir(opts, 'cdr_1', dias[0], dias[dias.length - 1]);
-      data = r.data;
-      if (r.data.length) campos = wv.resumenSinValores(r.cuerpo).campos;
+      const r = await _pedir(opts, 'cdr_1', tramo[0], tramo[tramo.length - 1]);
+      for (const x of r.data) data.push(x);
+      if (r.data.length && !campos.length) campos = wv.resumenSinValores(r.cuerpo).campos;
     }
     if (!data.length) { partes.push(mes + ': Wolkvox no trajo llamadas, sin cambios'); continue; }
     const prC = quitarCuentasPrueba(data, opts.destino); // Fase A26 (N6: solo MOBILIZE)
@@ -611,8 +624,14 @@ async function correrWhatsapp(opts, partes, res) {
     }
     let h = hojaWhatsapp(data, mapa);
     data = null; // datos del cliente y demás datos crudos no se guardan ni se quedan en memoria
-    const fuera = h.trafico.filter((t) => t.fechaInicio.slice(0, 7) !== mes).length;
-    if (fuera) { res.estado = 'error'; res.error = 'respuesta_invalida'; partes.push(mes + ': ' + fuera + ' grupos de chats fuera del mes, sin cambios'); return; }
+    // Fase AU3 (26/11, OK del usuario): Wolkvox puede traer chats que empezaron en otro mes (octubre de Aurora trajo 3
+    // grupos día-cola de otro mes, p. ej. abiertos el 30/09 y cerrados en octubre). Esos chats se descartan y se dicen;
+    // el mes solo se rechaza si NINGÚN chat cae en el mes pedido.
+    const enMes = h.trafico.filter((t) => t.fechaInicio.slice(0, 7) === mes);
+    const fuera = h.trafico.length - enMes.length;
+    const chatsFuera = h.trafico.filter((t) => t.fechaInicio.slice(0, 7) !== mes).reduce((a, t) => a + t.totalWhatsapp, 0);
+    if (fuera && !enMes.length) { res.estado = 'error'; res.error = 'respuesta_invalida'; partes.push(mes + ': ' + fuera + ' grupos de chats fuera del mes y ninguno dentro, sin cambios'); return; }
+    if (fuera) { h.trafico = enMes; h.tiempos = h.tiempos.filter((t) => String(t[1]).slice(0, 7) === mes); }
     if (!h.trafico.length) { partes.push(mes + ': ' + llegaron + ' chats, ninguno de entrada con fecha (' + h.salida + ' de salida, ' + h.sinFecha + ' sin fecha), sin cambios'); continue; }
     let wT = { insertadas: 0, borradas: 0 }, wTi = { insertadas: 0, borradas: 0 }, wTip = null;
     const tipFilas = tipAu ? tipificacionChatsMes(tipAu.hoja, mes) : null;
@@ -626,7 +645,7 @@ async function correrWhatsapp(opts, partes, res) {
     })();
     const recibidos = h.trafico.reduce((a, t) => a + t.totalWhatsapp, 0), contestados = h.trafico.reduce((a, t) => a + t.contestados, 0);
     res.meses.push({ mes, filas: h.trafico.length, tiempos: h.tiempos.length });
-    partes.push(mes + ': ' + llegaron + ' chats → ' + recibidos + ' de entrada (' + contestados + ' con asesor) en ' + h.trafico.length + ' filas día-cola, ' + h.tiempos.length + ' tiempos de primera respuesta; ' + h.salida + ' de salida y ' + h.sinFecha + ' sin fecha fuera, ' + h.sinTiempo + ' sin tiempo; abandono sin dato (¿Edwin?)' +
+    partes.push(mes + ': ' + llegaron + ' chats → ' + recibidos + ' de entrada (' + contestados + ' con asesor) en ' + h.trafico.length + ' filas día-cola, ' + h.tiempos.length + ' tiempos de primera respuesta; ' + h.salida + ' de salida y ' + h.sinFecha + ' sin fecha fuera, ' + h.sinTiempo + ' sin tiempo' + (chatsFuera ? ', ' + chatsFuera + ' chats de otro mes fuera' : '') + '; abandono sin dato (¿Edwin?)' +
       (tipAu ? '; ' + tipAu.otrasSkills + ' de otras skills fuera; tipificación: ' + (tipAu.sinAgentes ? tipAu.vistos + ' agentes vistos y ninguno elegido, sin escribir' : (wTip ? wTip.insertadas : 0) + ' chats de ' + tipAu.agentesElegidos + ' agentes (' + tipAu.otrosAgentes + ' de otros agentes fuera' + (tipFilas && tipFilas.fuera ? ', ' + tipFilas.fuera + ' de otro mes' : '') + ')') : '') + '; con respaldo');
     h = null;
   }
@@ -712,7 +731,7 @@ async function correrModulo(nombre, opts) {
   if (!cred) { res.estado = 'omitida'; partes.push('falta el token o el servidor de Wolkvox'); return terminar(); }
   const meses = A.planDe({ mes: opts.mes, ahora, destino: dest, huecoReal: opts.huecoReal });
   if (!meses.length) { res.estado = 'omitida'; partes.push(opts.mes ? 'mes no válido (' + String(opts.mes).slice(0, 7) + ')' : 'nada que pedir'); return terminar(); }
-  if (wv.usoDelDia(db, OPERACION, ahora) + meses.length * (mod.consultasPorMes || 1) > wv.topeDiario(env)) { res.estado = 'omitida'; partes.push('no alcanza el tope del día'); return terminar(); }
+  if (wv.usoDelDia(db, OPERACION, ahora) + meses.length * (nombre === 'cdr' ? consultasCdrPorMes(dest) : (mod.consultasPorMes || 1)) > wv.topeDiario(env)) { res.estado = 'omitida'; partes.push('no alcanza el tope del día'); return terminar(); }
   try {
     await mod.correr({ db, env, ahora, mes: opts.mes, fetchImpl: opts.fetchImpl, cred, destino: dest, campana: CAMPANA, huecoReal: opts.huecoReal }, partes, res);
   } catch (e) {
@@ -725,6 +744,7 @@ async function correrModulo(nombre, opts) {
 }
 
 module.exports = {
+  tramosCdr, consultasCdrPorMes, // Fase AU3
   hojaWhatsapp, WA_DESCARTADAS, // Fase N3
   // Fase A26: cuentas de prueba (las listas solo se cambian en pruebas)
   esCuentaPrueba, quitarCuentasPrueba, vaciarMes, PRUEBA_HUELLAS, PRUEBA_IDS,

@@ -7,6 +7,18 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.283.1 — Noviembre 2026
+
+**Clínica Aurora (copia de pruebas): las llamadas de un mes grande ya no se quedan sin traer.**
+
+- Wolkvox tardaba más de 30 segundos en mandar las llamadas de un mes completo (pasó con octubre) y la consulta se cortaba.
+- Ahora se piden por semanas (5 consultas en un mes de 31 días, 4 en febrero) y el mes se guarda solo cuando llegaron todas las semanas. Si una falla, el mes queda como estaba.
+- Solo la copia de pruebas de Aurora. MOBILIZE y ORLANT siguen igual (una consulta por mes).
+
+**Copias de pruebas (WhatsApp): un chat que empezó el mes anterior ya no bloquea el mes.**
+
+- Wolkvox a veces trae chats que empezaron el último día del mes anterior. Antes, por eso no se guardaba nada del mes; ahora esos chats se dejan fuera (y se dice cuántos) y el resto del mes se guarda.
+
 ## v1.283.0 — Noviembre 2026
 
 **ORLANT, Equidad profesionales: ahora es un cuadro dentro de su pestaña.**
