@@ -7,6 +7,18 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.285.0 — Noviembre 2026
+
+**ORLANT · Gestión STA: más gráficas y con los números a la vista.**
+
+- En «Gráficas» (administrador) y en la pestaña del cliente de ORLANT hay cuatro gráficas
+  nuevas: agendas por entidad y por servicio, y, después de «Codificación general»,
+  gestiones por entidad y por servicio. Usan los mismos filtros de arriba.
+- Todas las gráficas del STA muestran el número sobre cada barra, columna, punto o porción
+  (en la dona, las porciones muy chicas lo muestran en la leyenda).
+- «Codificación general» muestra todas las codificaciones, sin juntar las pequeñas en «Otros».
+- No cambia ningún dato.
+
 ## v1.284.0 — Noviembre 2026
 
 **Clínica Aurora (copia de pruebas): el Tráfico de WhatsApp trae las abandonadas y el ATA.**
