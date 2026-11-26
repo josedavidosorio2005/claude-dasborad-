@@ -283,6 +283,34 @@ asumir en qué quedó una fase anterior.
   cliente. Tope de 2.800 consultas al día por el token de Aurora. La
   consulta automática de la réplica de Aurora (interruptor y módulos
   propios) y pasar al Aurora real necesitan autorización nueva por escrito.
+- **Excepción escrita (usuario, 26/11/2026, réplica de Aurora con la API,
+  Fase AU2):**
+  - **Qué se autoriza:** que la consulta automática pida a Wolkvox, de la
+    operación `inconexion-aurora` (servidor `wv0071`, token
+    `WOLKVOX_AURORA_TOKEN`), `skill_1`, `cdr_1` y `chat_1`, y GUARDE **solo
+    en la réplica «CLINICA AURORA PRUEBAS API»**: Flujo de llamadas,
+    Tráfico de WhatsApp y Tipificación de llamadas y de WhatsApp.
+  - **Mapeo de Edwin (26/11):** Flujo = skill `4009-LINEA DE ENTRADA`;
+    Tráfico de WhatsApp = solo los skills «Confirmaciones WhatsApp»,
+    «Recordaciones 3 Días» y «WhatsApp», **sin filtro de agente**;
+    Tipificación de llamadas = skill LINEA DE ENTRADA y «-» (salida) y
+    Tipificación de WhatsApp = esos 3 skills, las dos **solo con los
+    agentes de Inconexión** de una lista editable en la plataforma. Total
+    tráfico y salida se calculan solos. Nivel de servicio, Agendas,
+    Inasistencia, Encuestas, Calidad, Errores y Líneas internas, fuera.
+  - **Datos sensibles:** teléfonos, datos del cliente/paciente y
+    comentarios se descartan en memoria antes de guardar (como `cdr_1` y
+    `chat_1` en las otras réplicas).
+  - **Reglas:** las mismas de N6 (horarios 00:05, 7:00 y 13:00, respaldo,
+    todo o nada por mes, sin reintentos, tope de 2.800 por el token de
+    Aurora). Arranca **APAGADA**: `WOLKVOX_AURORA_AUTO_ACTIVO` y
+    `WOLKVOX_AURORA_AUTO_MODULOS` en SSM, creados por el usuario con OK
+    explícito.
+  - **«Probar» ampliado:** 3 consultas (`skill_1`, `cdr_1`, `chat_1`) del
+    25/11/2026, más 1 «Diagnóstico de red». Solo nombres de campos, skills
+    y agentes; nunca datos de pacientes.
+  - Nunca el **Aurora real** ni otro cliente. Pasar al real = autorización
+    nueva por escrito.
 - Nada de pruebas agresivas contra producción (sin límite de tasa, sin
   volumen alto, sin tocar datos que no sean los explícitamente
   autorizados). No destapar pestañas ocultas a mano, no tocar datos de

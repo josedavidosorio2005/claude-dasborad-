@@ -313,6 +313,8 @@ async function correrUnaVez(opts) {
           else throw e;
         }
         const d = filasDelDia(cuerpo, dia);
+        // Fase AU2: en Aurora, el mapa skill_id → nombre de la operación (chat_1 solo trae skill_id).
+        if (dest.filtros) require('./wolkvox-agentes').registrarSkills(db, OPERACION, cuerpo && cuerpo.data);
         omitidas += d.omitidas;
         sinLlamadas += d.sinLlamadas;
         filas.push(...d.filas);
@@ -326,6 +328,13 @@ async function correrUnaVez(opts) {
       partes.push(mes + ': error ' + e.codigo + (e.causa ? ' (' + e.causa + ')' : '') + (e.httpStatus ? ' ' + e.httpStatus : '') +
         (e.campos ? ' campos: ' + e.campos.join(',').slice(0, 300) : '') + ', mes sin cambios, sin reintento');
       return terminar();
+    }
+    // Fase AU2 (mapeo de Edwin, 26/11): en Aurora solo entran las skills del Flujo de la lista (LINEA DE ENTRADA).
+    if (dest.filtros && dest.filtros.flujoSkills) {
+      const AG = require('./wolkvox-agentes');
+      const antes = filas.length;
+      for (let i = filas.length - 1; i >= 0; i--) if (!AG.enLista(dest.filtros.flujoSkills, filas[i].skillName)) filas.splice(i, 1);
+      if (antes !== filas.length) partes.push(mes + ': ' + (antes - filas.length) + ' filas de otras skills fuera');
     }
     // Fase A24: en el real solo entran las skills que el mapeo ya tiene a nombre de MOBILIZE (sin tocarlo).
     let sinMapeo = 0;
@@ -549,6 +558,8 @@ function iniciar(db, deps) {
       await correrReal({ db, env, ahora, franja, deps, leer });
       // Fase N6: la réplica de ORLANT, con SU interruptor (apagada: no deja rastro).
       await correrReplicaOrlant({ db, env, ahora, franja, deps, leer });
+      // Fase AU2: la réplica de Aurora, con SU interruptor y SU lista (apagada: no deja rastro).
+      await correrReplicaInterna('aurora_replica', { db, env, ahora, franja, deps, leer });
       return r;
     } catch (e) {
       console.error('[wolkvox-auto] error inesperado en la corrida (' + (e && e.name ? String(e.name).slice(0, 60) : 'error') + ')');
@@ -589,8 +600,10 @@ async function correrReal({ db, env, ahora, franja, deps, leer }) {
 // sin el parámetro, con otro valor o si SSM falla, no corre ni deja rastro. Primero el Flujo y después
 // los módulos de WOLKVOX_ORLANT_AUTO_MODULOS que estén autorizados para ORLANT, en el orden de MODULOS.
 // Su propio token y su propio contador del día (operación ORLANT). Nunca el ORLANT real.
-async function correrReplicaOrlant({ db, env, ahora, franja, deps, leer }) {
-  const dest = D.DESTINOS.orlant_replica;
+async function correrReplicaOrlant(args) { return correrReplicaInterna('orlant_replica', args); }
+// Fase AU2: lo mismo para cualquier réplica interna con interruptor y lista propios (ORLANT y Aurora).
+async function correrReplicaInterna(clave, { db, env, ahora, franja, deps, leer }) {
+  const dest = D.DESTINOS[clave];
   let activo = false;
   try { activo = (await leer(env, dest.interruptor)) === true; } catch (e) { activo = false; }
   if (!activo) return null;
@@ -684,5 +697,5 @@ module.exports = {
   CAMPANA, OPERACION, API, HORAS_COLOMBIA, ARCHIVO, QUIEN, ACCION_HISTORIAL, MAX_CONSULTAS_POR_CORRIDA,
   horaColombia, franjaActual, plan, convertirFila, filasDelDia, aPorcentaje, aSegundos, aEntero,
   asegurarTablas, franjaYaCorrida, ultimaCorrida, planMes, planDe, MESES_ATRAS_MAX, leerInterruptor, correrUnaVez, iniciar, estado, ejecutarAhora, correrLogin, planLogin, API_LOGIN,
-  leerValor, SIN_REGISTROS, correrReal, rellenarHuecoReal, correrReplicaOrlant,
+  leerValor, SIN_REGISTROS, correrReal, rellenarHuecoReal, correrReplicaOrlant, correrReplicaInterna,
 };

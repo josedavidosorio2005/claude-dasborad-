@@ -87,7 +87,7 @@ test('operación por campaña: solo las réplicas; los reales nunca', () => {
 
 // Fase N6 (23/11): la réplica de ORLANT pasa a ser un destino (apagado); MOBILIZE sigue igual.
 test('MOBILIZE sin cambios: sus dos destinos siguen de MOBILIZE; ORLANT solo como réplica', () => {
-  assert.deepEqual(Object.keys(D.DESTINOS), ['replica', 'real', 'orlant_replica']);
+  assert.deepEqual(Object.keys(D.DESTINOS), ['replica', 'real', 'orlant_replica', 'aurora_replica']); // Fase AU2: + la réplica de Aurora (apagada)
   assert.equal(D.operacionDe(), 'MOBILIZE');
   assert.equal(D.operacionDe('replica'), 'MOBILIZE');
   assert.equal(D.operacionDe('real'), 'MOBILIZE');

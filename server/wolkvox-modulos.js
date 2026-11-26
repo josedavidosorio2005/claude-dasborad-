@@ -323,6 +323,26 @@ const PERFILES_CDR = {
 };
 function perfilCdr(dest) { return PERFILES_CDR[D.destino(dest).perfilCdr] || PERFILES_CDR.mobilize; }
 
+// Fase AU2 (mapeo de Edwin, 26/11): en la réplica de Aurora el CDR solo deja la skill de entrada y «-» (la salida,
+// que cdr_1 trae sin skill) y solo los agentes de Inconexión elegidos en la lista editable. Los agentes vistos (solo
+// el nombre) quedan anotados para elegirlos. Sin agentes elegidos no se escribe nada (lo dice el Historial).
+function _skillCdr(r) {
+  const salida = _SALIDA.includes(String(_v(r, 'type_interaction') || '').trim().toLowerCase());
+  const s = _v(r, 'skill_name');
+  return salida && _vacio(s) ? '-' : (s == null ? '' : String(s));
+}
+function filtrarCdrAurora(db, dest, data) {
+  const AG = require('./wolkvox-agentes');
+  const f = dest.filtros;
+  const enSkill = data.filter((r) => AG.enLista(f.cdrSkills, _skillCdr(r || {})));
+  const otrasSkills = data.length - enSkill.length;
+  const vistos = AG.registrarVistos(db, dest.campana, enSkill.map((r) => _v(r || {}, 'agent_name')));
+  const elegidos = AG.incluidos(db, dest.campana);
+  if (!elegidos.size) return { data: [], otrasSkills, otrosAgentes: 0, aviso: otrasSkills + ' de otras skills fuera; ' + vistos + ' agentes vistos y ninguno elegido como de Inconexión (elígelos en «Agentes de Inconexión»)' };
+  const out = enSkill.filter((r) => elegidos.has(AG.norm(_v(r || {}, 'agent_name'))));
+  return { data: out, otrasSkills, otrosAgentes: enSkill.length - out.length, aviso: out.length ? null : otrasSkills + ' de otras skills y ' + (enSkill.length - out.length) + ' de otros agentes fuera; ninguna de los agentes elegidos' };
+}
+
 async function correrCdr(opts, partes, res) {
   const { cargarTipificaciones } = require('./tipificaciones');
   const meses = _auto().planDe(opts);
@@ -341,6 +361,12 @@ async function correrCdr(opts, partes, res) {
     const prC = quitarCuentasPrueba(data, opts.destino); // Fase A26 (N6: solo MOBILIZE)
     data = prC.data;
     if (!data.length) { if (opts.huecoReal) { partes.push(mes + ': solo filas de la cuenta de prueba' + _textoPrueba(prC) + ', sin cambios'); continue; } _soloPrueba(opts, partes, res, 'tipificaciones', mes, prC); continue; }
+    let filtroAu = null;
+    if (D.destino(opts.destino).filtros) { // Fase AU2: Aurora
+      filtroAu = filtrarCdrAurora(opts.db, D.destino(opts.destino), data);
+      data = filtroAu.data;
+      if (filtroAu.aviso) { partes.push(mes + ': ' + filtroAu.aviso + ', sin cambios'); continue; }
+    }
     const conteo = conteoCdr(data); // Fase A12: solo números
     const pf = perfilCdr(opts.destino); // Fase N6
     let p = T.tipificacionParseFilas(hojaCdr(data, pf), null, 'LLAMADAS', pf.opciones());
@@ -361,7 +387,8 @@ async function correrCdr(opts, partes, res) {
     });
     const unicas = p.unicasDia ? p.unicasDia.unicas : null;
     res.meses.push({ mes, filas: w.insertadas, reemplazadas: w.borradas, excluidas: p.excluidas || 0, unicas, salida: p.salida || 0, prueba: prC.quitadas });
-    partes.push(mes + ': ' + w.insertadas + ' llamadas (' + (p.salida || 0) + ' de salida' + (unicas !== null ? ', ' + unicas + ' únicas de ingreso' : '') + (p.excluidas ? ', ' + p.excluidas + ' de prueba fuera' : '') + _textoPrueba(prC) + '), reemplazó ' + w.borradas + ', con respaldo · ' + conteo);
+    partes.push(mes + ': ' + w.insertadas + ' llamadas (' + (p.salida || 0) + ' de salida' + (unicas !== null ? ', ' + unicas + ' únicas de ingreso' : '') + (p.excluidas ? ', ' + p.excluidas + ' de prueba fuera' : '') + _textoPrueba(prC) +
+      (filtroAu ? ', ' + filtroAu.otrasSkills + ' de otras skills y ' + filtroAu.otrosAgentes + ' de otros agentes fuera' : '') + '), reemplazó ' + w.borradas + ', con respaldo · ' + conteo);
     p = null;
   }
 }
@@ -566,27 +593,79 @@ async function correrWhatsapp(opts, partes, res) {
   const { listarSkillsWhatsapp } = require('./skills-whatsapp');
   const base = require('./clientes-registro').replicaDe(opts.db, opts.campana) || opts.campana; // el mapa es del cliente original
   const mapa = new Map(listarSkillsWhatsapp(opts.db, base).map((s) => [String(s.codigo), s.nombre]));
+  const dest = D.destino(opts.destino);
+  // Fase AU2: en Aurora el nombre de cada skill_id sale también de las respuestas de skill_1 (Flujo) de la operación.
+  if (dest.filtros) for (const [id, n] of require('./wolkvox-agentes').mapaSkills(opts.db, dest.operacion)) if (!mapa.has(id)) mapa.set(id, n);
   const ARCHIVO = 'API Wolkvox (chat_1)';
   for (const { mes, dias } of _auto().planDe(opts)) {
     res.consultas++;
     let { data } = await _pedir(opts, 'chat_1', dias[0], dias[dias.length - 1]);
     if (!data.length) { partes.push(mes + ': Wolkvox no trajo chats, sin cambios'); continue; }
     const llegaron = data.length;
+    let tipAu = null;
+    if (dest.filtros) { // Fase AU2: solo los 3 skills de WhatsApp; la Tipificación además solo con los agentes elegidos
+      const f = filtrarChatsAurora(opts.db, dest, data, mapa);
+      if (f.aviso) { partes.push(mes + ': ' + f.aviso + ', sin cambios'); continue; }
+      data = f.data;
+      tipAu = f.tipificacion;
+    }
     let h = hojaWhatsapp(data, mapa);
     data = null; // datos del cliente y demás datos crudos no se guardan ni se quedan en memoria
     const fuera = h.trafico.filter((t) => t.fechaInicio.slice(0, 7) !== mes).length;
     if (fuera) { res.estado = 'error'; res.error = 'respuesta_invalida'; partes.push(mes + ': ' + fuera + ' grupos de chats fuera del mes, sin cambios'); return; }
     if (!h.trafico.length) { partes.push(mes + ': ' + llegaron + ' chats, ninguno de entrada con fecha (' + h.salida + ' de salida, ' + h.sinFecha + ' sin fecha), sin cambios'); continue; }
-    let wT = { insertadas: 0, borradas: 0 }, wTi = { insertadas: 0, borradas: 0 };
+    let wT = { insertadas: 0, borradas: 0 }, wTi = { insertadas: 0, borradas: 0 }, wTip = null;
+    const tipFilas = tipAu ? tipificacionChatsMes(tipAu.hoja, mes) : null;
+    if (tipFilas && tipFilas.error) { res.estado = 'error'; res.error = 'respuesta_invalida'; partes.push(mes + ': tipificación de WhatsApp no esperada (' + String(tipFilas.error).slice(0, 120) + '), sin cambios'); return; }
     opts.db.transaction(() => {
       wT = cargarTraficoWhatsapp(opts.db, { campana: opts.campana, archivoNombre: ARCHIVO, cargadoPorNombre: QUIEN, filas: h.trafico });
       if (h.tiempos.length) wTi = cargarWhatsappTiempos(opts.db, { campana: opts.campana, archivoNombre: ARCHIVO, cargadoPorNombre: QUIEN, filas: h.tiempos });
+      if (tipFilas && tipFilas.filas.length) {
+        wTip = require('./tipificaciones').cargarTipificaciones(opts.db, { campana: opts.campana, canal: 'WHATSAPP', archivoNombre: ARCHIVO, cargadoPorNombre: QUIEN, filas: tipFilas.filas, desde: mes + '-01', hasta: ing.ultimoDiaDelMes(mes) });
+      }
     })();
     const recibidos = h.trafico.reduce((a, t) => a + t.totalWhatsapp, 0), contestados = h.trafico.reduce((a, t) => a + t.contestados, 0);
     res.meses.push({ mes, filas: h.trafico.length, tiempos: h.tiempos.length });
-    partes.push(mes + ': ' + llegaron + ' chats → ' + recibidos + ' de entrada (' + contestados + ' con asesor) en ' + h.trafico.length + ' filas día-cola, ' + h.tiempos.length + ' tiempos de primera respuesta; ' + h.salida + ' de salida y ' + h.sinFecha + ' sin fecha fuera, ' + h.sinTiempo + ' sin tiempo; abandono sin dato (¿Edwin?); con respaldo');
+    partes.push(mes + ': ' + llegaron + ' chats → ' + recibidos + ' de entrada (' + contestados + ' con asesor) en ' + h.trafico.length + ' filas día-cola, ' + h.tiempos.length + ' tiempos de primera respuesta; ' + h.salida + ' de salida y ' + h.sinFecha + ' sin fecha fuera, ' + h.sinTiempo + ' sin tiempo; abandono sin dato (¿Edwin?)' +
+      (tipAu ? '; ' + tipAu.otrasSkills + ' de otras skills fuera; tipificación: ' + (tipAu.sinAgentes ? tipAu.vistos + ' agentes vistos y ninguno elegido, sin escribir' : (wTip ? wTip.insertadas : 0) + ' chats de ' + tipAu.agentesElegidos + ' agentes (' + tipAu.otrosAgentes + ' de otros agentes fuera' + (tipFilas && tipFilas.fuera ? ', ' + tipFilas.fuera + ' de otro mes' : '') + ')') : '') + '; con respaldo');
     h = null;
   }
+}
+
+// Fase AU2 (mapeo de Edwin, 26/11): chats de la réplica de Aurora. Tráfico y tiempos: solo los 3 skills de WhatsApp,
+// SIN filtro de agente. Tipificación de WhatsApp: esos 3 skills y solo los agentes de Inconexión elegidos (los vistos
+// quedan anotados). Si no se conoce ningún skill_id de esos 3 (el mapa sale del Flujo, skill_1), no se escribe nada.
+const CHAT_TIPIF_COLUMNAS = [['agent_name', 'AGENT_NAME'], ['date', 'DATE'], ['date_close', 'DATE_CLOSE'], ['description_cod_act', 'DESCRIPTION_COD_ACT'], ['skill_name', 'SKILL_NAME'], ['cod_act', 'COD_ACT'], ['skill_id', 'SKILL_ID'], ['channel', 'CHANNEL']];
+function filtrarChatsAurora(db, dest, data, mapa) {
+  const AG = require('./wolkvox-agentes');
+  const f = dest.filtros;
+  const ids = new Set([...mapa].filter(([, n]) => AG.enLista(f.waSkills, n)).map(([id]) => id));
+  if (!ids.size) return { aviso: 'no se conoce el skill_id de ' + f.waSkills.join(', ') + ' (enciende «flujo» para que skill_1 los traiga, o llena «Skills de WhatsApp»)' };
+  const enSkill = data.filter((r) => ids.has(String(_v(r || {}, 'skill_id') == null ? '' : _v(r || {}, 'skill_id')).trim()));
+  const otrasSkills = data.length - enSkill.length;
+  const conAgente = enSkill.filter((r) => !_vacio(_v(r || {}, 'agent_name')));
+  const vistos = AG.registrarVistos(db, dest.campana, conAgente.map((r) => _v(r, 'agent_name')));
+  const elegidos = AG.incluidos(db, dest.campana);
+  const deInconexion = elegidos.size ? conAgente.filter((r) => elegidos.has(AG.norm(_v(r, 'agent_name')))) : [];
+  // La hoja de Tipificación lleva SOLO estas columnas (ni cliente, ni teléfono, ni comentarios).
+  const hoja = [CHAT_TIPIF_COLUMNAS.map((c) => c[1])].concat(deInconexion.map((r) => CHAT_TIPIF_COLUMNAS.map(([api]) => {
+    if (api === 'skill_name') return mapa.get(String(_v(r, 'skill_id')).trim()) || '';
+    const v = _v(r, api);
+    return v === undefined || v === null ? '' : v;
+  })));
+  return {
+    data: enSkill,
+    tipificacion: { hoja, otrasSkills, vistos, sinAgentes: !elegidos.size, agentesElegidos: elegidos.size, otrosAgentes: conAgente.length - deInconexion.length },
+  };
+}
+// Hoja de chats → filas de Tipificación del mes (las de otro mes quedan fuera y se cuentan).
+function tipificacionChatsMes(hoja, mes) {
+  if (hoja.length < 2) return { filas: [], fuera: 0 };
+  const p = T.tipificacionParseFilas(hoja, null, 'WHATSAPP');
+  if (p.error) return { error: p.error };
+  const todas = p.filas.map(T.tipificacionFilaComoArray);
+  const filas = todas.filter((f) => String(f[1]).slice(0, 7) === mes);
+  return { filas, fuera: todas.length - filas.length };
 }
 
 const MODULOS = {
@@ -595,7 +674,7 @@ const MODULOS = {
   encuesta: { api: 'diagram_4', descripcion: 'Encuesta (HistIVR) sin teléfono ni comentarios', correr: correrEncuesta }, // Fase A11
   no_conectadas: { api: 'cdr_5', descripcion: 'Llamadas de salida no conectadas (sin teléfono)', correr: correrNoConectadas }, // Fase A15
   abandonadas: { api: 'skill_2', descripcion: 'Llamadas únicas: abandonadas (sin teléfono)', correr: correrAbandonadas }, // Fase A19
-  whatsapp: { api: 'chat_1', descripcion: 'WhatsApp de entrada (tráfico por cola y primera respuesta) sin datos del cliente', correr: correrWhatsapp }, // Fase N3: solo la réplica de ORLANT
+  whatsapp: { api: 'chat_1', descripcion: 'WhatsApp de entrada (tráfico por cola y primera respuesta) sin datos del cliente', correr: correrWhatsapp }, // Fase N3: réplica de ORLANT; Fase AU2: + réplica de Aurora (también Tipificación de WhatsApp)
 };
 function modulosDe(valor) {
   return String(valor == null ? '' : valor).split(',').map((s) => s.trim().toLowerCase()).filter((s) => Object.prototype.hasOwnProperty.call(MODULOS, s));
