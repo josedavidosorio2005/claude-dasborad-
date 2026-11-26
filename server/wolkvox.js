@@ -54,7 +54,10 @@ const REPORTES = {
 // internas: el MOBILIZE real y el ORLANT real nunca están aquí (no tienen «Probar» ni diagnóstico).
 // Fase N5 (23/11/2026): + la réplica «ORLANT PRUEBAS API» (operación de ORLANT, servidor wv0034;
 // token y servidor en WOLKVOX_ORLANT_TOKEN / WOLKVOX_ORLANT_SERVIDOR). Sin consulta automática.
-const OPERACION_DE_CAMPANA = Object.freeze({ 'MOBILIZE PRUEBAS API': 'MOBILIZE', 'ORLANT PRUEBAS API': 'ORLANT' });
+// Fase AU1 (26/11/2026): + la réplica «CLINICA AURORA PRUEBAS API» (operación AURORA; token y servidor
+// en WOLKVOX_AURORA_TOKEN / WOLKVOX_AURORA_SERVIDOR). Solo «Diagnóstico de red» y «Probar»; sin
+// consulta automática. El Aurora real no tiene nada aquí.
+const OPERACION_DE_CAMPANA = Object.freeze({ 'MOBILIZE PRUEBAS API': 'MOBILIZE', 'ORLANT PRUEBAS API': 'ORLANT', 'CLINICA AURORA PRUEBAS API': 'AURORA' });
 
 class WolkvoxError extends Error {
   constructor(codigo, mensaje, httpStatus, causa) {

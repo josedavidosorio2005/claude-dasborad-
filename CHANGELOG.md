@@ -7,6 +7,14 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.278.0 — Noviembre 2026
+
+**Clínica Aurora: primera conexión de prueba con Wolkvox (oculta).**
+
+- Se crea «Clínica Aurora pruebas API», una copia oculta y vacía de Aurora, que solo ve el administrador. Tiene Tráfico de Llamadas, Tráfico de WhatsApp y Tipificación, igual que Aurora.
+- Desde ahí el administrador puede revisar la conexión con el Wolkvox de Aurora («Diagnóstico de red») y hacer una consulta de prueba («Probar»), que solo muestra nombres de campos y de skills.
+- No guarda datos de Wolkvox ni toca la Clínica Aurora real. Funciona cuando se configuren el token y el servidor de Aurora.
+
 ## v1.277.0 — Noviembre 2026
 
 **ORLANT, conexión con Wolkvox (réplica de pruebas): WhatsApp se puede encender solo.**

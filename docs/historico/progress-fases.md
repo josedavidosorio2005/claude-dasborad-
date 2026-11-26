@@ -22985,3 +22985,12 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
 - **MOBILIZE sin cambios:** réplica y real siguen corriendo el Flujo solo con su interruptor (probado).
 - **Pruebas:** `faseN3b-orlant-flujo-por-modulos.test.js` (6) con Wolkvox falso y datos inventados; `faseN6` ajustada (su lista ahora incluye `flujo`).
 - **Nada creado en SSM ni encendido.** Encender WhatsApp sigue esperando el OK del usuario.
+
+## Aurora por API: réplica oculta y operación AURORA (Fase AU1, v1.278.0, 2026-11-26, PR sin mergear)
+
+- **Autorización escrita del usuario (26/11):** solo la réplica oculta «CLINICA AURORA PRUEBAS API»; el Aurora real NO. Anotada en `CLAUDE.md`.
+- **Migración `faseAU1_replica_aurora_api_v1`** (`server/db.js`): fila interna con `replicaDe: 'CLINICA AURORA'`, módulos de tráfico de llamadas, de WhatsApp (con tiempos) y Tipificación, y el tablero con SOLO las pestañas Tráfico de Llamadas, Tráfico de WhatsApp y Tipificación copiadas del tablero de Aurora, con los paneles apuntando a la réplica. Aurora no tiene perfil en `plantillas-cliente`, por eso se copia su tablero actual. Idempotente; solo LEE Aurora.
+- **Operación `AURORA`** en `OPERACION_DE_CAMPANA` (`server/wolkvox.js`): «Diagnóstico de red» (solo el servidor) y «Probar» (1 consulta). Sin consulta automática: Aurora no es un destino, «Ejecutar ahora» da 404.
+- **SSM:** `WOLKVOX_AURORA_TOKEN` y `WOLKVOX_AURORA_SERVIDOR`, por crear por el usuario. Nada creado.
+- **Pruebas:** `faseAU1-wolkvox-aurora.test.js` (10) con red y fetch falsos y datos inventados; listas de clientes ajustadas en 7 pruebas viejas (la réplica aparece solo para el administrador).
+- **Límite conocido:** las reglas que dependen del nombre «CLINICA AURORA» (salida provisional, skills con nombre) no se aplican solas a la réplica; se revisan en la fase del destino automático.

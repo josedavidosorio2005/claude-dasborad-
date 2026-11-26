@@ -5367,6 +5367,57 @@ function crearReplicaOrlantApi() {
 }
 runOnceMigration('faseN5_replica_orlant_api_v1', crearReplicaOrlantApi);
 
+// Fase AU1 (autorizacion escrita del usuario, 26/11/2026, CLAUDE.md): replica OCULTA de Clinica
+// Aurora para probar la API de Wolkvox de Aurora, «CLINICA AURORA PRUEBAS API». Mismo patron que
+// la de ORLANT (Fase N5): fila nueva en el registro con los modulos de Aurora que van a salir de
+// Wolkvox (Trafico de Llamadas, Trafico de WhatsApp con sus tiempos y Tipificacion), los
+// parametros que Aurora tiene HOY mas `interno: true` (solo el administrador completo la ve) y
+// `replicaDe: 'CLINICA AURORA'`, y su tablero VACIO: Aurora no tiene perfil en
+// plantillas-cliente, asi que se copian del tablero actual de Aurora SOLO las pestañas Trafico de
+// Llamadas, Trafico de WhatsApp y Tipificacion, con sus paneles apuntando a la replica (nunca a
+// Aurora). APAGADA: sin consulta automatica; solo «Diagnostico de red» y «Probar». No toca
+// ninguna fila de Aurora, no crea usuarios, permisos, datos ni plantillas de Calidad. El
+// Aurora real NO esta autorizado. Idempotente: si la fila o el tablero ya existen, no hace nada.
+const REPLICA_API_AURORA = {
+  nombre: 'CLINICA AURORA PRUEBAS API',
+  titulo: 'Clínica Aurora pruebas API',
+  original: 'CLINICA AURORA',
+  modulos: ['flujo_llamadas', 'flujo_whatsapp', 'whatsapp_tiempos', 'tipificacion'],
+  pestanas: ['trafico', 'trafico_whatsapp', 'tipificacion'],
+};
+function crearReplicaAuroraApi() {
+  const R = REPLICA_API_AURORA;
+  const au = db.prepare('SELECT parametros, logo FROM clientes_registro WHERE nombre = ?').get(R.original);
+  if (!au) return; // sin Aurora no hay de donde copiar (no pasa en produccion)
+  let parametros = {};
+  try { parametros = au.parametros ? JSON.parse(au.parametros) : {}; } catch (e) { parametros = {}; }
+  parametros = Object.assign({}, parametros, { interno: true, replicaDe: R.original });
+  const cfgAu = db.prepare('SELECT secciones, layout FROM dashboards_config WHERE cliente = ?').get(R.original);
+  const now = new Date().toISOString();
+  const maxOrden = db.prepare('SELECT COALESCE(MAX(orden), 0) AS m FROM clientes_registro').get().m;
+  db.transaction(() => {
+    db.prepare(
+      `INSERT OR IGNORE INTO clientes_registro
+         (nombre, orden, dashboard, modulos, parametros, logo, activo, createdAt, updatedAt)
+       VALUES (?, ?, 1, ?, ?, ?, 1, ?, ?)`
+    ).run(R.nombre, maxOrden + 1, JSON.stringify(R.modulos), JSON.stringify(parametros), au.logo || null, now, now);
+    if (!db.prepare('SELECT 1 FROM dashboards_config WHERE cliente = ?').get(R.nombre)) {
+      let layout = { kpis: [], tabs: [] };
+      try { layout = cfgAu && cfgAu.layout ? JSON.parse(cfgAu.layout) : layout; } catch (e) { layout = { kpis: [], tabs: [] }; }
+      const tabs = (Array.isArray(layout.tabs) ? layout.tabs : [])
+        .filter((t) => t && R.pestanas.includes(t.key) && Array.isArray(t.panels) && t.panels.length > 0 &&
+          t.panels.every((p) => p && p.campana === R.original))
+        .map((t) => Object.assign({}, t, { panels: t.panels.map((p) => Object.assign({}, p, { campana: R.nombre })) }));
+      db.prepare(
+        `INSERT INTO dashboards_config (cliente, titulo, vista, secciones, layout, activo, createdAt, updatedAt)
+         VALUES (?, ?, NULL, ?, ?, 1, ?, ?)`
+      ).run(R.nombre, R.titulo, (cfgAu && cfgAu.secciones) || '{}', JSON.stringify({ kpis: [], tabs }), now, now);
+    }
+  })();
+  if (!config.isTest) console.log('[db] Migracion faseAU1_replica_aurora_api_v1 aplicada.');
+}
+runOnceMigration('faseAU1_replica_aurora_api_v1', crearReplicaAuroraApi);
+
 // Fase 353 (C, aprobado por el usuario el 13/11 con dry-run): los monitoreos sin usuario cuyo
 // asesor coincide EXACTO (mayusculas y espacios al borde aparte) con un UNICO usuario ASESOR
 // activo de su campaña quedan enlazados por id. Hoy ya llegan al portal por nombre; con el id no
@@ -5652,6 +5703,8 @@ module.exports.recalcularPctAtencionAbandono = recalcularPctAtencionAbandono;
 module.exports.orlantCalidadSoloNueva = orlantCalidadSoloNueva; // Fase 332: prueba de idempotencia
 module.exports.crearReplicaMobilizeApi = crearReplicaMobilizeApi; // Fase W1
 module.exports.crearReplicaOrlantApi = crearReplicaOrlantApi; // Fase N5
+module.exports.crearReplicaAuroraApi = crearReplicaAuroraApi; // Fase AU1
+module.exports.REPLICA_API_AURORA = REPLICA_API_AURORA;
 module.exports.REPLICA_API = REPLICA_API;
 module.exports.crearSedesHospitalLaMaria = crearSedesHospitalLaMaria; // Fase 354: prueba de idempotencia
 module.exports.prenderDatosAnterioresHlm = prenderDatosAnterioresHlm; // Fase 354b

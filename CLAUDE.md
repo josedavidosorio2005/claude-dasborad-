@@ -253,6 +253,24 @@ asumir en qué quedó una fase anterior.
   - **MOBILIZE** (réplica y real) no tiene este módulo: su lista de módulos es
     cerrada.
   - Pasarlo al ORLANT real = autorización nueva por escrito.
+- **Excepción escrita (usuario, 26/11/2026, Aurora por API, Fase AU1):** el
+  deploy de la Fase AU1 puede crear por migración la réplica oculta
+  «CLINICA AURORA PRUEBAS API» (interna, vacía, solo el administrador
+  completo; pestañas Tráfico de Llamadas, Tráfico de WhatsApp y Tipificación
+  copiadas del tablero de Aurora). Desde esa réplica, un administrador puede
+  usar contra la operación de Wolkvox de Aurora (`AURORA`):
+  - «Diagnóstico de red»: DNS, TCP 443 y TLS; sin token, sin petición HTTP
+    y sin gastar consultas.
+  - «Probar»: `skill_1` de un día ya cerrado, 1 consulta; solo muestra
+    nombres de campos y de skills, nunca valores.
+
+  Token y servidor en SSM (`WOLKVOX_AURORA_TOKEN` SecureString,
+  `WOLKVOX_AURORA_SERVIDOR`); los crea el usuario. Hasta nuevo OK, máximo 1
+  diagnóstico y 1 «Probar». No guarda datos de Wolkvox en ninguna campaña y
+  **no toca el Aurora real** (autorización expresamente negada) ni otro
+  cliente. Tope de 2.800 consultas al día por el token de Aurora. La
+  consulta automática de la réplica de Aurora (interruptor y módulos
+  propios) y pasar al Aurora real necesitan autorización nueva por escrito.
 - Nada de pruebas agresivas contra producción (sin límite de tasa, sin
   volumen alto, sin tocar datos que no sean los explícitamente
   autorizados). No destapar pestañas ocultas a mano, no tocar datos de
