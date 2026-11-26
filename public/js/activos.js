@@ -48,7 +48,8 @@ async function activosAbrir(ambito) {
 }
 function activosAbrirInmuebles() { return activosAbrir('inmuebles'); } // Fase 376: tarjeta «Inventario de inmuebles»
 // Menú lateral con los conteos de cada estado (del resumen).
-function activosMenuHtml(ambito, actual, resumen) {
+// Fase INV1 (pedido de Edwin): al pie del menú, el usuario de la sesión (como «Usuario: …» en su HTML).
+function activosMenuHtml(ambito, actual, resumen, usuario) {
   var pe = (resumen && resumen.porEstado) || {};
   var n = { libres: pe.libre, asignados: pe.en_uso, reparacion: pe.en_reparacion, malos: pe.malo, elementos: resumen ? resumen.total : null, actas: resumen && resumen.actasPorFirmar !== undefined ? resumen.actasPorFirmar : null,
     novedadesgh: resumen && resumen.novedadesGH ? resumen.novedadesGH.retirados + resumen.novedadesGH.ausentes : null }; // Fase GH4
@@ -58,7 +59,7 @@ function activosMenuHtml(ambito, actual, resumen) {
     return '<button type="button" class="ac-menu-btn" data-ac-vista="' + x[0] + '"' + (x[0] === actual ? ' aria-current="page"' : '') + ' onclick="activosTab(\'' + x[0] + '\')">' +
       (x[2] ? '<span class="ac-paso" aria-hidden="true">' + x[2] + '</span>' : '') + '<span class="ac-menu-txt">' + esc(x[1]) + '</span>' +
       (c !== undefined && c !== null ? '<span class="ac-menu-n">' + Number(c) + '</span>' : '') + '</button>';
-  }).join('');
+  }).join('') + (usuario ? '<p class="ac-menu-pie">Usuario: <b>' + esc(usuario) + '</b></p>' : '');
 }
 // El ciclo de un elemento (diseño de Edwin), con los pasos que llevan a su vista.
 function activosFlujoHtml(ambito) {
@@ -70,7 +71,7 @@ function activosFlujoHtml(ambito) {
 }
 async function _acRefrescarMenu() {
   try { _ac.resumen = await apiRequest('GET', '/activos/resumen?ambito=' + _ac.ambito); } catch (e) { /* el menú sigue sin conteos */ }
-  _acEl('ac-menu').innerHTML = activosMenuHtml(_ac.ambito, _ac.tab, _ac.resumen);
+  _acEl('ac-menu').innerHTML = activosMenuHtml(_ac.ambito, _ac.tab, _ac.resumen, typeof currentUser !== 'undefined' && currentUser ? currentUser.nombre || currentUser.user : '');
 }
 function activosCerrar() { closeModal('activos-overlay'); }
 
