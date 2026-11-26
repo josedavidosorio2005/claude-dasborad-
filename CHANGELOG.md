@@ -7,6 +7,14 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.277.0 — Noviembre 2026
+
+**ORLANT, conexión con Wolkvox (réplica de pruebas): WhatsApp se puede encender solo.**
+
+- En la réplica oculta «ORLANT PRUEBAS API», el Flujo diario ahora se enciende igual que los demás reportes: hay que incluir «flujo» en la lista de módulos. Antes corría siempre que la conexión estuviera encendida.
+- Así se puede probar solo WhatsApp, sin gastar las consultas del Flujo (una por día del mes).
+- MOBILIZE no cambia. Todo sigue apagado hasta el OK del usuario.
+
 ## v1.276.0 — Noviembre 2026
 
 **ORLANT, Gestión STA: la asesora ve en «Gestionados» sus gestiones del histórico.**

@@ -246,6 +246,10 @@ asumir en qué quedó una fase anterior.
   - **Reglas:** las mismas de N6. Arranca **APAGADO**, y no se crea
     `WOLKVOX_ORLANT_AUTO_ACTIVO` sin OK explícito; se enciende añadiendo
     `whatsapp` a `WOLKVOX_ORLANT_AUTO_MODULOS`, también con OK.
+  - **Flujo como módulo (Fase N3b, 26/11/2026):** en la réplica de ORLANT el
+    Flujo (`skill_1`) tampoco corre solo con el interruptor: necesita `flujo`
+    en `WOLKVOX_ORLANT_AUTO_MODULOS`. Así `whatsapp` puede correr solo. El
+    Flujo de MOBILIZE (réplica y real) sigue igual.
   - **MOBILIZE** (réplica y real) no tiene este módulo: su lista de módulos es
     cerrada.
   - Pasarlo al ORLANT real = autorización nueva por escrito.
