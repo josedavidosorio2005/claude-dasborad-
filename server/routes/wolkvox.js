@@ -162,7 +162,7 @@ router.post(
       db, logEvent, actor: actorLabel(req.actor), maxConsultas, modulo, mes: b.mes, destino: dest,
       fetchImpl: req.app.locals.wolkvoxFetch, leerInterruptor: req.app.locals.wolkvoxInterruptor, leerValor: req.app.locals.wolkvoxValor,
     });
-    if (r.estado === 'apagada') return res.status(409).json({ ok: false, codigo: 'apagada', error: modulo === 'flujo' || modulo === 'todos' || dest !== D.DESTINOS.replica ? 'La consulta automática está apagada (' + dest.interruptor + ' no es 1 en SSM)' : 'El módulo ' + modulo + ' está apagado (no está en ' + dest.modulos + ' en SSM)' });
+    if (r.estado === 'apagada') return res.status(409).json({ ok: false, codigo: 'apagada', error: r.porLista ? 'El Flujo está apagado (no está «flujo» en ' + dest.modulos + ' en SSM)' : modulo === 'flujo' || modulo === 'todos' || dest !== D.DESTINOS.replica ? 'La consulta automática está apagada (' + dest.interruptor + ' no es 1 en SSM)' : 'El módulo ' + modulo + ' está apagado (no está en ' + dest.modulos + ' en SSM)' });
     if (r.estado === 'no_permitido') return res.status(400).json({ ok: false, codigo: 'parametro', error: 'Ese módulo no está autorizado para esta campaña' });
     if (r.estado === 'ocupada') return res.status(409).json({ ok: false, codigo: 'ocupada', error: 'Ya hay una corrida en curso' });
     if (r.estado === 'sin_interruptor') return res.status(503).json({ ok: false, codigo: 'sin_interruptor', error: 'No se pudo leer el interruptor en SSM; no se consultó' });

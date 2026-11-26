@@ -22977,3 +22977,11 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
 - **Arreglo:** `estadoAsesor` devuelve `histCuenta`. Son las gestiones con `cuenta: true` cuyo `agente` es ella, de cualquier caso, y llevan solo número, codificación, fecha y citas. La app las suma (`S.histCuenta`) en «Gestionados».
 - **Riesgo bajo:** la asesora ve el número de autorización de casos que ya no tiene asignados. Ella misma los gestionó, y no recibe observación ni datos del caso. El caso no entra en su bandeja.
 - **Pruebas:** `faseSTA11-historico-gestion.test.js` (9). Revisión local con base demo y datos inventados a 375, 768 y 1440 px, en claro y oscuro: 10 reales + 5 del histórico = 15 en el contador, la lista y «Gestiones»; 0 errores de consola y sin desborde.
+
+## Wolkvox ORLANT: el Flujo también va por la lista de módulos (Fase N3b, v1.277.0, 2026-11-26, PR sin mergear)
+
+- **Pedido del usuario (26/11):** poder encender WhatsApp (`chat_1`) solo en la réplica «ORLANT PRUEBAS API». Antes, con `WOLKVOX_ORLANT_AUTO_ACTIVO=1`, el Flujo (`skill_1`, una consulta por día) corría siempre.
+- **Cambio:** el destino `orlant_replica` lleva `flujoPorModulos: true` y `flujoEnLista()` (`server/wolkvox-destinos.js`). El programador y «Ejecutar ahora» (suelto y «todos») de ORLANT corren el Flujo solo con `flujo` en `WOLKVOX_ORLANT_AUTO_MODULOS`. Si la lista no se puede leer, no corre nada. La ruta responde 409 con «no está «flujo» en WOLKVOX_ORLANT_AUTO_MODULOS».
+- **MOBILIZE sin cambios:** réplica y real siguen corriendo el Flujo solo con su interruptor (probado).
+- **Pruebas:** `faseN3b-orlant-flujo-por-modulos.test.js` (6) con Wolkvox falso y datos inventados; `faseN6` ajustada (su lista ahora incluye `flujo`).
+- **Nada creado en SSM ni encendido.** Encender WhatsApp sigue esperando el OK del usuario.

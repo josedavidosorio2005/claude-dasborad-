@@ -86,7 +86,7 @@ test('programador ENCENDIDO: Flujo + módulos autorizados, con el token de ORLAN
   const usoMob = wv.usoDelDia(db, 'MOBILIZE', AHORA);
   const usoOrl = wv.usoDelDia(db, 'ORLANT', AHORA);
   db.prepare("DELETE FROM wolkvox_auto_corridas WHERE franja LIKE '2026-11-05 07%'").run();
-  await tick(Object.assign({}, ENV, { WOLKVOX_ORLANT_AUTO_ACTIVO: '1', WOLKVOX_ORLANT_AUTO_MODULOS: 'encuesta,cdr,abandonadas,flujo_hora,nada' }), falso);
+  await tick(Object.assign({}, ENV, { WOLKVOX_ORLANT_AUTO_ACTIVO: '1', WOLKVOX_ORLANT_AUTO_MODULOS: 'flujo,encuesta,cdr,abandonadas,flujo_hora,nada' }), falso); // Fase N3b: el Flujo también va por la lista
   const apis = falso.llamadas.map((x) => x.api);
   assert.deepEqual(apis, ['skill_1', 'skill_1', 'skill_1', 'skill_1', 'skill_7', 'cdr_1'], 'Flujo (1–4/11) y después flujo_hora y cdr; encuesta y abandonadas nunca');
   assert.ok(falso.llamadas.every((x) => x.token === TOKEN_ORL && x.host === 'servidorfalson6.wolkvox.com'), 'siempre el token y el servidor de ORLANT');

@@ -474,10 +474,11 @@ async function ejecutarAhora(opts) {
       // Fase A20: el Flujo y luego cada módulo encendido, en el orden de MODULOS (flujo_hora completa
       // el AHT del Flujo, por eso va después). Lo apagado se salta. La primera falla detiene el resto.
       const M = require('./wolkvox-modulos');
-      let lista;
-      try { lista = M.modulosDe(await (opts.leerValor || leerValor)(env, dest.modulos)); } catch (e) { return { estado: 'sin_interruptor' }; }
+      let lista, valorLista;
+      try { valorLista = await (opts.leerValor || leerValor)(env, dest.modulos); lista = M.modulosDe(valorLista); } catch (e) { return { estado: 'sin_interruptor' }; }
       const out = { estado: 'ok', consultas: 0, meses: [], partes: [] };
-      const pasos = [['flujo', activo]].concat(Object.keys(M.MODULOS).filter((n) => D.moduloPermitido(dest, n)).map((n) => [n, lista.includes(n)]));
+      // Fase N3b: en ORLANT el Flujo también necesita «flujo» en la lista.
+      const pasos = [['flujo', activo && D.flujoEnLista(dest, valorLista)]].concat(Object.keys(M.MODULOS).filter((n) => D.moduloPermitido(dest, n)).map((n) => [n, lista.includes(n)]));
       for (const [nombre, encendido] of pasos) {
         if (!encendido) { out.partes.push({ modulo: nombre, estado: 'apagado' }); continue; }
         const r = nombre === 'flujo' ? await correrFlujo()
@@ -498,6 +499,12 @@ async function ejecutarAhora(opts) {
       return await M.correrModulo(opts.modulo, { db: opts.db, env, ahora: opts.ahora, mes: opts.mes, fetchImpl: opts.fetchImpl, logEvent: opts.logEvent, etiqueta, actor: opts.actor, destino: dest });
     }
     if (!activo) return { estado: 'apagada' };
+    if (dest.flujoPorModulos) {
+      // Fase N3b: en la réplica de ORLANT el Flujo suelto también exige «flujo» en su lista.
+      let valorLista;
+      try { valorLista = await (opts.leerValor || leerValor)(env, dest.modulos); } catch (e) { return { estado: 'sin_interruptor' }; }
+      if (!D.flujoEnLista(dest, valorLista)) return { estado: 'apagada', porLista: true };
+    }
     return await correrFlujo();
   } finally {
     _enCurso = false;
@@ -588,10 +595,15 @@ async function correrReplicaOrlant({ db, env, ahora, franja, deps, leer }) {
   try { activo = (await leer(env, dest.interruptor)) === true; } catch (e) { activo = false; }
   if (!activo) return null;
   const fr = franja + dest.sufijoFranja;
-  const r = await correrUnaVez({ db, env, ahora, franja: fr, destino: dest, fetchImpl: deps.fetchImpl, logEvent: deps.logEvent });
   const M = require('./wolkvox-modulos');
-  let mods = [];
-  try { mods = M.modulosDe(await (deps.leerValor || leerValor)(env, dest.modulos)); } catch (e) { mods = []; }
+  // Fase N3b: el Flujo (skill_1) también va por la lista: solo con «flujo» en WOLKVOX_ORLANT_AUTO_MODULOS.
+  // Si la lista no se puede leer, no corre nada (ni el Flujo).
+  let valor, leida = true;
+  try { valor = await (deps.leerValor || leerValor)(env, dest.modulos); } catch (e) { leida = false; }
+  if (!leida) return null;
+  const mods = M.modulosDe(valor);
+  let r = null;
+  if (D.flujoEnLista(dest, valor)) r = await correrUnaVez({ db, env, ahora, franja: fr, destino: dest, fetchImpl: deps.fetchImpl, logEvent: deps.logEvent });
   for (const m of Object.keys(M.MODULOS).filter((n) => mods.includes(n) && D.moduloPermitido(dest, n))) {
     await M.correrModulo(m, { db, env, ahora, franja: fr, destino: dest, fetchImpl: deps.fetchImpl, logEvent: deps.logEvent });
   }

@@ -35,7 +35,7 @@ const DESTINOS = Object.freeze({
   // Fase N6 (23/11/2026): SOLO la réplica de ORLANT, y solo Flujo (skill_1), Flujo por hora (skill_7),
   // Tipificación (cdr_1, sin datos sensibles) y No conectadas (cdr_5). Encuesta y abandonadas no están
   // autorizadas para ORLANT. Interruptor y lista de módulos propios; arranca apagada.
-  orlant_replica: Object.freeze({ clave: 'orlant_replica', campana: CAMPANA_REPLICA_ORLANT, operacion: 'ORLANT', interna: true, interruptor: 'WOLKVOX_ORLANT_AUTO_ACTIVO', modulos: 'WOLKVOX_ORLANT_AUTO_MODULOS', desdeMes: null, sufijoFranja: ' orlant', modulosPermitidos: Object.freeze(['flujo_hora', 'cdr', 'no_conectadas', 'whatsapp']), cuentasPrueba: false, perfilCdr: 'orlant', encuestaConnId: false }),
+  orlant_replica: Object.freeze({ clave: 'orlant_replica', campana: CAMPANA_REPLICA_ORLANT, operacion: 'ORLANT', interna: true, interruptor: 'WOLKVOX_ORLANT_AUTO_ACTIVO', modulos: 'WOLKVOX_ORLANT_AUTO_MODULOS', desdeMes: null, sufijoFranja: ' orlant', modulosPermitidos: Object.freeze(['flujo_hora', 'cdr', 'no_conectadas', 'whatsapp']), cuentasPrueba: false, perfilCdr: 'orlant', encuestaConnId: false, flujoPorModulos: true }), // Fase N3b: el Flujo también va por la lista («flujo»)
 });
 const CAMPANAS_PERMITIDAS = Object.freeze([CAMPANA_REPLICA, CAMPANA_REAL, CAMPANA_REPLICA_ORLANT]);
 
@@ -60,6 +60,14 @@ function operacionDe(dest) { return destino(dest).operacion; }
 function moduloPermitido(dest, modulo) {
   const d = destino(dest);
   return modulo === 'flujo' || !d.modulosPermitidos || d.modulosPermitidos.includes(modulo);
+}
+// Fase N3b (26/11/2026, pedido del usuario): en la réplica de ORLANT el Flujo (skill_1) se enciende como
+// un módulo más: solo corre si «flujo» está en su lista (WOLKVOX_ORLANT_AUTO_MODULOS), además del
+// interruptor. Así WhatsApp puede correr solo. MOBILIZE (réplica y real) no cambia: su Flujo va con el interruptor.
+function flujoEnLista(dest, valor) {
+  const d = destino(dest);
+  if (!d.flujoPorModulos) return true;
+  return String(valor == null ? '' : valor).split(',').some((x) => x.trim().toLowerCase() === 'flujo');
 }
 // Fase N6: el destino INTERNO (réplica) de una campaña, o null. Lo usan «Ejecutar ahora» y el estado.
 function destinoInterno(campana) {
@@ -111,4 +119,4 @@ function flujoConCargaManual(db, mes, archivoApi) {
   return db.prepare("SELECT COUNT(*) n FROM calidad_nivel_servicio_diario WHERE campana = ? AND substr(fecha, 1, 7) = ? AND COALESCE(archivoNombre, '') <> ?").get(CAMPANA_REAL, mes, archivoApi).n > 0;
 }
 
-module.exports = { DESTINOS, CAMPANAS_PERMITIDAS, CAMPANA_REPLICA, CAMPANA_REPLICA_ORLANT, CAMPANA_REAL, DESDE_MES_REAL, destino, operacionDe, moduloPermitido, destinoInterno, recortarPlan, campanaLista, skillsMapeadas, HUECOS_REAL, huecoPermitido, filasEnHueco, flujoConCargaManual };
+module.exports = { DESTINOS, CAMPANAS_PERMITIDAS, flujoEnLista, CAMPANA_REPLICA, CAMPANA_REPLICA_ORLANT, CAMPANA_REAL, DESDE_MES_REAL, destino, operacionDe, moduloPermitido, destinoInterno, recortarPlan, campanaLista, skillsMapeadas, HUECOS_REAL, huecoPermitido, filasEnHueco, flujoConCargaManual };
