@@ -311,6 +311,21 @@ asumir en qué quedó una fase anterior.
     y agentes; nunca datos de pacientes.
   - Nunca el **Aurora real** ni otro cliente. Pasar al real = autorización
     nueva por escrito.
+- **Excepción escrita (usuario, 26/11/2026, histórico de 2026 de la réplica
+  de Aurora):** un administrador puede lanzar «Ejecutar ahora» por meses
+  (`POST /api/wolkvox/auto/ejecutar` con `mes` y `modulo`: `flujo`, `cdr`,
+  `whatsapp` o `todos`) para cargar el histórico de 2026 (meses cerrados que
+  Wolkvox acepte) **solo en la réplica «CLINICA AURORA PRUEBAS API»**, con
+  el mapeo de la Fase AU2. **Nunca el Aurora real** ni otro cliente.
+  - Por tandas: un mes cada 10 min (la espera del servidor), parando en el
+    primer error; fuera de 12:45–13:15 y lejos de las 00:05 y las 7:00.
+  - Antes, un sondeo de 1 consulta (CDR de junio de 2026) para saber si
+    Wolkvox acepta meses viejos.
+  - Mismas reglas de AU2: respaldo, todo o nada por mes, sin reintentos,
+    datos sensibles descartados en memoria y tope de 2.800 consultas al día
+    por el token de Aurora. Si una consulta pasa los 30 s, se para y se
+    propone partir el mes (no se sube el tiempo máximo).
+  - Por la sesión del usuario en el navegador, nunca por un workflow.
 - Nada de pruebas agresivas contra producción (sin límite de tasa, sin
   volumen alto, sin tocar datos que no sean los explícitamente
   autorizados). No destapar pestañas ocultas a mano, no tocar datos de
