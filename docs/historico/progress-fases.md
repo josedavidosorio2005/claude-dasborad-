@@ -23043,3 +23043,9 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
 - **Consultas:** 5 por mes de 29–31 días, 4 en febrero; las corridas automáticas (00:05, 7:00 y 13:00) del mes en curso gastan hasta 5 en vez de 1.
 - **Chats de otro mes (OK del usuario, 26/11):** el `chat_1` de octubre de Aurora trajo 3 grupos día-cola de otro mes y el mes se rechazaba entero. Ahora esos chats se descartan y se cuentan en el Historial («N chats de otro mes fuera»); el mes solo se rechaza si ninguno cae dentro. Vale para las réplicas con WhatsApp (Aurora y ORLANT).
 - **Pruebas:** `faseAU3-aurora-cdr-por-semanas.test.js` (5) con Wolkvox falso y datos inventados.
+
+## Aurora réplica: espera de 2 min en «Ejecutar ahora» (Fase AU4, v1.283.2, 2026-11-26)
+
+- **Por qué:** autorización escrita del usuario (26/11) para acelerar el histórico de 2026 de la réplica «CLINICA AURORA PRUEBAS API».
+- **Cambio:** el destino `aurora_replica` lleva `esperaEjecutarMs: 2 min`; la ruta `POST /wolkvox/auto/ejecutar` usa la espera del destino (los demás, 10 min). El candado (una consulta detrás de otra) no cambia. Anotado en `CLAUDE.md` (ampliación de la excepción del histórico de Aurora).
+- **Pruebas:** `faseAU4-aurora-espera-2min.test.js` (2): Aurora pide 2 min, ORLANT réplica 10 min, Aurora real 404.

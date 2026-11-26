@@ -7,6 +7,13 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.283.2 — Noviembre 2026
+
+**Clínica Aurora (copia de pruebas): el histórico se carga más rápido.**
+
+- En la copia de pruebas de Aurora, «Ejecutar ahora» espera 2 minutos entre
+  una carga y la siguiente (antes 10). Las demás campañas siguen igual.
+
 ## v1.283.1 — Noviembre 2026
 
 **Clínica Aurora (copia de pruebas): las llamadas de un mes grande ya no se quedan sin traer.**

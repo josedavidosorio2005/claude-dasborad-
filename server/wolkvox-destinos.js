@@ -52,7 +52,8 @@ const DESTINOS = Object.freeze({
   // también va por la lista («flujo»). El CDR con el perfil de ORLANT (Aurora usa su regla, provisional).
   // Fase AU3 (26/11/2026): el cdr_1 del mes completo de Aurora pasa los 30 s (octubre): se pide por semanas
   // (cdrDiasPorConsulta: 7 → 5 consultas en un mes de 31 días) y el mes se escribe solo si llegaron todas.
-  aurora_replica: Object.freeze({ clave: 'aurora_replica', campana: CAMPANA_REPLICA_AURORA, operacion: 'AURORA', interna: true, interruptor: 'WOLKVOX_AURORA_AUTO_ACTIVO', modulos: 'WOLKVOX_AURORA_AUTO_MODULOS', desdeMes: null, sufijoFranja: ' aurora', modulosPermitidos: Object.freeze(['cdr', 'whatsapp']), cuentasPrueba: false, perfilCdr: 'orlant', encuestaConnId: false, flujoPorModulos: true, filtros: FILTROS_AURORA, cdrDiasPorConsulta: 7 }),
+  // Fase AU4 (autorización escrita del usuario, 26/11/2026): «Ejecutar ahora» de esta réplica espera 2 min (no 10).
+  aurora_replica: Object.freeze({ clave: 'aurora_replica', campana: CAMPANA_REPLICA_AURORA, operacion: 'AURORA', interna: true, interruptor: 'WOLKVOX_AURORA_AUTO_ACTIVO', modulos: 'WOLKVOX_AURORA_AUTO_MODULOS', desdeMes: null, sufijoFranja: ' aurora', modulosPermitidos: Object.freeze(['cdr', 'whatsapp']), cuentasPrueba: false, perfilCdr: 'orlant', encuestaConnId: false, flujoPorModulos: true, filtros: FILTROS_AURORA, cdrDiasPorConsulta: 7, esperaEjecutarMs: 2 * 60 * 1000 }),
 });
 const CAMPANAS_PERMITIDAS = Object.freeze([CAMPANA_REPLICA, CAMPANA_REAL, CAMPANA_REPLICA_ORLANT, CAMPANA_REPLICA_AURORA]);
 

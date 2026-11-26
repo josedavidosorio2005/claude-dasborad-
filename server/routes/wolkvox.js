@@ -132,6 +132,9 @@ router.post(
 // y `maxConsultas` opcional (1 a 62) como tope de esta corrida. Queda en el Historial
 // (WOLKVOX_AUTO, «Ejecutar ahora», con quien la pidio). Responde solo conteos y codigos.
 const ESPERA_ENTRE_EJECUCIONES_MS = 10 * 60 * 1000;
+// Fase AU4 (autorización escrita del usuario, 26/11/2026): la réplica de Aurora espera 2 min entre «Ejecutar ahora»
+// (para cargar su histórico de 2026). Sale del destino (`esperaEjecutarMs`); los demás, 10 min como siempre.
+const esperaDe = (dest) => (dest && dest.esperaEjecutarMs) || ESPERA_ENTRE_EJECUCIONES_MS;
 const _ultimaEjecucion = new Map();
 router.post(
   '/wolkvox/auto/ejecutar',
@@ -156,7 +159,7 @@ router.post(
       maxConsultas = Number(b.maxConsultas);
       if (!Number.isInteger(maxConsultas) || maxConsultas < 1 || maxConsultas > wvAuto.MAX_CONSULTAS_POR_CORRIDA) return res.status(400).json({ error: 'maxConsultas debe ser un entero de 1 a ' + wvAuto.MAX_CONSULTAS_POR_CORRIDA, codigo: 'parametro' });
     }
-    const espera = (_ultimaEjecucion.get(op) || 0) + ESPERA_ENTRE_EJECUCIONES_MS - Date.now();
+    const espera = (_ultimaEjecucion.get(op) || 0) + esperaDe(dest) - Date.now();
     if (espera > 0) return res.status(429).json({ error: 'Espera ' + Math.ceil(espera / 60000) + ' min antes de volver a ejecutar', codigo: 'espera' });
     _ultimaEjecucion.set(op, Date.now());
     const r = await wvAuto.ejecutarAhora({

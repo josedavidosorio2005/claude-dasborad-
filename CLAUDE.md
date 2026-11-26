@@ -319,6 +319,12 @@ asumir en qué quedó una fase anterior.
   el mapeo de la Fase AU2. **Nunca el Aurora real** ni otro cliente.
   - Por tandas: un mes cada 10 min (la espera del servidor), parando en el
     primer error; fuera de 12:45–13:15 y lejos de las 00:05 y las 7:00.
+  - **Ampliación (usuario, 26/11/2026, Fase AU4):** la espera entre «Ejecutar
+    ahora» baja a **2 minutos SOLO para la réplica «CLINICA AURORA PRUEBAS
+    API»** (`esperaEjecutarMs` de su destino). MOBILIZE, ORLANT (réplica y
+    real) y el Aurora real siguen igual (10 min o sin «Ejecutar ahora»); las
+    consultas siguen una detrás de otra. El deploy que lo trae se lanza entre
+    dos pasos, nunca con uno en curso, y lejos de la corrida automática.
   - Antes, un sondeo de 1 consulta (CDR de junio de 2026) para saber si
     Wolkvox acepta meses viejos.
   - Mismas reglas de AU2: respaldo, todo o nada por mes, sin reintentos,
