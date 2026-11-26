@@ -1,6 +1,7 @@
 // wolkvox-prueba.js — Fase W2 (docs/plan-api-wolkvox.md): botón «Probar conexión» con Wolkvox
 // en el encabezado del tablero. SOLO para el administrador completo y SOLO en una campaña interna
-// (las réplicas ocultas «MOBILIZE PRUEBAS API» y «ORLANT PRUEBAS API»); el servidor lo vuelve a
+// (las réplicas ocultas «MOBILIZE PRUEBAS API», «ORLANT PRUEBAS API» y, desde la Fase AU1,
+// «CLINICA AURORA PRUEBAS API»); el servidor lo vuelve a
 // exigir (403/404).
 // Muestra code, msg, cuántas filas y los NOMBRES de los campos: nunca un valor. Todo lo que llega
 // del servidor se pinta con textContent.

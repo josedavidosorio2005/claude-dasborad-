@@ -100,6 +100,7 @@ test('una base nueva termina todas las migraciones con Aurora, creada despues de
     'fase332_orlant_calidad_solo_nueva_v1', // Fase 332: los 3 paneles viejos de Calidad de ORLANT ocultos (no toca Aurora/HLM)
     'faseW1_replica_mobilize_api_v1', // Fase W1: replica interna de Mobilize (fila nueva; no toca Aurora/HLM)
     'faseN5_replica_orlant_api_v1', // Fase N5: replica interna de ORLANT (fila nueva; no toca Aurora/HLM)
+    'faseAU1_replica_aurora_api_v1', // Fase AU1: replica interna de Aurora (fila nueva; solo LEE Aurora)
     'fase353_monitoreos_enlace_exacto_v1', // Fase 353: solo llena monitoreos.asesorUserId por nombre exacto (no toca Aurora/HLM)
     'fase353_monitoreos_enlace_exacto_v2', // Fase 353b
     'fase354_hlm_sedes_v1', 'fase354b_hlm_datos_anteriores_v1', 'fase376_inventario_listas_v1', 'fase377_inventario_campos_v1', 'fase380_inventario_administrables_v1', 'faseSTA_orlant_gestion_base_v1', 'faseA32_no_conectadas_meses_v1', 'faseEQ_orlant_equidad_tab_v1']; // Fase 354b: prende «Datos anteriores» en parametros del padre // Fase 354: crea las 2 sedes de HLM (filas nuevas) y agrega parametros.sedes al padre // Fase 353b: lo mismo con nombre_clave() (tildes, Ñ, espacios especiales)
@@ -148,7 +149,7 @@ test('sin plantilla de Calidad (no se inventan items) y sin usuarios ni permisos
 
 test('ORLANT y MOBILIZE no cambian: registro igual a la semilla y dashboards iguales a la foto', () => {
   // Fase 160: HLM se prueba en fase160-crear-hlm.test.js.
-  const r = reg.leerRegistro(db).filter((c) => c.nombre !== AURORA && c.nombre !== 'HOSPITAL LA MARIA' && c.nombre !== 'SURA' && c.nombre !== 'MOBILIZE PRUEBAS API' && c.nombre !== 'ORLANT PRUEBAS API' && !c.parametros.sedeDe); // Fase 354: las sedes en fase354-hlm-sedes // Fase W1: la replica en faseW1-replica-interna // Fase 215: SURA en fase215-sura-televentas
+  const r = reg.leerRegistro(db).filter((c) => c.nombre !== AURORA && c.nombre !== 'HOSPITAL LA MARIA' && c.nombre !== 'SURA' && c.nombre !== 'MOBILIZE PRUEBAS API' && c.nombre !== 'ORLANT PRUEBAS API' && c.nombre !== 'CLINICA AURORA PRUEBAS API' && !c.parametros.sedeDe); // Fase 354: las sedes en fase354-hlm-sedes // Fase W1: la replica en faseW1-replica-interna // Fase 215: SURA en fase215-sura-televentas
   assert.deepEqual(r.map((c) => ({ nombre: c.nombre, modulos: c.modulos, parametros: c.parametros, logo: c.logo })),
     reg.REGISTRO_INICIAL.map((c) => ({ nombre: c.nombre, modulos: c.modulos, parametros: c.parametros, logo: c.logo })));
   for (const c of ['ORLANT', 'MOBILIZE']) {
