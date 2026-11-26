@@ -109,11 +109,11 @@ function activosPanelHtml(r, config) {
   }).join('');
   var sedes = (r.porSede || []).map(function (s) { return '<li>' + esc(s.sede) + ': <b>' + s.n + '</b></li>'; }).join('');
   // Fase 377 (I2): rendimiento por RAM (torres y portátiles); cada tarjeta abre el inventario con ese filtro.
-  var rend = r.porRendimiento ? '<h4 class="ac-sub">Rendimiento según la RAM (sin los dados de baja)</h4><div class="ac-kpis">' + (config.rendimientos || []).map(function (x) {
+  var rend = r.porRendimiento ? '<h4 class="ac-sub">Rendimiento según la RAM</h4><div class="ac-kpis">' + (config.rendimientos || []).map(function (x) {
     return '<button type="button" class="ac-kpi ac-rend-kpi" onclick="activosVerRendimiento(\'' + x.codigo + '\')"><b>' + (r.porRendimiento[x.codigo] || 0) + '</b><span class="vis-pill ' + AC_CLASE_REND[x.codigo] + '">' + esc(x.nombre) + '</span><span class="vis-ayuda">' + esc(x.ayuda) + '</span></button>';
   }).join('') + '</div>' : '';
   return tarjetas + rend + '<div class="table-wrap"><table class="vis-tabla"><thead><tr><th scope="col">Tipo</th>' + est.map(function (e) { return '<th scope="col" class="vis-num">' + esc(e.nombre) + '</th>'; }).join('') + '</tr></thead><tbody>' + filas + '</tbody></table></div>' +
-    (sedes ? '<h4 class="ac-sub">Por sede (sin los dados de baja)</h4><ul class="ac-sedes">' + sedes + '</ul>' : '');
+    (sedes ? '<h4 class="ac-sub">Por sede</h4><ul class="ac-sedes">' + sedes + '</ul>' : '');
 }
 async function _acPanel() {
   var c = _acEl('ac-p-panel');
@@ -1142,7 +1142,8 @@ if (typeof module !== 'undefined' && module.exports) module.exports.activosNoved
 // ── Fase GH5 (pedido del usuario, 23/11): «Panel general» igual al diseño de Edwin ──
 // Chips «Ver gráficas de», tarjetas con detalle, dona por estado y por RAM, barras por tipo/sede/operación,
 // marcas, valor, renta, calidad de los datos y movimientos de 6 meses. Datos: GET /activos/panel.
-var ACP_ESTADOS = [['en_uso', 'En uso'], ['libre', 'Libres'], ['en_reparacion', 'En reparación'], ['malo', 'Malos'], ['de_baja', 'Dados de baja']];
+// Fase INV1 (pedido de Edwin, 26/11): el panel no muestra los dados de baja (siguen en la lista y en el historial).
+var ACP_ESTADOS = [['en_uso', 'En uso'], ['libre', 'Libres'], ['en_reparacion', 'En reparación'], ['malo', 'Malos']];
 var ACP_REND = [['bajo', 'Bajo (menos de 8 GB)'], ['medio', 'Medio (8 a 15 GB)'], ['alto', 'Alto (16 GB o más)'], ['sin', 'Sin dato (RAM no registrada)']];
 var ACP_MOV = [['ingresos', 'Ingresos'], ['asignaciones', 'Asignaciones'], ['devoluciones', 'Devoluciones'], ['danos', 'Daños y reparaciones']];
 function _acpPct(n, t) { return t ? Math.round(n * 1000 / t) / 10 : 0; }
@@ -1202,9 +1203,9 @@ function activosPanel2Html(p) {
   if (!p.total) return cab + '<div class="acp-kpis">' + kpis.join('') + '</div><p class="vis-vacio">Aún no hay elementos. Regístralos en «Registrar ingreso».</p>';
   var segE = ACP_ESTADOS.map(function (x) { return [x[0], e[x[0]] || 0, x[1]]; });
   var g = [];
-  g.push(_acpCard('¿En qué estado están los equipos y elementos?', 'Cuántos están en uso, libres, en reparación, malos o dados de baja.',
-    '<div class="acp-dona-w">' + _acpDona(segE, p.total, 'elementos', 'e') + _acpFilasEstado(segE, p.total, 'e') + '</div>',
-    '<span>' + _acpPct(enUso, p.total) + '% en uso · ' + (e.libre || 0) + ' libres para entregar</span>' + _acpBtn('Ver libres', "activosTab('libres')")));
+  g.push(_acpCard('¿En qué estado están los equipos y elementos?', 'Cuántos están en uso, libres, en reparación o malos.',
+    '<div class="acp-dona-w">' + _acpDona(segE, vivos, 'elementos', 'e') + _acpFilasEstado(segE, vivos, 'e') + '</div>',
+    '<span>' + _acpPct(enUso, vivos) + '% en uso · ' + (e.libre || 0) + ' libres para entregar</span>' + _acpBtn('Ver libres', "activosTab('libres')")));
   if (p.porRendimiento) {
     var r = p.porRendimiento, tr = ACP_REND.reduce(function (a, x) { return a + (r[x[0]] || 0); }, 0), segR = ACP_REND.map(function (x) { return [x[0], r[x[0]] || 0, x[1]]; });
     g.push(_acpCard('Rendimiento según la memoria RAM', 'Torres y portátiles. Bajo: menos de 8 GB · Medio: 8 a 15 GB · Alto: 16 GB o más.',
@@ -1214,10 +1215,10 @@ function activosPanel2Html(p) {
   var maxT = Math.max.apply(null, p.porTipo.map(function (t) { return t.total; }).concat([1]));
   var ley = _acpLeyenda(ACP_ESTADOS, 'e');
   g.push(_acpCard('¿Cuántos hay de cada tipo?', 'Todos los elementos registrados, por tipo y estado.', ley + _acpApiladas(p.porTipo, maxT),
-    '<span>' + p.total + ' elementos en total</span>' + _acpBtn('Ver inventario', "activosTab('elementos')")));
+    '<span>' + vivos + ' elementos en total</span>' + _acpBtn('Ver inventario', "activosTab('elementos')")));
   var maxS = Math.max.apply(null, p.porSede.map(function (t) { return t.total; }).concat([1]));
   var sinS = p.porSede.filter(function (s) { return s.sin; })[0];
-  g.push(_acpCard('Elementos por sede', 'Cantidad por sede, separada por estado (sin los dados de baja).', ley + _acpApiladas(p.porSede, maxS),
+  g.push(_acpCard('Elementos por sede', 'Cantidad por sede, separada por estado.', ley + _acpApiladas(p.porSede, maxS),
     '<span>' + (sinS ? sinS.total : 0) + ' sin sede registrada</span>' + _acpBtn('Ver datos', "activosTab('elementos')")));
   var maxO = Math.max.apply(null, p.porOperacion.map(function (t) { return t.total; }).concat([1]));
   var sinO = p.porOperacion.filter(function (s) { return s.sin; })[0];
@@ -1225,7 +1226,7 @@ function activosPanel2Html(p) {
     '<span>' + (sinO ? sinO.total : 0) + ' sin operación asignada</span>' + _acpBtn('Ver datos', "activosTab('elementos')")));
   g.push(_acpCard('Marcas más comunes', 'Marcas de todos los elementos.', _acpSimples(p.marcas.map(function (m) { return { nombre: m.nombre, v: m.n }; }), 'acp-c-marca'),
     '<span>' + p.total + ' registrados</span>' + _acpBtn('Ver datos', "activosTab('elementos')")));
-  g.push(_acpCard('Valor del inventario por elemento', 'Suma del precio de compra de los elementos propios de InConexion (sin los dados de baja ni los rentados).',
+  g.push(_acpCard('Valor del inventario por elemento', 'Suma del precio de compra de los elementos propios de InConexion (sin los rentados).',
     _acpSimples(p.valor.porTipo.map(function (v) { return { nombre: v.nombre, v: v.valor }; }), 'acp-c-valor', _acpMiles),
     '<span>Total: <b>' + _acpMiles(p.valor.total) + '</b> · ' + p.valor.sinPrecio + ' propio(s) sin precio</span>' + _acpBtn('Ver datos', "activosTab('elementos')")));
   g.push(_acpCard('Renta mensual por elemento', 'Lo que se paga cada mes por elementos de proveedores diferentes a InConexion, por proveedor.',
