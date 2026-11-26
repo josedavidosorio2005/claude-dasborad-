@@ -23,18 +23,27 @@ function equidadDestapar(tabs) {
   }).catch(function () { return []; });
 }
 
+// Pedido de Edwin (26/11, aclarado por el usuario): en la pestaña del Dashboard de ORLANT, Equidad sale como un
+// CUADRO con el título «Equidad profesionales»; al hacer clic abre la vista de siempre (por mes, con sus 3 pestañas)
+// en su propia pantalla (#eq-overlay). No cambia la carga ni los datos. Puro: arma el cuadro (un <button>).
+function equidadCuadroHtml(datos) {
+  var d = datos || {};
+  var bases = (d.grupos || []).map(function (g) { return g.nombre; }).filter(Boolean);
+  var total = Number(d.total) || 0;
+  var detalle = total ? total.toLocaleString('es-CO') + ' citas cargadas' + ((d.meses || []).length ? ' · ' + d.meses.length + ' mes' + (d.meses.length === 1 ? '' : 'es') : '') : 'Todavía no hay citas cargadas';
+  var e = typeof esc === 'function' ? esc : function (v) { return String(v); };
+  return '<button type="button" class="aurora-card eq-cuadro" onclick="openOrlantEquidad()" aria-describedby="eq-cuadro-sub">' +
+    '<span class="aurora-card-title eq-cuadro-titulo">Equidad profesionales</span>' +
+    '<span class="eq-cuadro-sub" id="eq-cuadro-sub">Citas por profesional, por mes' + (bases.length ? ': ' + e(bases.join(', ')) : '') + '</span>' +
+    '<span class="eq-cuadro-dato">' + e(detalle) + '</span>' +
+    '<span class="eq-cuadro-abrir" aria-hidden="true">Abrir →</span></button>';
+}
+
 async function _equidadRenderPanel(p, i) {
   var host = document.getElementById('gd-p' + i); if (!host) return;
-  if (typeof eqCrearApp !== 'function') { host.innerHTML = '<div class="aurora-card"><div class="gd-vacio" role="status">No se pudo abrir Equidad profesionales.</div></div>'; return; }
-  var cont = document.createElement('div');
-  cont.className = 'eq-host';
-  host.innerHTML = '';
-  host.appendChild(cont);
-  var root = cont.attachShadow({ mode: 'open' });
-  root.innerHTML = _eqHojaCss() + EQ_MARKUP;
   var datos = _eqTab.datos;
-  var app = eqCrearApp(root, { estado: function () { return datos ? Promise.resolve(datos) : _eqCargarEstado(); } });
-  try { await app.iniciar(); } catch (e) { /* el app ya pintó el aviso */ }
+  if (!datos) { try { datos = await _eqCargarEstado(); } catch (e) { datos = null; } }
+  host.innerHTML = equidadCuadroHtml(datos);
 }
 
 // «Exportar»: por base, los profesionales con sus citas, % del promedio y estado (mismos cálculos que la pestaña,
@@ -53,38 +62,9 @@ async function _gdExportarEquidad() {
   return out;
 }
 
-// ── Pedido de Edwin (reunión 26/11/2026): tarjeta «Equidad profesionales» en el menú principal, igual que
-// «Gestión STA». Al hacer clic abre la vista de siempre (por mes, con sus 3 pestañas) en su propia pantalla.
-// No cambia la carga ni los datos, y la pestaña del Dashboard de ORLANT sigue igual. Quién la ve lo decide el
-// servidor: la tarjeta solo aparece si GET /orlant/equidad/estado responde (admin, gerencia, supervisor o
-// quien carga de ORLANT; el cliente de ORLANT solo si la opción está encendida).
-var EQ_TARJETA = { key: 'equidad', label: 'Equidad profesionales', sub: 'ORLANT: citas por profesional, por mes', icon: 'i-users', accion: 'openOrlantEquidad' };
+// ── Pantalla de Equidad (#eq-overlay): la abre el cuadro de la pestaña del Dashboard de ORLANT (pedido de Edwin, 26/11).
+// Muestra la vista de siempre (por mes, con sus 3 pestañas) con los datos al día. Quién la ve lo decide el servidor.
 var _eqOv = { host: null, root: null, abierto: false };
-
-// Antes de preguntar al servidor: ¿podría verla? (así quien no tiene nada que ver con ORLANT no hace la consulta).
-function eqPodriaVerTarjeta(user, esFullAdmin) {
-  if (esFullAdmin) return true;
-  if (!user) return false;
-  if (user.rol === 'GERENCIA') return true;
-  var p = user.perms || {};
-  return p.campana_ORLANT === true || p.cliente_ORLANT === true || p.supervisa_ORLANT === true;
-}
-
-// La pone en el menú (después de «Gestión STA» / «ORLANT · Tablero nuevo» si están) cuando el servidor la deja ver.
-function eqPintarTarjeta(grid, tarjetaHtml, user, esFullAdmin) {
-  if (!grid || typeof tarjetaHtml !== 'function' || !eqPodriaVerTarjeta(user, esFullAdmin)) return Promise.resolve(false);
-  return _eqCargarEstado().then(function () {
-    if (!document.body.contains(grid) || grid.querySelector('[data-entrada="equidad"]')) return false;
-    var html = tarjetaHtml(EQ_TARJETA);
-    var ancla = grid.querySelector('[data-entrada="orlant_tablero"]') || grid.querySelector('[data-entrada="sta"]');
-    if (ancla) ancla.insertAdjacentHTML('afterend', html);
-    else {
-      var cal = grid.querySelector('[onclick="onDashBtn(\'Calidad\')"]');
-      if (cal) cal.insertAdjacentHTML('afterend', html); else grid.insertAdjacentHTML('beforeend', html);
-    }
-    return true;
-  }).catch(function () { return false; });
-}
 
 async function openOrlantEquidad() {
   var overlay = document.getElementById('eq-overlay');
@@ -110,7 +90,9 @@ function closeOrlantEquidad() {
   if (!overlay) return;
   overlay.classList.remove('show');
   if (typeof motionCerrarDialogo === 'function') motionCerrarDialogo(overlay);
-  document.body.style.overflow = '';
+  // Se abre encima del Dashboard: si el tablero sigue abierto, el fondo sigue sin scroll.
+  var tablero = document.getElementById('gd-overlay');
+  document.body.style.overflow = tablero && tablero.classList.contains('show') ? 'hidden' : '';
 }
 
-if (typeof module !== 'undefined' && module.exports) module.exports = { EQ_TARJETA: EQ_TARJETA, eqPodriaVerTarjeta: eqPodriaVerTarjeta };
+if (typeof module !== 'undefined' && module.exports) module.exports = { equidadCuadroHtml: equidadCuadroHtml };
