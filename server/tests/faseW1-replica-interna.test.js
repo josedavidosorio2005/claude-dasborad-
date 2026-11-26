@@ -139,7 +139,9 @@ test('listas y enlace directo: solo el administrador la ve; quien gestiona usuar
     assert.ok([403, 404].includes(d.status), rol + ' enlace directo: ' + d.status);
   }
   const la = (await request(app).get('/api/dashboard/clientes').set(H(admin))).body;
-  assert.ok(la.clientes.includes(R) && la.listaClientes.includes(R) && la.registro.some((c) => c.nombre === R && c.parametros.interno === true));
+  // Fase W9 (26/11): retirada de los tableros (dashboard = 0): ya no está en listaClientes (las tarjetas), pero
+  // su configuración y su registro (interno) siguen, y el administrador la puede abrir.
+  assert.ok(la.clientes.includes(R) && !la.listaClientes.includes(R) && la.registro.some((c) => c.nombre === R && c.parametros.interno === true));
   assert.ok(!la.campanasCalidad.includes(R), 'sin Calidad');
   assert.equal((await request(app).get('/api/dashboard/' + encodeURIComponent(R)).set(H(admin))).status, 200, 'el administrador la abre');
   // Mobilize real sigue igual para su cliente.

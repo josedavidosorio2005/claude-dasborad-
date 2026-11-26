@@ -22994,3 +22994,12 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
 - **SSM:** `WOLKVOX_AURORA_TOKEN` y `WOLKVOX_AURORA_SERVIDOR`, por crear por el usuario. Nada creado.
 - **Pruebas:** `faseAU1-wolkvox-aurora.test.js` (10) con red y fetch falsos y datos inventados; listas de clientes ajustadas en 7 pruebas viejas (la réplica aparece solo para el administrador).
 - **Límite conocido:** las reglas que dependen del nombre «CLINICA AURORA» (salida provisional, skills con nombre) no se aplican solas a la réplica; se revisan en la fase del destino automático.
+
+## Se retira la réplica «MOBILIZE PRUEBAS API» (Fase W9, v1.279.0, 2026-11-26, PR sin mergear)
+
+- **Pedido del usuario (26/11):** retirar la réplica (tablero y corridas) y dejar el MOBILIZE real exactamente igual.
+- **SSM (lo hizo el usuario, 26/11):** `WOLKVOX_AUTO_ACTIVO=0` y `WOLKVOX_AUTO_MODULOS=ninguno`. El real sigue con `WOLKVOX_REAL_ACTIVO=1`.
+- **Migración `faseW9_retirar_replica_mobilize_v1`:** `dashboard = 0` en su fila del registro. Sale de las tarjetas de tableros (`listaClientes`). Su fila (sigue interna), su `dashboards_config` y todos sus datos quedan: no se borró nada. Idempotente.
+- **Sin cambios en el programador ni en el código del real.** Revisado: sin la réplica no se escribe la marca de su franja, pero el real y cada módulo tienen la suya, así que un reinicio en la misma hora no repite consultas.
+- **Se pierde:** «Ejecutar ahora» (solo réplica), puntualidad por `agent_7` (apagada), entrada del agente de la oficina (apagada) y la tarjeta de la réplica. `/api/wolkvox/estado?campana=MOBILIZE PRUEBAS API` sigue sirviendo para revisar el real.
+- **Pruebas:** `faseW9-retirar-replica-mobilize.test.js` (3): migración sin borrar e idempotente; réplica en 0 y real en 1 corre una vez por franja, también tras un reinicio en la misma hora; `/wolkvox/estado` sigue. Ajustadas 5 pruebas de listas de clientes.

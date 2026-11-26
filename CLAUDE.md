@@ -137,6 +137,18 @@ asumir en qué quedó una fase anterior.
   `cdr_1` los datos sensibles (teléfonos, datos del cliente,
   comentarios) se descartan en memoria antes de guardar. Calidad queda
   fuera. Cada módulo arranca apagado y se enciende con OK del usuario.
+- **Réplica «MOBILIZE PRUEBAS API» RETIRADA (usuario, 26/11/2026, Fase
+  W9):** el usuario puso en SSM `WOLKVOX_AUTO_ACTIVO=0` y
+  `WOLKVOX_AUTO_MODULOS=ninguno`, y la migración
+  `faseW9_retirar_replica_mobilize_v1` la sacó de los tableros
+  (`dashboard = 0`). **No se borró nada**: su fila (sigue interna), su
+  tablero y sus datos siguen en la base; borrarlos es una migración
+  destructiva aparte (inventario, dry-run, respaldo y «OK borrar»). El
+  MOBILIZE real sigue igual (`WOLKVOX_REAL_ACTIVO`, 00:05, 7:00 y 13:00) y
+  se revisa con `/api/wolkvox/estado?campana=MOBILIZE PRUEBAS API` y el
+  Historial. Volver a encender la réplica (o lo que colgaba de ella:
+  «Ejecutar ahora», puntualidad por `agent_7`, entrada del agente de la
+  oficina) = OK nuevo del usuario.
 - **Excepción escrita (usuario, 20/11/2026, Wolkvox al MOBILIZE real,
   Fase A24, `docs/plan-api-wolkvox.md` §10.19–10.20):** la consulta
   automática puede pedir y REEMPLAZAR en el **MOBILIZE real**, **desde
