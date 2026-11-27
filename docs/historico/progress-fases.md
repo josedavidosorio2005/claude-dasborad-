@@ -23187,3 +23187,12 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
 - **Canal CORREO:** `canal` acepta LLAMADA, WPP o CORREO (monitoreo uno a uno, edición y carga masiva); etiqueta «✉️ Correo» en las listas de Calidad, «Mis resultados» y el formulario. En las metas de los líderes, CORREO cuenta del lado de llamada (realizados − WhatsApp), como cualquier canal que no sea WPP.
 - **Comprobado en local con los 5 Excel (sin subir nada):** el motor estándar da el mismo puntaje y los mismos fallos que el Excel en las 307 filas.
 - **Pruebas:** `faseCM2-campanas-calidad-edwin.test.js` (4), datos inventados; actualizadas las que fijan la lista de clientes (`dashboard`, `fase134`, `fase153-*`, `fase160`, `fase256`) y `fase343` (encabezados de Teléfono). Suite completa: 3771.
+
+### Fase CM2 — cierre en producción (27/11/2026, sesión del usuario en Brave)
+
+- v1.300.0 en producción (PR #993; deploy a la primera; `/api/health` 1.300.0).
+- **Plantillas importadas** (Calidad › Plantillas, motor estándar, principales): Clínica Bivett (12 ítems), los 2 consultorios (la misma de Consultorios, 11 cada uno), Sascha Fitness (10), Infondo (11), Cartera (14).
+- **11 cuentas ASESOR** con contraseña temporal (cambio obligatorio al entrar); los `.txt` por campaña quedaron en el Escritorio del usuario, fuera del repo. Isabel Ruiz tiene una cuenta en cada consultorio; Beatriz Chica una en Infondo y otra en Cartera; Susana Rico de Infondo es una cuenta aparte de la de Hospital La María (pendiente: Edwin confirma si es la misma persona).
+- **Monitoreos cargados** con la carga masiva: Bivett 3, Sascha Fitness 109 (42 WhatsApp/chat, 67 correo; 2 fechas mal escritas saltadas), Infondo 96, Cartera 95 (sin la fila de 2023-10). Todos enlazados a su cuenta (0 sin usuario). El de Consultorios **no se cargó** hasta que Edwin diga de qué consultorio es.
+- **Hospital La María:** los 2 archivos se volvieron a subir para completar la Codificación. Solo se actualizaron filas existentes (0 nuevas): siguen 16 en Sede 33 y 33 en Castilla, y las 49 tienen la codificación. Los 4 de Camila Zapata Ríos siguen sin usuario.
+- **Pendiente:** el formulario «Calificar» solo muestra el selector de canal en ORLANT (`canal` no es un campo de plantilla), así que un monitoreo de Sascha calificado a mano queda como «Llamada». Hoy «Correo» solo llega por la carga masiva.
