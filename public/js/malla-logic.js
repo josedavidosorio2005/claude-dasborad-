@@ -157,6 +157,22 @@ function mallaPausasTexto(t) {
   if (t.pausa2) out.push('Pausa ' + t.pausa2 + '–' + _mFin(t.pausa2, mallaPausaMin(t, 2)));
   return out.join(' · ');
 }
+// Pedido de Edwin (27/11): en «Mi malla» cada pausa va en su columna. Columnas en orden del día y sus rangos:
+// [{ k: 'pausa1', etq: 'Pausa 1', txt: '10:30–10:45' }, …]; solo las que tiene el día (vacío en descanso).
+var MALLA_COLS_PAUSA = [['pausa1', 'Pausa 1'], ['almuerzo', 'Almuerzo'], ['pausa2', 'Pausa 2']];
+function mallaPausasPartes(t) {
+  if (!t || !t.entrada) return [];
+  return MALLA_COLS_PAUSA.filter(function (c) { return t[c[0]]; }).map(function (c) {
+    var fin = c[0] === 'almuerzo' ? _mFin(t.almuerzo, Number(t.almuerzoMin) || 0) : _mFin(t[c[0]], mallaPausaMin(t, c[0] === 'pausa1' ? 1 : 2));
+    return { k: c[0], etq: c[1], txt: t[c[0]] + '–' + fin };
+  });
+}
+// Columnas de la semana: las pausas que tiene al menos un día, en orden.
+function mallaColsPausaSemana(horario) {
+  var hay = {};
+  for (var d = 1; d <= 7; d++) mallaPausasPartes(horario && (horario[d] || horario[String(d)])).forEach(function (x) { hay[x.k] = true; });
+  return MALLA_COLS_PAUSA.filter(function (c) { return hay[c[0]]; }).map(function (c) { return { k: c[0], etq: c[1] }; });
+}
 
 // Horario de un grupo: { "1": {entrada, salida} | null, ..., "7": ... }. Devuelve { ok, horario, error }
 // con el horario normalizado (las 7 claves; null = no trabaja ese día).
@@ -238,7 +254,7 @@ function mallaTurnoTexto(t) { return t && t.entrada ? t.entrada + ' – ' + t.sa
 
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
-    MALLA_DIAS: MALLA_DIAS, MALLA_NOMBRE_MAX: MALLA_NOMBRE_MAX,
+    MALLA_DIAS: MALLA_DIAS, MALLA_NOMBRE_MAX: MALLA_NOMBRE_MAX, mallaPausasPartes: mallaPausasPartes, mallaColsPausaSemana: mallaColsPausaSemana,
     mallaLunesDe: mallaLunesDe, mallaEsLunes: mallaEsLunes, mallaSumarSemanas: mallaSumarSemanas, mallaFechaDelDia: mallaFechaDelDia, mallaSemanasDelMes: mallaSemanasDelMes,
     mallaSemanaTexto: mallaSemanaTexto, mallaValidarHorario: mallaValidarHorario, mallaNombreValido: mallaNombreValido, mallaTurnoTexto: mallaTurnoTexto,
     mallaFestivosColombia: mallaFestivosColombia, mallaAplicarFestivos: mallaAplicarFestivos, // Fase M1 (B)

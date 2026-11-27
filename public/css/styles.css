@@ -3033,6 +3033,20 @@ circle.acp-l-ingresos{fill:var(--c-brand-blue)}circle.acp-l-asignaciones{fill:va
 #ac-textos .ig{flex:1 1 280px}
 #ac-textos textarea{width:100%}
 /* Fase 368 (D3): «Mi malla» de la asesora: el día en verde (Puntual) o en rojo (Llegaste tarde). */
+/* Pedido de Edwin (27/11): «Mi malla» con Horario | Pausa 1 | Almuerzo | Pausa 2 en columnas, separadas por una línea
+   vertical suave. En el celular cada día es un bloque: el horario y debajo una pausa por línea (con su nombre). */
+.ml-tabla-mia .ml-mia-pz{border-left:1px solid var(--c-border-soft);white-space:nowrap;font-variant-numeric:tabular-nums}
+.ml-tabla-mia tbody td:nth-child(2){white-space:nowrap} /* Horario */
+@media (max-width:600px){
+  .ml-tabla-mia thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+  .ml-tabla-mia,.ml-tabla-mia tbody,.ml-tabla-mia tr,.ml-tabla-mia th,.ml-tabla-mia td{display:block;width:auto}
+  .ml-tabla-mia tr{padding:8px 4px;border-bottom:1px solid var(--c-border-soft)}
+  .ml-tabla-mia th,.ml-tabla-mia td{border:0;padding:2px 4px;white-space:normal}
+  .ml-tabla-mia td.ml-mia-pz{border-left:0}
+  .ml-tabla-mia td.ml-mia-pz::before{content:attr(data-etq) ": ";color:var(--c-text-2);font-size:var(--fs-small)}
+  .ml-tabla-mia td.ml-mia-pz-vacia{display:none}
+  .ml-tabla-mia td.ml-punt-celda:empty{display:none}
+}
 .ml-tabla-mia tr.ml-dia-puntual > *{background:var(--c-success-bg)}
 .ml-tabla-mia tr.ml-dia-tarde > *{background:var(--c-danger-bg)}
 .ml-tabla tr.ml-dia-tarde > *{background:var(--c-danger-bg)}

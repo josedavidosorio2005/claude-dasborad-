@@ -7,7 +7,7 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
-## v1.288.0 — Noviembre 2026
+## v1.291.0 — Noviembre 2026
 
 **ORLANT · Centro de cargas: «Equidad profesionales» como un cuadrito más (pedido de Edwin).**
 
@@ -16,6 +16,16 @@ sepan que hay nuevo, que se corrigio y que falta.
 - La sección de Equidad (explicación, botones Pólizas / Medicina prepagada / Particulares y los meses)
   sale solo al hacer clic en el cuadrito, como Calidad; «Módulos» vuelve a los cuadritos.
 - No cambia cómo se cargan las bases ni ningún dato.
+
+## v1.288.0 — Noviembre 2026
+
+**Malla de turnos: la asesora ve su horario y sus pausas en columnas (pedido de Edwin).**
+
+- En «Mi malla» (lo que ve la asesora) el horario ya no sale pegado a las pausas: cada día muestra
+  Horario | Pausa 1 | Almuerzo | Pausa 2 en columnas con su encabezado, separadas por una línea suave.
+- Los días de descanso dicen «Descanso» en Horario y dejan las demás columnas vacías.
+- En el celular cada día muestra el horario y debajo una pausa por línea, sin salirse de la pantalla.
+- «Puntual» y las novedades siguen igual. No cambia ningún dato.
 
 ## v1.287.0 — Noviembre 2026
 
