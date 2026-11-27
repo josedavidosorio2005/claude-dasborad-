@@ -7,6 +7,24 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.297.0 — Noviembre 2026
+
+**Inventario de sistemas: agentes desde Gestión humana y entrega de varios elementos con una sola acta, como en el diseño de Edwin.**
+
+- En **Agentes** hay un buscador **«Buscar en Gestión humana»**: se escribe la cédula o el nombre y salen las
+  personas activas de Gestión humana. Al elegir una se llenan su nombre y su cédula. Si la persona no está, el
+  agente se sigue pudiendo escribir a mano (con el aviso de siempre).
+- La lista de agentes tiene la columna **«Gestión humana»**: Activo en GH, Retirado, Vacaciones, Ausente, Sale
+  pronto o No está en GH. La ficha de cada agente lo explica con fechas.
+- A una persona que Gestión humana tiene como **retirada** no se le entrega, cambia ni reasigna nada: solo se le
+  reciben sus elementos con «Devolver».
+- En la ficha del agente, **«Entregar elementos»**: una fila por tipo con los elementos libres, se elige uno por
+  tipo, se escriben la fecha y la observación de la entrega, y se genera **una sola acta** con todo, ya lista para
+  imprimir y firmar («Por firmar»).
+- Las alertas de Gestión humana siguen en Actas › «Novedades de GH».
+- Funciona igual con el acceso de Gestión humana a Talento humano apagado o prendido. No cambia ningún dato
+  guardado.
+
 ## v1.296.0 — Noviembre 2026
 
 **Inventario: hojas para imprimir, como en el diseño de Edwin (primera parte).**

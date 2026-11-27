@@ -915,13 +915,56 @@ function _acAgentes() {
   _acEl('ac-ag-operacion').innerHTML = _acOpciones(_ac.config.listas.operaciones, null, '—');
   activosCerrarAgente();
 }
+// Fase INV3 (HTML de Edwin): estado del agente en Gestión humana. null = Gestión humana sin datos (no se muestra).
+var AC_GH_PILL = { activo: ['vis-verde', 'Activo en GH'], retiro: ['vis-rojo', 'Retirado'], vacaciones: ['vis-amarillo', 'Vacaciones'], ausente: ['vis-amarillo', 'Ausente'], proximo: ['vis-amarillo', 'Sale pronto'], sin: ['vis-gris', 'No está en GH'] };
+function activosGhPill(gh) {
+  if (!gh || !AC_GH_PILL[gh.t]) return '';
+  var p = AC_GH_PILL[gh.t];
+  return '<span class="vis-pill ' + p[0] + '" title="' + esc(gh.txt || '') + '">' + esc(p[1]) + '</span>';
+}
 function activosAgentesHtml(lista) {
-  if (!lista.length) return '<p class="vis-vacio">Aún no hay agentes. Agrégalos arriba.</p>';
-  return '<div class="table-wrap"><table class="vis-tabla"><thead><tr><th scope="col">Agente</th><th scope="col">Documento</th><th scope="col">Sede</th><th scope="col">Operación</th><th scope="col" class="vis-num">Elementos</th><th scope="col"><span class="sr-only">Acciones</span></th></tr></thead><tbody>' +
+  if (!lista.length) return '<p class="vis-vacio">Aún no hay agentes. Búscalos en Gestión humana o agrégalos arriba.</p>';
+  var conGh = lista.some(function (g) { return g.gh; });
+  return '<div class="table-wrap"><table class="vis-tabla"><thead><tr><th scope="col">Agente</th><th scope="col">Documento</th><th scope="col">Sede</th><th scope="col">Operación</th>' + (conGh ? '<th scope="col">Gestión humana</th>' : '') + '<th scope="col" class="vis-num">Elementos</th><th scope="col"><span class="sr-only">Acciones</span></th></tr></thead><tbody>' +
     lista.map(function (g) {
-      return '<tr><th scope="row">' + esc(g.nombre) + (g.activo ? '' : ' <span class="vis-pill vis-gris">Inactivo</span>') + '</th><td>' + esc(g.documento) + '</td><td>' + esc(g.sede) + '</td><td>' + esc(g.operacion) + '</td><td class="vis-num">' + Number(g.elementos || 0) + '</td>' +
+      return '<tr><th scope="row">' + esc(g.nombre) + (g.activo ? '' : ' <span class="vis-pill vis-gris">Inactivo</span>') + '</th><td>' + esc(g.documento) + '</td><td>' + esc(g.sede) + '</td><td>' + esc(g.operacion) + '</td>' + (conGh ? '<td>' + activosGhPill(g.gh) + '</td>' : '') + '<td class="vis-num">' + Number(g.elementos || 0) + '</td>' +
         '<td><button type="button" class="btn-cancel ac-btn" onclick="activosVerAgente(' + Number(g.id) + ')">Ver</button></td></tr>';
     }).join('') + '</tbody></table></div>';
+}
+// Fase INV3 (HTML de Edwin): los agentes salen de las personas ACTIVAS de Gestión humana. Se busca por cédula o
+// nombre; al elegir una persona se llenan el nombre y la cédula del formulario «Agregar agente».
+var _acGhTimer = null;
+function activosGhBuscarDiferido() { clearTimeout(_acGhTimer); _acGhTimer = setTimeout(activosGhBuscar, 350); }
+function activosGhPersonasHtml(r) {
+  if (!r) return '';
+  if (r.error) return '<li class="ac-gh-nada">' + esc(r.error) + '</li>';
+  if (!r.hayGH) return '<li class="ac-gh-nada">Gestión humana aún no tiene personas registradas: agrega el agente a mano.</li>';
+  if (!r.personas.length) return '<li class="ac-gh-nada">No hay personas activas con ese nombre o cédula en Gestión humana.</li>';
+  return r.personas.map(function (p, i) {
+    return '<li><button type="button" class="ac-gh-persona" onclick="activosGhElegir(' + i + ')"><b>' + esc(p.nombre) + '</b><span>CC ' + esc(p.documento) + (p.yaEsAgente ? ' · ya es agente' : '') + '</span></button></li>';
+  }).join('');
+}
+async function activosGhBuscar() {
+  var q = _acEl('ac-ag-gh-q'), ul = _acEl('ac-ag-gh-res');
+  if (!q || !ul) return;
+  var v = q.value.trim();
+  if (v.length < 3) { ul.innerHTML = ''; _ac.ghPersonas = []; return; }
+  var r;
+  try { r = await apiRequest('GET', '/activos/gh-personas?q=' + encodeURIComponent(v)); }
+  catch (e) { r = { error: e.status === 429 ? 'Demasiadas búsquedas. Espera unos minutos.' : 'No se pudo buscar en Gestión humana.' }; }
+  if (q.value.trim() !== v) return; // cambió mientras buscaba
+  _ac.ghPersonas = (r && r.personas) || [];
+  ul.innerHTML = activosGhPersonasHtml(r);
+}
+function activosGhElegir(i) {
+  var p = (_ac.ghPersonas || [])[i];
+  if (!p) return;
+  if (p.yaEsAgente) { _acEl('ac-ag-q').value = p.documento; activosBuscarAgentes(); _acEl('ac-ag-gh-res').innerHTML = ''; return; }
+  var nom = _acEl('ac-ag-nombre'), doc = _acEl('ac-ag-documento');
+  nom.value = p.nombre; nom.dataset.gh = '1'; doc.value = p.documento;
+  var av = _acEl('ac-ag-doc-aviso'); av.textContent = 'Nombre y cédula tomados de Gestión humana.'; av.className = 'ac-gh-aviso si';
+  _acEl('ac-ag-gh-res').innerHTML = '';
+  _acEl('ac-ag-sede').focus();
 }
 async function activosBuscarAgentes() {
   var q = [];
@@ -952,48 +995,102 @@ async function activosVerAgente(id) {
   try { r = await apiRequest('GET', '/activos/agentes/' + id); } catch (e) { _acError(e.message); return; }
   _ac.agente = r;
   var g = r.agente;
+  var retirado = !!(r.gh && r.gh.t === 'retiro'); // Fase INV3: a un retirado en Gestión humana solo se le reciben elementos
   var tipoN = function (c) { var t = _acTipo(c); return t ? t.nombre : c; };
   var elems = r.elementos.length ? '<div class="table-wrap"><table class="vis-tabla"><thead><tr><th scope="col">Elemento</th><th scope="col">Marca / modelo</th><th scope="col">Serial</th><th scope="col"><span class="sr-only">Acciones</span></th></tr></thead><tbody>' +
     r.elementos.map(function (a) {
       return '<tr><th scope="row">' + esc(tipoN(a.tipo)) + ' ' + esc(a.codigo) + '</th><td>' + esc([a.marca, a.modelo].filter(Boolean).join(' ')) + '</td><td>' + esc(a.serial) + '</td>' +
-        '<td><div class="ac-acciones"><button type="button" class="btn-cancel ac-btn" onclick="activosFormSoltar(' + Number(a.id) + ',\'devolver\')">Devolver</button><button type="button" class="btn-cancel ac-btn" onclick="activosFormSoltar(' + Number(a.id) + ',\'cambiar\')">Cambiar elemento</button></div></td></tr>';
+        '<td><div class="ac-acciones"><button type="button" class="btn-cancel ac-btn" onclick="activosFormSoltar(' + Number(a.id) + ',\'devolver\')">Devolver</button>' + (retirado ? '' : '<button type="button" class="btn-cancel ac-btn" onclick="activosFormSoltar(' + Number(a.id) + ',\'cambiar\')">Cambiar elemento</button>') + '</div></td></tr>';
     }).join('') + '</tbody></table></div>' : '<p class="vis-vacio">No tiene elementos asignados.</p>';
   var hist = r.asignaciones.map(function (s) {
     return '<li>' + esc(tipoN(s.tipo)) + ' ' + esc(s.codigo) + ' · desde ' + esc(_acFecha(s.desde)) + (s.hasta ? ' hasta ' + esc(_acFecha(s.hasta)) + (s.motivoFin ? ' · ' + esc(s.motivoFin) : '') : ' · actual') + '</li>';
   }).join('');
-  var tiposAsignables = _ac.config.tipos.filter(function (t) { return t.codigo !== 'ADMINISTRABLE' && t.asignable !== false; }).map(function (t) { return { codigo: t.codigo, nombre: t.nombre }; });
   _acEl('ac-ag-detalle').innerHTML = '<section class="aurora-card"><div class="aurora-card-title">' + esc(g.nombre) + (g.activo ? '' : ' · <span class="vis-pill vis-gris">Inactivo</span>') + '</div>' +
     '<dl class="wv-estado"><dt>Documento</dt><dd>' + esc(g.documento || '—') + '</dd><dt>Sede</dt><dd>' + esc(g.sede || '—') + '</dd><dt>Operación</dt><dd>' + esc(g.operacion || '—') + '</dd></dl>' +
+    activosGhCajaHtml(r.gh, r.elementos.length) + // Fase INV3
     '<h4 class="ac-sub">Elementos asignados</h4>' + elems + '<div id="ac-soltar"></div>' +
-    (g.activo ? '<form class="ac-asig-form" onsubmit="activosAsignar(event)"><div class="ig"><label for="ac-as-tipo">Asignar: tipo</label><select id="ac-as-tipo" onchange="activosLibresParaAsignar()">' + _acOpciones(tiposAsignables) + '</select></div>' +
-      '<div class="ig"><label for="ac-as-elem">Elemento libre</label><select id="ac-as-elem"></select></div><button type="submit" class="btn-primary">Asignar</button></form>' : '') +
+    (g.activo && !retirado ? activosEntregaZonaHtml(_acHoyCo()) : '') + // Fase INV3: entrega de varios elementos con una sola acta
     '<h4 class="ac-sub">Actas</h4><div id="ac-actas"><p class="vis-vacio">Cargando…</p></div>' + '<h4 class="ac-sub">Historial de asignaciones</h4>' + (hist ? '<ul class="ac-hist">' + hist + '</ul>' : '<p class="vis-vacio">Sin movimientos.</p>') +
     '<div class="modal-btns">' + (g.activo ? (r.elementos.length ? '' : '<button type="button" class="btn-cancel" onclick="activosActivarAgente(false)">Marcar inactivo</button>') : '<button type="button" class="btn-cancel" onclick="activosActivarAgente(true)">Volver a activar</button>') +
     '<button type="button" class="btn-cancel" onclick="activosCerrarAgente()">Volver a la lista</button></div></section>';
   _acEl('ac-ag-zona').classList.add('hidden');
   _acEl('ac-ag-detalle').classList.remove('hidden');
-  if (g.activo) activosLibresParaAsignar();
+  if (g.activo && !retirado) activosEntregaCargar(); // Fase INV3
   _acActas(); // Fase 371
 }
-async function _acLibres(tipo) { return (await apiRequest('GET', '/activos?estado=libre&tipo=' + encodeURIComponent(tipo))).activos.filter(function (a) { return !a.agente; }); }
-async function activosLibresParaAsignar() {
-  var sel = _acEl('ac-as-elem');
-  try {
-    var l = await _acLibres(_acEl('ac-as-tipo').value);
-    sel.innerHTML = l.length ? _acOpcionesElem(l) : '<option value="">No hay libres de este tipo</option>';
-  } catch (e) { _acError(e.message); }
+// ── Fase INV3 (HTML de Edwin): estado en Gestión humana y «Entregar seleccionados y generar acta» ──
+function activosGhCajaHtml(gh, nElementos) {
+  if (!gh) return '';
+  var clase = gh.t === 'activo' ? 'si' : gh.t === 'retiro' ? 'mal' : 'no';
+  var fin = /\.$/.test(gh.txt || '') ? ' ' : '. ';
+  var extra = gh.t === 'retiro' ? fin + (nElementos ? 'Tiene ' + Number(nElementos) + ' elemento(s) a su nombre: recíbelos con «Devolver».' : 'No se le pueden entregar elementos.') : '';
+  return '<p class="ac-gh-caja ' + clase + '" role="status"><b>Gestión humana:</b> ' + esc(gh.txt) + esc(extra) + '</p>';
 }
-async function activosAsignar(ev) {
+function activosEntregaZonaHtml(hoy) {
+  return '<h4 class="ac-sub">Entregar elementos</h4><p class="vis-ayuda">Elige en cada tipo lo que le vas a entregar (uno por tipo). Se genera una sola acta con todo, lista para imprimir y firmar.</p>' +
+    '<div id="ac-ent-filas"><p class="vis-vacio">Cargando…</p></div><div id="ac-ent-res" class="ac-ent-res" aria-live="polite"></div>' +
+    '<form class="ac-asig-form" onsubmit="activosEntregar(event)" novalidate><div class="ig"><label for="ac-ent-fecha">Fecha de entrega</label><input type="date" id="ac-ent-fecha" value="' + esc(hoy) + '" max="' + esc(hoy) + '"></div>' +
+    '<div class="ig ac-ent-obs"><label for="ac-ent-obs">Observación de la entrega</label><input type="text" id="ac-ent-obs" maxlength="500" placeholder="Ej.: ingreso a la campaña, puesto 12"></div>' +
+    '<button type="submit" class="btn-primary" id="ac-ent-btn">Entregar seleccionados y generar acta</button></form>';
+}
+// tipos [{codigo, nombre}], libres { tipo: [elementos] }, actuales: lo que ya tiene [{tipo, codigo}] (aviso, no bloquea).
+function activosEntregaFilasHtml(tipos, libres, actuales) {
+  if (!tipos.length) return '<p class="vis-vacio">No hay tipos que se asignen a agentes.</p>';
+  return '<div class="table-wrap"><table class="vis-tabla ac-ent-tabla"><thead><tr><th scope="col">Tipo</th><th scope="col">Elemento libre</th><th scope="col">Ya tiene</th></tr></thead><tbody>' +
+    tipos.map(function (t) {
+      var l = libres[t.codigo] || [];
+      var ya = (actuales || []).filter(function (a) { return a.tipo === t.codigo; }).map(function (a) { return a.codigo; });
+      var sel = l.length ? '<select id="ac-ent-' + esc(t.codigo) + '" data-tipo="' + esc(t.codigo) + '" aria-label="' + esc(t.nombre) + ': elemento a entregar" onchange="activosEntregaResumen()"><option value="">— No entregar —</option>' +
+        l.map(function (a) { return '<option value="' + Number(a.id) + '">' + esc(a.codigo) + (a.marca ? ' · ' + esc(a.marca) : '') + '</option>'; }).join('') + '</select>'
+        : '<span class="vis-ayuda">No hay libres de este tipo</span>';
+      return '<tr><th scope="row">' + esc(t.nombre) + '</th><td>' + sel + '</td><td>' + (ya.length ? 'Ya tiene ' + esc(ya.join(', ')) : '—') + '</td></tr>';
+    }).join('') + '</tbody></table></div>';
+}
+function activosEntregaResumenHtml(sel) {
+  if (!sel.length) return '<p class="vis-ayuda">Elige arriba lo que le vas a entregar; aquí verás el resumen antes de generar el acta.</p>';
+  return '<p><b>Se le van a entregar ' + sel.length + ' elemento(s)</b> en una sola acta:</p><ul class="ac-hist">' +
+    sel.map(function (x) { return '<li>' + esc(x.tipo) + ' ' + esc(x.codigo) + '</li>'; }).join('') + '</ul>';
+}
+function _acEntregaSel() {
+  return Array.prototype.slice.call(document.querySelectorAll('#ac-ent-filas select[data-tipo]')).filter(function (x) { return x.value; }).map(function (x) {
+    var t = _acTipo(x.dataset.tipo), op = x.options[x.selectedIndex];
+    return { id: Number(x.value), tipo: t ? t.nombre : x.dataset.tipo, codigo: op ? op.text.split(' · ')[0] : '' };
+  });
+}
+function activosEntregaResumen() {
+  var sel = _acEntregaSel(), b = _acEl('ac-ent-btn'), res = _acEl('ac-ent-res');
+  if (res) res.innerHTML = activosEntregaResumenHtml(sel);
+  if (b) b.textContent = sel.length ? 'Entregar ' + sel.length + ' elemento(s) y generar acta' : 'Entregar seleccionados y generar acta';
+}
+async function activosEntregaCargar() {
+  var c = _acEl('ac-ent-filas'); if (!c) return;
+  var tipos = _ac.config.tipos.filter(function (t) { return t.codigo !== 'ADMINISTRABLE' && t.asignable !== false; }).map(function (t) { return { codigo: t.codigo, nombre: t.nombre }; });
+  try {
+    var l = (await apiRequest('GET', '/activos?estado=libre')).activos.filter(function (a) { return !a.agente; });
+    var por = {}; l.forEach(function (a) { (por[a.tipo] = por[a.tipo] || []).push(a); });
+    c.innerHTML = activosEntregaFilasHtml(tipos, por, (_ac.agente && _ac.agente.elementos) || []);
+    activosEntregaResumen();
+  } catch (e) { c.innerHTML = ''; _acError(e.message); }
+}
+async function activosEntregar(ev) {
   ev.preventDefault();
   _acError('');
-  var id = Number(_acEl('ac-as-elem').value);
-  if (!id) { _acError('Elige un elemento libre'); return; }
+  var sel = _acEntregaSel();
+  if (!sel.length) { _acError('Elige al menos un elemento para entregar'); return; }
+  var obs = _acEl('ac-ent-obs');
+  if (obs.value.trim().length < 3) { _acError('Escribe la observación de la entrega'); obs.focus(); return; }
+  // La ventana se abre en el mismo clic (si no, el navegador la bloquea) y se llena con el acta.
+  var w = window.open('', '_blank');
   try {
-    await apiRequest('POST', '/activos/' + id + '/asignar', { agenteId: _ac.agente.agente.id });
-    showToast('Elemento asignado', 'ok');
+    var r = await apiRequest('POST', '/activos/agentes/' + _ac.agente.agente.id + '/entregar', { ids: sel.map(function (x) { return x.id; }), fecha: _acEl('ac-ent-fecha').value, observaciones: obs.value });
+    if (r.acta && w) { w.document.open(); w.document.write(activosActaPrintHtml(r.acta)); w.document.close(); setTimeout(function () { try { w.focus(); w.print(); } catch (e) { /* cerrada */ } }, 300); }
+    else if (w) w.close();
+    showToast(r.elementos.length + ' elemento(s) entregados' + (r.acta ? ' · acta N.º ' + Number(r.acta.numero) + ' lista para firmar' : ''), 'ok');
     await activosVerAgente(_ac.agente.agente.id);
-  } catch (e) { _acError(e.message); }
+    _acRefrescarMenu();
+  } catch (e) { if (w) w.close(); _acError(e.message); }
 }
+async function _acLibres(tipo) { return (await apiRequest('GET', '/activos?estado=libre&tipo=' + encodeURIComponent(tipo))).activos.filter(function (a) { return !a.agente; }); }
 function activosCancelarSoltar() { _acEl('ac-soltar').innerHTML = ''; }
 // Devolver o cambiar: cómo queda el elemento que entrega (libre, en reparación o malo) y el motivo.
 async function activosFormSoltar(id, modo) {
@@ -1514,4 +1611,5 @@ if (typeof module !== 'undefined' && module.exports) Object.assign(module.export
 if (typeof module !== 'undefined' && module.exports) module.exports.activosCedulaAviso = activosCedulaAviso; // 25/11: aviso de la cédula (pruebas)
 if (typeof module !== 'undefined' && module.exports) { module.exports.activosActasKpisHtml = activosActasKpisHtml; module.exports.activosActasHtml = activosActasHtml; module.exports.activosActaCompletarHtml = activosActaCompletarHtml; module.exports.activosActaPrintHtml = activosActaPrintHtml; } // Fase INV4 (pruebas)
 if (typeof module !== 'undefined' && module.exports) { module.exports.activosAjEstadosHtml = activosAjEstadosHtml; module.exports.activosCopiaNombre = activosCopiaNombre; } // Fase INV6 (pruebas)
+if (typeof module !== 'undefined' && module.exports) { module.exports.activosGhPill = activosGhPill; module.exports.activosEntregaFilasHtml = activosEntregaFilasHtml; module.exports.activosEntregaResumenHtml = activosEntregaResumenHtml; module.exports.activosGhPersonasHtml = activosGhPersonasHtml; module.exports.activosGhCajaHtml = activosGhCajaHtml; } // Fase INV3 (pruebas)
 if (typeof module !== 'undefined' && module.exports) { module.exports.activosFichaPrintHtml = activosFichaPrintHtml; module.exports.activosFilasExport = activosFilasExport; } // Fase INV5 (pruebas)
