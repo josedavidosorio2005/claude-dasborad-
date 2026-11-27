@@ -7,7 +7,7 @@ const assert = require('node:assert/strict');
 const { db } = require('./helpers');
 const M = require('../wolkvox-modulos');
 
-const R = 'MOBILIZE PRUEBAS API';
+const R = 'MOBILIZE'; // Fase W10: antes la réplica «MOBILIZE PRUEBAS API» (borrada); ahora el destino real
 const ENV = { NODE_ENV: 'test', WOLKVOX_MOBILIZE_TOKEN: 'TOKEN-FALSO-A15-no-es-real-0123456789', WOLKVOX_MOBILIZE_SERVIDOR: 'servidorfalsoa15' };
 const AHORA = new Date('2026-11-04T12:30:00Z');
 const TEL = '3000000155', DEST = '3000000156', CLIENTE = 'CC-INVENTADA-155', CONN = 'CONN-INVENTADO-155';
@@ -29,10 +29,10 @@ test('hoja de no conectadas: solo asesor, fecha, ring_time y result', () => {
 test('corrida: una consulta, reemplaza el mes de la réplica con respaldo, sin datos sensibles; MOBILIZE real intacto', async () => {
   const ins = db.prepare("INSERT INTO llamadas_no_conectadas (campana, fecha, agente, archivoNombre, cargadoPorNombre, createdAt) VALUES (?, ?, 'X', 'x', 'x', 'x')");
   ins.run(R, '2026-11-25'); // vieja del mes: sale (mes completo)
-  ins.run('MOBILIZE', '2026-11-02');
+  ins.run('ORLANT', '2026-11-02');
   const versiones = db.prepare('SELECT COUNT(*) n FROM cargas_versiones WHERE campana = ?').get(R).n;
   const f = falso(DATA);
-  const r = await M.correrModulo('no_conectadas', { db, env: ENV, ahora: AHORA, fetchImpl: f.fetch, franja: 'a15-1' });
+  const r = await M.correrModulo('no_conectadas', { db, destino: 'real', env: ENV, ahora: AHORA, fetchImpl: f.fetch, franja: 'a15-1' });
   assert.equal(r.estado, 'ok', r.detalle);
   assert.equal(f.urls.length, 1);
   assert.equal(new URL(f.urls[0]).searchParams.get('api'), 'cdr_5');
@@ -42,7 +42,7 @@ test('corrida: una consulta, reemplaza el mes de la réplica con respaldo, sin d
   for (const x of [TEL, DEST, CLIENTE, CONN]) assert.ok(!txt.includes(x), 'se guardó ' + x);
   assert.match(r.detalle, /3 no conectadas \(reemplazó 1, con respaldo\)/);
   assert.ok(db.prepare('SELECT COUNT(*) n FROM cargas_versiones WHERE campana = ?').get(R).n > versiones, 'respaldo');
-  assert.equal(db.prepare("SELECT COUNT(*) n FROM llamadas_no_conectadas WHERE campana = 'MOBILIZE'").get().n, 1);
+  assert.equal(db.prepare("SELECT COUNT(*) n FROM llamadas_no_conectadas WHERE campana = 'ORLANT'").get().n, 1);
 });
 
 test('el módulo está en la lista y arranca apagado', () => {

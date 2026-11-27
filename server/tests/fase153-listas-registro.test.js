@@ -70,7 +70,7 @@ test('GET /api/dashboard/clientes trae el registro (modulos, parametros, logo)',
   const t = await tokenFor('admin', MASTER_PASSWORD);
   const r = await request(app).get('/api/dashboard/clientes').set({ Authorization: 'Bearer ' + t });
   assert.equal(r.status, 200);
-  assert.deepEqual(r.body.registro.map((c) => c.nombre), ['ORLANT', 'MOBILIZE', 'CLINICA AURORA', 'HOSPITAL LA MARIA', 'HOSPITAL LA MARIA - CASTILLA', 'HOSPITAL LA MARIA - SEDE 33', 'SURA', 'MOBILIZE PRUEBAS API', 'ORLANT PRUEBAS API', 'CLINICA AURORA PRUEBAS API']); // Fase AU1 // Fase N5 // Fase 354: + sedes // Fase 153 (P3) + Fase 160 + Fase 215 + Fase W1 (solo admin)
+  assert.deepEqual(r.body.registro.map((c) => c.nombre), ['ORLANT', 'MOBILIZE', 'CLINICA AURORA', 'HOSPITAL LA MARIA', 'HOSPITAL LA MARIA - CASTILLA', 'HOSPITAL LA MARIA - SEDE 33', 'SURA', 'ORLANT PRUEBAS API', 'CLINICA AURORA PRUEBAS API']); // Fase AU1 // Fase N5 // Fase 354: + sedes // Fase 153 (P3) + Fase 160 + Fase 215 + Fase W1 (solo admin)
   r.body.registro.forEach((c) => assert.deepEqual(Object.keys(c).sort(), ['logo', 'modulos', 'nombre', 'parametros']));
 });
 

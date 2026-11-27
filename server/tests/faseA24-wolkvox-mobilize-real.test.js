@@ -58,8 +58,8 @@ async function tick(ahora, deps) {
 }
 
 test('lista cerrada: la réplica, el MOBILIZE real y (Fase N6) la réplica de ORLANT; nunca el ORLANT real', () => {
-  assert.deepEqual([...D.CAMPANAS_PERMITIDAS], ['MOBILIZE PRUEBAS API', 'MOBILIZE', 'ORLANT PRUEBAS API', 'CLINICA AURORA PRUEBAS API']); // Fase AU2: + la réplica de Aurora
-  assert.equal(D.destino().campana, 'MOBILIZE PRUEBAS API');
+  assert.deepEqual([...D.CAMPANAS_PERMITIDAS], ['MOBILIZE', 'ORLANT PRUEBAS API', 'CLINICA AURORA PRUEBAS API']); // Fase AU2: + la réplica de Aurora // Fase W10: sin la réplica de MOBILIZE
+  assert.throws(() => D.destino(), /Falta el destino/);
   assert.equal(D.destino('real').campana, 'MOBILIZE');
   for (const malo of ['ORLANT', 'SURA', 'MOBILIZE', { campana: 'MOBILIZE' }, 'toString', 5]) assert.throws(() => D.destino(malo), /no permitido/, String(malo));
   const filas = [{ fecha: '2026-12-01', skillName: 'X', totalLlamadas: 1, contestadas: 1 }];
@@ -67,7 +67,7 @@ test('lista cerrada: la réplica, el MOBILIZE real y (Fase N6) la réplica de OR
   assert.throws(() => M.reemplazarMesFlujoHora(db, '2026-12', [], 'ORLANT'), /no permitida/);
   assert.throws(() => M.actualizarAhtEspera(db, '2026-12', new Map(), 'SURA'), /no permitida/);
   assert.equal(D.campanaLista(db, 'real'), true);
-  assert.equal(D.campanaLista(db, 'replica'), true);
+  assert.throws(() => D.campanaLista(db, 'replica'), /no permitido/); // Fase W10
 });
 
 test('corte (Fase A29): el real nunca pide meses anteriores a 2026-11; la réplica no cambia', () => {
@@ -81,7 +81,7 @@ test('corte (Fase A29): el real nunca pide meses anteriores a 2026-11; la répli
   assert.deepEqual(auto.planDe({ ahora: at('2026-12-02T12:00:00Z'), destino: 'real' }).map((m) => [m.mes, m.dias.length]), [['2026-11', 30], ['2026-12', 1]], 'en diciembre, los días 1 a 3 cierra noviembre');
   assert.deepEqual(auto.planDe({ ahora: at('2026-12-04T12:00:00Z'), destino: 'real' }).map((m) => [m.mes, m.dias.length]), [['2026-12', 3]]);
   assert.deepEqual(auto.planDe({ ahora: at('2026-12-03T12:00:00Z'), mes: '2026-10', destino: 'real' }), [], 'octubre ni pedido a mano');
-  assert.deepEqual(auto.planDe({ ahora: at('2026-11-03T12:00:00Z') }).map((m) => m.mes), ['2026-10', '2026-11'], 'la réplica sí');
+  assert.deepEqual(auto.planDe({ ahora: at('2026-11-03T12:00:00Z'), destino: 'orlant_replica' }).map((m) => m.mes), ['2026-10', '2026-11'], 'una réplica sí'); // Fase W10: la de ORLANT
   for (let t = Date.UTC(2026, 9, 1); t <= Date.UTC(2027, 1, 28); t += 3600 * 1000) {
     for (const m of auto.planDe({ ahora: new Date(t), destino: 'real' })) assert.ok(m.mes >= '2026-11', 'nunca antes de noviembre: ' + m.mes);
   }
@@ -101,9 +101,7 @@ test('programador: sin WOLKVOX_REAL_ACTIVO, con otro valor o con SSM caído, nun
   // 3) SSM caído al leer el interruptor del real
   await tick(proxima(), { env: ENV_BASE, fetchImpl: falso.fetch, leerInterruptor: async (e, nombre) => { if (nombre === 'WOLKVOX_REAL_ACTIVO') throw Object.assign(new Error('x'), { name: 'AccessDeniedException' }); return false; },
     leerValor: async (e, nombre) => (nombre === 'WOLKVOX_REAL_MODULOS' ? 'cdr' : '') });
-  // 4) interruptor de la réplica encendido no enciende el real
-  await tick(new Date('2026-12-20T12:05:00Z'), { env: ENV_BASE, fetchImpl: falso.fetch, leerInterruptor: async (e, nombre) => nombre === undefined || nombre === 'WOLKVOX_AUTO_ACTIVO', leerValor: async (e, nombre) => (nombre === 'WOLKVOX_REAL_MODULOS' ? 'cdr' : '') });
-  assert.ok(falso.urls.length > 0, 'la réplica sí consultó');
+  // 4) Fase W10: el caso «interruptor de la réplica encendido» se fue con la réplica de MOBILIZE.
   assert.equal(huellaReal(), antes, 'el MOBILIZE real quedó igual');
   assert.equal(n("SELECT COUNT(*) n FROM wolkvox_auto_corridas WHERE franja LIKE '% real%'"), 0);
 });

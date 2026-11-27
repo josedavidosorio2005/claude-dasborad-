@@ -5,6 +5,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { db } = require('./helpers');
+require('../db').crearReplicaMobilizeApi(); // Fase W10: ya no se crea al arrancar; la prueba la arma (replicaDe de una campaña interna)
 const E = require('../eficacia');
 const R = require('../clientes-registro');
 

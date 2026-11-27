@@ -5313,7 +5313,8 @@ function crearReplicaMobilizeApi() {
   })();
   if (!config.isTest) console.log('[db] Migracion faseW1_replica_mobilize_api_v1 aplicada.');
 }
-runOnceMigration('faseW1_replica_mobilize_api_v1', crearReplicaMobilizeApi);
+// Fase W10 (26/11/2026): la réplica se BORRÓ (ver borrarReplicaMobilizeApi más abajo). Ya no se crea al arrancar
+// (en producción esta migración ya corrió el 12/11); la función queda solo para que las pruebas armen una réplica.
 
 // Fase N5 (23/11/2026, docs/orlant/nuevo-dashboard/plan.md §4): replica OCULTA de ORLANT para
 // probar la API de Wolkvox de ORLANT (operacion `inconexion-orlant`, servidor wv0034), «ORLANT
@@ -5429,6 +5430,39 @@ function retirarReplicaMobilizeApi() {
   if (!config.isTest) console.log('[db] Migracion faseW9_retirar_replica_mobilize_v1 aplicada (' + r.changes + ' fila).');
 }
 runOnceMigration('faseW9_retirar_replica_mobilize_v1', retirarReplicaMobilizeApi);
+
+// Fase W10 (26/11/2026, pedido del usuario; migración DESTRUCTIVA: el merge lo hace el usuario con su «OK borrar»):
+// se BORRA del todo la réplica «MOBILIZE PRUEBAS API»: su tablero, su fila del registro y sus datos en todas las
+// tablas con `campana`/`cliente`, el login de agentes por API (operación MOBILIZE, solo de la réplica) y las claves de
+// permisos que la nombran. El MOBILIZE real no se toca (borrar-replica-mobilize.js lo cuenta antes y después y, si
+// cambia una cifra, deshace todo). El Historial y las corridas de Wolkvox se quedan (auditoría).
+// Idempotente y SIN runOnceMigration: en cada arranque, si la réplica existe, PRIMERO un respaldo completo de la base
+// (VACUUM INTO, en data/antes-de-borrar/) y solo si salió bien, el borrado. Si el respaldo o el borrado fallan, no se
+// borra nada, se anota en el log y se reintenta en el próximo arranque (la app arranca igual).
+function borrarReplicaMobilizeApi(opts) {
+  const B = require('./borrar-replica-mobilize');
+  if (!db.prepare('SELECT 1 FROM clientes_registro WHERE nombre = ?').get(B.NOMBRE)) return { estado: 'nada' };
+  const respaldar = (opts && opts.respaldar) || ((archivo) => db.exec("VACUUM INTO '" + archivo.replace(/'/g, "''") + "'"));
+  const dir = (opts && opts.dirRespaldo) || path.join(path.dirname(DB_PATH), 'antes-de-borrar');
+  let archivo;
+  try {
+    fs.mkdirSync(dir, { recursive: true });
+    archivo = path.join(dir, 'faseW10-replica-mobilize-' + new Date().toISOString().replace(/[:.]/g, '-') + '.db');
+    respaldar(archivo);
+    if (!fs.existsSync(archivo) || fs.statSync(archivo).size === 0) throw new Error('respaldo vacío');
+  } catch (e) {
+    console.error('[db] Fase W10: no se pudo hacer el respaldo; NO se borra la réplica (se reintenta al próximo arranque).');
+    return { estado: 'sin_respaldo' };
+  }
+  let r;
+  try { r = B.borrar(db); } catch (e) {
+    console.error('[db] Fase W10: el borrado de la réplica se deshizo (' + String(e && e.message).slice(0, 120) + ').');
+    return { estado: 'error', respaldo: path.basename(archivo) };
+  }
+  if (!config.isTest) console.log('[db] Fase W10: réplica «' + B.NOMBRE + '» ' + r.estado + ' (' + JSON.stringify(r.borradas || r.motivo || {}) + '); respaldo ' + path.basename(archivo) + '.');
+  return Object.assign({ respaldo: path.basename(archivo) }, r);
+}
+borrarReplicaMobilizeApi();
 
 // Fase 353 (C, aprobado por el usuario el 13/11 con dry-run): los monitoreos sin usuario cuyo
 // asesor coincide EXACTO (mayusculas y espacios al borde aparte) con un UNICO usuario ASESOR
@@ -5713,7 +5747,8 @@ module.exports.TABLAS_SIN_VERSION_DATOS = TABLAS_SIN_VERSION_DATOS;
 // Fase 155: idem (prueba que la migracion es idempotente).
 module.exports.recalcularPctAtencionAbandono = recalcularPctAtencionAbandono;
 module.exports.orlantCalidadSoloNueva = orlantCalidadSoloNueva; // Fase 332: prueba de idempotencia
-module.exports.crearReplicaMobilizeApi = crearReplicaMobilizeApi; // Fase W1
+module.exports.crearReplicaMobilizeApi = crearReplicaMobilizeApi; // Fase W1 (desde W10, solo para pruebas)
+module.exports.borrarReplicaMobilizeApi = borrarReplicaMobilizeApi; // Fase W10
 module.exports.crearReplicaOrlantApi = crearReplicaOrlantApi; // Fase N5
 module.exports.crearReplicaAuroraApi = crearReplicaAuroraApi; // Fase AU1
 module.exports.REPLICA_API_AURORA = REPLICA_API_AURORA;

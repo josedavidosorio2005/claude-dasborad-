@@ -45,7 +45,7 @@ test('flujoEnLista: ORLANT solo con «flujo» en la lista; MOBILIZE (réplica y 
   assert.equal(o.flujoPorModulos, true);
   for (const v of [undefined, null, '', 'whatsapp', 'flujo_hora,cdr', 'flujos', 'no_flujo']) assert.equal(D.flujoEnLista(o, v), false, String(v));
   for (const v of ['flujo', ' Flujo ', 'whatsapp,flujo', 'cdr , FLUJO']) assert.equal(D.flujoEnLista(o, v), true, v);
-  for (const d of ['replica', 'real']) {
+  for (const d of ['real']) { // Fase W10: sin la réplica de MOBILIZE
     assert.ok(!D.DESTINOS[d].flujoPorModulos, d);
     for (const v of [undefined, '', 'cdr', 'flujo']) assert.equal(D.flujoEnLista(d, v), true, d + ' ' + v);
   }
@@ -75,10 +75,10 @@ test('programador ORLANT: sin lista (o vacía) no corre nada, ni el Flujo; con �
   assert.equal(apagado.llamadas.length, 0);
 });
 
-test('MOBILIZE sin cambios: su réplica corre el Flujo con el interruptor aunque su lista de módulos esté vacía', async () => {
+test('MOBILIZE sin cambios: el real corre el Flujo con el interruptor aunque su lista de módulos esté vacía', async () => {
   const falso = crearFalso();
-  await tick(Object.assign({}, ENV, { WOLKVOX_AUTO_ACTIVO: '1' }), falso);
-  assert.deepEqual(falso.llamadas.map((x) => x.api), ['skill_1', 'skill_1', 'skill_1', 'skill_1'], 'Flujo de la réplica de MOBILIZE (1–4/11), sin lista');
+  await tick(Object.assign({}, ENV, { WOLKVOX_REAL_ACTIVO: '1' }), falso); // Fase W10: antes la réplica
+  assert.deepEqual(falso.llamadas.map((x) => x.api), ['skill_1', 'skill_1', 'skill_1', 'skill_1'], 'Flujo del MOBILIZE real (1–4/11), sin lista');
   assert.ok(falso.llamadas.every((x) => x.token === TOKEN_MOB));
 });
 
@@ -100,12 +100,7 @@ test('«Ejecutar ahora» ORLANT: el Flujo exige «flujo» en la lista (suelto y 
   const r5 = await auto.ejecutarAhora(Object.assign({}, base, { modulo: 'flujo', maxConsultas: 10, leerValor: lista('flujo') }));
   assert.notEqual(r5.estado, 'apagada', JSON.stringify(r5));
   assert.ok(falso.llamadas.some((x) => x.api === 'skill_1'), 'con «flujo» sí corre: ' + JSON.stringify(r5));
-  // MOBILIZE: el Flujo no lee la lista (corre solo con el interruptor).
-  const mob = crearFalso();
-  const leidos = [];
-  await auto.ejecutarAhora({ db, env: ENV, ahora: AHORA, fetchImpl: mob.fetch, logEvent: () => {}, maxConsultas: 10, leerInterruptor: async () => true, leerValor: async (e, n) => { leidos.push(n); return undefined; } });
-  assert.deepEqual(leidos, []);
-  assert.deepEqual(mob.llamadas.map((x) => x.api), ['skill_1', 'skill_1', 'skill_1', 'skill_1']);
+  // Fase W10: la parte de «Ejecutar ahora» de la réplica de MOBILIZE se fue con ella (el real no lo tiene).
 });
 
 test('ruta «Ejecutar ahora»: Flujo de ORLANT sin «flujo» en la lista da 409 con un mensaje claro y 0 consultas', async () => {

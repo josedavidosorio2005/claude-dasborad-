@@ -10,7 +10,7 @@ const wv = require('../wolkvox');
 const rutaWv = require('../routes/wolkvox');
 const auto = require('../wolkvox-auto');
 
-const R = 'MOBILIZE PRUEBAS API';
+const R = 'MOBILIZE'; // Fase W10: antes la réplica «MOBILIZE PRUEBAS API» (borrada); ahora el destino real
 const TOKEN = 'TOKEN-FALSO-A2-no-es-real-0123456789';
 const SERVIDOR = 'servidorfalsoa2';
 const H = (t) => ({ Authorization: 'Bearer ' + t });
@@ -64,15 +64,17 @@ test('Probar con 404: muestra el code y msg de Wolkvox (limpios), nunca el token
 test('consulta automatica: un 404 «sin registros» es un dia vacio; otro 404 detiene la corrida', async () => {
   const env = { NODE_ENV: 'test', WOLKVOX_MOBILIZE_TOKEN: TOKEN, WOLKVOX_MOBILIZE_SERVIDOR: SERVIDOR };
   const ahora = new Date('2026-11-04T12:30:00Z'); // 4/11: pide 1, 2 y 3
+  require('../wolkvox-auto').asegurarTablas(db);
+  db.prepare("INSERT OR IGNORE INTO trafico_skill_mapeo (skillName, campana, sede, createdAt, updatedAt) VALUES ('SKILL A2', 'MOBILIZE', NULL, 'x', 'x')").run(); // Fase W10: el real guarda solo skills mapeadas
   let n = 0;
   const f1 = () => { n++; return n === 2 ? json(404, { code: 404, msg: 'No records found' })() : json(200, { code: 200, msg: '1 records were found', data: [{ skill_name: 'SKILL A2', inbound_calls: '3', answer_calls: '2' }] })(); };
-  const r = await auto.correrUnaVez({ db, env, ahora, fetchImpl: f1, franja: 'a2-1' });
+  const r = await auto.correrUnaVez({ db, destino: 'real', env, ahora, fetchImpl: f1, franja: 'a2-1' });
   assert.equal(r.estado, 'ok', r.detalle);
   assert.equal(n, 3);
   assert.equal(r.meses[0].filas, 2);
   let m = 0;
   const f2 = () => { m++; return json(404, { code: 404, msg: 'Report not found' })(); };
-  const r2 = await auto.correrUnaVez({ db, env, ahora, fetchImpl: f2, franja: 'a2-2' });
+  const r2 = await auto.correrUnaVez({ db, destino: 'real', env, ahora, fetchImpl: f2, franja: 'a2-2' });
   assert.equal(r2.error, 'http');
   assert.equal(m, 1);
 });

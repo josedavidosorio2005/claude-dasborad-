@@ -57,7 +57,9 @@ const REPORTES = {
 // Fase AU1 (26/11/2026): + la réplica «CLINICA AURORA PRUEBAS API» (operación AURORA; token y servidor
 // en WOLKVOX_AURORA_TOKEN / WOLKVOX_AURORA_SERVIDOR). Solo «Diagnóstico de red» y «Probar»; sin
 // consulta automática. El Aurora real no tiene nada aquí.
-const OPERACION_DE_CAMPANA = Object.freeze({ 'MOBILIZE PRUEBAS API': 'MOBILIZE', 'ORLANT PRUEBAS API': 'ORLANT', 'CLINICA AURORA PRUEBAS API': 'AURORA' });
+// Fase W10 (26/11/2026, pedido del usuario): la réplica «MOBILIZE PRUEBAS API» se borró; su panel (estado, «Probar» y
+// «Diagnóstico de red») pasa al MOBILIZE real (operación MOBILIZE, mismo token). El real no tiene «Ejecutar ahora».
+const OPERACION_DE_CAMPANA = Object.freeze({ MOBILIZE: 'MOBILIZE', 'ORLANT PRUEBAS API': 'ORLANT', 'CLINICA AURORA PRUEBAS API': 'AURORA' });
 
 class WolkvoxError extends Error {
   constructor(codigo, mensaje, httpStatus, causa) {

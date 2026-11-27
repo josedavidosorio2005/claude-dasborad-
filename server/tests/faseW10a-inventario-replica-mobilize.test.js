@@ -17,6 +17,8 @@ const huella = () => JSON.stringify(db.prepare("SELECT name FROM sqlite_master W
 
 before(async () => {
   admin = await tokenFor('admin', MASTER_PASSWORD);
+  // Fase W10: la réplica ya no se crea al arrancar (y la migración la borra); se siembra aquí, como en faseW10.
+  require('../db').crearReplicaMobilizeApi();
   const ins = db.prepare("INSERT INTO calidad_nivel_servicio_diario (campana, fecha, skillName, totalLlamadas, contestadas, archivoNombre, cargadoPorNombre, createdAt) VALUES (?, ?, 'SKILL W10A', 10, 9, 'inventado', 'prueba', ?)");
   for (const f of ['2026-11-02', '2026-11-03', '2026-11-04']) ins.run(R, f, ts);
   ins.run('MOBILIZE', '2030-01-02', ts);

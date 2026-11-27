@@ -1,7 +1,8 @@
 // routes/wolkvox.js — Fase W2 (docs/plan-api-wolkvox.md): «Probar conexión» con Wolkvox.
-// SOLO el administrador completo (isFullAdmin) y SOLO en una campaña interna que tenga operacion
-// de Wolkvox (las replicas ocultas «MOBILIZE PRUEBAS API» y, desde la Fase N5, «ORLANT PRUEBAS
-// API»). Los reales y los demas clientes no tienen nada aqui: para ellos, 404.
+// SOLO el administrador completo (isFullAdmin) y SOLO en una campaña con operacion de Wolkvox: las
+// replicas ocultas («ORLANT PRUEBAS API», Fase N5; «CLINICA AURORA PRUEBAS API», Fase AU1) y, desde la
+// Fase W10 (26/11/2026, la réplica «MOBILIZE PRUEBAS API» se borró), el MOBILIZE real (estado, «Probar»
+// y «Diagnóstico de red»; sin «Ejecutar ahora»). Los demas clientes no tienen nada aqui: para ellos, 404.
 // La respuesta al navegador trae code, msg, cuantas filas y los NOMBRES de los campos; nunca un
 // valor de los datos, ni el token, ni el servidor, ni la URL.
 'use strict';
@@ -23,7 +24,10 @@ const _ultimaPrueba = new Map();
 function operacionPermitida(req, res, campana) {
   if (!isFullAdmin(req.actor)) { res.status(403).json({ error: 'Solo el administrador' }); return null; }
   const op = typeof campana === 'string' ? wv.operacionDeCampana(campana) : null;
-  if (!op || !esCampanaInterna(db, campana)) { res.status(404).json({ error: 'Esta campaña no tiene conexión con Wolkvox' }); return null; }
+  // Fase W10: una réplica tiene que ser interna; el MOBILIZE real tiene que existir y NO ser interno.
+  const D = require('../wolkvox-destinos');
+  const ok = campana === D.CAMPANA_REAL ? D.campanaLista(db, D.DESTINOS.real) : esCampanaInterna(db, campana);
+  if (!op || !ok) { res.status(404).json({ error: 'Esta campaña no tiene conexión con Wolkvox' }); return null; }
   return op;
 }
 
@@ -42,8 +46,11 @@ router.get(
     // Fase N6: la consulta automática (y «Ejecutar ahora») es de las réplicas (destinos internos):
     // MOBILIZE y, desde la Fase N6, ORLANT (apagada hasta WOLKVOX_ORLANT_AUTO_ACTIVO=1).
     const wvAuto = require('../wolkvox-auto');
-    const dest = require('../wolkvox-destinos').destinoInterno(req.query.campana);
+    const D = require('../wolkvox-destinos');
+    const dest = D.destinoInterno(req.query.campana);
     const autoDisponible = !!dest && dest.operacion === op;
+    // Fase W10: el MOBILIZE real muestra el estado de SU consulta automática (solo lectura: sin «Ejecutar ahora»).
+    const destEstado = autoDisponible ? dest : (req.query.campana === D.CAMPANA_REAL ? D.DESTINOS.real : null);
     res.json({
       configurado: wv.estaConfigurado(op),
       diagnostico: wv.diagnostico(op), // solo si/no: token encontrado, servidor encontrado, servidor con formato valido
@@ -54,7 +61,7 @@ router.get(
       reportes: Object.keys(wv.REPORTES),
       reportesNombres: wv.REPORTES, // Fase A5: para la lista de «Probar»
       autoDisponible, // Fase N5
-      auto: autoDisponible ? wvAuto.estado(db, undefined, dest) : null, // Fase A1: horarios, interruptor al arrancar, ultima corrida (sin secretos)
+      auto: destEstado ? wvAuto.estado(db, undefined, destEstado) : null, // Fase A1: horarios, interruptor al arrancar, ultima corrida (sin secretos)
       agentesDisponible: autoDisponible && !!(dest && dest.filtros && dest.filtros.agentes), // Fase AU2: lista de agentes de Inconexión
       servidorEncontrado: wv.servidorDe(op) !== null, // Fase N5: basta para el «Diagnóstico de red» (sin token)
     });

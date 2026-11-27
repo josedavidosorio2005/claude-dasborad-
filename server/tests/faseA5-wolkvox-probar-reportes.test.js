@@ -10,7 +10,7 @@ const { request, app, db, tokenFor, MASTER_PASSWORD } = require('./helpers');
 const rutaWv = require('../routes/wolkvox');
 const wv = require('../wolkvox');
 
-const R = 'MOBILIZE PRUEBAS API';
+const R = 'MOBILIZE'; // Fase W10: antes la réplica «MOBILIZE PRUEBAS API» (borrada); ahora el destino real
 const TOKEN = 'TOKEN-FALSO-A5-no-es-real-0123456789';
 const NOMBRE = 'Persona Inventada A5';
 const TEL = '3000000055';

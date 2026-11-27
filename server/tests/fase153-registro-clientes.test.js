@@ -50,7 +50,7 @@ test('el registro sembrado da exactamente las listas de antes', () => {
 test('la semilla describe los modulos y parametros reales de ORLANT y MOBILIZE', () => {
   const r = Object.fromEntries(reg.leerRegistro(db).map((c) => [c.nombre, c]));
   // Fase W9: el registro completo sigue teniendo la replica de Mobilize (no se borra nada; solo dashboard = 0).
-  assert.deepEqual(Object.keys(r), CON_REPLICA.slice(0, CON_REPLICA.indexOf('ORLANT PRUEBAS API')).concat(['MOBILIZE PRUEBAS API', 'ORLANT PRUEBAS API', 'CLINICA AURORA PRUEBAS API']));
+  assert.deepEqual(Object.keys(r), CON_REPLICA.slice(0, CON_REPLICA.indexOf('ORLANT PRUEBAS API')).concat(['ORLANT PRUEBAS API', 'CLINICA AURORA PRUEBAS API']) /* Fase W10: sin la réplica de MOBILIZE */);
   assert.ok(r.ORLANT.modulos.includes('whatsapp_tiempos'));
   assert.ok(!r.ORLANT.modulos.includes('llamadas_unicas'));
   assert.ok(r.MOBILIZE.modulos.includes('llamadas_unicas') && r.MOBILIZE.modulos.includes('encuesta'));
@@ -85,7 +85,7 @@ test('GET /api/dashboard/clientes expone las listas del registro (y sigue igual 
   const t = await tokenFor('admin', MASTER_PASSWORD);
   const r = await request(app).get('/api/dashboard/clientes').set(auth(t));
   assert.equal(r.status, 200);
-  assert.deepEqual(r.body.clientes.slice().sort(), [AURORA, 'CLINICA AURORA PRUEBAS API', 'HOSPITAL LA MARIA', 'HOSPITAL LA MARIA - CASTILLA', 'HOSPITAL LA MARIA - SEDE 33', 'MOBILIZE', 'MOBILIZE PRUEBAS API', 'ORLANT', 'ORLANT PRUEBAS API']); // Fase 354 // Fase W1
+  assert.deepEqual(r.body.clientes.slice().sort(), [AURORA, 'CLINICA AURORA PRUEBAS API', 'HOSPITAL LA MARIA', 'HOSPITAL LA MARIA - CASTILLA', 'HOSPITAL LA MARIA - SEDE 33', 'MOBILIZE', 'ORLANT', 'ORLANT PRUEBAS API']); // Fase 354 // Fase W1
   assert.deepEqual(r.body.listaClientes, CON_REPLICA);
   assert.deepEqual(r.body.campanasCalidad, CON_SURA); // Fase 321
   assert.deepEqual(Object.keys(r.body).sort(), ['campanasCalidad', 'clientes', 'listaClientes', 'registro']);

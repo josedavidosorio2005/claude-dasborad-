@@ -1,66 +1,33 @@
-// wolkvox-ingesta.js — Plan B de Wolkvox, fase B1 (17/11/2026): el servidor de producción no
-// llega a Wolkvox (TCP 443 bloqueado desde su IP), así que un AGENTE en un PC de la oficina
-// consulta la API y ENVÍA los resultados aquí. Excepción autorizada por escrito por el usuario
-// (17/11, ver CLAUDE.md): solo la réplica oculta «MOBILIZE PRUEBAS API» y solo el reporte de Flujo.
-//
-// Seguridad:
-//  - APAGADO por defecto: sin WOLKVOX_AGENTE_CLAVE_SHA256 (SSM) el endpoint responde 503.
-//  - En SSM va solo la HUELLA (sha256, 64 hex) de la clave del agente, nunca la clave. Se compara
-//    con timingSafeEqual.
-//  - WOLKVOX_AGENTE_IPS (SSM, opcional): IPs permitidas separadas por coma; vacío = cualquiera.
-//  - Nunca se registra la clave, la huella ni el cuerpo: el Historial lleva solo mes y conteos.
-//  - Escribe directo en calidad_nivel_servicio_diario de la réplica, SIN tocar el mapeo de skills
-//    (cargarTrafico con campaña registraría las skills reales de MOBILIZE a nombre de la réplica).
+// wolkvox-ingesta.js — validación y reemplazo del Flujo del mes que usa la consulta automática de Wolkvox
+// (wolkvox-auto.js). Nació como el Plan B de Wolkvox, fase B1 (17/11/2026): un agente en un PC de la oficina
+// ENVIABA el Flujo a POST /api/wolkvox/agente/flujo, solo para la réplica «MOBILIZE PRUEBAS API».
+// Fase W10 (26/11/2026, pedido del usuario): la réplica se borró y con ella esa entrada (la ruta ya no existe);
+// aquí quedan solo las funciones que usa el programador. Escribe directo en calidad_nivel_servicio_diario,
+// SIN tocar el mapeo de skills.
 'use strict';
 
-const crypto = require('crypto');
-const express = require('express');
 const { cargarNivelServicioDiario } = require('./nivel-servicio-diario');
 const { respaldarAntesDeCambiar } = require('./cargas-versiones');
-const { esCampanaInterna } = require('./clientes-registro');
 
-const RUTA_INGESTA = '/api/wolkvox/agente/flujo';
 const MAX_FILAS = 5000;
 
-const { CAMPANA_REPLICA, CAMPANAS_PERMITIDAS } = require('./wolkvox-destinos');
-const CAMPANA_INGESTA = CAMPANA_REPLICA; // 'MOBILIZE PRUEBAS API'
+const { CAMPANAS_PERMITIDAS } = require('./wolkvox-destinos');
 const REPORTES_INGESTA = ['flujo'];
-
-function huellaConfigurada(env) {
-  const h = String((env || process.env).WOLKVOX_AGENTE_CLAVE_SHA256 || '').trim().toLowerCase();
-  return /^[0-9a-f]{64}$/.test(h) ? h : null;
-}
-function estaEncendida(env) { return huellaConfigurada(env) !== null; }
-
-function claveValida(clave, env) {
-  const h = huellaConfigurada(env);
-  if (!h || typeof clave !== 'string' || clave.length < 32 || clave.length > 200) return false;
-  const a = crypto.createHash('sha256').update(clave, 'utf8').digest();
-  return crypto.timingSafeEqual(a, Buffer.from(h, 'hex'));
-}
-
-// Express con trust proxy da la IP del cliente; se quita el prefijo IPv4-mapeado (::ffff:).
-function normalizarIp(ip) { return String(ip || '').trim().replace(/^::ffff:/i, ''); }
-function ipPermitida(ip, env) {
-  const lista = String((env || process.env).WOLKVOX_AGENTE_IPS || '').split(',').map(normalizarIp).filter(Boolean);
-  if (!lista.length) return true;
-  return lista.includes(normalizarIp(ip));
-}
 
 function ultimoDiaDelMes(mes) {
   const [y, m] = mes.split('-').map(Number);
   return mes + '-' + String(new Date(Date.UTC(y, m, 0)).getUTCDate()).padStart(2, '0');
 }
 
-// Reemplaza el MES COMPLETO de la réplica con las filas recibidas (todas de ese mes, ya validadas).
+// Reemplaza el MES COMPLETO de la campaña con las filas recibidas (todas de ese mes, ya validadas).
 // Fase A1 (18/11): `archivoNombre` dice de donde vino (agente o consulta automatica) y
 // `conservar` lista campos que la API no trae (AHT y espera): para cada dia y skill, si la fila
 // nueva no lo trae, se copia el valor que ya estaba (el del archivo manual) en vez de dejarlo vacio.
 const CONSERVABLES = ['ahtSegundos', 'waitTimeSegundos'];
-// Fase A24 (20/11): `campana` (por defecto la réplica) solo puede ser una de la lista cerrada de
-// wolkvox-destinos.js; el agente B1 nunca la pasa (sigue solo la réplica).
+// Fase A24 (20/11): `campana` solo puede ser una de la lista cerrada de wolkvox-destinos.js.
+// Fase W10: es obligatoria (antes, sin ella, era la réplica de MOBILIZE, que se borró).
 function reemplazarMesFlujo(db, { mes, filas, cargadoPorNombre, archivoNombre, conservar, campana }) {
-  const campanaDestino = campana === undefined ? CAMPANA_INGESTA : campana;
+  const campanaDestino = campana;
   if (!CAMPANAS_PERMITIDAS.includes(campanaDestino)) throw new Error('Campaña no permitida para Wolkvox');
   const desde = mes + '-01', hasta = ultimoDiaDelMes(mes);
   let borradasMes = 0, resultado, conservados = 0;
@@ -83,7 +50,7 @@ function reemplazarMesFlujo(db, { mes, filas, cargadoPorNombre, archivoNombre, c
     }
     // Lo que no venga en este envío (otra skill, otro día del mes) también sale: el mes queda igual a lo enviado.
     borradasMes = db.prepare('DELETE FROM calidad_nivel_servicio_diario WHERE campana = ? AND fecha BETWEEN ? AND ?').run(campanaDestino, desde, hasta).changes;
-    resultado = cargarNivelServicioDiario(db, { campana: campanaDestino, sede: null, archivoNombre: archivoNombre || 'API Wolkvox (agente)', cargadoPorNombre, filas });
+    resultado = cargarNivelServicioDiario(db, { campana: campanaDestino, sede: null, archivoNombre: archivoNombre || 'API Wolkvox', cargadoPorNombre, filas });
   })();
   return { mes, filas: filas.length, skills: new Set(filas.map((f) => f.skillName)).size, reemplazadas: borradasMes, insertadas: resultado.diario.insertadas, conservados };
 }
@@ -134,24 +101,4 @@ function validarCuerpo(b) {
   return { mes, filas };
 }
 
-// Se monta ANTES del middleware que exige sesion para leer un cuerpo (server.js): el agente no
-// tiene sesion, se identifica con la clave (cabecera X-Agente-Clave). Encendido, IP y clave se
-// revisan ANTES de leer el cuerpo.
-function montarIngesta(app, db, { responderSinLeerCuerpo }) {
-  const leerJson = express.json({ limit: '2mb' });
-  app.post(RUTA_INGESTA, (req, res, next) => {
-    if (!estaEncendida()) return responderSinLeerCuerpo(req, res, 503, { error: 'Ingesta apagada' });
-    if (!ipPermitida(req.ip)) return responderSinLeerCuerpo(req, res, 403, { error: 'Origen no permitido' });
-    if (!claveValida(req.get('x-agente-clave'))) return responderSinLeerCuerpo(req, res, 401, { error: 'Clave invalida' });
-    if (!req.is('application/json')) return responderSinLeerCuerpo(req, res, 415, { error: 'El cuerpo de la peticion debe ser JSON' });
-    next();
-  }, leerJson, (req, res) => {
-    const v = validarCuerpo(req.body);
-    if (v.error) return res.status(400).json({ error: v.error });
-    if (!esCampanaInterna(db, CAMPANA_INGESTA)) return res.status(409).json({ error: 'La replica no existe' });
-    const r = reemplazarMesFlujo(db, { mes: v.mes, filas: v.filas, cargadoPorNombre: 'Agente Wolkvox' });
-    res.json({ ok: true, ...r });
-  });
-}
-
-module.exports = { RUTA_INGESTA, montarIngesta, validarCuerpo, CAMPANA_INGESTA, REPORTES_INGESTA, estaEncendida, claveValida, ipPermitida, normalizarIp, ultimoDiaDelMes, reemplazarMesFlujo };
+module.exports = { validarCuerpo, REPORTES_INGESTA, ultimoDiaDelMes, reemplazarMesFlujo };

@@ -11,7 +11,7 @@ const wv = require('../wolkvox');
 const rutaWv = require('../routes/wolkvox');
 const { wvRedFilas } = require('../../public/js/wolkvox-prueba.js');
 
-const R = 'MOBILIZE PRUEBAS API';
+const R = 'MOBILIZE'; // Fase W10: antes la réplica «MOBILIZE PRUEBAS API» (borrada); ahora el destino real
 const TOKEN = 'TOKEN-FALSO-W3-no-es-real-0987654321';
 const SERVIDOR = 'servidorfalso03';
 const H = (t) => ({ Authorization: 'Bearer ' + t });
@@ -91,7 +91,7 @@ test('«Probar conexión» con falla de red: la causa va al log, al Historial y 
 
 test('diagnóstico: solo administrador y solo la réplica (cliente 403, otra campaña 404)', async () => {
   assert.equal((await request(app).post('/api/wolkvox/diagnostico-red').set(H(cliente)).send({ campana: R })).status, 403);
-  assert.equal((await request(app).post('/api/wolkvox/diagnostico-red').set(H(admin)).send({ campana: 'MOBILIZE' })).status, 404);
+  assert.equal((await request(app).post('/api/wolkvox/diagnostico-red').set(H(admin)).send({ campana: 'ORLANT' })).status, 404); // Fase W10: el panel pasó al MOBILIZE real; el ORLANT real sigue sin él
   assert.equal((await request(app).post('/api/wolkvox/diagnostico-red').send({ campana: R })).status, 401);
   assert.equal(red.llamadas.length, 0, 'sin permiso no se toca la red');
 });

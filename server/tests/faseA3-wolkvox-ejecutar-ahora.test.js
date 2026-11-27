@@ -9,12 +9,13 @@ const { request, app, db, tokenFor, MASTER_PASSWORD } = require('./helpers');
 const rutaWv = require('../routes/wolkvox');
 const auto = require('../wolkvox-auto');
 
-const R = auto.CAMPANA;
+const R = 'ORLANT PRUEBAS API'; // Fase W10: antes la réplica de MOBILIZE (borrada); «Ejecutar ahora» sigue en las réplicas
 const TOKEN = 'TOKEN-FALSO-A3-no-es-real-0123456789';
 const SERVIDOR = 'servidorfalsoa3';
 const H = (t) => ({ Authorization: 'Bearer ' + t });
-process.env.WOLKVOX_MOBILIZE_TOKEN = TOKEN;
-process.env.WOLKVOX_MOBILIZE_SERVIDOR = SERVIDOR;
+process.env.WOLKVOX_ORLANT_TOKEN = TOKEN;
+process.env.WOLKVOX_ORLANT_SERVIDOR = SERVIDOR;
+app.locals.wolkvoxValor = async () => 'flujo'; // Fase N3b: el Flujo de ORLANT va por la lista
 let llamadas = 0;
 let encendido = false;
 app.locals.wolkvoxInterruptor = async () => encendido;
@@ -58,7 +59,7 @@ test('encendida: corre una vez, Historial con «Ejecutar ahora» y quien; la seg
   assert.equal(llamadas, n);
   if (n) assert.equal(r.body.estado, 'ok');
   const h = db.prepare("SELECT actor, detalle FROM historial WHERE accion = 'WOLKVOX_AUTO' ORDER BY id DESC LIMIT 1").get();
-  assert.match(h.detalle, /^Ejecutar ahora · MOBILIZE PRUEBAS API · skill_1 · /);
+  assert.match(h.detalle, /^Ejecutar ahora · ORLANT PRUEBAS API · skill_1 · /);
   assert.notEqual(h.actor, auto.QUIEN);
   for (const s of [TOKEN, SERVIDOR, 'SKILL INVENTADA A3']) assert.ok(!r.text.includes(s) && !h.detalle.includes(s));
   const r2 = await ejecutar(admin);
@@ -82,11 +83,12 @@ test('tope de la corrida: si el plan necesita mas que maxConsultas, no consulta'
 test('candado: «Ejecutar ahora» no corre si hay otra corrida; interruptor ilegible: no corre', async () => {
   let soltar;
   const lento = () => new Promise((ok) => { soltar = () => ok({ status: 200, json: () => Promise.resolve({ code: 200, msg: '0 records were found' }) }); });
-  const env = { NODE_ENV: 'test', WOLKVOX_MOBILIZE_TOKEN: TOKEN, WOLKVOX_MOBILIZE_SERVIDOR: SERVIDOR };
-  const primera = auto.ejecutarAhora({ db, env, ahora: new Date('2026-11-03T12:00:00Z'), fetchImpl: lento, leerInterruptor: async () => true });
+  const env = { NODE_ENV: 'test', WOLKVOX_ORLANT_TOKEN: TOKEN, WOLKVOX_ORLANT_SERVIDOR: SERVIDOR };
+  const O = { destino: 'orlant_replica', leerValor: async () => 'flujo' };
+  const primera = auto.ejecutarAhora({ ...O, db, env, ahora: new Date('2026-11-03T12:00:00Z'), fetchImpl: lento, leerInterruptor: async () => true });
   await new Promise((ok) => setImmediate(ok));
   await new Promise((ok) => setImmediate(ok));
-  assert.equal((await auto.ejecutarAhora({ db, env, leerInterruptor: async () => true })).estado, 'ocupada');
+  assert.equal((await auto.ejecutarAhora({ ...O, db, env, leerInterruptor: async () => true })).estado, 'ocupada');
   while (!soltar) await new Promise((ok) => setImmediate(ok));
   // Responde todos los dias pendientes.
   const fin = primera.then((x) => x);
@@ -94,7 +96,7 @@ test('candado: «Ejecutar ahora» no corre si hay otra corrida; interruptor ileg
   const r = await fin;
   clearInterval(intervalo);
   assert.equal(r.estado === 'ok' || r.estado === 'omitida', true, r.estado);
-  assert.equal((await auto.ejecutarAhora({ db, env, leerInterruptor: async () => { throw new Error('x'); } })).estado, 'sin_interruptor');
+  assert.equal((await auto.ejecutarAhora({ ...O, db, env, leerInterruptor: async () => { throw new Error('x'); } })).estado, 'sin_interruptor');
 });
 
 test('navegador: wvAutoFilas solo pinta conteos y codigos', () => {

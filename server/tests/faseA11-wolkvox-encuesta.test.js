@@ -7,7 +7,7 @@ const assert = require('node:assert/strict');
 const { db } = require('./helpers');
 const M = require('../wolkvox-modulos');
 
-const R = 'MOBILIZE PRUEBAS API';
+const R = 'MOBILIZE'; // Fase W10: antes la réplica «MOBILIZE PRUEBAS API» (borrada); ahora el destino real
 const ENV = { NODE_ENV: 'test', WOLKVOX_MOBILIZE_TOKEN: 'TOKEN-FALSO-A11-no-es-real-0123456789', WOLKVOX_MOBILIZE_SERVIDOR: 'servidorfalsoa11' };
 const AHORA = new Date('2026-11-04T12:30:00Z');
 const ANI = '3000000111', DNI = 'DNI-INVENTADO-111', CLIENTE = 'CC-INVENTADA-111', COMENTARIO = 'comentario inventado secreto 111', CONN = 'CONN-INVENTADO-111';
@@ -37,22 +37,23 @@ test('hoja de la encuesta: solo asesor, skill, fecha y Q01–Q04', () => {
 test('corrida: una consulta por mes, reemplaza el mes de la réplica con respaldo, sin datos sensibles; MOBILIZE real intacto', async () => {
   const ins = db.prepare("INSERT INTO encuestas (campana, fecha, agente, skill, q1, q2, q3, q4, comentario, connId, hora, telefono, archivoNombre, cargadoPorNombre, createdAt) VALUES (?, ?, 'X', 'S', 1, 1, 1, 1, '', '', '', '', 'x', 'x', 'x')");
   ins.run(R, '2026-11-25'); // vieja del mes: sale (mes completo)
-  ins.run('MOBILIZE', '2026-11-02');
+  ins.run('ORLANT', '2026-11-02');
   const versiones = db.prepare('SELECT COUNT(*) n FROM cargas_versiones WHERE campana = ?').get(R).n;
   const f = falso(DATA);
-  const r = await M.correrModulo('encuesta', { db, env: ENV, ahora: AHORA, fetchImpl: f.fetch, franja: 'a11-1' });
+  const r = await M.correrModulo('encuesta', { db, destino: 'real', env: ENV, ahora: AHORA, fetchImpl: f.fetch, franja: 'a11-1' });
   assert.equal(r.estado, 'ok', r.detalle);
   assert.equal(f.urls.length, 1);
   assert.deepEqual(Object.fromEntries(new URL(f.urls[0]).searchParams), { api: 'diagram_4', date_ini: '20261101000000', date_end: '20261103235959' });
   const filas = filasRep();
   assert.deepEqual(filas.map((x) => [x.fecha, x.hora, x.q1, x.q3]), [['2026-11-02', '08:15', 9, 1], ['2026-11-03', '10:20', 3, 2]]);
   const txt = JSON.stringify(filas);
-  for (const x of [ANI, DNI, CLIENTE, COMENTARIO, CONN]) assert.ok(!txt.includes(x), 'se guardó ' + x);
+  for (const x of [ANI, DNI, CLIENTE, COMENTARIO]) // Fase W10: el real sí guarda el CONN_ID (Fase A33)
+  assert.ok(!txt.includes(x), 'se guardó ' + x);
   assert.ok(db.prepare('SELECT COUNT(*) n FROM cargas_versiones WHERE campana = ?').get(R).n > versiones, 'respaldo');
-  assert.equal(db.prepare("SELECT COUNT(*) n FROM encuestas WHERE campana = 'MOBILIZE' AND fecha = '2026-11-02'").get().n, 1);
+  assert.equal(db.prepare("SELECT COUNT(*) n FROM encuestas WHERE campana = 'ORLANT' AND fecha = '2026-11-02'").get().n, 1);
 });
 
-test('el módulo está en la lista y arranca apagado (solo corre si está en WOLKVOX_AUTO_MODULOS)', () => {
+test('el módulo está en la lista y arranca apagado (solo corre si está en WOLKVOX_REAL_MODULOS)', () => {
   assert.equal(M.MODULOS.encuesta.api, 'diagram_4');
   assert.deepEqual(M.modulosDe('flujo_hora,cdr'), ['flujo_hora', 'cdr']);
   assert.deepEqual(M.modulosDe('flujo_hora,cdr,encuesta'), ['flujo_hora', 'cdr', 'encuesta']);

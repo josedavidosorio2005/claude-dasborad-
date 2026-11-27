@@ -1,3 +1,4 @@
+// Fase W10: la réplica de MOBILIZE se borró; queda solo el MOBILIZE real (35 consultas, 6 corridas).
 // faseQA-wolkvox-cambio-mes.test.js — Revisión del 25/11/2026: la corrida del 01/12 a las 00:05 (hora de
 // Colombia), la primera del mes, de punta a punta con el programador real (iniciar/tick). Con la réplica y el
 // MOBILIZE real encendidos y los 5 módulos de cada uno:
@@ -80,7 +81,7 @@ db.prepare('INSERT INTO trafico_skill_mapeo (skillName, campana, sede, createdAt
 test('plan del 01/12: a las 00:05 y a las 7:00 cierra noviembre completo; diciembre todavía no tiene días', () => {
   assert.equal(auto.franjaActual(MEDIANOCHE), '2026-12-01 00');
   assert.equal(auto.franjaActual(SIETE), '2026-12-01 07');
-  for (const destino of ['replica', 'real']) {
+  for (const destino of ['real']) {
     for (const ahora of [MEDIANOCHE, SIETE]) {
       const plan = auto.planDe({ ahora, destino });
       assert.deepEqual(plan.map((m) => [m.mes, m.dias.length, m.dias[0], m.dias[m.dias.length - 1]]), [['2026-11', 30, '2026-11-01', '2026-11-30']], destino);
@@ -88,7 +89,7 @@ test('plan del 01/12: a las 00:05 y a las 7:00 cierra noviembre completo; diciem
   }
 });
 
-test('01/12 00:05: réplica y real cierran noviembre (30 días) con respaldo, 70 consultas y nada de diciembre', async () => {
+test('01/12 00:05: el real cierra noviembre (30 días) con respaldo, 35 consultas y nada de diciembre', async () => {
   const octubre0 = JSON.stringify(db.prepare("SELECT fecha, totalLlamadas FROM calidad_nivel_servicio_diario WHERE campana = ? AND fecha LIKE '2026-10%'").all(REAL));
   const falso = crearFalso();
   await tick(MEDIANOCHE, falso);
@@ -96,18 +97,18 @@ test('01/12 00:05: réplica y real cierran noviembre (30 días) con respaldo, 70
   // Consultas: 2 destinos × (30 de skill_1 + 5 módulos), todas de noviembre.
   const cuenta = {};
   for (const p of falso.pedidos) cuenta[p.api] = (cuenta[p.api] || 0) + 1;
-  assert.deepEqual(cuenta, { skill_1: 60, skill_7: 2, cdr_1: 2, diagram_4: 2, cdr_5: 2, skill_2: 2 });
+  assert.deepEqual(cuenta, { skill_1: 30, skill_7: 1, cdr_1: 1, diagram_4: 1, cdr_5: 1, skill_2: 1 });
   assert.ok(falso.pedidos.every((p) => p.ini.startsWith('202611') && p.fin.startsWith('202611')), 'ninguna consulta pide diciembre');
   for (const p of falso.pedidos.filter((x) => x.api !== 'skill_1')) assert.deepEqual([p.ini, p.fin], ['20261101000000', '20261130235959'], p.api + ': el mes completo');
-  assert.equal(wv.usoDelDia(db, auto.OPERACION, MEDIANOCHE), 70, 'uso del día');
+  assert.equal(wv.usoDelDia(db, auto.OPERACION, MEDIANOCHE), 35, 'uso del día');
 
   // Corridas: las 12 (Flujo + 5 módulos, réplica y real) quedan «ok».
   const corridas = db.prepare("SELECT franja, estado FROM wolkvox_auto_corridas WHERE franja LIKE '2026-12-01 00%' ORDER BY franja").all();
-  assert.equal(corridas.length, 12, JSON.stringify(corridas));
+  assert.equal(corridas.length, 6, JSON.stringify(corridas));
   assert.ok(corridas.every((c) => c.estado === 'ok'), JSON.stringify(corridas));
 
   // Datos: noviembre con sus 30 días en las 6 tablas, en los dos destinos; diciembre vacío.
-  for (const c of [REP, REAL]) {
+  for (const c of [REAL]) {
     for (const t of TABLAS) {
       assert.equal(diasDistintos(t, c), 30, c + ' · ' + t + ': los 30 días de noviembre');
       assert.equal(porMes(t, c, '2026-12'), 0, c + ' · ' + t + ': nada de diciembre');
@@ -122,7 +123,7 @@ test('01/12 00:05: réplica y real cierran noviembre (30 días) con respaldo, 70
   assert.equal(JSON.stringify(db.prepare("SELECT fecha, totalLlamadas FROM calidad_nivel_servicio_diario WHERE campana = ? AND fecha LIKE '2026-10%'").all(REAL)), octubre0, 'octubre del real intacto');
 
   // Historial: el Flujo de cada destino dice «2026-11: 30 días».
-  for (const c of [REP, REAL]) {
+  for (const c of [REAL]) {
     const h = db.prepare("SELECT detalle FROM historial WHERE accion = 'WOLKVOX_AUTO' AND detalle LIKE ? ORDER BY id DESC").get(c + ' · skill_1 · 2026-11: 30 días%');
     assert.ok(h, c + ': historial del Flujo con 30 días');
   }
@@ -135,8 +136,8 @@ test('01/12 7:00: vuelve a cerrar noviembre igual (mismas filas, sin duplicar) y
   assert.equal(r1.pedidos.length, 0, 'la franja de las 00:05 ya corrió: no consulta otra vez');
   const r2 = crearFalso();
   await tick(SIETE, r2);
-  assert.equal(r2.pedidos.length, 70);
+  assert.equal(r2.pedidos.length, 35);
   assert.equal(foto(), antes, 'mismas filas por tabla y destino');
   for (const t of TABLAS) assert.equal(porMes(t, REAL, '2026-12') + porMes(t, REP, '2026-12'), 0, t);
-  assert.equal(wv.usoDelDia(db, auto.OPERACION, SIETE), 140);
+  assert.equal(wv.usoDelDia(db, auto.OPERACION, SIETE), 70);
 });

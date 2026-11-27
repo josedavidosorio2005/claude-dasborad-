@@ -8,6 +8,7 @@ const assert = require('node:assert/strict');
 const path = require('path');
 const bcrypt = require('bcryptjs');
 const { request, app, db, tokenFor, MASTER_PASSWORD } = require('./helpers');
+require('./fixture-campana-ejemplo-malla').montar(); // Fase W10: la réplica solo como campaña de ejemplo
 const P = require('../puntualidad');
 const auto = require('../wolkvox-auto');
 const H = require('../../public/js/horarios-logic.js');
@@ -77,28 +78,6 @@ test('reemplaza solo los días del archivo; otro mes o sin permiso: no carga', a
   assert.equal((await request(app).post('/api/malla/horarios/carga').set(HD(tk.admin)).send({ campana: 'SURA', mes: '2030-04', filas: dia5.filas })).status, 400);
   for (const k of ['supm', 's1']) assert.ok([403, 404].includes((await request(app).post('/api/malla/horarios/carga').set(HD(tk[k])).send({ campana: 'SURA', mes: '2030-03', filas: dia5.filas })).status), k);
   assert.equal((await request(app).post('/api/malla/horarios/carga').set(HD(tk.admin)).send({ campana: 'ORLANT', mes: '2030-03', filas: dia5.filas })).status, 404, 'campaña sin puntualidad');
-});
-
-test('el archivo y la API (agent_7) llegan al MISMO cálculo', async () => {
-  const sesiones = [
-    { fecha: '2030-05-06', id: '801', nombre: 'Agente Inventado Ocho', login: '08:00:01', logout: '12:00:00' },
-    { fecha: '2030-05-06', id: '801', nombre: 'Agente Inventado Ocho', login: '12:30:00', logout: '16:40:00' },
-    { fecha: '2030-05-06', id: '802', nombre: 'Agente Inventado Nueve', login: '07:58:00', logout: '17:01:00' },
-  ];
-  const OP = P.config('MOBILIZE PRUEBAS API').operacion;
-  const foto = () => db.prepare('SELECT fecha, agentId, agentName, primerLogin, ultimoLogout, sesiones, segundos FROM wolkvox_login_diario WHERE operacion = ? AND substr(fecha,1,7) = ? ORDER BY fecha, agentId').all(OP, '2030-05');
-  // API: agent_7 simulado (texto «AAAA-MM-DD HH:MM:SS»).
-  const fetchImpl = () => Promise.resolve({ status: 200, json: () => Promise.resolve({ code: 200, msg: '3 records were found', data: sesiones.map((s) => ({ agent_id: s.id, agent_name: s.nombre, date: s.fecha, login: s.fecha + ' ' + s.login, logout: s.fecha + ' ' + s.logout, login_time: '4:00:00' })) }) });
-  const env = { NODE_ENV: 'test', WOLKVOX_MOBILIZE_TOKEN: 'TOKEN-FALSO-367-no-es-real-0123456789', WOLKVOX_MOBILIZE_SERVIDOR: 'servidorfalso367' };
-  const r = await auto.correrLogin({ db, env, ahora: new Date('2030-05-07T15:00:00Z'), fetchImpl, franja: 'f367-api' });
-  assert.equal(r.estado, 'ok', r.detalle);
-  const porApi = foto();
-  db.prepare('DELETE FROM wolkvox_login_diario WHERE operacion = ? AND substr(fecha,1,7) = ?').run(OP, '2030-05');
-  // Archivo: las mismas sesiones como serial de Excel.
-  const p = H.horariosFilasDesdeHoja([ENC].concat(sesiones.map((s) => [serial(s.fecha + ' 00:00:00'), Number(s.id), serial(s.fecha + ' ' + s.login), serial(s.fecha + ' ' + s.logout), 4 / 24, s.nombre, 1])));
-  const c = await request(app).post('/api/malla/horarios/carga').set(HD(tk.admin)).send({ campana: 'MOBILIZE PRUEBAS API', mes: '2030-05', filas: p.filas });
-  assert.equal(c.status, 201, JSON.stringify(c.body));
-  assert.deepEqual(foto(), porApi);
 });
 
 test('interfaz: la sección «Horarios» y el resultado escapan los nombres', () => {

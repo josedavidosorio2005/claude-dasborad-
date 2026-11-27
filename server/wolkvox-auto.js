@@ -1,4 +1,6 @@
 // wolkvox-auto.js — Plan A de Wolkvox, fase A1 (18/11/2026): CONSULTA AUTOMATICA desde el
+// [Fase W10, 26/11/2026: la réplica «MOBILIZE PRUEBAS API» se borró; hoy corren el MOBILIZE real y las réplicas
+// de ORLANT y Aurora, cada una con su interruptor. Lo de abajo es la historia de la fase A1.]
 // servidor. Dos veces al dia (7:00 a.m. y 1:00 p.m., hora Colombia) pide `skill_1` un dia por
 // consulta, del dia 1 del mes en curso hasta ayer (y, los dias 1 a 3, todo el mes anterior), y
 // reemplaza el Flujo de ese mes en la replica oculta «MOBILIZE PRUEBAS API». SOLO esa replica y
@@ -22,11 +24,9 @@
 
 const wv = require('./wolkvox');
 const ing = require('./wolkvox-ingesta');
-const { esCampanaInterna } = require('./clientes-registro');
 const { fechaLimitesHoyColombia } = require('./fecha-limites');
-const D = require('./wolkvox-destinos'); // Fase A24: réplica o MOBILIZE real (lista cerrada)
+const D = require('./wolkvox-destinos'); // Fase A24: lista cerrada de destinos (real y réplicas)
 
-const CAMPANA = ing.CAMPANA_INGESTA; // 'MOBILIZE PRUEBAS API'
 const OPERACION = 'MOBILIZE';
 const API = 'skill_1';
 // Fase A9 (pedido de Edwin 18/11): además 00:05, para cerrar el día anterior (el plan pide hasta
@@ -277,7 +277,7 @@ async function correrUnaVez(opts) {
     return res;
   };
 
-  if (!D.campanaLista(db, dest)) { res.estado = 'omitida'; partes.push(dest.clave === 'replica' ? 'la réplica no existe' : 'la campaña no existe o es interna'); return terminar(); }
+  if (!D.campanaLista(db, dest)) { res.estado = 'omitida'; partes.push(dest.interna ? 'la réplica no existe' : 'la campaña no existe o es interna'); return terminar(); }
   const OPERACION = dest.operacion; // Fase N5: del destino (hoy MOBILIZE en los dos)
   const cred = opts.credenciales || wv.credenciales(OPERACION, env);
   if (!cred) { res.estado = 'omitida'; partes.push('falta el token o el servidor de Wolkvox'); return terminar(); }
@@ -372,89 +372,8 @@ async function correrUnaVez(opts) {
   return terminar();
 }
 
-// ── Fase 363 (Malla fase 2): login/logout de los agentes (agent_7) ──
-// Autorizacion escrita del usuario (18/11): solo para la replica «MOBILIZE PRUEBAS API» al
-// principio. Interruptor propio WOLKVOX_LOGIN_ACTIVO=1 (SSM). Una consulta por tramo: del 1 del mes
-// en curso hasta AHORA (los logins de hoy cuentan) y, los dias 1 a 3, todo el mes anterior. Todo o
-// nada por tramo; sin reintentos; Historial WOLKVOX_LOGIN solo con conteos.
-const API_LOGIN = 'agent_7';
-function planLogin(ahora) {
-  ahora = ahora || new Date();
-  const hoy = fechaLimitesHoyColombia(ahora);
-  const d = new Date(ahora.getTime() - 5 * 3600 * 1000);
-  const hora = String(d.getUTCHours()).padStart(2, '0') + ':' + String(d.getUTCMinutes()).padStart(2, '0') + ':' + String(d.getUTCSeconds()).padStart(2, '0');
-  const mes = hoy.slice(0, 7);
-  const out = [];
-  if (Number(hoy.slice(8, 10)) <= 3) {
-    const ant = _mesAnterior(mes);
-    out.push({ mes: ant, desde: ant + '-01', hasta: ing.ultimoDiaDelMes(ant), hastaMomento: ing.ultimoDiaDelMes(ant) + ' 23:59:59' });
-  }
-  out.push({ mes, desde: mes + '-01', hasta: hoy, hastaMomento: hoy + ' ' + hora });
-  return out;
-}
-async function correrLogin(opts) {
-  const P = require('./puntualidad');
-  const { db } = opts;
-  const env = opts.env || process.env;
-  const ahora = opts.ahora || new Date();
-  const franja = (opts.franja || 'manual ' + new Date().toISOString()) + ' login';
-  asegurarTablas(db);
-  if (db.prepare('INSERT OR IGNORE INTO wolkvox_auto_corridas (franja, inicio, estado) VALUES (?, ?, ?)').run(franja, new Date().toISOString(), 'corriendo').changes === 0) return { estado: 'ya_corrida', consultas: 0 };
-  const t0 = Date.now();
-  const res = { estado: 'ok', consultas: 0, tramos: [] };
-  const partes = [];
-  const terminar = () => {
-    const detalle = (opts.etiqueta ? opts.etiqueta + ' · ' : '') + CAMPANA + ' · ' + API_LOGIN + ' · ' + (partes.join(' · ') || 'nada que pedir') + ' · ' + res.consultas + ' consultas · ' + ((Date.now() - t0) / 1000).toFixed(1) + ' s';
-    db.prepare('UPDATE wolkvox_auto_corridas SET fin = ?, estado = ?, consultas = ?, detalle = ? WHERE franja = ?').run(new Date().toISOString(), res.estado, res.consultas, detalle, franja);
-    console.log('[wolkvox-auto] ' + detalle);
-    if (typeof opts.logEvent === 'function') { try { opts.logEvent('WOLKVOX_LOGIN', null, opts.actor || QUIEN, detalle); } catch (e) { console.error('[wolkvox-auto] no se pudo escribir en el Historial'); } }
-    res.detalle = detalle;
-    return res;
-  };
-  const cfg = P.config(CAMPANA);
-  if (!cfg || !esCampanaInterna(db, CAMPANA)) { res.estado = 'omitida'; partes.push('la réplica no existe o no tiene puntualidad'); return terminar(); }
-  const cred = opts.credenciales || wv.credenciales(cfg.operacion, env);
-  if (!cred) { res.estado = 'omitida'; partes.push('falta el token o el servidor de Wolkvox'); return terminar(); }
-  const tramos = planLogin(ahora);
-  if (wv.usoDelDia(db, cfg.operacion, ahora) + tramos.length > wv.topeDiario(env)) { res.estado = 'omitida'; partes.push('no alcanza el tope del día'); return terminar(); }
-  for (const t of tramos) {
-    let cuerpo;
-    try {
-      res.consultas++;
-      cuerpo = (await wv.consultarReporte({
-        db, operacion: cfg.operacion, api: API_LOGIN, env, ahora, fetchImpl: opts.fetchImpl, credenciales: cred,
-        dateIni: wv.fechaWolkvox(t.desde, '00:00:00'), dateEnd: wv.fechaWolkvox(t.hasta, t.hastaMomento.slice(11)),
-      })).cuerpo;
-    } catch (e) {
-      if (!(e instanceof wv.WolkvoxError)) throw e;
-      if (e.httpStatus === 404 && SIN_REGISTROS.test(e.wolkvoxMsg || '')) cuerpo = { data: [] };
-      else {
-        res.estado = res.tramos.length ? 'parcial' : 'error';
-        res.error = e.codigo;
-        partes.push(t.mes + ': error ' + e.codigo + (e.causa ? ' (' + e.causa + ')' : '') + (e.httpStatus ? ' ' + e.httpStatus : '') + ', sin cambios, sin reintento');
-        return terminar();
-      }
-    }
-    let data = cuerpo && cuerpo.data;
-    if ((data === undefined || data === null || data === '') && SIN_REGISTROS.test(String((cuerpo && cuerpo.msg) || ''))) data = [];
-    const r = P.resumirSesiones(data);
-    if (r.error) {
-      res.estado = 'error';
-      res.error = 'respuesta_invalida';
-      partes.push(t.mes + ': respuesta no esperada (' + r.error + '; campos: ' + wv.resumenSinValores(cuerpo).campos.join(',').slice(0, 300) + '), sin cambios');
-      return terminar();
-    }
-    // Sin sesiones: no se toca lo guardado ni se mueve el «hasta» (como el Flujo con un mes vacío);
-    // si no, un día sin datos de Wolkvox se vería como «Sin ingreso».
-    if (!r.dias.size) { res.tramos.push({ mes: t.mes, filas: 0, agentes: 0, sesiones: 0 }); partes.push(t.mes + ': Wolkvox no trajo sesiones, sin cambios'); continue; }
-    const n = P.guardarResumen(db, cfg.operacion, t.desde, t.hasta, r.dias, t.hastaMomento, new Date().toISOString());
-    const agentesN = new Set([...r.dias.values()].map((x) => x.agentId)).size;
-    const sesiones = [...r.dias.values()].reduce((s, x) => s + x.sesiones, 0);
-    res.tramos.push({ mes: t.mes, filas: n, agentes: agentesN, sesiones });
-    partes.push(t.mes + ': ' + sesiones + ' sesiones, ' + agentesN + ' agentes, ' + n + ' agente-días');
-  }
-  return terminar();
-}
+// Fase W10 (26/11/2026): el login de agentes por API (agent_7, Fase 363, interruptor WOLKVOX_LOGIN_ACTIVO) era
+// solo de la réplica de MOBILIZE y se retiró con ella. La puntualidad por ARCHIVO (SURA) sigue en puntualidad.js.
 
 // Candado comun: el programador y «Ejecutar ahora» nunca corren a la vez.
 let _enCurso = false;
@@ -469,16 +388,14 @@ async function ejecutarAhora(opts) {
   _enCurso = true;
   try {
     const env = opts.env || process.env;
-    // Fase N6: el destino interno (réplica de MOBILIZE, por defecto, o de ORLANT). Nunca un real.
+    // Fase N6: el destino interno (una réplica: ORLANT o Aurora desde la Fase W10). Nunca un real.
+    // Fase W10: sin destino ya no hay réplica por defecto: D.destino lanza.
     const dest = D.destino(opts.destino);
     if (!dest.interna) return { estado: 'no_permitido' };
-    const esOrlant = dest !== D.DESTINOS.replica;
     let activo = false;
-    // La réplica de ORLANT exige SU interruptor para todo (también para un módulo suelto).
-    if (esOrlant || !opts.modulo || opts.modulo === 'flujo' || opts.modulo === 'todos') {
-      try { activo = await (opts.leerInterruptor || leerInterruptor)(env, dest.interruptor); } catch (e) { return { estado: 'sin_interruptor' }; }
-    }
-    if (esOrlant && !activo) return { estado: 'apagada' };
+    // Cada réplica exige SU interruptor para todo (también para un módulo suelto).
+    try { activo = await (opts.leerInterruptor || leerInterruptor)(env, dest.interruptor); } catch (e) { return { estado: 'sin_interruptor' }; }
+    if (!activo) return { estado: 'apagada' };
     if (opts.modulo && opts.modulo !== 'todos' && !D.moduloPermitido(dest, opts.modulo)) return { estado: 'no_permitido' };
     // Fase A20: `mes` (AAAA-MM, un mes pasado completo) cambia el plan; la etiqueta lo dice.
     const etiqueta = 'Ejecutar ahora' + (opts.mes ? ' (mes ' + opts.mes + ')' : '');
@@ -507,7 +424,7 @@ async function ejecutarAhora(opts) {
       return out;
     }
     if (opts.modulo && opts.modulo !== 'flujo') {
-      // Paso 1+ (llenar la réplica): el módulo tiene que estar en WOLKVOX_AUTO_MODULOS.
+      // Un módulo suelto: tiene que estar en la lista de módulos de la réplica.
       const M = require('./wolkvox-modulos');
       let lista;
       try { lista = M.modulosDe(await (opts.leerValor || leerValor)(env, dest.modulos)); } catch (e) { return { estado: 'sin_interruptor' }; }
@@ -545,24 +462,10 @@ function iniciar(db, deps) {
     if (franjaYaCorrida(db, franja)) return null;
     _enCurso = true;
     try {
-      let activo = false;
-      try { activo = await leer(env); } catch (e) {
-        console.error('[wolkvox-auto] no se pudo leer el interruptor en SSM (' + (e && e.name ? String(e.name).slice(0, 60) : 'error') + '); no se consulta');
-        return null;
-      }
-      let r = null;
-      if (activo) r = await correrUnaVez({ db, env, ahora, franja, fetchImpl: deps.fetchImpl, logEvent: deps.logEvent });
-      // Fase 363: login de agentes (agent_7), con su propio interruptor. Apagado: no deja rastro.
-      let login = false;
-      try { login = await leer(env, 'WOLKVOX_LOGIN_ACTIVO'); } catch (e) { login = false; }
-      if (login) await correrLogin({ db, env, ahora, franja, fetchImpl: deps.fetchImpl, logEvent: deps.logEvent });
-      // Llenar la réplica: módulos encendidos en WOLKVOX_AUTO_MODULOS (lista). Apagado: no deja rastro.
-      const M = require('./wolkvox-modulos');
-      let mods = [];
-      try { mods = M.modulosDe(await (deps.leerValor || leerValor)(env, 'WOLKVOX_AUTO_MODULOS')); } catch (e) { mods = []; }
-      for (const m of mods) await M.correrModulo(m, { db, env, ahora, franja, fetchImpl: deps.fetchImpl, logEvent: deps.logEvent });
-      // Fase A24: el MOBILIZE real, con su propio interruptor (después de la réplica).
-      await correrReal({ db, env, ahora, franja, deps, leer });
+      // Fase W10: ya no hay réplica de MOBILIZE (ni su interruptor WOLKVOX_AUTO_ACTIVO, ni su lista
+      // WOLKVOX_AUTO_MODULOS, ni el login por agent_7). Cada destino lee SU interruptor; apagado: no deja rastro.
+      // Fase A24: el MOBILIZE real, con su propio interruptor.
+      const r = await correrReal({ db, env, ahora, franja, deps, leer });
       // Fase N6: la réplica de ORLANT, con SU interruptor (apagada: no deja rastro).
       await correrReplicaOrlant({ db, env, ahora, franja, deps, leer });
       // Fase AU2: la réplica de Aurora, con SU interruptor y SU lista (apagada: no deja rastro).
@@ -676,33 +579,26 @@ async function rellenarHuecoReal(opts) {
   }
 }
 
-// Para /wolkvox/estado (solo admin): horarios, interruptor al arrancar y la ultima corrida.
+// Para /wolkvox/estado (solo admin): horarios, interruptor al arrancar y la última corrida DEL DESTINO.
+// Fase W10: siempre de un destino (el MOBILIZE real o una réplica); sin destino, D.destino lanza.
 function estado(db, env, destino) {
   env = env || process.env;
-  // Fase N6: el estado de la réplica de ORLANT (su interruptor, sus módulos y SU última corrida).
-  if (destino && D.destino(destino) !== D.DESTINOS.replica) {
-    const d = D.destino(destino);
-    asegurarTablas(db);
-    const ultima = db.prepare('SELECT franja, inicio, fin, estado, consultas, detalle FROM wolkvox_auto_corridas WHERE detalle LIKE ? ORDER BY inicio DESC LIMIT 1').get('%' + d.campana + ' · %') || null;
-    return {
-      horariosColombia: HORAS_COLOMBIA.map((h) => String(h).padStart(2, '0') + (h === 0 ? ':0' + MINUTO_MEDIANOCHE : ':00')),
-      reporte: API, campana: d.campana, interruptor: d.interruptor, listaModulos: d.modulos,
-      modulosPermitidos: d.modulosPermitidos ? d.modulosPermitidos.slice() : null,
-      activoAlArrancar: _activo(env[d.interruptor]), ultimaCorrida: ultima,
-    };
-  }
+  const d = D.destino(destino);
+  asegurarTablas(db);
+  // «%MOBILIZE · %» no coincide con «… PRUEBAS API · …»: cada destino ve solo SUS corridas.
+  const ultima = db.prepare('SELECT franja, inicio, fin, estado, consultas, detalle FROM wolkvox_auto_corridas WHERE detalle LIKE ? ORDER BY inicio DESC LIMIT 1').get('%' + d.campana + ' · %') || null;
   return {
     horariosColombia: HORAS_COLOMBIA.map((h) => String(h).padStart(2, '0') + (h === 0 ? ':0' + MINUTO_MEDIANOCHE : ':00')),
-    reporte: API,
-    activoAlArrancar: _activo(env.WOLKVOX_AUTO_ACTIVO),
-    ultimaCorrida: ultimaCorrida(db),
-    real: { campana: D.CAMPANA_REAL, desdeMes: D.DESDE_MES_REAL, interruptor: D.DESTINOS.real.interruptor, activoAlArrancar: _activo(env.WOLKVOX_REAL_ACTIVO) }, // Fase A24
+    reporte: API, campana: d.campana, interruptor: d.interruptor, listaModulos: d.modulos,
+    modulosPermitidos: d.modulosPermitidos ? d.modulosPermitidos.slice() : null,
+    desdeMes: d.desdeMes || null,
+    activoAlArrancar: _activo(env[d.interruptor]), ultimaCorrida: ultima,
   };
 }
 
 module.exports = {
-  CAMPANA, OPERACION, API, HORAS_COLOMBIA, ARCHIVO, QUIEN, ACCION_HISTORIAL, MAX_CONSULTAS_POR_CORRIDA,
+  OPERACION, API, HORAS_COLOMBIA, ARCHIVO, QUIEN, ACCION_HISTORIAL, MAX_CONSULTAS_POR_CORRIDA,
   horaColombia, franjaActual, plan, convertirFila, filasDelDia, aPorcentaje, aSegundos, aEntero,
-  asegurarTablas, franjaYaCorrida, ultimaCorrida, planMes, planDe, MESES_ATRAS_MAX, leerInterruptor, correrUnaVez, iniciar, estado, ejecutarAhora, correrLogin, planLogin, API_LOGIN,
+  asegurarTablas, franjaYaCorrida, ultimaCorrida, planMes, planDe, MESES_ATRAS_MAX, leerInterruptor, correrUnaVez, iniciar, estado, ejecutarAhora,
   leerValor, SIN_REGISTROS, correrReal, rellenarHuecoReal, correrReplicaOrlant, correrReplicaInterna,
 };

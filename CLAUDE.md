@@ -149,6 +149,20 @@ asumir en qué quedó una fase anterior.
   Historial. Volver a encender la réplica (o lo que colgaba de ella:
   «Ejecutar ahora», puntualidad por `agent_7`, entrada del agente de la
   oficina) = OK nuevo del usuario.
+- **Réplica «MOBILIZE PRUEBAS API» BORRADA (pedido del usuario, 26/11/2026,
+  Fase W10, v1.284.0):** el destino `replica` salió del código (sin
+  destino, `D.destino()` lanza), con la entrada del agente de la oficina
+  (B1, `POST /api/wolkvox/agente/flujo`) y el login por API (`agent_7`,
+  Fase 363). La migración `borrarReplicaMobilizeApi` (`server/db.js`)
+  hace un respaldo (`VACUUM INTO`, carpeta `antes-de-borrar/`) y después
+  borra su tablero, su fila y sus datos en una sola transacción; si cambia
+  una cifra del MOBILIZE real, se deshace. El Historial no se toca. Las
+  excepciones B1, A1 (réplica), Fase 363 (`agent_7`) y «llenar la réplica»
+  quedan sin efecto. El panel de Wolkvox (estado, Probar, Diagnóstico)
+  pasó al **MOBILIZE real**, sin «Ejecutar ahora»; se revisa con
+  `/api/wolkvox/estado?campana=MOBILIZE`. Dry-run: `GET
+  /api/wolkvox/replica-mobilize/inventario` (solo conteos). El PR lo
+  mergea el usuario tras su «OK borrar».
 - **Excepción escrita (usuario, 20/11/2026, Wolkvox al MOBILIZE real,
   Fase A24, `docs/plan-api-wolkvox.md` §10.19–10.20):** la consulta
   automática puede pedir y REEMPLAZAR en el **MOBILIZE real**, **desde

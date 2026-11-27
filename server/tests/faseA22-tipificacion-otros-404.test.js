@@ -23,13 +23,13 @@ test('vacía, TIMEOUTACW (cualquier mayúscula) → Otros_motivos; las demás no
 });
 
 test('abandonadas: un 404 de skill_2 = sin registros, el mes no cambia y la corrida es ok', async () => {
-  const R = 'MOBILIZE PRUEBAS API';
-  db.prepare("INSERT INTO llamadas_abandonadas (campana, fecha, skill, archivoNombre, cargadoPorNombre, createdAt) VALUES (?, '2026-09-10', 'X', 'x', 'x', 'x')").run(R);
+  const R = 'MOBILIZE'; // Fase W10: antes la réplica «MOBILIZE PRUEBAS API» (borrada); ahora el destino real
+  db.prepare("INSERT INTO llamadas_abandonadas (campana, fecha, skill, archivoNombre, cargadoPorNombre, createdAt) VALUES (?, '2026-11-10', 'X', 'x', 'x', 'x')").run(R);
   const antes = db.prepare('SELECT COUNT(*) n FROM llamadas_abandonadas WHERE campana = ?').get(R).n;
   const urls = [];
   const r = await M.correrModulo('abandonadas', {
-    db, env: { NODE_ENV: 'test', WOLKVOX_MOBILIZE_TOKEN: 'TOKEN-FALSO-A22-0123456789', WOLKVOX_MOBILIZE_SERVIDOR: 'srvfalsoa22' },
-    ahora: new Date('2026-11-19T20:00:00Z'), mes: '2026-09', franja: 'a22-1',
+    db, destino: 'real', env: { NODE_ENV: 'test', WOLKVOX_MOBILIZE_TOKEN: 'TOKEN-FALSO-A22-0123456789', WOLKVOX_MOBILIZE_SERVIDOR: 'srvfalsoa22' },
+    ahora: new Date('2026-12-19T20:00:00Z'), mes: '2026-11', franja: 'a22-1',
     fetchImpl: (u) => { urls.push(u); return Promise.resolve({ status: 404, json: () => Promise.resolve({ code: 404, msg: 'Texto distinto inventado', data: [] }) }); },
   });
   assert.equal(urls.length, 1);
@@ -40,8 +40,8 @@ test('abandonadas: un 404 de skill_2 = sin registros, el mes no cambia y la corr
 
 test('otros reportes: un 404 sin «sin registros» sigue siendo error', async () => {
   const r = await M.correrModulo('no_conectadas', {
-    db, env: { NODE_ENV: 'test', WOLKVOX_MOBILIZE_TOKEN: 'TOKEN-FALSO-A22-0123456789', WOLKVOX_MOBILIZE_SERVIDOR: 'srvfalsoa22' },
-    ahora: new Date('2026-11-19T20:00:00Z'), mes: '2026-09', franja: 'a22-2',
+    db, destino: 'real', env: { NODE_ENV: 'test', WOLKVOX_MOBILIZE_TOKEN: 'TOKEN-FALSO-A22-0123456789', WOLKVOX_MOBILIZE_SERVIDOR: 'srvfalsoa22' },
+    ahora: new Date('2026-12-19T20:00:00Z'), mes: '2026-11', franja: 'a22-2',
     fetchImpl: () => Promise.resolve({ status: 404, json: () => Promise.resolve({ code: 404, msg: 'Texto distinto inventado', data: [] }) }),
   });
   assert.equal(r.estado, 'error');
