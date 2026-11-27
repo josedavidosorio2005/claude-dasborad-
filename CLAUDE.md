@@ -427,6 +427,12 @@ asumir en qué quedó una fase anterior.
   han llegado.
 - El repositorio es público por decisión del jefe (29/09/2026); no
   reportarlo como pendiente.
+- **Inventario de sistemas: cada elemento por separado, sin «equipo de mesa»**
+  (decisión de Edwin, 18/11/2026, confirmada el 27/11/2026). No armar equipos
+  de escritorio (torre + monitor + teclado + mouse + diadema) ni componentes
+  dentro de un equipo, aunque el HTML de Edwin los tenga: cada elemento se
+  asigna, devuelve y lleva su acta por separado. Volver a armarlos = pedido
+  nuevo y escrito de Edwin.
 
 ## Sistema de diseño
 
