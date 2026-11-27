@@ -24,8 +24,42 @@ async function ccEquidadPintar(cliente) {
   if (gen !== _ceq.gen || !r) return;
   _ceq.datos = r;
   c.innerHTML = ccEquidadHtml(r, _ceqAnio(), _ceq.base, _ceqMesActual(), ccEquidadEsAdmin());
-  c.hidden = false;
+  // Pedido de Edwin (27/11): la sección sale solo al abrir el cuadrito «Equidad profesionales» (como Calidad).
+  c.hidden = !(typeof _cc !== 'undefined' && _cc && _cc.modulo === CC_EQUIDAD_ID);
+  // Si las tarjetas ya están en pantalla, se vuelven a pintar con el cuadrito.
+  if (typeof _ccRender === 'function' && typeof _cc !== 'undefined' && _cc && !_cc.modulo && document.querySelector('#cc-body .cc-tarjetas')) _ccRender();
 }
+// Pedido de Edwin (27/11): cuadrito «Equidad profesionales» en las tarjetas del Centro de cargas de ORLANT, al lado
+// del de Calidad y con su mismo estilo: «Al día» o «Pendiente», meses con datos en el año y última carga.
+var CC_EQUIDAD_ID = 'equidad';
+// Resumen del año: { mesesConDatos, ultimaCarga, alDia }. «Al día»: cada base tiene el mes anterior cargado
+// (en un año que no es el actual, si tiene datos). Puro.
+function ccEquidadResumenAnio(r, anio, mesActual) {
+  anio = String(anio); mesActual = mesActual || new Date().toISOString().slice(0, 7);
+  var a = Number(mesActual.slice(0, 4)), m = Number(mesActual.slice(5, 7)) - 1; if (m === 0) { a -= 1; m = 12; }
+  var anterior = a + '-' + (m < 10 ? '0' : '') + m;
+  var meses = {}, ultima = '', grupos = (r && r.grupos) || [];
+  grupos.forEach(function (g) { (g.meses || []).forEach(function (x) {
+    if (String(x.mes).slice(0, 4) !== anio || !(x.citas > 0)) return;
+    meses[x.mes] = true; if (x.cargadoEn && x.cargadoEn > ultima) ultima = x.cargadoEn;
+  }); });
+  var n = Object.keys(meses).length;
+  var alDia = n > 0 && (anio !== mesActual.slice(0, 4) || (grupos.length > 0 && grupos.every(function (g) { return (g.meses || []).some(function (x) { return x.mes === anterior && x.citas > 0; }); })));
+  return { mesesConDatos: n, ultimaCarga: ultima, alDia: alDia };
+}
+function ccEquidadTarjetaHtml(r, anio, mesActual) {
+  var x = ccEquidadResumenAnio(r, anio, mesActual);
+  var bases = ((r && r.grupos) || []).map(function (g) { return g.nombre; });
+  var ic = typeof iconoSvg === 'function' ? iconoSvg('file-spreadsheet') : '';
+  return '<button type="button" class="cc-tarjeta cc-tarjeta-equidad" onclick="ccAbrirModulo(\'' + CC_EQUIDAD_ID + '\')">' +
+    '<span class="cc-tarjeta-top"><span class="cc-tarjeta-icono">' + ic + '</span><span class="cc-pill ' + (x.alDia ? 'cc-pill-ok' : 'cc-pill-falta') + '">' + (x.alDia ? 'Al día' : 'Pendiente') + '</span></span>' +
+    '<span class="cc-tarjeta-nombre">Equidad profesionales</span>' +
+    '<span class="cc-tarjeta-dato">' + (x.mesesConDatos ? x.mesesConDatos + (x.mesesConDatos === 1 ? ' mes' : ' meses') + ' con datos en ' + esc(String(anio)) : 'Nada cargado en ' + esc(String(anio))) + '</span>' +
+    (x.ultimaCarga ? '<span class="cc-tarjeta-sub">Última carga: ' + esc(centroFechaCorta(x.ultimaCarga)) + '</span>' : '') +
+    (bases.length ? '<span class="cc-tarjeta-sub">' + bases.length + ' bases: ' + esc(bases.join(', ')) + '</span>' : '') + '</button>';
+}
+// Abre la sección (ccAbrirModulo('equidad') → _ccRender): migas y «Módulos» arriba; la sección es #cc-equidad.
+function ccEquidadMostrar(visible) { var c = _ceqEl('cc-equidad'); if (c) c.hidden = !visible || !_ceq.datos; }
 function ccEquidadElegirBase(id) { _ceq.base = id; if (_ceq.datos) { var c = _ceqEl('cc-equidad'); if (c) c.innerHTML = ccEquidadHtml(_ceq.datos, _ceqAnio(), _ceq.base, _ceqMesActual(), ccEquidadEsAdmin()); } }
 
 // Los 12 meses del año con lo cargado de una base: [{ mes, registros, ultimaCarga, cargadoPor, archivo }]. Puro.
@@ -161,5 +195,5 @@ async function ccEquidadGuardarEntidades() {
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { ccEquidadHtml: ccEquidadHtml, ccEquidadResultadoHtml: ccEquidadResultadoHtml, ccEquidadMesesDelAnio: ccEquidadMesesDelAnio };
+  module.exports = { ccEquidadHtml: ccEquidadHtml, ccEquidadResultadoHtml: ccEquidadResultadoHtml, ccEquidadMesesDelAnio: ccEquidadMesesDelAnio, ccEquidadResumenAnio: ccEquidadResumenAnio, ccEquidadTarjetaHtml: ccEquidadTarjetaHtml, CC_EQUIDAD_ID: CC_EQUIDAD_ID };
 }
