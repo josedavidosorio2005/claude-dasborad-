@@ -3057,6 +3057,10 @@ circle.acp-l-ingresos{fill:var(--c-brand-blue)}circle.acp-l-asignaciones{fill:va
   .ac-rail-fab{right:12px;bottom:16px;padding:10px 16px}
   .ac-rail-fab span{position:static;width:auto;height:auto;overflow:visible;clip:auto}
 }
+/* Fase INV2 (HTML de Edwin): campo obligatorio que falta al registrar. */
+.modal-activos .ig.ac-falta input,.modal-activos .ig.ac-falta select,.modal-activos .ig.ac-falta textarea{border-color:var(--c-danger);box-shadow:0 0 0 1px var(--c-danger)}
+.modal-activos .ig.ac-falta label{color:var(--c-danger-text)}
+.ac-te-asig{margin:10px 0 2px}
 /* Fase 372 (E4): editor de formularios por tipo. */
 .ac-tipo-form{margin:0 0 12px}
 .ac-ce-lista{list-style:none;margin:8px 0 10px;padding:0;display:flex;flex-direction:column;gap:8px}

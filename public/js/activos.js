@@ -318,6 +318,7 @@ async function activosVer(id) {
 // Los inmuebles y los equipos administrables no se asignan.
 function activosGestionHtml(a, ambito) {
   if (ambito === 'inmuebles' || a.tipo === 'ADMINISTRABLE' || a.estado === 'de_baja') return '';
+  var tg = _acTipo(a.tipo); if (tg && tg.asignable === false && !a.agente) return ''; // Fase INV2: componente del inventario
   if (a.agente) {
     return '<div class="ac-gestion-cab"><p class="ac-gestion-txt">Asignado a <b>' + esc(a.agente.nombre) + '</b></p>' +
       '<button type="button" class="btn-cancel ac-btn" onclick="activosIrAgente(' + Number(a.agente.id) + ')">Ver agente</button></div>' +
@@ -611,8 +612,38 @@ async function activosCambiarEstado(ev) {
 // ── Registrar ──
 function activosCampoHtml(c) {
   var id = 'ac-d-' + c.k;
-  if (c.t === 'lista') return '<div class="ig"><label for="' + id + '">' + esc(c.l) + '</label><select id="' + id + '" data-campo="' + esc(c.k) + '"><option value="">—</option>' + c.o.map(function (o) { return '<option>' + esc(o) + '</option>'; }).join('') + '</select></div>';
-  return '<div class="ig"><label for="' + id + '">' + esc(c.l) + '</label><input type="' + (c.t === 'numero' ? 'number' : 'text') + '" id="' + id + '" data-campo="' + esc(c.k) + '"' + (c.t === 'numero' ? ' min="0" step="1"' : ' maxlength="120"') + '></div>';
+  if (c.t === 'lista') return '<div class="ig"><label for="' + id + '">' + esc(c.l) + '</label><select id="' + id + '" data-campo="' + esc(c.k) + '" aria-required="true"><option value="">—</option>' + c.o.map(function (o) { return '<option>' + esc(o) + '</option>'; }).join('') + '</select></div>';
+  return '<div class="ig"><label for="' + id + '">' + esc(c.l) + '</label><input type="' + (c.t === 'numero' ? 'number' : 'text') + '" id="' + id + '" data-campo="' + esc(c.k) + '" aria-required="true"' + (c.t === 'numero' ? ' min="0" step="1"' : ' maxlength="120"') + '></div>';
+}
+// Fase INV2 (HTML de Edwin): todos los campos son obligatorios. El mismo texto que el servidor (server/activos.js).
+function activosFaltanTxt(faltan) {
+  return 'Todos los campos son obligatorios. Falta' + (faltan.length > 1 ? 'n' : '') + ': ' + faltan.slice(0, 4).join(', ') + (faltan.length > 4 ? ' y ' + (faltan.length - 4) + ' más' : '') + '.';
+}
+// Propio (InConexion, o sin propietario) lleva precio; de un proveedor, renta mensual (como el servidor y el Panel).
+function activosEsPropio(p) { return !String(p || '').trim() || /inconexi[oó]n/i.test(String(p)); }
+function activosAjustarPrecioRenta() {
+  var propio = activosEsPropio((_acEl('ac-r-proveedor') || {}).value);
+  [['precio', propio], ['renta_mensual', !propio]].forEach(function (x) {
+    var el = _acEl('ac-d-' + x[0]); if (!el) return;
+    var ig = el.closest('.ig'); ig.classList.toggle('hidden', !x[1]);
+    if (!x[1]) { el.value = ''; ig.classList.remove('ac-falta'); el.removeAttribute('aria-invalid'); }
+  });
+}
+// Marca los campos vacíos que se ven (los ocultos, el código automático y lo que no aplica no cuentan) y devuelve sus nombres.
+function activosRevisarObligatorios(form) {
+  var faltan = [];
+  Array.prototype.forEach.call(form.querySelectorAll('.ig'), function (ig) {
+    var el = ig.querySelector('input:not([type=checkbox]):not([type=hidden]),select,textarea');
+    if (!el) return;
+    ig.classList.remove('ac-falta'); el.removeAttribute('aria-invalid');
+    if (el.disabled || el.readOnly || ig.closest('.hidden') || (el.id === 'ac-r-codigo' && !el.required)) return;
+    if (String(el.value).trim()) return;
+    ig.classList.add('ac-falta'); el.setAttribute('aria-invalid', 'true');
+    var lb = ig.querySelector('label'); faltan.push(lb ? lb.textContent.trim() : el.id);
+    var quitar = function () { ig.classList.remove('ac-falta'); el.removeAttribute('aria-invalid'); };
+    el.addEventListener('input', quitar, { once: true }); el.addEventListener('change', quitar, { once: true });
+  });
+  return faltan;
 }
 function _acFormulario() {
   var sel = _acEl('ac-r-tipo');
@@ -629,10 +660,17 @@ function activosCambioTipo() {
   _acEl('ac-r-codigo').required = !esAdm; _acEl('ac-r-codigo-ayuda').classList.toggle('hidden', !esAdm);
   var t = _acTipo(_acEl('ac-r-tipo').value);
   _acEl('ac-r-campos').innerHTML = t ? t.campos.filter(function (c) { return !c.oculto; }).map(activosCampoHtml).join('') : ''; // Fase 372: sin los ocultos
+  activosAjustarPrecioRenta(); // Fase INV2
 }
 async function activosRegistrar(ev) {
   ev.preventDefault();
   _acError('');
+  var faltan = activosRevisarObligatorios(_acEl('ac-r-form')); // Fase INV2: todos los campos obligatorios
+  if (faltan.length) {
+    _acError(activosFaltanTxt(faltan));
+    var primero = _acEl('ac-r-form').querySelector('.ac-falta input,.ac-falta select,.ac-falta textarea'); if (primero) primero.focus();
+    return;
+  }
   var datos = {};
   document.querySelectorAll('#ac-r-campos [data-campo]').forEach(function (el) { if (el.value !== '') datos[el.dataset.campo] = el.type === 'number' ? Number(el.value) : el.value; });
   var b = { tipo: _acEl('ac-r-tipo').value, codigo: _acEl('ac-r-codigo').value, estado: _acEl('ac-r-estado').value, marca: _acEl('ac-r-marca').value, modelo: _acEl('ac-r-modelo').value, serial: _acEl('ac-r-serial').value,
@@ -706,12 +744,21 @@ function activosCampoEditorHtml(c, i) {
     '<div class="ac-acciones"><button type="button" class="btn-cancel ac-btn" onclick="activosMoverCampo(this,-1)" aria-label="Subir campo">↑</button><button type="button" class="btn-cancel ac-btn" onclick="activosMoverCampo(this,1)" aria-label="Bajar campo">↓</button>' +
     (nuevo ? '<button type="button" class="btn-cancel ac-btn" onclick="this.closest(\'.ac-ce\').remove()">Quitar</button>' : '') + '</div></li>';
 }
-function activosEditorTipoHtml(t) {
+// Fase INV2 (HTML de Edwin): «Se asigna a agentes». Sí: como un portátil; No: componente del inventario. No va en los
+// equipos administrables ni en los inmuebles, y no se cambia si el tipo ya tiene elementos.
+function activosAsignableHtml(t, ambito) {
+  if ((t && t.codigo === 'ADMINISTRABLE') || ((t && t.ambito) || ambito) === 'inmuebles') return '';
+  var asig = !t || t.asignable !== false, bloq = !!(t && t.elementos);
+  return '<label class="ac-check ac-te-asig"><input type="checkbox" id="ac-te-asig"' + (asig ? ' checked' : '') + (bloq ? ' disabled' : '') + ' aria-describedby="ac-te-asig-ayuda"> Se asigna a agentes</label>' +
+    '<p class="vis-ayuda" id="ac-te-asig-ayuda">Sí: funciona como un portátil (entra a Libres, se asigna a un agente y lleva acta). No: es un componente del inventario y no se asigna.' + (bloq ? ' No se puede cambiar porque ya hay elementos de este tipo.' : '') + '</p>';
+}
+function activosEditorTipoHtml(t, ambito) {
   var nuevo = !t;
+  var asignable = activosAsignableHtml(t, ambito);
   t = t || { nombre: '', plural: '', campos: [] };
   return '<form class="aurora-card ac-tipo-form" onsubmit="activosGuardarTipo(event)" data-codigo="' + esc(t.codigo || '') + '"><div class="aurora-card-title">' + (nuevo ? 'Nuevo tipo' : 'Editar ' + esc(t.nombre)) + '</div>' +
     '<div class="ac-filtros"><div class="ig"><label for="ac-te-nombre">Nombre</label><input type="text" id="ac-te-nombre" maxlength="40" value="' + esc(t.nombre) + '"></div>' +
-    '<div class="ig"><label for="ac-te-plural">Plural</label><input type="text" id="ac-te-plural" maxlength="40" value="' + esc(t.plural) + '"></div></div>' +
+    '<div class="ig"><label for="ac-te-plural">Plural</label><input type="text" id="ac-te-plural" maxlength="40" value="' + esc(t.plural) + '"></div></div>' + asignable +
     '<p class="vis-ayuda">Además de los campos de siempre (código, marca, modelo, serial, sede, operación, proveedor y observaciones).</p>' +
     '<ol class="ac-ce-lista" id="ac-te-campos">' + t.campos.map(activosCampoEditorHtml).join('') + '</ol>' +
     '<button type="button" class="btn-cancel ac-btn" onclick="activosAgregarCampo()">Agregar campo</button>' +
@@ -721,7 +768,7 @@ function activosEditarTipo(codigo) {
   _acError('');
   var t = codigo ? (_ac.config.tiposTodos || []).find(function (x) { return x.codigo === codigo; }) : null;
   var ed = _acEl('ac-tipo-editor');
-  ed.innerHTML = activosEditorTipoHtml(t);
+  ed.innerHTML = activosEditorTipoHtml(t, _ac.ambito);
   _acEl('ac-tipos').classList.add('hidden');
   ed.classList.remove('hidden');
   _acEl('ac-te-nombre').focus();
@@ -756,6 +803,7 @@ async function activosGuardarTipo(ev) {
   _acError('');
   var form = ev.target, codigo = form.getAttribute('data-codigo');
   var b = { nombre: _acEl('ac-te-nombre').value, plural: _acEl('ac-te-plural').value, campos: activosLeerCampos(form) };
+  var asig = _acEl('ac-te-asig'); if (asig && !asig.disabled) b.asignable = asig.checked; // Fase INV2
   try {
     await apiRequest(codigo ? 'PUT' : 'POST', '/activos/config/tipos' + (codigo ? '/' + encodeURIComponent(codigo) : '?ambito=' + _ac.ambito), b);
     showToast(codigo ? 'Formulario guardado' : 'Tipo creado', 'ok');
@@ -842,7 +890,7 @@ async function activosVerAgente(id) {
   var hist = r.asignaciones.map(function (s) {
     return '<li>' + esc(tipoN(s.tipo)) + ' ' + esc(s.codigo) + ' · desde ' + esc(_acFecha(s.desde)) + (s.hasta ? ' hasta ' + esc(_acFecha(s.hasta)) + (s.motivoFin ? ' · ' + esc(s.motivoFin) : '') : ' · actual') + '</li>';
   }).join('');
-  var tiposAsignables = _ac.config.tipos.filter(function (t) { return t.codigo !== 'ADMINISTRABLE'; }).map(function (t) { return { codigo: t.codigo, nombre: t.nombre }; });
+  var tiposAsignables = _ac.config.tipos.filter(function (t) { return t.codigo !== 'ADMINISTRABLE' && t.asignable !== false; }).map(function (t) { return { codigo: t.codigo, nombre: t.nombre }; });
   _acEl('ac-ag-detalle').innerHTML = '<section class="aurora-card"><div class="aurora-card-title">' + esc(g.nombre) + (g.activo ? '' : ' · <span class="vis-pill vis-gris">Inactivo</span>') + '</div>' +
     '<dl class="wv-estado"><dt>Documento</dt><dd>' + esc(g.documento || '—') + '</dd><dt>Sede</dt><dd>' + esc(g.sede || '—') + '</dd><dt>Operación</dt><dd>' + esc(g.operacion || '—') + '</dd></dl>' +
     '<h4 class="ac-sub">Elementos asignados</h4>' + elems + '<div id="ac-soltar"></div>' +
@@ -1306,7 +1354,7 @@ function activosRegistrarTarjetasHtml(tipos, porTipo, ultimos) {
     var x = porTipo[t.codigo] || {}, total = Object.keys(x).reduce(function (a, k) { return a + (x[k] || 0); }, 0);
     var c = esc(t.codigo);
     return '<article class="acp-card acr-card"><div class="acr-top"><h4>' + esc(t.nombre) + '</h4><button type="button" class="acr-edit" onclick="activosEditarFormulario(\'' + c + '\')">Editar formulario</button></div>' +
-      (ACR_AYUDA[t.codigo] ? '<p class="acp-ayuda">' + esc(ACR_AYUDA[t.codigo]) + '</p>' : '') +
+      (ACR_AYUDA[t.codigo] ? '<p class="acp-ayuda">' + esc(ACR_AYUDA[t.codigo]) + '</p>' : t.ambito === 'inmuebles' ? '' : '<p class="acp-ayuda">' + (t.asignable === false ? 'Componente del inventario: no se asigna a agentes.' : 'Se asigna a agentes.') + '</p>') + // Fase INV2
       '<p class="acr-n">' + total + ' registrados' + (t.codigo === 'ADMINISTRABLE' ? '' : ' · ' + (x.libre || 0) + ' libres') + '</p>' +
       '<div class="acr-acc"><button type="button" class="btn-primary ac-btn" onclick="activosRegistrarTipo(\'' + c + '\')">+ Registrar</button><button type="button" class="acp-btn" onclick="activosVerTipo(\'' + c + '\')">' + (t.codigo === 'ADMINISTRABLE' ? 'Ver equipos' : 'Ver inventario') + '</button></div></article>';
   }).join('');
@@ -1339,4 +1387,5 @@ function activosEditarFormulario(codigo) { activosTab('ajustes'); activosEditarT
 function activosNuevaTecnologia() { activosTab('ajustes'); activosEditarTipo(null); }
 function activosIrImportar() { activosTab('ajustes'); var s = _acEl('ac-imp-tipo'); if (s) { try { s.scrollIntoView({ block: 'center' }); } catch (e) { /* */ } s.focus(); } }
 if (typeof module !== 'undefined' && module.exports) { module.exports.activosPanel2Html = activosPanel2Html; module.exports.activosRegistrarTarjetasHtml = activosRegistrarTarjetasHtml; module.exports.activosConteoTexto = activosConteoTexto; module.exports.activosListaHtml = activosListaHtml; module.exports.activosInvTiposHtml = activosInvTiposHtml; module.exports.activosActasPestanasHtml = activosActasPestanasHtml; module.exports.activosAjEstadosHtml = activosAjEstadosHtml; }
+if (typeof module !== 'undefined' && module.exports) Object.assign(module.exports, { activosFaltanTxt: activosFaltanTxt, activosEsPropio: activosEsPropio, activosAsignableHtml: activosAsignableHtml }); // Fase INV2
 if (typeof module !== 'undefined' && module.exports) module.exports.activosCedulaAviso = activosCedulaAviso; // 25/11: aviso de la cédula (pruebas)
