@@ -7,7 +7,7 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
-## v1.288.0 — Noviembre 2026
+## v1.290.0 — Noviembre 2026
 
 **Inventario de sistemas: campos obligatorios y tecnologías que se asignan a agentes.**
 
@@ -22,6 +22,25 @@ sepan que hay nuevo, que se corrigio y que falta.
   asignan; los equipos administrables y los inmuebles, no.
 - La importación desde Excel sigue aceptando filas incompletas (quedan en «Con datos pendientes»).
 - No cambia ningún dato guardado.
+
+## v1.288.0 — Noviembre 2026
+
+**Malla de turnos: la asesora ve su horario y sus pausas en columnas (pedido de Edwin).**
+
+- En «Mi malla» (lo que ve la asesora) el horario ya no sale pegado a las pausas: cada día muestra
+  Horario | Pausa 1 | Almuerzo | Pausa 2 en columnas con su encabezado, separadas por una línea suave.
+- Los días de descanso dicen «Descanso» en Horario y dejan las demás columnas vacías.
+- En el celular cada día muestra el horario y debajo una pausa por línea, sin salirse de la pantalla.
+- «Puntual» y las novedades siguen igual. No cambia ningún dato.
+
+## v1.287.0 — Noviembre 2026
+
+**ORLANT · Gestión STA: «Agendas por asesor» y «Gestiones por día» más simples (pedido de Edwin).**
+
+- «Agendas por asesor» queda igual que por entidad y por servicio: un solo número por barra, con la
+  palabra «agendas» (por ejemplo «79 agendas»). El largo y el orden de las barras van por ese número.
+- «Gestiones por día» muestra solo la línea de gestiones (sin la de citas ni su leyenda).
+- Vale para «Gráficas» del administrador y para la pestaña del cliente de ORLANT. No cambia ningún dato.
 
 ## v1.286.0 — Noviembre 2026
 
