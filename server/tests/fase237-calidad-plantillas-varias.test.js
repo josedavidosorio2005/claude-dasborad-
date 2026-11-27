@@ -147,5 +147,6 @@ test('formulario de monitoreo: selector solo con 2+ plantillas usables; la princ
   assert.equal(ctx.calItems('ORLANT').length, 2);
   assert.equal(ctx.calEngine('ORLANT'), 'sura');
   assert.equal(ctx.calItemsPrincipal('ORLANT').length, 1);
-  assert.match(fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'js', 'calidad-carga-masiva.js'), 'utf8'), /var items = calItemsPrincipal\(_ccampana\);/);
+  // Fase CM1: la carga masiva usa la principal si hay una sola plantilla, o la elegida (faseCM1-carga-masiva-plantilla.test.js).
+  assert.match(fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'js', 'calidad-carga-masiva.js'), 'utf8'), /return p \? \(p\.items \|\| \[\]\) : calItemsPrincipal\(_ccampana\);/);
 });

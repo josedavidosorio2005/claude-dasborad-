@@ -49,10 +49,15 @@ async function _calCargarClientesConDashboard(){
 function _calCampanaTieneDashboard(camp){
   return !!(_calClientesConDashboard && _calClientesConDashboard.indexOf(camp)!==-1);
 }
+// Fase CM1 (27/11/2026): una campaña con tablero y VARIAS plantillas (p. ej. Hospital La María, una por sede)
+// carga sus monitoreos aquí, eligiendo la plantilla: «Cargar datos» solo sabe calificar con la principal.
+function _calCargaMasivaVisible(camp){
+  return !_calCampanaTieneDashboard(camp) || calPlantillasUsables(camp).length > 1;
+}
 function _calActualizarTabCarga(){
   var cargaBtn = document.getElementById('ctab-btn-carga');
   if(!cargaBtn) return;
-  var mostrar = calCanEvaluate() && !_calCampanaTieneDashboard(_ccampana);
+  var mostrar = calCanEvaluate() && _calCargaMasivaVisible(_ccampana);
   cargaBtn.style.display = mostrar ? '' : 'none';
   if(!mostrar && _ctab==='carga') switchCalTab(calCanEvaluate() ? 'monitoreos' : 'resumen');
 }
@@ -398,7 +403,7 @@ function populateCalAsesorSelect(){ /* Fase 340: idem */ }
 
 function switchCalTab(t){
   if((t==='nuevo' || t==='carga') && !calCanEvaluate()) t='resumen';
-  if(t==='carga' && _calCampanaTieneDashboard(_ccampana)) t='monitoreos';
+  if(t==='carga' && !_calCargaMasivaVisible(_ccampana)) t='monitoreos'; // Fase CM1
   if(t==='plantillas' && !isFullAdmin()) t='resumen'; // Fase 253
   if(t==='vistos' && !(typeof vistosPuedeVer==='function' && vistosPuedeVer(currentUser ? currentUser.rol : null, isFullAdmin()))) t='resumen'; // Fase 357 (C)
   if(t==='encuestas' && !(typeof _cen!=='undefined' && _cen.activa && _cen.activaDe===_ccampana)) t = calCanEvaluate() ? 'nuevo' : 'resumen'; // Fase 331

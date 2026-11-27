@@ -26,6 +26,7 @@
 var _cargasClientes = [];
 var _cargasSpec = null;          // { cliente, secciones:{ key: {titulo, cadencia, periodo, filaUnica, columnas} } }
 var _cargasCalidadPorCampana = {}; // { campana: {campana,engine,items} } — de GET /calidad/plantillas
+var _cargasCalidadVarias = {}; // Fase CM1: { campana: n } campañas con 2+ plantillas activas (se cargan en Calidad › Carga masiva)
 var _cargasPlan = [];            // cargasPlanConsolidado(...) para el cliente actual
 var _cargasArchivoNombre = '';
 var _cargasResultados = [];      // 1 por hoja del plan, tras procesarArchivoConsolidado
@@ -97,6 +98,11 @@ async function openCargas(){
     _cargasCalidadPorCampana = {};
     plantillas.forEach(function(p){ _cargasCalidadPorCampana[p.campana] = p; });
   }catch(e){ _cargasCalidadPorCampana = {}; }
+  try{ // Fase CM1
+    var todas = await apiRequest('GET','/calidad/plantillas/todas') || [];
+    _cargasCalidadVarias = {};
+    todas.forEach(function(p){ if(p.activo !== false) _cargasCalidadVarias[p.campana] = (_cargasCalidadVarias[p.campana] || 0) + 1; });
+  }catch(e){ _cargasCalidadVarias = {}; }
   var selC = document.getElementById('carga-cliente');
   // PR 5: quien carga por su permiso de modulo solo ve el cliente que eligio en el Centro.
   // Fase 159: desde el Centro (Subir/Reemplazar), el cliente queda fijo -- un
@@ -790,7 +796,11 @@ async function procesarArchivoConsolidado(input){
       var spec = _cargasSpec.secciones[h.hoja];
       parseFn = function(a){ return spec.filaUnica ? cargasParseFilaUnica(spec, a) : cargasParseMultiFila(spec, a); };
     } else if(h.tipo === 'calidad'){
-      parseFn = function(a){ return cmParseRows(a, calidad.items); };
+      parseFn = function(a){
+        // Fase CM1: con varias plantillas, aquí se calificaría todo con la principal (puntajes mal): se carga en Calidad.
+        if((_cargasCalidadVarias[cliente] || 0) > 1) return { error: 'Esta campaña tiene ' + _cargasCalidadVarias[cliente] + ' plantillas de Calidad: carga los monitoreos en Calidad › Carga masiva, eligiendo la plantilla de cada archivo. Las demás hojas de este archivo se cargan normal.' };
+        return cmParseRows(a, calidad.items);
+      };
     } else if(h.tipo === 'agendas'){
       parseFn = function(a, w){ return agendasParseFilas(a, w, { codigosEntidad: _cargasCodigosEntidad }); };
     } else if(h.tipo === 'efectividad_agendamiento'){
