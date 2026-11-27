@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.290.0` (ver `server/package.json`, expuesta en
+- **Versión**: `1.296.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -687,7 +687,8 @@ mismo orden):
 - Fase STA14 — Gestión STA (pedido de Edwin, 27/11): agendas por entidad y por servicio con un solo número («N agendas», el de las citas), recuadros sin «Agendas (efectivas)» ni «Fuera de gestión» («Citas agendadas» → «Agendas») y sin las gráficas por fecha de ingreso, autorización y expiración (v1.286.0, 2026-11-27)
 - Fase STA15 — Gestión STA (pedido de Edwin, 27/11): «Agendas por asesor» con un solo número («N agendas», el de las citas) y «Gestiones por día» solo con la línea de gestiones (v1.287.0, 2026-11-27)
 - Fase M3 — Malla de la asesora («Mi malla»): Horario | Pausa 1 | Almuerzo | Pausa 2 en columnas; en el celular, una pausa por línea (v1.288.0, 2026-11-27)
-- Fase INV2 — Inventario: todos los campos obligatorios al registrar y editar (precio para los propios, renta para los de un proveedor) y «Se asigna a agentes» por tipo en «Nueva tecnología» (v1.290.0, 2026-11-27, PR sin mergear)
+- Fase EQ6 — Centro de cargas de ORLANT: cuadrito «Equidad profesionales» al lado del de Calidad; la sección de Equidad sale solo al abrirlo (v1.291.0, 2026-11-27, PR sin mergear)
+- Fase INV2 — Inventario: todos los campos obligatorios al registrar y editar (precio para los propios, renta para los de un proveedor) y «Se asigna a agentes» por tipo en «Nueva tecnología» (v1.296.0, 2026-11-27, PR sin mergear)
 - Fase 309 — Revisión de seguridad: el cliente ya no recibe el nombre de los líderes en `GET /metas`; resto en `docs/revision-seguridad-2026-11-09.md` (v1.154.1, 2026-11-10)
 - Fase 308 — Revisión antes de la reunión con clientes y pendientes del supervisor (solo docs, 2026-11-10)
 - Fase 307 — Calidad para que los líderes evalúen: ORLANT conserva su Calidad y suma «Resultado de los monitoreos» al final; Aurora ya lo tenía (se muestra con el primer monitoreo) (v1.154.0, 2026-11-10)

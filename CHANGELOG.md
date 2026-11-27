@@ -7,7 +7,7 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
-## v1.290.0 — Noviembre 2026
+## v1.296.0 — Noviembre 2026
 
 **Inventario de sistemas: campos obligatorios y tecnologías que se asignan a agentes.**
 
@@ -22,6 +22,16 @@ sepan que hay nuevo, que se corrigio y que falta.
   asignan; los equipos administrables y los inmuebles, no.
 - La importación desde Excel sigue aceptando filas incompletas (quedan en «Con datos pendientes»).
 - No cambia ningún dato guardado.
+
+## v1.291.0 — Noviembre 2026
+
+**ORLANT · Centro de cargas: «Equidad profesionales» como un cuadrito más (pedido de Edwin).**
+
+- En el Centro de cargas de ORLANT hay un cuadrito «Equidad profesionales» al lado del de Calidad,
+  con el mismo estilo: «Al día» o «Pendiente», cuántos meses tienen datos en el año y la última carga.
+- La sección de Equidad (explicación, botones Pólizas / Medicina prepagada / Particulares y los meses)
+  sale solo al hacer clic en el cuadrito, como Calidad; «Módulos» vuelve a los cuadritos.
+- No cambia cómo se cargan las bases ni ningún dato.
 
 ## v1.288.0 — Noviembre 2026
 
