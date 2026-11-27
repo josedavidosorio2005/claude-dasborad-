@@ -23100,7 +23100,7 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
 - **Cambio:** `public/js/centro-equidad.js` (`ccEquidadResumenAnio`, `ccEquidadTarjetaHtml`, `CC_EQUIDAD_ID = 'equidad'`, `ccEquidadMostrar`; `#cc-equidad` queda oculto salvo con el cuadrito abierto) y `public/js/centro-cargas.js` (el cuadrito va después de Calidad o al final; `_ccEsEquidad` / `_ccRenderEquidad` con migas y «Módulos»). «Al día»: cada base tiene el mes anterior cargado (en un año pasado, si tiene datos); si no, «Pendiente». Mismas rutas de carga.
 - **Pruebas:** `faseEQ6-equidad-cuadrito-centro.test.js` (3).
 - **Revisión visual local** (copia de la base demo, 72 citas INVENTADAS por la API en sep y oct de 2026, Playwright con Brave): 375/768/1440 en claro y oscuro: el cuadrito sale después de Calidad («Al día», 2 meses, última carga), la sección cerrada hasta el clic, abierta con 3 bases y 12 meses, «Módulos» la vuelve a cerrar; sin desborde y 0 errores de consola.
-## Inventario de sistemas con la apariencia del HTML de Edwin (Fase INV1, v1.295.0, 2026-11-27, PR SIN mergear)
+## Inventario de sistemas con la apariencia del HTML de Edwin (Fase INV1, v1.292.0, 2026-11-27, PR SIN mergear)
 
 - **Pedido (Edwin, 26/11; parte 1 del usuario, 27/11):** que el Inventario de sistemas se vea como su HTML (`docs/gestion-humana/Plataforma_InConexion.html`, ignorado), sin cambiar datos.
 - **Cambios (`public/js/activos.js`, `public/css/styles.css`, `public/css/paleta.css`, `public/index.html`):**

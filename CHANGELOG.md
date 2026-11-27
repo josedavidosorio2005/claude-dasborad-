@@ -7,7 +7,7 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
-## v1.295.0 — Noviembre 2026
+## v1.292.0 — Noviembre 2026
 
 **Inventario de sistemas: se ve como el HTML de Edwin.**
 
