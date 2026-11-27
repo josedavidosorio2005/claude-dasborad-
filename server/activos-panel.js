@@ -82,7 +82,7 @@ function panel(db, ambito, tipoSel, ahora) {
     { k: 'sin_marca', l: 'Sin marca registrada', n: vivos.filter((f) => !String(f.marca || '').trim()).length },
   ];
   if (!tipo) calidad.push({ k: 'agentes_incompletos', l: 'Agentes sin nombre o sin documento', n: agentes.incompletos || 0, ir: 'agentes' });
-  if (actas && !tipo) calidad.push({ k: 'actas_pendientes', l: 'Actas pendientes por firmar', n: actas.pendientes, ir: 'actas' }, { k: 'actas_atrasadas', l: 'Actas atrasadas (' + ACT.DIAS_ATRASO + '+ días hábiles)', n: actas.atrasadas, ir: 'actas' });
+  if (actas && !tipo) calidad.push({ k: 'actas_pendientes', l: 'Actas pendientes por completar o firmar', n: actas.pendientes + actas.porCompletar, ir: 'actas' }, { k: 'actas_atrasadas', l: 'Actas atrasadas (' + ACT.DIAS_ATRASO + '+ días hábiles)', n: actas.atrasadas, ir: 'actas' });
 
   // Movimientos de los últimos 6 meses (del historial del inventario, de los elementos de este panel).
   const hoy = new Date((ahora ? new Date(ahora) : new Date()).getTime() - COL_MS); // reloj de Colombia en campos UTC
@@ -107,7 +107,7 @@ function panel(db, ambito, tipoSel, ahora) {
     marcas: [...marcas.entries()].map(([nombre, n]) => ({ nombre, n })).sort((a, b) => b.n - a.n).slice(0, 8),
     valor: { porTipo: valor, total: valor.reduce((a, v) => a + v.valor, 0), sinPrecio },
     renta: { porProveedor: [...renta.values()].sort((a, b) => b.valor - a.valor), total: [...renta.values()].reduce((a, r) => a + r.valor, 0), n: [...renta.values()].reduce((a, r) => a + r.n, 0) },
-    agentes: { activos: agentes.total || 0, conEquipo }, actasPendientes: actas ? actas.pendientes : null,
+    agentes: { activos: agentes.total || 0, conEquipo }, actasPendientes: actas ? actas.pendientes + actas.porCompletar : null, // Fase INV4: por completar o firmar, como Edwin
     calidad, movimientos: meses,
   };
 }

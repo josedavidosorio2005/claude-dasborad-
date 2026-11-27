@@ -7,6 +7,20 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.294.0 — Noviembre 2026
+
+**Inventario de sistemas: las actas se completan antes de imprimirlas, como en el diseño de Edwin.**
+
+- Cada acta que se crea sola (al asignar, devolver, cambiar, mandar a reparación, recibir de reparación, marcar
+  malo o dar de baja) queda primero **«Por completar»**.
+- Con «Completar y generar PDF» se escriben la fecha del acta, quién entrega o recibe por Sistemas, el técnico o
+  proveedor (en reparación y en el recibo de reparación) y, si se quiere, observaciones. Al generar el PDF el acta
+  pasa a **«Por firmar»**; firmada y subida, queda **«Firmada»**.
+- El PDF del acta trae esa fecha, quién entrega o recibe por Sistemas y las observaciones.
+- Actas tiene la tarjeta «Por completar» y la pestaña «Actas pendientes» muestra las por completar y las por
+  firmar. El conteo del menú y del Panel general también suma las dos.
+- Las actas hechas a mano y las que ya estaban impresas siguen «Por firmar». No se borra ni cambia ningún dato.
+
 ## v1.293.0 — Noviembre 2026
 
 **Inventario de sistemas: campos obligatorios y tecnologías que se asignan a agentes.**

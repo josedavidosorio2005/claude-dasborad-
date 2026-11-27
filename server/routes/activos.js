@@ -97,7 +97,7 @@ router.get('/activos/resumen', requireActor, wrap((req, res) => {
   if (!permitido(req, res)) return;
   const r = A.resumen(db, req.query.ambito);
   if (A.ambitoDe(req.query.ambito) === 'sistemas') {
-    r.actasPorFirmar = ACT.resumen(db).pendientes; // Fase 379: conteo del menú
+    const ra = ACT.resumen(db); r.actasPorFirmar = ra.pendientes + ra.porCompletar; // Fase 379: conteo del menú (INV4: por completar o firmar, como Edwin)
     const N = NGH.novedades(db); // Fase GH4: retirados y ausentes hoy con equipos (conteo del menú)
     r.novedadesGH = { retirados: N.retirados.length, ausentes: N.ausentes.length };
   }
@@ -348,10 +348,20 @@ router.get('/activos/actas/:id', requireActor, wrap((req, res) => {
   const a = actaPorId(req, res); if (!a) return;
   res.json({ acta: a });
 }));
+// Fase INV4 (HTML de Edwin): completar el acta y generar su PDF para firmar (queda «por firmar»).
+router.post('/activos/actas/:id/completar', requireActor, wrap((req, res) => {
+  if (!permitido(req, res)) return;
+  const a = actaPorId(req, res); if (!a) return;
+  const r = ACT.completar(db, a, req.body, actorLabel(req.actor));
+  if (r.error) return res.status(400).json({ error: r.error });
+  logEvent('ACTIVO_ACTA_GENERADA', { nombre: 'acta ' + a.numero, user: '-', rol: 'activos' }, actorLabel(req.actor), a.tipo);
+  res.json(r);
+}));
 router.post('/activos/actas/:id/firmada', requireActor, wrap(async (req, res) => {
   if (!permitido(req, res)) return;
   const a = actaPorId(req, res); if (!a) return;
   if (a.anulada) return res.status(400).json({ error: 'El acta está anulada' }); // Fase 379
+  if (a.estado === 'completar') return res.status(400).json({ error: 'Primero completa el acta y genera el PDF para firmar' }); // Fase INV4
   if (!ACT.bucket()) return res.status(503).json({ error: 'Falta configurar dónde se guardan las actas firmadas (S3). Pídeselo al administrador.' });
   const p = ACT.leerPdf((req.body || {}).pdf);
   if (p.error) return res.status(400).json({ error: p.error });

@@ -34,7 +34,7 @@ test('cada movimiento crea su acta automática', async () => {
   const a1 = await P('/activos/' + ids['I4-D1'] + '/asignar', { agenteId: ids.ag1 });
   assert.deepEqual(tipos(a1), ['entrega']);
   const acta = a1.body.actas[0];
-  assert.deepEqual([acta.auto, acta.estado, acta.agente.nombre, acta.elementos[0].codigo, acta.elementos[0].dir], [true, 'pendiente', 'Agente Inventado ag1', 'I4-D1', 'recibe']);
+  assert.deepEqual([acta.auto, acta.estado, acta.agente.nombre, acta.elementos[0].codigo, acta.elementos[0].dir], [true, 'completar', 'Agente Inventado ag1', 'I4-D1', 'recibe']); // Fase INV4: nace «por completar»
   assert.ok(acta.texto.length > 10);
   assert.deepEqual(tipos(await P('/activos/' + ids['I4-D1'] + '/reasignar', { agenteId: ids.ag2, motivo: 'Cambio de puesto' })), ['devolucion', 'entrega']);
   const c = await P('/activos/' + ids['I4-D1'] + '/cambiar', { nuevoId: ids['I4-D2'], estado: 'malo', motivo: 'Micrófono dañado' });
@@ -57,7 +57,7 @@ test('cada movimiento crea su acta automática', async () => {
 test('vista Actas: filtros, conteos, anular sin borrar y permisos', async () => {
   const todas = (await G('/activos/actas')).body;
   assert.equal(todas.actas.length, 10);
-  assert.deepEqual(todas.resumen, { pendientes: 10, firmadas: 0, atrasadas: 0, anuladas: 0, total: 10 });
+  assert.deepEqual(todas.resumen, { porCompletar: 10, pendientes: 0, firmadas: 0, atrasadas: 0, anuladas: 0, total: 10 }); // Fase INV4
   assert.equal((await G('/activos/actas?tipo=entrega')).body.actas.length, 3);
   assert.equal((await G('/activos/actas?q=Taller')).body.actas.length, 1);
   const una = todas.actas[0];
@@ -79,7 +79,7 @@ test('atrasadas: 3 o más días hábiles sin firmar (lunes a viernes)', async ()
   assert.equal(ACT.diasHabiles('2026-11-12T15:00:00Z', new Date('2026-11-16T15:00:00Z')), 2);
   assert.equal(ACT.diasHabiles('2026-11-12T15:00:00Z', new Date('2026-11-17T15:00:00Z')), 3);
   assert.equal(ACT.diasHabiles('2026-11-14T15:00:00Z', new Date('2026-11-16T15:00:00Z')), 1, 'de sábado a lunes');
-  const id = (await G('/activos/actas?estado=pendiente')).body.actas[0].id;
+  const id = (await G('/activos/actas?estado=sincerrar')).body.actas[0].id; // Fase INV4: por completar también se atrasa
   db.prepare("UPDATE activos_actas SET fecha = '2026-01-05T15:00:00.000Z' WHERE id = ?").run(id);
   const r = (await G('/activos/actas?estado=atrasada')).body;
   assert.deepEqual(r.actas.map((a) => a.id), [id]);
