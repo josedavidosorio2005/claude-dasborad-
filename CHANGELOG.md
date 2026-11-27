@@ -7,6 +7,17 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.294.0 — Noviembre 2026
+
+**Inventario: hojas para imprimir, como en el diseño de Edwin (primera parte).**
+
+- Cada elemento tiene el botón **«Imprimir ficha»**: una hoja con todos sus datos (también los de su tipo), a
+  quién está asignado y desde cuándo, y sus últimos movimientos. Si está asignado, trae las firmas de entrega y
+  recibo, como la ficha de Edwin.
+- En **Agentes** están los botones **Excel** y **PDF** de la hoja «Agentes y equipos asignados»: cada agente con
+  su documento, operación, sede, lo que tiene asignado hoy y si está activo.
+- No cambia ningún dato.
+
 ## v1.288.0 — Noviembre 2026
 
 **Malla de turnos: la asesora ve su horario y sus pausas en columnas (pedido de Edwin).**

@@ -250,7 +250,7 @@ async function activosVer(id) {
   _acError('');
   var r;
   try { r = await apiRequest('GET', '/activos/' + id + '/historial'); } catch (e) { _acError(e.message); return; }
-  _ac.sel = r.activo;
+  _ac.sel = r.activo; _ac.selHist = r.historial; // Fase INV5: para la ficha imprimible
   var a = r.activo, t = _acTipo(a.tipo) || { campos: [], nombre: a.tipo };
   var datos = t.campos.filter(function (c) { return a.datos[c.k] !== undefined; }).map(function (c) { return '<dt>' + esc(c.l) + '</dt><dd>' + esc(a.datos[c.k]) + '</dd>'; }).join('');
   var opciones = _ac.config.estados.filter(function (e) { return e.codigo !== a.estado && (e.codigo !== 'en_uso' || a.tipo === 'ADMINISTRABLE'); });
@@ -262,7 +262,7 @@ async function activosVer(id) {
       '<div class="ig ac-motivo"><label for="ac-motivo">Motivo / diagnóstico</label><input type="text" id="ac-motivo" maxlength="300" list="ac-motivos-lista" placeholder="Ej.: no enciende, pantalla dañada, reparado…"></div>' +
       '<div class="ig" id="ac-tecnico-ig"><label for="ac-tecnico">Técnico o proveedor</label><input type="text" id="ac-tecnico" maxlength="80" placeholder="Ej.: soporte interno"></div>' +
       (a.agente ? '<p class="vis-ayuda ac-form-titulo">Está asignado a ' + esc(a.agente.nombre) + ': al cambiar el estado se registra la devolución.</p>' : '') + '<button type="submit" class="btn-primary">Cambiar estado</button></form>' : '') +
-    '<h4 class="ac-sub">Historial</h4><ul class="ac-hist">' + hist + '</ul><div class="modal-btns"><button type="button" class="btn-cancel" onclick="activosCerrarDetalle()">Volver a la lista</button></div></section>';
+    '<h4 class="ac-sub">Historial</h4><ul class="ac-hist">' + hist + '</ul><div class="modal-btns"><button type="button" class="btn-cancel" onclick="activosImprimirFicha()">Imprimir ficha</button><button type="button" class="btn-cancel" onclick="activosCerrarDetalle()">Volver a la lista</button></div></section>'; // Fase INV5: ficha imprimible
   _acEl('ac-detalle').classList.remove('hidden');
   _acEl('ac-lista-zona').classList.add('hidden');
   _acEl('ac-detalle').scrollIntoView({ block: 'start' });
@@ -433,6 +433,9 @@ function activosFilasExport(vista, lista, config) {
   var f = function (x) { return x ? _acFecha(x) : ''; };
   if (vista === 'admin') return { titulo: 'Equipos administrables', cols: ['Código', 'Tipo', 'Marca', 'Modelo', 'Serial', 'Dirección IP', 'Sede', 'Ubicación', 'Responsable', 'Estado'],
     filas: lista.map(function (a) { var d = a.datos || {}; return [a.codigo, d.subtipo || '', a.marca || '', a.modelo || '', a.serial || '', d.ip || '', a.sede || '', d.ubicacion || '', d.responsable || '', AC_ESTADO_ADMIN[a.estado] || a.estado]; }) };
+  // Fase INV5 (HTML de Edwin): hoja «Agentes y equipos asignados».
+  if (vista === 'agentes') return { titulo: 'Agentes y equipos asignados', cols: ['Nombre', 'Documento', 'Operación', 'Sede', 'Equipos asignados', 'Estado'],
+    filas: lista.map(function (g) { return [g.nombre, g.documento || '', g.operacion || '', g.sede || '', (g.equipos || []).map(function (e) { return e.tipo + ' ' + e.codigo; }).join(', '), g.activo ? 'Activo' : 'Inactivo']; }) };
   if (vista === 'actas') return { titulo: 'Actas', cols: ['N.º', 'Tipo', 'Fecha', 'Agente', 'Elementos', 'Motivo', 'Estado'],
     filas: lista.map(function (a) { return [a.numero, a.tipoNombre, f(a.fecha), a.agente ? a.agente.nombre : '', a.elementos.map(function (e) { return e.tipo + ' ' + e.codigo; }).join(', '), a.motivo || '', a.estado === 'anulada' ? 'Anulada' : a.firmada ? 'Firmada' : a.atrasada ? 'Atrasada' : 'Por firmar']; }) };
   if (vista === 'historial') return { titulo: 'Historial del inventario', cols: ['Fecha', 'Tipo', 'Código', 'Acción', 'Antes', 'Después', 'Motivo', 'Quién'],
@@ -441,6 +444,39 @@ function activosFilasExport(vista, lista, config) {
     filas: lista.map(function (a) { var d = a.datos || {}; return [a.codigo, tipoN(a.tipo), AC_ESTADO_TXT[a.estado] || a.estado, a.marca || '', a.modelo || '', a.serial || '', typeof d.ram_gb === 'number' ? d.ram_gb : '', a.sede || '', a.operacion || '', a.proveedor || '', a.agente ? a.agente.nombre : '']; }) };
 }
 // Página para imprimir / guardar como PDF (todo escapado, sin scripts).
+// ── Fase INV5 (HTML de Edwin, «printFicha»): ficha imprimible de un elemento ──
+// Todos sus datos en pares, la asignación actual y el historial. Si está asignado, con las firmas de Edwin.
+function activosFichaPrintHtml(a, tipo, historial, estadoN, cuando) {
+  tipo = tipo || { nombre: a.tipo, campos: [] };
+  var pares = [['Código', a.codigo], ['Tipo', tipo.nombre], ['Estado', estadoN(a.estado)], ['Marca', a.marca], ['Modelo', a.modelo], ['Serial', a.serial], ['Sede', a.sede], ['Operación', a.operacion], ['Propietario / proveedor', a.proveedor]]
+    .concat((tipo.campos || []).filter(function (c) { return a.datos && a.datos[c.k] !== undefined && a.datos[c.k] !== ''; }).map(function (c) { return [c.l, a.datos[c.k]]; }));
+  var tabla = function (titulo, l) {
+    var filas = [];
+    for (var i = 0; i < l.length; i += 2) filas.push('<tr><td class="k">' + esc(l[i][0]) + '</td><td>' + esc(l[i][1] === null || l[i][1] === undefined || l[i][1] === '' ? '—' : l[i][1]) + '</td>' + (l[i + 1] ? '<td class="k">' + esc(l[i + 1][0]) + '</td><td>' + esc(l[i + 1][1] === null || l[i + 1][1] === undefined || l[i + 1][1] === '' ? '—' : l[i + 1][1]) + '</td>' : '<td class="k"></td><td></td>') + '</tr>');
+    return '<table class="fic"><tr><th colspan="4">' + esc(titulo) + '</th></tr>' + filas.join('') + '</table>';
+  };
+  var g = a.agente;
+  var fecha = function (x) { return x ? new Date(x).toLocaleString('es-CO', { timeZone: 'America/Bogota' }) : ''; };
+  var hist = (historial || []).slice(0, 20) /* llega del más nuevo al más viejo */.map(function (h) { return '<tr><td>' + esc(fecha(h.fecha)) + '</td><td>' + esc(h.accion) + '</td><td>' + esc(h.estadoAntes && h.estadoDespues && h.estadoAntes !== h.estadoDespues ? estadoN(h.estadoAntes) + ' → ' + estadoN(h.estadoDespues) : '') + '</td><td>' + esc(h.motivo || '') + '</td><td>' + esc(h.quien || '') + '</td></tr>'; }).join('');
+  return '<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Ficha ' + esc(tipo.nombre) + ' ' + esc(a.codigo) + '</title>' +
+    '<style>@page{size:A4;margin:14mm}body{font-family:Arial,Helvetica,sans-serif;color:#1a1a1a;font-size:11px;line-height:1.4}.ph{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #1a1a1a;padding-bottom:6px;margin-bottom:12px}' +
+    'h1{font-size:17px;margin:0 0 2px}.cod{font-size:16px;font-weight:bold}table{width:100%;border-collapse:collapse;margin:0 0 12px}th,td{border:1px solid #999;padding:4px 6px;text-align:left;vertical-align:top}th{background:#eee}td.k{font-weight:bold;width:22%;background:#fafafa}' +
+    '.firmas{display:grid;grid-template-columns:1fr 1fr;gap:48px;margin-top:48px}.firma{border-top:1px solid #1a1a1a;padding-top:6px}.pie{margin-top:24px;color:#666;font-size:9px}</style></head><body>' +
+    '<div class="ph"><div><h1>Ficha de ' + esc(String(tipo.nombre).toLowerCase()) + '</h1><div>InConexion® · Inventario de sistemas</div></div><div style="text-align:right">Código <span class="cod">' + esc(a.codigo) + '</span><br>Impreso: ' + esc(cuando) + '</div></div>' +
+    tabla('Datos del elemento', pares) +
+    (g ? tabla('Asignación actual', [['Agente', g.nombre], ['Documento', g.documento], ['Asignado desde', fecha(g.desde)]]) : '') +
+    (a.observaciones ? '<table><tr><th>Observaciones</th></tr><tr><td>' + esc(a.observaciones) + '</td></tr></table>' : '') +
+    (hist ? '<table><thead><tr><th colspan="5">Historial (últimos movimientos)</th></tr><tr><th>Fecha</th><th>Acción</th><th>Estado</th><th>Motivo</th><th>Quién</th></tr></thead><tbody>' + hist + '</tbody></table>' : '') +
+    (g ? '<p>Quien recibe declara que el elemento se entrega en buen estado y se compromete a su cuidado y uso adecuado para las labores asignadas.</p><div class="firmas"><div class="firma">Entrega (Sistemas)<br>Nombre:<br>Fecha:</div><div class="firma">Recibe (agente): ' + esc(g.nombre) + '<br>Documento: ' + esc(g.documento || '') + '<br>Fecha:</div></div>' : '') +
+    '<p class="pie">Ficha informativa. Las entregas y devoluciones se firman en su acta (Inventario de sistemas → Actas).</p></body></html>';
+}
+function activosImprimirFicha() {
+  var a = _ac.sel; if (!a) return;
+  var w = window.open('', '_blank');
+  if (!w) { showToast('Permite las ventanas emergentes para imprimir la ficha.', 'error'); return; }
+  w.document.open(); w.document.write(activosFichaPrintHtml(a, _acTipo(a.tipo), _ac.selHist, _acEstadoNombre, new Date().toLocaleString('es-CO', { timeZone: 'America/Bogota' }))); w.document.close();
+  setTimeout(function () { try { w.focus(); w.print(); } catch (e) { /* ventana cerrada */ } }, 300);
+}
 function activosReportePrintHtml(t, cuando) {
   return '<!doctype html><html lang="es"><head><meta charset="utf-8"><title>' + esc(t.titulo) + '</title>' +
     '<style>@page{size:A4 landscape;margin:12mm}body{font-family:Arial,Helvetica,sans-serif;color:#1a1a1a;font-size:10px}h1{font-size:15px;margin:0 0 2px}p{margin:0 0 10px;color:#555}' +
@@ -450,7 +486,7 @@ function activosReportePrintHtml(t, cuando) {
     t.filas.map(function (r) { return '<tr>' + r.map(function (v) { return '<td>' + esc(v === null || v === undefined ? '' : v) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table></body></html>';
 }
 function activosExportar(vista, formato) {
-  var lista = { elementos: _ac.lista, admin: _ac.adLista, actas: _ac.actasLista, historial: _ac.histLista }[vista] || [];
+  var lista = { elementos: _ac.lista, admin: _ac.adLista, actas: _ac.actasLista, historial: _ac.histLista, agentes: _ac.agLista }[vista] || []; // Fase INV5: agentes
   if (!lista.length) { showToast('No hay filas para descargar con estos filtros.', 'error'); return; }
   var t = activosFilasExport(vista, lista, _ac.config);
   if (vista === 'elementos') t.titulo = (_ac.ambito === 'inmuebles' ? 'Inventario de inmuebles' : 'Inventario de sistemas') + ' · ' + (_ac.tab === 'ajustes' ? 'Todo' : (AC_VISTA_TXT[_ac.tab] || [''])[0]); // GH5d: «Exportar todo» desde Ajustes
@@ -766,8 +802,9 @@ async function activosBuscarAgentes() {
   if (_acEl('ac-ag-todos').checked) q.push('todos=1');
   var c = _acEl('ac-ag-lista');
   c.innerHTML = '<p class="vis-vacio">Cargando…</p>';
-  try { c.innerHTML = activosAgentesHtml((await apiRequest('GET', '/activos/agentes' + (q.length ? '?' + q.join('&') : ''))).agentes); }
-  catch (e) { c.innerHTML = ''; _acError(e.message); }
+  q.push('equipos=1'); // Fase INV5: para la hoja «Agentes y equipos asignados»
+  try { _ac.agLista = (await apiRequest('GET', '/activos/agentes?' + q.join('&'))).agentes; c.innerHTML = activosAgentesHtml(_ac.agLista); }
+  catch (e) { _ac.agLista = []; c.innerHTML = ''; _acError(e.message); }
 }
 async function activosCrearAgente(ev) {
   ev.preventDefault();
@@ -1294,3 +1331,4 @@ function activosNuevaTecnologia() { activosTab('ajustes'); activosEditarTipo(nul
 function activosIrImportar() { activosTab('ajustes'); var s = _acEl('ac-imp-tipo'); if (s) { try { s.scrollIntoView({ block: 'center' }); } catch (e) { /* */ } s.focus(); } }
 if (typeof module !== 'undefined' && module.exports) { module.exports.activosPanel2Html = activosPanel2Html; module.exports.activosRegistrarTarjetasHtml = activosRegistrarTarjetasHtml; module.exports.activosConteoTexto = activosConteoTexto; module.exports.activosListaHtml = activosListaHtml; module.exports.activosInvTiposHtml = activosInvTiposHtml; module.exports.activosActasPestanasHtml = activosActasPestanasHtml; module.exports.activosAjEstadosHtml = activosAjEstadosHtml; }
 if (typeof module !== 'undefined' && module.exports) module.exports.activosCedulaAviso = activosCedulaAviso; // 25/11: aviso de la cédula (pruebas)
+if (typeof module !== 'undefined' && module.exports) { module.exports.activosFichaPrintHtml = activosFichaPrintHtml; module.exports.activosFilasExport = activosFilasExport; } // Fase INV5 (pruebas)
