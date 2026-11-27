@@ -215,7 +215,7 @@ function verDetalleMonitoreo(idx){
   document.getElementById('dm-evaluador').textContent = m.evaluador || '-';
   document.getElementById('dm-idllamada').textContent = m.idLlamada || '-';
   document.getElementById('dm-codificacion').textContent = m.codificacion || '-';
-  document.getElementById('dm-canal').innerHTML = calEstadoHtml(m.canal==='WPP' ? '💬 WhatsApp / Chat' : '📞 Llamada');
+  document.getElementById('dm-canal').innerHTML = calEstadoHtml(m.canal==='WPP' ? '💬 WhatsApp / Chat' : m.canal==='CORREO' ? '✉️ Correo' : '📞 Llamada');
   document.getElementById('dm-observaciones').textContent = m.observaciones || '-';
 
   document.getElementById('dm-preview').innerHTML =

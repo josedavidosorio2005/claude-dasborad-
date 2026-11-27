@@ -80,7 +80,7 @@ test('quien lo ve: CALIDAD, SUPERVISOR, Reportes y admin si; cliente, asesor (li
 test('carga masiva por Excel: sigue leyendo y guardando la columna TELEFONO', () => {
   const col = CM.CM_COLUMNAS_FIJAS || CM.CM_FIJAS || null;
   const src = PUB('js/calidad-carga-masiva-logic.js');
-  assert.match(src, /\{ key: 'telefono', label: 'TELEFONO', labelAlt: \['# TELEFONO'\] \}/);
+  assert.match(src, /\{ key: 'telefono', label: 'TELEFONO', labelAlt: \['# TELEFONO', /); // Fase CM2: + encabezados de Infondo/Cartera
   assert.match(src, /telefono: map\.fijas\.telefono!==undefined/);
   assert.ok(col === null || col.some((c) => c.key === 'telefono'));
 });
