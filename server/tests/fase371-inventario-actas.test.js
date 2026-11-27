@@ -6,6 +6,7 @@ const assert = require('node:assert/strict');
 const path = require('path');
 const bcrypt = require('bcryptjs');
 const { request, app, db, tokenFor, MASTER_PASSWORD } = require('./helpers');
+const { completar } = require('./helpers-activos'); // Fase INV2: registrar exige todos los campos
 
 const H = (t) => ({ Authorization: 'Bearer ' + t });
 const tk = {};
@@ -29,7 +30,7 @@ before(async () => {
   tk.admin = await tokenFor('admin', MASTER_PASSWORD);
   tk.sis = await tokenFor('f371_sis', 'Clave#2026x');
   tk.sup = await tokenFor('f371_sup', 'Clave#2026x');
-  const P = (u, b) => request(app).post('/api/activos' + u).set(H(tk.sis)).send(b);
+  const P = (u, b) => request(app).post('/api/activos' + u).set(H(tk.sis)).send(u === '' ? completar(b) : b);
   ids.ag = (await P('/agentes', { nombre: 'Agente Inventado Actas', documento: '7100001' })).body.agente.id;
   ids.otro = (await P('/agentes', { nombre: 'Otro Agente Inventado' })).body.agente.id;
   for (const [tipo, codigo] of [['DIADEMA', 'E3-D1'], ['MOUSE', 'E3-M1'], ['TECLADO', 'E3-K1']]) {

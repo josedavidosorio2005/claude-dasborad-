@@ -45,22 +45,34 @@ async function activosAbrir(ambito) {
   _acEl('activos-title').textContent = AC_TITULO[_ac.ambito];
   var sel = _acEl('ac-r-tipo'); if (sel) sel.innerHTML = ''; // los tipos cambian según el inventario
   openModal('activos-overlay');
+  activosAlternarMenu(true); // Fase INV1: el menú siempre arranca visible
+  _ac.prev = null;
   _acMotivos();
   activosTab('panel');
 }
 function activosAbrirInmuebles() { return activosAbrir('inmuebles'); } // Fase 376: tarjeta «Inventario de inmuebles»
 // Menú lateral con los conteos de cada estado (del resumen).
-function activosMenuHtml(ambito, actual, resumen) {
+// Fase INV1 (pedido de Edwin): al pie del menú, el usuario de la sesión (como «Usuario: …» en su HTML).
+// Fase INV1: secciones plegables («Menú», «Ciclo de elementos», «Gestión»), como su HTML. `plegadas`: {sección: true}.
+// En una sección plegada solo queda a la vista la pantalla abierta. En el celular (≤ 760 px) no hay títulos de
+// sección: allí se ve todo siempre (CSS).
+function activosMenuHtml(ambito, actual, resumen, usuario, plegadas) {
+  plegadas = plegadas || {};
+  var sec = '';
   var pe = (resumen && resumen.porEstado) || {};
   var n = { libres: pe.libre, asignados: pe.en_uso, reparacion: pe.en_reparacion, malos: pe.malo, elementos: resumen ? resumen.total : null, actas: resumen && resumen.actasPorFirmar !== undefined ? resumen.actasPorFirmar : null,
     novedadesgh: resumen && resumen.novedadesGH ? resumen.novedadesGH.retirados + resumen.novedadesGH.ausentes : null }; // Fase GH4
   return (AC_MENU[ambito] || AC_MENU.sistemas).map(function (x) {
-    if (x[0] === 'sec') return '<p class="ac-menu-sec">' + esc(x[1]) + '</p>';
+    if (x[0] === 'sec') {
+      sec = x[1];
+      var pl = !!plegadas[sec];
+      return '<button type="button" class="ac-menu-sec" aria-expanded="' + !pl + '" onclick="activosPlegarSeccion(\'' + esc(sec) + '\')">' + esc(sec) + '<span aria-hidden="true">' + (pl ? '▸' : '▾') + '</span></button>';
+    }
     var c = n[x[0]];
-    return '<button type="button" class="ac-menu-btn" data-ac-vista="' + x[0] + '"' + (x[0] === actual ? ' aria-current="page"' : '') + ' onclick="activosTab(\'' + x[0] + '\')">' +
+    return '<button type="button" class="ac-menu-btn' + (plegadas[sec] && x[0] !== actual ? ' ac-menu-oculto' : '') + '" data-ac-vista="' + x[0] + '"' + (x[0] === actual ? ' aria-current="page"' : '') + ' onclick="activosTab(\'' + x[0] + '\')">' +
       (x[2] ? '<span class="ac-paso" aria-hidden="true">' + x[2] + '</span>' : '') + '<span class="ac-menu-txt">' + esc(x[1]) + '</span>' +
       (c !== undefined && c !== null ? '<span class="ac-menu-n">' + Number(c) + '</span>' : '') + '</button>';
-  }).join('');
+  }).join('') + (usuario ? '<p class="ac-menu-pie">Usuario: <b>' + esc(usuario) + '</b></p>' : '');
 }
 // El ciclo de un elemento (diseño de Edwin), con los pasos que llevan a su vista.
 function activosFlujoHtml(ambito) {
@@ -72,21 +84,54 @@ function activosFlujoHtml(ambito) {
 }
 async function _acRefrescarMenu() {
   try { _ac.resumen = await apiRequest('GET', '/activos/resumen?ambito=' + _ac.ambito); } catch (e) { /* el menú sigue sin conteos */ }
-  _acEl('ac-menu').innerHTML = activosMenuHtml(_ac.ambito, _ac.tab, _ac.resumen);
+  _acPintarMenu();
+}
+function _acPintarMenu() {
+  _acEl('ac-menu').innerHTML = activosMenuHtml(_ac.ambito, _ac.tab, _ac.resumen, typeof currentUser !== 'undefined' && currentUser ? currentUser.nombre || currentUser.user : '', _ac.plegadas);
+}
+// Fase INV1: pliega o despliega una sección del menú (se recuerda mientras la página siga abierta).
+function activosPlegarSeccion(sec) {
+  _ac.plegadas = _ac.plegadas || {};
+  _ac.plegadas[sec] = !_ac.plegadas[sec];
+  _acPintarMenu();
+}
+// Fase INV1 (pedido de Edwin): desde la vista «Inventario», botón para volver a la pantalla de antes.
+function activosVolverHtml(prev) {
+  if (!prev || prev === 'elementos' || !AC_VISTA_TXT[prev]) return '';
+  return '<button type="button" class="ac-volver" onclick="activosTab(\'' + esc(prev) + '\')">← Volver a ' + esc(AC_VISTA_TXT[prev][0]) + '</button>';
 }
 function activosCerrar() { closeModal('activos-overlay'); }
+// Fase INV1 (HTML de Edwin): botón lateral «Menú» = muestra u oculta el menú del Inventario (empieza visible).
+function activosAlternarMenu(mostrar) {
+  var lay = document.querySelector('#activos-overlay .ac-layout'); if (!lay) return;
+  var ver = typeof mostrar === 'boolean' ? mostrar : lay.classList.contains('ac-sin-menu');
+  lay.classList.toggle('ac-sin-menu', !ver);
+  var b = _acEl('ac-rail-menu');
+  if (b) { b.setAttribute('aria-expanded', String(ver)); b.title = ver ? 'Ocultar el menú' : 'Mostrar el menú'; }
+}
+// Botón flotante «Inventario»: abre la vista Inventario; si ya está abierta, vuelve a la pantalla de antes.
+function activosDestinoFab(tab, prev) { return tab === 'elementos' ? (prev && prev !== 'elementos' && AC_VISTA_TXT[prev] ? prev : 'panel') : 'elementos'; }
+function activosAlternarInventario() { activosTab(activosDestinoFab(_ac.tab, _ac.prev)); }
+function _acPintarFab() {
+  var b = _acEl('ac-rail-inv'); if (!b) return;
+  var en = _ac.tab === 'elementos';
+  b.setAttribute('aria-pressed', String(en));
+  b.title = en ? 'Cerrar el inventario y volver' : 'Abrir el inventario';
+}
 
 function activosTab(tab) {
   if (!AC_VISTA_TXT[tab]) tab = 'panel';
   if (tab === 'novedadesgh' && _ac.ambito !== 'inmuebles') { _ac.actasPestana = 'novedades'; tab = 'actas'; } // Fase GH5d: las novedades viven en Actas, como Edwin
   if (_ac.ambito === 'inmuebles' && (tab === 'agentes' || tab === 'asignados' || tab === 'actas' || tab === 'admin' || tab === 'novedadesgh')) tab = 'panel'; // inmuebles no se asignan a agentes
+  if (tab === 'elementos' && _ac.tab && _ac.tab !== 'elementos') _ac.prev = _ac.tab; // Fase INV1: «Volver» como en el HTML de Edwin
   _ac.tab = tab;
   _acError('');
   var seccion = AC_VISTA_ESTADO[tab] ? 'elementos' : tab; // las vistas por estado usan la lista de elementos
   ['panel', 'elementos', 'agentes', 'registrar', 'ajustes', 'actas', 'admin', 'historial'].forEach(function (t) { _acEl('ac-p-' + t).classList.toggle('hidden', t !== seccion); });
   var txt = AC_VISTA_TXT[tab];
-  _acEl('ac-vista-cab').innerHTML = '<h4 class="ac-vista-tit">' + esc(txt[0]) + '</h4><p class="vis-ayuda">' + esc(txt[1]) + '</p>' + (tab === 'registrar' ? activosFlujoHtml(_ac.ambito) : '') /* Fase GH5: el panel de Edwin no lleva el flujo */;
+  _acEl('ac-vista-cab').innerHTML = '<h4 class="ac-vista-tit">' + esc(txt[0]) + '</h4><p class="vis-ayuda">' + esc(txt[1]) + '</p>' + (tab === 'registrar' ? activosFlujoHtml(_ac.ambito) : '') /* Fase GH5: el panel de Edwin no lleva el flujo */ + (tab === 'elementos' ? activosVolverHtml(_ac.prev) : '');
   _acRefrescarMenu();
+  _acPintarFab();
   var main = document.querySelector('#activos-overlay .ac-main'); if (main) main.scrollTop = 0;
   if (tab === 'panel') _acPanel();
   if (seccion === 'elementos') { _ac.estadoFijo = AC_VISTA_ESTADO[tab] || null; _acEl('ac-f-estado-ig').classList.toggle('hidden', !!_ac.estadoFijo); activosCerrarDetalleSinBuscar(); _acFiltrosYLista(); _acInvTipos(); }
@@ -111,11 +156,11 @@ function activosPanelHtml(r, config) {
   }).join('');
   var sedes = (r.porSede || []).map(function (s) { return '<li>' + esc(s.sede) + ': <b>' + s.n + '</b></li>'; }).join('');
   // Fase 377 (I2): rendimiento por RAM (torres y portátiles); cada tarjeta abre el inventario con ese filtro.
-  var rend = r.porRendimiento ? '<h4 class="ac-sub">Rendimiento según la RAM (sin los dados de baja)</h4><div class="ac-kpis">' + (config.rendimientos || []).map(function (x) {
+  var rend = r.porRendimiento ? '<h4 class="ac-sub">Rendimiento según la RAM</h4><div class="ac-kpis">' + (config.rendimientos || []).map(function (x) {
     return '<button type="button" class="ac-kpi ac-rend-kpi" onclick="activosVerRendimiento(\'' + x.codigo + '\')"><b>' + (r.porRendimiento[x.codigo] || 0) + '</b><span class="vis-pill ' + AC_CLASE_REND[x.codigo] + '">' + esc(x.nombre) + '</span><span class="vis-ayuda">' + esc(x.ayuda) + '</span></button>';
   }).join('') + '</div>' : '';
   return tarjetas + rend + '<div class="table-wrap"><table class="vis-tabla"><thead><tr><th scope="col">Tipo</th>' + est.map(function (e) { return '<th scope="col" class="vis-num">' + esc(e.nombre) + '</th>'; }).join('') + '</tr></thead><tbody>' + filas + '</tbody></table></div>' +
-    (sedes ? '<h4 class="ac-sub">Por sede (sin los dados de baja)</h4><ul class="ac-sedes">' + sedes + '</ul>' : '');
+    (sedes ? '<h4 class="ac-sub">Por sede</h4><ul class="ac-sedes">' + sedes + '</ul>' : '');
 }
 async function _acPanel() {
   var c = _acEl('ac-p-panel');
@@ -275,6 +320,7 @@ async function activosVer(id) {
 // Los inmuebles y los equipos administrables no se asignan.
 function activosGestionHtml(a, ambito) {
   if (ambito === 'inmuebles' || a.tipo === 'ADMINISTRABLE' || a.estado === 'de_baja') return '';
+  var tg = _acTipo(a.tipo); if (tg && tg.asignable === false && !a.agente) return ''; // Fase INV2: componente del inventario
   if (a.agente) {
     return '<div class="ac-gestion-cab"><p class="ac-gestion-txt">Asignado a <b>' + esc(a.agente.nombre) + '</b></p>' +
       '<button type="button" class="btn-cancel ac-btn" onclick="activosIrAgente(' + Number(a.agente.id) + ')">Ver agente</button></div>' +
@@ -436,7 +482,7 @@ function activosFilasExport(vista, lista, config) {
   if (vista === 'admin') return { titulo: 'Equipos administrables', cols: ['Código', 'Tipo', 'Marca', 'Modelo', 'Serial', 'Dirección IP', 'Sede', 'Ubicación', 'Responsable', 'Estado'],
     filas: lista.map(function (a) { var d = a.datos || {}; return [a.codigo, d.subtipo || '', a.marca || '', a.modelo || '', a.serial || '', d.ip || '', a.sede || '', d.ubicacion || '', d.responsable || '', AC_ESTADO_ADMIN[a.estado] || a.estado]; }) };
   if (vista === 'actas') return { titulo: 'Actas', cols: ['N.º', 'Tipo', 'Fecha', 'Agente', 'Elementos', 'Motivo', 'Estado'],
-    filas: lista.map(function (a) { return [a.numero, a.tipoNombre, f(a.fecha), a.agente ? a.agente.nombre : '', a.elementos.map(function (e) { return e.tipo + ' ' + e.codigo; }).join(', '), a.motivo || '', a.estado === 'anulada' ? 'Anulada' : a.firmada ? 'Firmada' : a.atrasada ? 'Atrasada' : 'Por firmar']; }) };
+    filas: lista.map(function (a) { return [a.numero, a.tipoNombre, f(a.fecha), a.agente ? a.agente.nombre : '', a.elementos.map(function (e) { return e.tipo + ' ' + e.codigo; }).join(', '), a.motivo || '', a.estado === 'anulada' ? 'Anulada' : a.firmada ? 'Firmada' : a.atrasada ? 'Atrasada' : a.estado === 'completar' ? 'Por completar' : 'Por firmar']; }) };
   if (vista === 'historial') return { titulo: 'Historial del inventario', cols: ['Fecha', 'Tipo', 'Código', 'Acción', 'Antes', 'Después', 'Motivo', 'Quién'],
     filas: lista.map(function (h) { return [f(h.fecha), tipoN(h.tipo), h.codigo, h.accion, (h.estadoAntes ? _acEstadoTxt(h.estadoAntes, AC_ESTADO_TXT[h.estadoAntes]) : ''), (h.estadoDespues ? _acEstadoTxt(h.estadoDespues, AC_ESTADO_TXT[h.estadoDespues]) : '') || '', h.motivo || '', h.quien || '']; }) };
   return { titulo: 'Inventario', cols: ['Código', 'Tipo', 'Estado', 'Marca', 'Modelo', 'Serial', 'RAM (GB)', 'Sede', 'Operación', 'Propietario / proveedor', 'Agente'],
@@ -568,8 +614,38 @@ async function activosCambiarEstado(ev) {
 // ── Registrar ──
 function activosCampoHtml(c) {
   var id = 'ac-d-' + c.k;
-  if (c.t === 'lista') return '<div class="ig"><label for="' + id + '">' + esc(c.l) + '</label><select id="' + id + '" data-campo="' + esc(c.k) + '"><option value="">—</option>' + c.o.map(function (o) { return '<option>' + esc(o) + '</option>'; }).join('') + '</select></div>';
-  return '<div class="ig"><label for="' + id + '">' + esc(c.l) + '</label><input type="' + (c.t === 'numero' ? 'number' : 'text') + '" id="' + id + '" data-campo="' + esc(c.k) + '"' + (c.t === 'numero' ? ' min="0" step="1"' : ' maxlength="120"') + '></div>';
+  if (c.t === 'lista') return '<div class="ig"><label for="' + id + '">' + esc(c.l) + '</label><select id="' + id + '" data-campo="' + esc(c.k) + '" aria-required="true"><option value="">—</option>' + c.o.map(function (o) { return '<option>' + esc(o) + '</option>'; }).join('') + '</select></div>';
+  return '<div class="ig"><label for="' + id + '">' + esc(c.l) + '</label><input type="' + (c.t === 'numero' ? 'number' : 'text') + '" id="' + id + '" data-campo="' + esc(c.k) + '" aria-required="true"' + (c.t === 'numero' ? ' min="0" step="1"' : ' maxlength="120"') + '></div>';
+}
+// Fase INV2 (HTML de Edwin): todos los campos son obligatorios. El mismo texto que el servidor (server/activos.js).
+function activosFaltanTxt(faltan) {
+  return 'Todos los campos son obligatorios. Falta' + (faltan.length > 1 ? 'n' : '') + ': ' + faltan.slice(0, 4).join(', ') + (faltan.length > 4 ? ' y ' + (faltan.length - 4) + ' más' : '') + '.';
+}
+// Propio (InConexion, o sin propietario) lleva precio; de un proveedor, renta mensual (como el servidor y el Panel).
+function activosEsPropio(p) { return !String(p || '').trim() || /inconexi[oó]n/i.test(String(p)); }
+function activosAjustarPrecioRenta() {
+  var propio = activosEsPropio((_acEl('ac-r-proveedor') || {}).value);
+  [['precio', propio], ['renta_mensual', !propio]].forEach(function (x) {
+    var el = _acEl('ac-d-' + x[0]); if (!el) return;
+    var ig = el.closest('.ig'); ig.classList.toggle('hidden', !x[1]);
+    if (!x[1]) { el.value = ''; ig.classList.remove('ac-falta'); el.removeAttribute('aria-invalid'); }
+  });
+}
+// Marca los campos vacíos que se ven (los ocultos, el código automático y lo que no aplica no cuentan) y devuelve sus nombres.
+function activosRevisarObligatorios(form) {
+  var faltan = [];
+  Array.prototype.forEach.call(form.querySelectorAll('.ig'), function (ig) {
+    var el = ig.querySelector('input:not([type=checkbox]):not([type=hidden]),select,textarea');
+    if (!el) return;
+    ig.classList.remove('ac-falta'); el.removeAttribute('aria-invalid');
+    if (el.disabled || el.readOnly || ig.closest('.hidden') || (el.id === 'ac-r-codigo' && !el.required)) return;
+    if (String(el.value).trim()) return;
+    ig.classList.add('ac-falta'); el.setAttribute('aria-invalid', 'true');
+    var lb = ig.querySelector('label'); faltan.push(lb ? lb.textContent.trim() : el.id);
+    var quitar = function () { ig.classList.remove('ac-falta'); el.removeAttribute('aria-invalid'); };
+    el.addEventListener('input', quitar, { once: true }); el.addEventListener('change', quitar, { once: true });
+  });
+  return faltan;
 }
 function _acFormulario() {
   var sel = _acEl('ac-r-tipo');
@@ -586,10 +662,17 @@ function activosCambioTipo() {
   _acEl('ac-r-codigo').required = !esAdm; _acEl('ac-r-codigo-ayuda').classList.toggle('hidden', !esAdm);
   var t = _acTipo(_acEl('ac-r-tipo').value);
   _acEl('ac-r-campos').innerHTML = t ? t.campos.filter(function (c) { return !c.oculto; }).map(activosCampoHtml).join('') : ''; // Fase 372: sin los ocultos
+  activosAjustarPrecioRenta(); // Fase INV2
 }
 async function activosRegistrar(ev) {
   ev.preventDefault();
   _acError('');
+  var faltan = activosRevisarObligatorios(_acEl('ac-r-form')); // Fase INV2: todos los campos obligatorios
+  if (faltan.length) {
+    _acError(activosFaltanTxt(faltan));
+    var primero = _acEl('ac-r-form').querySelector('.ac-falta input,.ac-falta select,.ac-falta textarea'); if (primero) primero.focus();
+    return;
+  }
   var datos = {};
   document.querySelectorAll('#ac-r-campos [data-campo]').forEach(function (el) { if (el.value !== '') datos[el.dataset.campo] = el.type === 'number' ? Number(el.value) : el.value; });
   var b = { tipo: _acEl('ac-r-tipo').value, codigo: _acEl('ac-r-codigo').value, estado: _acEl('ac-r-estado').value, marca: _acEl('ac-r-marca').value, modelo: _acEl('ac-r-modelo').value, serial: _acEl('ac-r-serial').value,
@@ -695,12 +778,21 @@ function activosCampoEditorHtml(c, i) {
     '<div class="ac-acciones"><button type="button" class="btn-cancel ac-btn" onclick="activosMoverCampo(this,-1)" aria-label="Subir campo">↑</button><button type="button" class="btn-cancel ac-btn" onclick="activosMoverCampo(this,1)" aria-label="Bajar campo">↓</button>' +
     (nuevo ? '<button type="button" class="btn-cancel ac-btn" onclick="this.closest(\'.ac-ce\').remove()">Quitar</button>' : '') + '</div></li>';
 }
-function activosEditorTipoHtml(t) {
+// Fase INV2 (HTML de Edwin): «Se asigna a agentes». Sí: como un portátil; No: componente del inventario. No va en los
+// equipos administrables ni en los inmuebles, y no se cambia si el tipo ya tiene elementos.
+function activosAsignableHtml(t, ambito) {
+  if ((t && t.codigo === 'ADMINISTRABLE') || ((t && t.ambito) || ambito) === 'inmuebles') return '';
+  var asig = !t || t.asignable !== false, bloq = !!(t && t.elementos);
+  return '<label class="ac-check ac-te-asig"><input type="checkbox" id="ac-te-asig"' + (asig ? ' checked' : '') + (bloq ? ' disabled' : '') + ' aria-describedby="ac-te-asig-ayuda"> Se asigna a agentes</label>' +
+    '<p class="vis-ayuda" id="ac-te-asig-ayuda">Sí: funciona como un portátil (entra a Libres, se asigna a un agente y lleva acta). No: es un componente del inventario y no se asigna.' + (bloq ? ' No se puede cambiar porque ya hay elementos de este tipo.' : '') + '</p>';
+}
+function activosEditorTipoHtml(t, ambito) {
   var nuevo = !t;
+  var asignable = activosAsignableHtml(t, ambito);
   t = t || { nombre: '', plural: '', campos: [] };
   return '<form class="aurora-card ac-tipo-form" onsubmit="activosGuardarTipo(event)" data-codigo="' + esc(t.codigo || '') + '"><div class="aurora-card-title">' + (nuevo ? 'Nuevo tipo' : 'Editar ' + esc(t.nombre)) + '</div>' +
     '<div class="ac-filtros"><div class="ig"><label for="ac-te-nombre">Nombre</label><input type="text" id="ac-te-nombre" maxlength="40" value="' + esc(t.nombre) + '"></div>' +
-    '<div class="ig"><label for="ac-te-plural">Plural</label><input type="text" id="ac-te-plural" maxlength="40" value="' + esc(t.plural) + '"></div></div>' +
+    '<div class="ig"><label for="ac-te-plural">Plural</label><input type="text" id="ac-te-plural" maxlength="40" value="' + esc(t.plural) + '"></div></div>' + asignable +
     '<p class="vis-ayuda">Además de los campos de siempre (código, marca, modelo, serial, sede, operación, proveedor y observaciones).</p>' +
     '<ol class="ac-ce-lista" id="ac-te-campos">' + t.campos.map(activosCampoEditorHtml).join('') + '</ol>' +
     '<button type="button" class="btn-cancel ac-btn" onclick="activosAgregarCampo()">Agregar campo</button>' +
@@ -710,7 +802,7 @@ function activosEditarTipo(codigo) {
   _acError('');
   var t = codigo ? (_ac.config.tiposTodos || []).find(function (x) { return x.codigo === codigo; }) : null;
   var ed = _acEl('ac-tipo-editor');
-  ed.innerHTML = activosEditorTipoHtml(t);
+  ed.innerHTML = activosEditorTipoHtml(t, _ac.ambito);
   _acEl('ac-tipos').classList.add('hidden');
   ed.classList.remove('hidden');
   _acEl('ac-te-nombre').focus();
@@ -745,6 +837,7 @@ async function activosGuardarTipo(ev) {
   _acError('');
   var form = ev.target, codigo = form.getAttribute('data-codigo');
   var b = { nombre: _acEl('ac-te-nombre').value, plural: _acEl('ac-te-plural').value, campos: activosLeerCampos(form) };
+  var asig = _acEl('ac-te-asig'); if (asig && !asig.disabled) b.asignable = asig.checked; // Fase INV2
   try {
     await apiRequest(codigo ? 'PUT' : 'POST', '/activos/config/tipos' + (codigo ? '/' + encodeURIComponent(codigo) : '?ambito=' + _ac.ambito), b);
     showToast(codigo ? 'Formulario guardado' : 'Tipo creado', 'ok');
@@ -831,7 +924,7 @@ async function activosVerAgente(id) {
   var hist = r.asignaciones.map(function (s) {
     return '<li>' + esc(tipoN(s.tipo)) + ' ' + esc(s.codigo) + ' · desde ' + esc(_acFecha(s.desde)) + (s.hasta ? ' hasta ' + esc(_acFecha(s.hasta)) + (s.motivoFin ? ' · ' + esc(s.motivoFin) : '') : ' · actual') + '</li>';
   }).join('');
-  var tiposAsignables = _ac.config.tipos.filter(function (t) { return t.codigo !== 'ADMINISTRABLE'; }).map(function (t) { return { codigo: t.codigo, nombre: t.nombre }; });
+  var tiposAsignables = _ac.config.tipos.filter(function (t) { return t.codigo !== 'ADMINISTRABLE' && t.asignable !== false; }).map(function (t) { return { codigo: t.codigo, nombre: t.nombre }; });
   _acEl('ac-ag-detalle').innerHTML = '<section class="aurora-card"><div class="aurora-card-title">' + esc(g.nombre) + (g.activo ? '' : ' · <span class="vis-pill vis-gris">Inactivo</span>') + '</div>' +
     '<dl class="wv-estado"><dt>Documento</dt><dd>' + esc(g.documento || '—') + '</dd><dt>Sede</dt><dd>' + esc(g.sede || '—') + '</dd><dt>Operación</dt><dd>' + esc(g.operacion || '—') + '</dd></dl>' +
     '<h4 class="ac-sub">Elementos asignados</h4>' + elems + '<div id="ac-soltar"></div>' +
@@ -920,7 +1013,8 @@ var AC_TEXTO_BASE = {
 };
 function activosActaPrintHtml(acta) {
   var tipo = acta.tipo;
-  var fecha = new Date(acta.fecha).toLocaleString('es-CO', { timeZone: 'America/Bogota' });
+  // Fase INV4: con la fecha que se escribió al completarla (si no, la de creación).
+  var fecha = /^\d{4}-\d{2}-\d{2}$/.test(acta.fechaActa || '') ? acta.fechaActa.slice(8, 10) + '/' + acta.fechaActa.slice(5, 7) + '/' + acta.fechaActa.slice(0, 4) : new Date(acta.fecha).toLocaleString('es-CO', { timeZone: 'America/Bogota' });
   var g = acta.agente && acta.agente.nombre ? acta.agente : null;
   var els = acta.elementos || [];
   var conDir = tipo === 'cambio' && els.some(function (e) { return e.dir; });
@@ -943,8 +1037,10 @@ function activosActaPrintHtml(acta) {
     '<p class="sub">Inventario de sistemas · InConexión · ' + esc(fecha) + '</p>' +
     (acta.anulada ? '<p class="anulada">ANULADA: ' + esc(acta.anulada.motivo || '') + '</p>' : '') +
     '<dl>' + (g ? '<dt>Agente</dt><dd>' + esc(g.nombre || '') + '</dd><dt>Documento</dt><dd>' + esc(g.documento || '') + '</dd><dt>Sede</dt><dd>' + esc(g.sede || acta.sede || '') + '</dd><dt>Operación</dt><dd>' + esc(g.operacion || '') + '</dd>' : '<dt>Sede</dt><dd>' + esc(acta.sede || '') + '</dd>') +
-    (acta.motivo ? '<dt>Motivo</dt><dd>' + esc(acta.motivo) + '</dd>' : '') + (acta.tecnico ? '<dt>Técnico o proveedor</dt><dd>' + esc(acta.tecnico) + '</dd>' : '') + '</dl>' +
+    (acta.motivo ? '<dt>Motivo</dt><dd>' + esc(acta.motivo) + '</dd>' : '') + (acta.tecnico ? '<dt>Técnico o proveedor</dt><dd>' + esc(acta.tecnico) + '</dd>' : '') +
+    (acta.entrega ? '<dt>' + (tipo === 'devolucion' || tipo === 'retorno' ? 'Recibe' : 'Entrega') + ' por Sistemas</dt><dd>' + esc(acta.entrega) + '</dd>' : '') + '</dl>' +
     '<table><thead><tr><th>#</th>' + (conDir ? '<th>Movimiento</th>' : '') + '<th>Elemento</th><th>Código</th><th>Marca / modelo</th><th>Serial</th>' + (conQueda ? '<th>Queda</th>' : '') + (conMotivo ? '<th>Motivo</th>' : '') + '</tr></thead><tbody>' + filas + '</tbody></table>' +
+    (acta.observaciones ? '<p><strong>Observaciones:</strong> ' + esc(acta.observaciones) + '</p>' : '') +
     '<p>' + esc(texto) + '</p>' +
     '<div class="firmas"><div class="firma">' + esc(firmas[0]) + '<br>Nombre:<br>Documento:</div><div class="firma">' + esc(firmas[1]) + '<br>Nombre:<br>Documento:</div></div>' +
     '<p class="pie">Generada por ' + esc(acta.quien || '') + (acta.auto ? ' (automática)' : '') + '. Firmada, se escanea en PDF y se sube en la plataforma (Inventario de sistemas → Actas).</p>' +
@@ -957,10 +1053,12 @@ function activosActasAviso(actas) {
   if (!l.length) return '';
   return '. ' + (l.length === 1 ? 'Acta N.º ' + Number(l[0].numero) + ' creada' : 'Actas N.º ' + l.map(function (a) { return Number(a.numero); }).join(' y ') + ' creadas') + ' (en «Actas»)';
 }
-var AC_CLASE_ACTA = { pendiente: 'vis-amarillo', firmada: 'vis-verde', anulada: 'vis-gris' };
-var AC_ESTADO_ACTA = { pendiente: 'Por firmar', firmada: 'Firmada', anulada: 'Anulada' };
+// Fase INV4 (HTML de Edwin): «Por completar» → «Por firmar» → «Firmada».
+var AC_CLASE_ACTA = { completar: 'vis-amarillo', pendiente: 'vis-amarillo', firmada: 'vis-verde', anulada: 'vis-gris' };
+var AC_ESTADO_ACTA = { completar: 'Por completar', pendiente: 'Por firmar', firmada: 'Firmada', anulada: 'Anulada' };
+var AC_ACTA_CON_TECNICO = ['reparacion', 'retorno'];
 function activosActasKpisHtml(r) {
-  return '<div class="ac-kpis">' + [['pendiente', 'Por firmar', r.pendientes, 'vis-amarillo'], ['atrasada', 'Atrasadas', r.atrasadas, 'vis-rojo'], ['firmada', 'Firmadas', r.firmadas, 'vis-verde'], ['anulada', 'Anuladas', r.anuladas, 'vis-gris']].map(function (k) {
+  return '<div class="ac-kpis">' + [['completar', 'Por completar', r.porCompletar, 'vis-amarillo'], ['pendiente', 'Por firmar', r.pendientes, 'vis-amarillo'], ['atrasada', 'Atrasadas', r.atrasadas, 'vis-rojo'], ['firmada', 'Firmadas', r.firmadas, 'vis-verde'], ['anulada', 'Anuladas', r.anuladas, 'vis-gris']].map(function (k) {
     return '<button type="button" class="ac-kpi ac-rend-kpi" onclick="activosActasFiltrar(\'' + k[0] + '\')"><b>' + Number(k[2] || 0) + '</b><span class="vis-pill ' + k[3] + '">' + esc(k[1]) + '</span></button>';
   }).join('') + '</div>';
 }
@@ -968,10 +1066,12 @@ function activosActasHtml(lista, firmadasActivas, diasAtraso) {
   if (!lista.length) return '<p class="vis-vacio">Ninguna acta con estos filtros. Se crean solas al asignar, devolver, cambiar o cambiar de estado un elemento.</p>';
   return '<div class="table-wrap"><table class="vis-tabla"><thead><tr><th scope="col">N.º</th><th scope="col">Tipo</th><th scope="col">Fecha</th><th scope="col">Agente</th><th scope="col">Elementos</th><th scope="col">Motivo</th><th scope="col">Estado</th><th scope="col"><span class="sr-only">Acciones</span></th></tr></thead><tbody>' +
     lista.map(function (a) {
-      var acc = '<button type="button" class="btn-cancel ac-btn" onclick="activosActaImprimirLista(' + Number(a.id) + ')">Imprimir / PDF</button>';
+      // Fase INV4: un acta por completar no se imprime todavía: primero se completa y se genera su PDF.
+      var acc = a.estado === 'completar' ? '<button type="button" class="btn-primary ac-btn" onclick="activosActaCompletarForm(' + Number(a.id) + ')">Completar y generar PDF</button>'
+        : '<button type="button" class="btn-cancel ac-btn" onclick="activosActaImprimirLista(' + Number(a.id) + ')">Imprimir / PDF</button>';
       if (a.firmada) acc += '<button type="button" class="btn-cancel ac-btn" onclick="activosDescargarFirmada(' + Number(a.id) + ')">Ver firmada</button>';
       if (a.estado === 'pendiente' && firmadasActivas) acc += '<label class="btn-cancel ac-btn ac-subir">Subir firmada<input type="file" accept="application/pdf" class="sr-only" onchange="activosSubirFirmadaLista(' + Number(a.id) + ', this)"></label>';
-      if (a.estado === 'pendiente') acc += '<button type="button" class="btn-cancel ac-btn" onclick="activosActaAnularForm(' + Number(a.id) + ')">Anular</button>';
+      if (a.estado === 'pendiente' || a.estado === 'completar') acc += '<button type="button" class="btn-cancel ac-btn" onclick="activosActaAnularForm(' + Number(a.id) + ')">Anular</button>';
       var elems = (a.elementos || []).map(function (e) { return e.tipo + ' ' + e.codigo; }).join(', ');
       return '<tr><th scope="row">' + Number(a.numero) + '</th><td>' + esc(a.tipoNombre) + (a.auto ? '' : ' <span class="vis-ayuda">(manual)</span>') + '</td><td>' + esc(new Date(a.fecha).toLocaleDateString('es-CO', { timeZone: 'America/Bogota' })) + '</td>' +
         '<td>' + esc(a.agente ? a.agente.nombre : '—') + '</td><td>' + esc(elems) + '</td><td>' + esc(a.motivo || '') + (a.tecnico ? ' · ' + esc(a.tecnico) : '') + '</td>' +
@@ -979,7 +1079,7 @@ function activosActasHtml(lista, firmadasActivas, diasAtraso) {
         '<td><div class="ac-acciones">' + acc + '</div></td></tr>';
     }).join('') + '</tbody></table></div>';
 }
-function activosActasFiltrar(estado) { _acEl('ac-ac-estado').value = estado; activosActasPestana(estado === 'pendiente' || estado === 'firmada' ? estado : 'todas', true); }
+function activosActasFiltrar(estado) { _acEl('ac-ac-estado').value = estado; activosActasPestana(['pendiente', 'completar', 'sincerrar'].indexOf(estado) !== -1 ? 'pendiente' : estado === 'firmada' ? 'firmada' : 'todas', true); }
 // Fase GH5d (diseño de Edwin): pestañas «Actas pendientes», «Actas firmadas», «Todas» y «Novedades de GH».
 var AC_ACTAS_PEST = [['pendiente', 'Actas pendientes'], ['firmada', 'Actas firmadas'], ['todas', 'Todas'], ['novedades', 'Novedades de GH']];
 function activosActasPestanasHtml(actual, nNovedades) {
@@ -997,7 +1097,7 @@ function activosActasPestana(p, sinTocarEstado) {
   _acEl('ac-ac-zona').classList.toggle('hidden', nov);
   _acEl('ac-p-novedadesgh').classList.toggle('hidden', !nov);
   if (nov) { activosNovedadesGH(); return; }
-  if (!sinTocarEstado) _acEl('ac-ac-estado').value = p === 'todas' ? '' : p;
+  if (!sinTocarEstado) _acEl('ac-ac-estado').value = p === 'todas' ? '' : p === 'pendiente' ? 'sincerrar' : p; // Fase INV4: pendientes = por completar o firmar
   activosActasBuscar();
 }
 function activosActaManual() { activosTab('agentes'); _acError(''); var q = _acEl('ac-ag-q'); if (q) q.focus(); }
@@ -1016,8 +1116,51 @@ async function activosActasBuscar() {
     _acEl('ac-actas-kpis').innerHTML = activosActasKpisHtml(r.resumen);
     _acEl('ac-ac-conteo').textContent = r.actas.length + (r.actas.length === 1 ? ' acta' : ' actas') + ' con estos filtros' + (r.firmadasActivas ? '' : '. Subir la firmada se activa cuando el administrador configure el almacenamiento privado (S3).');
     c.innerHTML = activosActasHtml(r.actas, r.firmadasActivas, r.diasAtraso);
+    if (_ac.completarTras) { var idc = _ac.completarTras; _ac.completarTras = null; activosActaCompletarForm(idc); } // Fase INV4: desde la ficha del agente
   } catch (e) { c.innerHTML = ''; _acError(e.message); }
 }
+// ── Fase INV4 (HTML de Edwin): completar el acta y generar su PDF para firmar ──
+function _acHoyCo() { return new Date(Date.now() - 5 * 3600 * 1000).toISOString().slice(0, 10); }
+function _acQuienSoy() { return typeof currentUser !== 'undefined' && currentUser && currentUser.nombre ? currentUser.nombre : ''; }
+function activosActaCompletarHtml(a, hoy, quien) {
+  var recibe = a.tipo === 'devolucion' || a.tipo === 'retorno';
+  var conTec = AC_ACTA_CON_TECNICO.indexOf(a.tipo) !== -1;
+  var elems = (a.elementos || []).map(function (e) { return e.tipo + ' ' + e.codigo; }).join(', ');
+  return '<form class="ac-asig-form" onsubmit="activosActaCompletar(event,' + Number(a.id) + ')"><h5 class="ac-sub ac-form-titulo">Completar el acta N.º ' + Number(a.numero) + ' · ' + esc(a.tipoNombre) + '</h5>' +
+    '<p class="vis-ayuda">' + (a.auto ? 'Acta creada sola el ' + esc(new Date(a.fecha).toLocaleDateString('es-CO', { timeZone: 'America/Bogota' })) + (a.motivo ? ' · Motivo: ' + esc(a.motivo) : '') + '.' : 'Acta creada a mano.') +
+    (a.agente ? ' Agente: ' + esc(a.agente.nombre || '') + '.' : '') + ' Elementos: ' + esc(elems) + '. Completa los datos y genera el PDF para firmar.</p>' +
+    '<div class="ig"><label for="ac-cp-fecha">Fecha del acta</label><input type="date" id="ac-cp-fecha" required max="' + esc(hoy) + '" value="' + esc(a.fechaActa || hoy) + '"></div>' +
+    '<div class="ig"><label for="ac-cp-entrega">Quién ' + (recibe ? 'recibe' : 'entrega') + ' por Sistemas</label><input type="text" id="ac-cp-entrega" required minlength="3" maxlength="80" value="' + esc(a.entrega || quien || '') + '"></div>' +
+    (conTec ? '<div class="ig"><label for="ac-cp-tecnico">Técnico o proveedor</label><input type="text" id="ac-cp-tecnico" required minlength="2" maxlength="80" placeholder="Ej.: Soporte interno" value="' + esc(a.tecnico || '') + '"></div>' : '') +
+    '<div class="ig ac-motivo"><label for="ac-cp-obs">Observaciones (opcional)</label><textarea id="ac-cp-obs" rows="3" maxlength="500">' + esc(a.observaciones || '') + '</textarea></div>' +
+    '<button type="submit" class="btn-primary">Generar PDF para firmar</button><button type="button" class="btn-cancel" onclick="activosActaAnularCancelar()">Cancelar</button></form>';
+}
+function activosActaCompletarForm(id) {
+  var a = (_ac.actasLista || []).find(function (x) { return x.id === id; }); if (!a) return;
+  var z = _acEl('ac-ac-anular');
+  z.innerHTML = activosActaCompletarHtml(a, _acHoyCo(), _acQuienSoy());
+  try { z.scrollIntoView({ block: 'center' }); } catch (e) { /* sin scroll */ }
+  _acEl('ac-cp-fecha').focus();
+}
+async function activosActaCompletar(ev, id) {
+  ev.preventDefault();
+  _acError('');
+  var tec = _acEl('ac-cp-tecnico');
+  var body = { fecha: _acEl('ac-cp-fecha').value, entrega: _acEl('ac-cp-entrega').value, observaciones: _acEl('ac-cp-obs').value };
+  if (tec) body.tecnico = tec.value;
+  // La ventana se abre en el mismo clic (si no, el navegador la bloquea) y se llena al generar el acta.
+  var w = window.open('', '_blank');
+  try {
+    var r = await apiRequest('POST', '/activos/actas/' + id + '/completar', body);
+    if (w) { w.document.open(); w.document.write(activosActaPrintHtml(r.acta)); w.document.close(); setTimeout(function () { try { w.focus(); w.print(); } catch (e) { /* cerrada */ } }, 300); }
+    else showToast('Permite las ventanas emergentes para imprimir el acta.', 'error');
+    showToast('Acta N.º ' + Number(r.acta.numero) + ' generada. Imprímela, hazla firmar y súbela escaneada.', 'ok');
+    activosActaAnularCancelar();
+    activosActasBuscar();
+    _acRefrescarMenu();
+  } catch (e) { if (w) w.close(); _acError(e.message); }
+}
+function activosIrCompletarActa(id) { _ac.completarTras = id; _ac.actasPestana = 'pendiente'; activosTab('actas'); }
 function activosActaImprimirLista(id) { var a = (_ac.actasLista || []).find(function (x) { return x.id === id; }); if (a) activosImprimirActa(a); }
 async function activosSubirFirmadaLista(id, input) { await activosSubirFirmada(id, input); activosActasBuscar(); }
 function activosActaAnularForm(id) {
@@ -1056,6 +1199,8 @@ async function _acActas() {
   _ac.actas = r;
   var lista = r.actas.length ? '<div class="table-wrap"><table class="vis-tabla"><thead><tr><th scope="col">N.º</th><th scope="col">Tipo</th><th scope="col">Fecha</th><th scope="col">Elementos</th><th scope="col">Firmada</th><th scope="col"><span class="sr-only">Acciones</span></th></tr></thead><tbody>' +
     r.actas.map(function (a) {
+      if (a.estado === 'completar') return '<tr><th scope="row">' + Number(a.numero) + '</th><td>' + esc(a.tipoNombre) + '</td><td>' + esc(_acFecha(a.fecha)) + '</td><td class="vis-num">' + a.elementos.length + '</td><td><span class="vis-pill vis-amarillo">Por completar</span></td>' +
+        '<td><div class="ac-acciones"><button type="button" class="btn-primary ac-btn" onclick="activosIrCompletarActa(' + Number(a.id) + ')">Completar y generar PDF</button></div></td></tr>'; // Fase INV4
       var acciones = '<button type="button" class="btn-cancel ac-btn" onclick="activosImprimirActaId(' + Number(a.id) + ')">Imprimir / PDF</button>';
       if (a.firmada) acciones += '<button type="button" class="btn-cancel ac-btn" onclick="activosDescargarFirmada(' + Number(a.id) + ')">Ver firmada</button>';
       if (r.firmadasActivas) acciones += '<label class="btn-cancel ac-btn ac-subir">' + (a.firmada ? 'Reemplazar firmada' : 'Subir firmada') + '<input type="file" accept="application/pdf" class="sr-only" onchange="activosSubirFirmada(' + Number(a.id) + ', this)"></label>';
@@ -1131,7 +1276,7 @@ async function activosDescargarFirmada(id) {
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { activosMenuHtml: activosMenuHtml, activosFlujoHtml: activosFlujoHtml, AC_MENU: AC_MENU, AC_VISTA_ESTADO: AC_VISTA_ESTADO, activosTiposHtml: activosTiposHtml, activosCampoEditorHtml: activosCampoEditorHtml, activosEditorTipoHtml: activosEditorTipoHtml, activosLeerCampos: activosLeerCampos, activosPanelHtml: activosPanelHtml, activosListaHtml: activosListaHtml, activosConsulta: activosConsulta, activosRendHtml: activosRendHtml, activosGestionHtml: activosGestionHtml, activosAgenteSelectHtml: activosAgenteSelectHtml, activosAgenteBody: activosAgenteBody, activosActasHtml: activosActasHtml, activosActasKpisHtml: activosActasKpisHtml, activosActasAviso: activosActasAviso, activosFilasExport: activosFilasExport, activosReportePrintHtml: activosReportePrintHtml, activosHistorialHtml: activosHistorialHtml, activosImportarColumnas: activosImportarColumnas, activosImportarResultadoHtml: activosImportarResultadoHtml, activosAdminHtml: activosAdminHtml, activosAdminKpisHtml: activosAdminKpisHtml, activosAdminSubtiposHtml: activosAdminSubtiposHtml, AC_ESTADO_ADMIN: AC_ESTADO_ADMIN, activosCampoHtml: activosCampoHtml, activosAgentesHtml: activosAgentesHtml, activosActaPrintHtml: activosActaPrintHtml };
+  module.exports = { activosDestinoFab: activosDestinoFab, activosVolverHtml: activosVolverHtml,activosMenuHtml: activosMenuHtml, activosFlujoHtml: activosFlujoHtml, AC_MENU: AC_MENU, AC_VISTA_ESTADO: AC_VISTA_ESTADO, activosTiposHtml: activosTiposHtml, activosCampoEditorHtml: activosCampoEditorHtml, activosEditorTipoHtml: activosEditorTipoHtml, activosLeerCampos: activosLeerCampos, activosPanelHtml: activosPanelHtml, activosListaHtml: activosListaHtml, activosConsulta: activosConsulta, activosRendHtml: activosRendHtml, activosGestionHtml: activosGestionHtml, activosAgenteSelectHtml: activosAgenteSelectHtml, activosAgenteBody: activosAgenteBody, activosActasHtml: activosActasHtml, activosActasKpisHtml: activosActasKpisHtml, activosActasAviso: activosActasAviso, activosFilasExport: activosFilasExport, activosReportePrintHtml: activosReportePrintHtml, activosHistorialHtml: activosHistorialHtml, activosImportarColumnas: activosImportarColumnas, activosImportarResultadoHtml: activosImportarResultadoHtml, activosAdminHtml: activosAdminHtml, activosAdminKpisHtml: activosAdminKpisHtml, activosAdminSubtiposHtml: activosAdminSubtiposHtml, AC_ESTADO_ADMIN: AC_ESTADO_ADMIN, activosCampoHtml: activosCampoHtml, activosAgentesHtml: activosAgentesHtml, activosActaPrintHtml: activosActaPrintHtml };
 }
 
 // ── Fase GH4 (plan de Gestión humana): «Novedades desde Gestión Humana» (diseño de Edwin) ──
@@ -1176,7 +1321,8 @@ if (typeof module !== 'undefined' && module.exports) module.exports.activosNoved
 // ── Fase GH5 (pedido del usuario, 23/11): «Panel general» igual al diseño de Edwin ──
 // Chips «Ver gráficas de», tarjetas con detalle, dona por estado y por RAM, barras por tipo/sede/operación,
 // marcas, valor, renta, calidad de los datos y movimientos de 6 meses. Datos: GET /activos/panel.
-var ACP_ESTADOS = [['en_uso', 'En uso'], ['libre', 'Libres'], ['en_reparacion', 'En reparación'], ['malo', 'Malos'], ['de_baja', 'Dados de baja']];
+// Fase INV1 (pedido de Edwin, 26/11): el panel no muestra los dados de baja (siguen en la lista y en el historial).
+var ACP_ESTADOS = [['en_uso', 'En uso'], ['libre', 'Libres'], ['en_reparacion', 'En reparación'], ['malo', 'Malos']];
 var ACP_REND = [['bajo', 'Bajo (menos de 8 GB)'], ['medio', 'Medio (8 a 15 GB)'], ['alto', 'Alto (16 GB o más)'], ['sin', 'Sin dato (RAM no registrada)']];
 var ACP_MOV = [['ingresos', 'Ingresos'], ['asignaciones', 'Asignaciones'], ['devoluciones', 'Devoluciones'], ['danos', 'Daños y reparaciones']];
 function _acpPct(n, t) { return t ? Math.round(n * 1000 / t) / 10 : 0; }
@@ -1236,9 +1382,9 @@ function activosPanel2Html(p) {
   if (!p.total) return cab + '<div class="acp-kpis">' + kpis.join('') + '</div><p class="vis-vacio">Aún no hay elementos. Regístralos en «Registrar ingreso».</p>';
   var segE = ACP_ESTADOS.map(function (x) { return [x[0], e[x[0]] || 0, x[1]]; });
   var g = [];
-  g.push(_acpCard('¿En qué estado están los equipos y elementos?', 'Cuántos están en uso, libres, en reparación, malos o dados de baja.',
-    '<div class="acp-dona-w">' + _acpDona(segE, p.total, 'elementos', 'e') + _acpFilasEstado(segE, p.total, 'e') + '</div>',
-    '<span>' + _acpPct(enUso, p.total) + '% en uso · ' + (e.libre || 0) + ' libres para entregar</span>' + _acpBtn('Ver libres', "activosTab('libres')")));
+  g.push(_acpCard('¿En qué estado están los equipos y elementos?', 'Cuántos están en uso, libres, en reparación o malos.',
+    '<div class="acp-dona-w">' + _acpDona(segE, vivos, 'elementos', 'e') + _acpFilasEstado(segE, vivos, 'e') + '</div>',
+    '<span>' + _acpPct(enUso, vivos) + '% en uso · ' + (e.libre || 0) + ' libres para entregar</span>' + _acpBtn('Ver libres', "activosTab('libres')")));
   if (p.porRendimiento) {
     var r = p.porRendimiento, tr = ACP_REND.reduce(function (a, x) { return a + (r[x[0]] || 0); }, 0), segR = ACP_REND.map(function (x) { return [x[0], r[x[0]] || 0, x[1]]; });
     g.push(_acpCard('Rendimiento según la memoria RAM', 'Torres y portátiles. Bajo: menos de 8 GB · Medio: 8 a 15 GB · Alto: 16 GB o más.',
@@ -1248,10 +1394,10 @@ function activosPanel2Html(p) {
   var maxT = Math.max.apply(null, p.porTipo.map(function (t) { return t.total; }).concat([1]));
   var ley = _acpLeyenda(ACP_ESTADOS, 'e');
   g.push(_acpCard('¿Cuántos hay de cada tipo?', 'Todos los elementos registrados, por tipo y estado.', ley + _acpApiladas(p.porTipo, maxT),
-    '<span>' + p.total + ' elementos en total</span>' + _acpBtn('Ver inventario', "activosTab('elementos')")));
+    '<span>' + vivos + ' elementos en total</span>' + _acpBtn('Ver inventario', "activosTab('elementos')")));
   var maxS = Math.max.apply(null, p.porSede.map(function (t) { return t.total; }).concat([1]));
   var sinS = p.porSede.filter(function (s) { return s.sin; })[0];
-  g.push(_acpCard('Elementos por sede', 'Cantidad por sede, separada por estado (sin los dados de baja).', ley + _acpApiladas(p.porSede, maxS),
+  g.push(_acpCard('Elementos por sede', 'Cantidad por sede, separada por estado.', ley + _acpApiladas(p.porSede, maxS),
     '<span>' + (sinS ? sinS.total : 0) + ' sin sede registrada</span>' + _acpBtn('Ver datos', "activosTab('elementos')")));
   var maxO = Math.max.apply(null, p.porOperacion.map(function (t) { return t.total; }).concat([1]));
   var sinO = p.porOperacion.filter(function (s) { return s.sin; })[0];
@@ -1259,7 +1405,7 @@ function activosPanel2Html(p) {
     '<span>' + (sinO ? sinO.total : 0) + ' sin operación asignada</span>' + _acpBtn('Ver datos', "activosTab('elementos')")));
   g.push(_acpCard('Marcas más comunes', 'Marcas de todos los elementos.', _acpSimples(p.marcas.map(function (m) { return { nombre: m.nombre, v: m.n }; }), 'acp-c-marca'),
     '<span>' + p.total + ' registrados</span>' + _acpBtn('Ver datos', "activosTab('elementos')")));
-  g.push(_acpCard('Valor del inventario por elemento', 'Suma del precio de compra de los elementos propios de InConexion (sin los dados de baja ni los rentados).',
+  g.push(_acpCard('Valor del inventario por elemento', 'Suma del precio de compra de los elementos propios de InConexion (sin los rentados).',
     _acpSimples(p.valor.porTipo.map(function (v) { return { nombre: v.nombre, v: v.valor }; }), 'acp-c-valor', _acpMiles),
     '<span>Total: <b>' + _acpMiles(p.valor.total) + '</b> · ' + p.valor.sinPrecio + ' propio(s) sin precio</span>' + _acpBtn('Ver datos', "activosTab('elementos')")));
   g.push(_acpCard('Renta mensual por elemento', 'Lo que se paga cada mes por elementos de proveedores diferentes a InConexion, por proveedor.',
@@ -1294,7 +1440,7 @@ function activosRegistrarTarjetasHtml(tipos, porTipo, ultimos) {
     var x = porTipo[t.codigo] || {}, total = Object.keys(x).reduce(function (a, k) { return a + (x[k] || 0); }, 0);
     var c = esc(t.codigo);
     return '<article class="acp-card acr-card"><div class="acr-top"><h4>' + esc(t.nombre) + '</h4><button type="button" class="acr-edit" onclick="activosEditarFormulario(\'' + c + '\')">Editar formulario</button></div>' +
-      (ACR_AYUDA[t.codigo] ? '<p class="acp-ayuda">' + esc(ACR_AYUDA[t.codigo]) + '</p>' : '') +
+      (ACR_AYUDA[t.codigo] ? '<p class="acp-ayuda">' + esc(ACR_AYUDA[t.codigo]) + '</p>' : t.ambito === 'inmuebles' ? '' : '<p class="acp-ayuda">' + (t.asignable === false ? 'Componente del inventario: no se asigna a agentes.' : 'Se asigna a agentes.') + '</p>') + // Fase INV2
       '<p class="acr-n">' + total + ' registrados' + (t.codigo === 'ADMINISTRABLE' ? '' : ' · ' + (x.libre || 0) + ' libres') + '</p>' +
       '<div class="acr-acc"><button type="button" class="btn-primary ac-btn" onclick="activosRegistrarTipo(\'' + c + '\')">+ Registrar</button><button type="button" class="acp-btn" onclick="activosVerTipo(\'' + c + '\')">' + (t.codigo === 'ADMINISTRABLE' ? 'Ver equipos' : 'Ver inventario') + '</button></div></article>';
   }).join('');
@@ -1327,5 +1473,7 @@ function activosEditarFormulario(codigo) { activosTab('ajustes'); activosEditarT
 function activosNuevaTecnologia() { activosTab('ajustes'); activosEditarTipo(null); }
 function activosIrImportar() { activosTab('ajustes'); var s = _acEl('ac-imp-tipo'); if (s) { try { s.scrollIntoView({ block: 'center' }); } catch (e) { /* */ } s.focus(); } }
 if (typeof module !== 'undefined' && module.exports) { module.exports.activosPanel2Html = activosPanel2Html; module.exports.activosRegistrarTarjetasHtml = activosRegistrarTarjetasHtml; module.exports.activosConteoTexto = activosConteoTexto; module.exports.activosListaHtml = activosListaHtml; module.exports.activosInvTiposHtml = activosInvTiposHtml; module.exports.activosActasPestanasHtml = activosActasPestanasHtml; module.exports.activosAjEstadosHtml = activosAjEstadosHtml; }
+if (typeof module !== 'undefined' && module.exports) Object.assign(module.exports, { activosFaltanTxt: activosFaltanTxt, activosEsPropio: activosEsPropio, activosAsignableHtml: activosAsignableHtml }); // Fase INV2
 if (typeof module !== 'undefined' && module.exports) module.exports.activosCedulaAviso = activosCedulaAviso; // 25/11: aviso de la cédula (pruebas)
+if (typeof module !== 'undefined' && module.exports) { module.exports.activosActasKpisHtml = activosActasKpisHtml; module.exports.activosActasHtml = activosActasHtml; module.exports.activosActaCompletarHtml = activosActaCompletarHtml; module.exports.activosActaPrintHtml = activosActaPrintHtml; } // Fase INV4 (pruebas)
 if (typeof module !== 'undefined' && module.exports) { module.exports.activosAjEstadosHtml = activosAjEstadosHtml; module.exports.activosCopiaNombre = activosCopiaNombre; } // Fase INV6 (pruebas)

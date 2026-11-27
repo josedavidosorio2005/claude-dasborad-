@@ -6,6 +6,7 @@ const assert = require('node:assert/strict');
 const path = require('path');
 const bcrypt = require('bcryptjs');
 const { request, app, db, tokenFor } = require('./helpers');
+const { completar } = require('./helpers-activos'); // Fase INV2: registrar exige todos los campos
 
 const H = (t) => ({ Authorization: 'Bearer ' + t });
 let tk, tkSup;
@@ -17,7 +18,7 @@ before(async () => {
   tk = await tokenFor('f381_sis', 'Clave#2026x');
   tkSup = await tokenFor('f381_sup', 'Clave#2026x');
 });
-const P = (url, b, t) => request(app).post('/api' + url).set(H(t || tk)).send(b);
+const P = (url, b, t) => request(app).post('/api' + url).set(H(t || tk)).send(url === '/activos' ? completar(b) : b);
 const G = (url, t) => request(app).get('/api' + url).set(H(t || tk));
 
 test('importar: revisión fila por fila, nada se guarda hasta confirmar', async () => {

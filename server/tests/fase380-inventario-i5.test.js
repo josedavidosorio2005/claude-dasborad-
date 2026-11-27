@@ -7,6 +7,7 @@ const assert = require('node:assert/strict');
 const path = require('path');
 const bcrypt = require('bcryptjs');
 const { request, app, db, tokenFor } = require('./helpers');
+const { completar, completarEdicion, crearIncompleto } = require('./helpers-activos'); // Fase INV2: registrar exige todos los campos
 const A = require('../activos');
 
 const H = (t) => ({ Authorization: 'Bearer ' + t });
@@ -16,7 +17,7 @@ before(async () => {
     .run('Persona Inventada f380', 'f380_sis', 'SISTEMAS', bcrypt.hashSync('Clave#2026x', 4), '{}', new Date().toISOString());
   tk = await tokenFor('f380_sis', 'Clave#2026x');
 });
-const P = (url, b) => request(app).post('/api' + url).set(H(tk)).send(b);
+const P = (url, b) => request(app).post('/api' + url).set(H(tk)).send(url === '/activos' ? completar(b) : b);
 const nuevo = (subtipo, extra) => P('/activos', Object.assign({ tipo: 'ADMINISTRABLE', datos: Object.assign({ subtipo }, (extra || {}).datos || {}) }, extra && extra.codigo ? { codigo: extra.codigo } : {}));
 
 test('subtipos y campos nuevos del administrable (migración aditiva)', async () => {
@@ -37,7 +38,7 @@ test('código automático por subtipo, único; el código escrito a mano se resp
   assert.equal((await nuevo('Switch')).body.activo.codigo, '6001');
   assert.equal((await nuevo('UPS')).body.activo.codigo, '4001');
   assert.equal((await nuevo('Access Point')).body.activo.codigo, '9001');
-  assert.equal((await nuevo(undefined)).body.activo.codigo, '4501', 'sin subtipo: «Otro»');
+  assert.equal(crearIncompleto({ tipo: 'ADMINISTRABLE', datos: {} }).body.activo.codigo, '4501', 'sin subtipo (importación): «Otro»');
   assert.equal((await nuevo('Router', { codigo: 'RT-PRINCIPAL' })).body.activo.codigo, 'RT-PRINCIPAL');
   assert.equal((await nuevo('Router')).body.activo.codigo, '8001');
   assert.equal((await nuevo('Firewall')).body.activo.codigo, '8002', 'router y firewall comparten rango');
@@ -51,7 +52,7 @@ test('IP repetida: aviso al crear y al editar, sin bloquear', async () => {
   const b = await nuevo('Switch', { datos: { ip: '10.0.0.5' } });
   assert.equal(b.status, 201);
   assert.match(b.body.aviso, /10\.0\.0\.5 ya está registrada en el equipo 6002/);
-  const e = await request(app).put('/api/activos/' + a.body.activo.id).set(H(tk)).send({ datos: { subtipo: 'Switch', ip: '10.0.0.5' } });
+  const e = await request(app).put('/api/activos/' + a.body.activo.id).set(H(tk)).send(completarEdicion('ADMINISTRABLE', { datos: { subtipo: 'Switch', ip: '10.0.0.5' } }));
   assert.match(e.body.aviso, /6003/);
 });
 

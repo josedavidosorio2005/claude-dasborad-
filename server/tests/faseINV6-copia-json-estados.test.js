@@ -5,6 +5,7 @@ const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const bcrypt = require('bcryptjs');
 const { request, app, db, tokenFor } = require('./helpers');
+const { completar } = require('./helpers-activos'); // Fase INV2: registrar exige todos los campos
 
 const H = (t) => ({ Authorization: 'Bearer ' + t });
 let tk;
@@ -18,7 +19,7 @@ before(async () => {
       .run('Persona Inventada ' + u, u, rol, bcrypt.hashSync('Clave#2026x', 4), '{}', new Date().toISOString());
   }
   tk = { sis: await tokenFor('inv6_sis', 'Clave#2026x'), sup: await tokenFor('inv6_sup', 'Clave#2026x') };
-  ids.d1 = (await P('/activos', { tipo: 'DIADEMA', codigo: 'INV6-D1', marca: 'MarcaX', sede: '' })).body.activo.id;
+  ids.d1 = (await P('/activos', completar({ tipo: 'DIADEMA', codigo: 'INV6-D1', marca: 'MarcaX' }))).body.activo.id; // Fase INV2: todos los campos
   ids.ag = (await P('/activos/agentes', { nombre: 'Agente Inventado INV6', documento: '7600001' })).body.agente.id;
   await P('/activos/' + ids.d1 + '/asignar', { agenteId: ids.ag });
 });

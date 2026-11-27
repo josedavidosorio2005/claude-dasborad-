@@ -194,6 +194,12 @@ CREATE TABLE IF NOT EXISTS activos_estados (
   if (!db.prepare('PRAGMA table_info(activos_tipos)').all().some((c) => c.name === 'ambito')) db.exec("ALTER TABLE activos_tipos ADD COLUMN ambito TEXT NOT NULL DEFAULT 'sistemas'");
   const insI = db.prepare("INSERT OR IGNORE INTO activos_tipos (codigo, nombre, plural, orden, campos, ambito) VALUES (?, ?, ?, ?, ?, 'inmuebles')");
   TIPOS_INMUEBLES.forEach((t, i) => insI.run(t.codigo, t.nombre, t.plural, 100 + i, JSON.stringify(t.campos)));
+  // Fase INV2 (HTML de Edwin, «Se asigna a agentes»): los tipos de siempre siguen como hoy (se asignan), menos los
+  // equipos administrables y los inmuebles, que nunca se asignaron a un agente. Solo agrega una columna: no borra nada.
+  if (!db.prepare('PRAGMA table_info(activos_tipos)').all().some((c) => c.name === 'asignable')) {
+    db.exec('ALTER TABLE activos_tipos ADD COLUMN asignable INTEGER NOT NULL DEFAULT 1');
+    db.exec("UPDATE activos_tipos SET asignable = 0 WHERE codigo = 'ADMINISTRABLE' OR ambito = 'inmuebles'");
+  }
 }
 
 // Fase 372 (E4): con { todos: true } también los tipos desactivados (con su marca `activo`).
@@ -204,7 +210,7 @@ function tipos(db, opts) {
   if (!todos) w.push('activo = 1');
   if (amb) w.push("ambito = '" + amb + "'");
   return db.prepare('SELECT * FROM activos_tipos ' + (w.length ? 'WHERE ' + w.join(' AND ') + ' ' : '') + 'ORDER BY orden, codigo').all()
-    .map((t) => ({ codigo: t.codigo, nombre: t.nombre, plural: t.plural, activo: !!t.activo, ambito: t.ambito || 'sistemas', campos: JSON.parse(t.campos || '[]') }));
+    .map((t) => ({ codigo: t.codigo, nombre: t.nombre, plural: t.plural, activo: !!t.activo, ambito: t.ambito || 'sistemas', asignable: t.asignable === undefined ? true : !!t.asignable, campos: JSON.parse(t.campos || '[]') }));
 }
 function tipo(db, codigo, opts) { return tipos(db, opts).find((t) => t.codigo === codigo) || null; }
 function lista(db, nombre) { return db.prepare('SELECT valor FROM activos_listas WHERE lista = ? ORDER BY orden, valor').all(nombre).map((r) => r.valor); }
@@ -219,7 +225,26 @@ function guardarLista(db, nombre, valores) {
 
 const _txt = (v, max) => (typeof v === 'string' ? v.trim().slice(0, max || 120) : '');
 // Valida y normaliza el cuerpo de un elemento. -> { error } o { valores }
-function validar(db, b, { nuevo, tipo: tipoActual }) {
+// Fase INV2 (HTML de Edwin): con { completo } (registrar y editar) todos los campos visibles son obligatorios: los de
+// siempre, los del tipo (menos los ocultos) y las observaciones. El precio es de los propios (InConexion) y la renta
+// mensual de los de un proveedor: se pide el que aplica. La importación desde Excel no lo exige (marca «datos pendientes»).
+const PROPIO = /inconexi[oó]n/i;
+const esPropio = (p) => !String(p || '').trim() || PROPIO.test(String(p));
+function faltanTexto(faltan) {
+  return 'Todos los campos son obligatorios. Falta' + (faltan.length > 1 ? 'n' : '') + ': ' + faltan.slice(0, 4).join(', ') + (faltan.length > 4 ? ' y ' + (faltan.length - 4) + ' más' : '') + '.';
+}
+function camposFaltantes(t, v, datos) {
+  const faltan = [];
+  for (const [k, l] of [['marca', 'Marca'], ['modelo', 'Modelo'], ['serial', 'Serial'], ['sede', 'Sede'], ['operacion', 'Operación'], ['proveedor', 'Propietario / proveedor']]) if (!v[k]) faltan.push(l);
+  const propio = esPropio(v.proveedor);
+  for (const c of t.campos) {
+    if (c.oculto || (c.k === 'precio' && !propio) || (c.k === 'renta_mensual' && propio)) continue;
+    if (datos[c.k] === undefined) faltan.push(c.l);
+  }
+  if (!v.observaciones) faltan.push('Observaciones');
+  return faltan;
+}
+function validar(db, b, { nuevo, tipo: tipoActual, completo }) {
   if (!b || typeof b !== 'object' || Array.isArray(b)) return { error: 'Datos no válidos' };
   const permitidas = ['tipo', 'codigo', 'sede', 'operacion', 'proveedor', 'marca', 'modelo', 'serial', 'datos', 'observaciones', 'estado'];
   if (Object.keys(b).some((k) => !permitidas.includes(k))) return { error: 'Datos no válidos' };
@@ -245,6 +270,7 @@ function validar(db, b, { nuevo, tipo: tipoActual }) {
     else if (c.t === 'lista') { if (!(c.o || []).includes(x)) return { error: c.l + ': elige una opción' }; datos[c.k] = x; }
     else datos[c.k] = _txt(String(x), 120);
   }
+  if (completo) { const faltan = camposFaltantes(t, v, datos); if (faltan.length) return { error: faltanTexto(faltan), faltan }; }
   if (datos.ip && !/^(25[0-5]|2[0-4]\d|1?\d?\d)(\.(25[0-5]|2[0-4]\d|1?\d?\d)){3}$/.test(datos.ip)) return { error: 'La dirección IP no es válida (ejemplo: 192.168.1.10)' };
   if (nuevo) {
     const estado = b.estado === undefined ? 'libre' : b.estado;
@@ -444,6 +470,8 @@ function _cerrar(db, a, estado, motivo, quien, ahora, accion) {
 }
 function asignar(db, a, agenteId, quien) {
   if (a.tipo === 'ADMINISTRABLE') return { error: 'Los equipos administrables no se asignan a un agente' };
+  const ta = tipo(db, a.tipo, { todos: true }); // Fase INV2: «Se asigna a agentes» del tipo
+  if (ta && !ta.asignable) return { error: ta.plural + ': este tipo no se asigna a agentes (es un componente del inventario)' };
   if (a.agente) return { error: 'Ya está asignado a ' + a.agente.nombre };
   if (a.estado !== 'libre') return { error: 'Solo se asigna un elemento libre' };
   const g = Number.isInteger(agenteId) ? agente(db, agenteId) : null;
@@ -587,5 +615,5 @@ function importar(db, tipoCodigo, filas, confirmar, quien) {
   return Object.assign(resumen, { importadas: validas.length });
 }
 
-module.exports = { CEDULA_SIN_GH, historialGeneral, mapaColumnas, importar, ADMIN_SUBTIPOS_I5, ADMIN_CODIGO_BASE, agregarCamposI5, siguienteCodigoAdmin, ipRepetida, reasignar, agenteParaAsignar, CAMPOS_I2, agregarCamposI2, RENDIMIENTOS, rendimientoDe, AMBITOS, TIPOS_INMUEBLES, ambitoDe, ESTADOS_AL_SOLTAR, validarAgente, agentes, agente, crearAgente, editarAgente, agenteDetalle, asignar, devolver, cambiarElemento,
+module.exports = { faltanTexto, camposFaltantes, esPropio, CEDULA_SIN_GH, historialGeneral, mapaColumnas, importar, ADMIN_SUBTIPOS_I5, ADMIN_CODIGO_BASE, agregarCamposI5, siguienteCodigoAdmin, ipRepetida, reasignar, agenteParaAsignar, CAMPOS_I2, agregarCamposI2, RENDIMIENTOS, rendimientoDe, AMBITOS, TIPOS_INMUEBLES, ambitoDe, ESTADOS_AL_SOLTAR, validarAgente, agentes, agente, crearAgente, editarAgente, agenteDetalle, asignar, devolver, cambiarElemento,
   ESTADOS, ESTADO_CODIGOS, estados, estadoNombre, renombrarEstados, ESTADO_NOMBRE_MAX, LISTAS, TIPOS_BASE, puede, crearTablas, tipos, tipo, lista, guardarLista, validar, crear, obtener, editar, cambiarEstado, listar, resumen, historial };

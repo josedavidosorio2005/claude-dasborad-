@@ -7,6 +7,7 @@ const assert = require('node:assert/strict');
 const path = require('path');
 const bcrypt = require('bcryptjs');
 const { request, app, db, tokenFor, MASTER_PASSWORD } = require('./helpers');
+const { completar, completarEdicion } = require('./helpers-activos'); // Fase INV2: registrar y editar exigen todos los campos
 
 const H = (t) => ({ Authorization: 'Bearer ' + t });
 const tk = {};
@@ -21,7 +22,7 @@ before(async () => {
   tk.admin = await tokenFor('admin', MASTER_PASSWORD);
   for (const u of ['sis', 'inv', 'sup']) tk[u] = await tokenFor('f369_' + u, 'Clave#2026x');
 });
-const post = (t, b) => request(app).post('/api/activos').set(H(t)).send(b);
+const post = (t, b) => request(app).post('/api/activos').set(H(t)).send(completar(b));
 
 test('empieza limpio: ningún elemento ni lista; los 7 tipos sembrados', async () => {
   assert.equal(db.prepare('SELECT COUNT(*) n FROM activos').get().n, 0);
@@ -80,7 +81,7 @@ test('cambio de estado con motivo, historial; «en uso» solo por asignación (s
   assert.equal((await request(app).post('/api/activos/' + sw.body.activo.id + '/estado').set(H(tk.sis)).send({ estado: 'en_uso', motivo: 'Instalado en el rack' })).status, 200);
   // Editar: no cambia tipo, código ni estado.
   assert.equal((await request(app).put('/api/activos/' + sw.body.activo.id).set(H(tk.sis)).send({ codigo: 'otro' })).status, 400);
-  const e = await request(app).put('/api/activos/' + sw.body.activo.id).set(H(tk.sis)).send({ marca: 'MarcaY', datos: { subtipo: 'Switch', ip: '192.168.1.11' } });
+  const e = await request(app).put('/api/activos/' + sw.body.activo.id).set(H(tk.sis)).send(completarEdicion('ADMINISTRABLE', { marca: 'MarcaY', datos: { subtipo: 'Switch', ip: '192.168.1.11' } }));
   assert.equal(e.status, 200, JSON.stringify(e.body));
   assert.deepEqual([e.body.activo.marca, e.body.activo.datos.ip, e.body.activo.estado], ['MarcaY', '192.168.1.11', 'en_uso']);
 });
