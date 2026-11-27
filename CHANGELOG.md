@@ -21,6 +21,16 @@ sepan que hay nuevo, que se corrigio y que falta.
   firmar. El conteo del menú y del Panel general también suma las dos.
 - Las actas hechas a mano y las que ya estaban impresas siguen «Por firmar». No se borra ni cambia ningún dato.
 
+## v1.291.0 — Noviembre 2026
+
+**ORLANT · Centro de cargas: «Equidad profesionales» como un cuadrito más (pedido de Edwin).**
+
+- En el Centro de cargas de ORLANT hay un cuadrito «Equidad profesionales» al lado del de Calidad,
+  con el mismo estilo: «Al día» o «Pendiente», cuántos meses tienen datos en el año y la última carga.
+- La sección de Equidad (explicación, botones Pólizas / Medicina prepagada / Particulares y los meses)
+  sale solo al hacer clic en el cuadrito, como Calidad; «Módulos» vuelve a los cuadritos.
+- No cambia cómo se cargan las bases ni ningún dato.
+
 ## v1.288.0 — Noviembre 2026
 
 **Malla de turnos: la asesora ve su horario y sus pausas en columnas (pedido de Edwin).**
