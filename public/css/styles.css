@@ -2969,6 +2969,13 @@ circle.acp-l-ingresos{fill:var(--c-brand-blue)}circle.acp-l-asignaciones{fill:va
 .aj-card .ig>label[for^="ac-l-"]{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .aj-card textarea{width:100%;box-sizing:border-box}
 .aj-estados{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px}
+/* Fase INV6: cada estado con su nombre editable (una fila por estado). */
+.aj-estados{gap:10px}
+.aj-estados .aj-estado{flex:1 1 100%;display:flex;flex-direction:column;gap:4px;margin:0}
+.aj-estados .aj-estado label{display:flex;flex-wrap:wrap;align-items:center;gap:6px;text-transform:none;letter-spacing:0}
+.aj-estados .aj-estado input{width:100%;min-width:0}
+.aj-estados .aj-estado label .vis-ayuda{margin:0;font-weight:400}
+.aj-estados + .ac-btn{margin-top:10px}
 @media (max-width:900px){.acp-grid{grid-template-columns:minmax(0,1fr)}}
 @media (max-width:480px){.acp-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.acp-bar{grid-template-columns:minmax(64px,34%) 1fr auto}.acp-acc{width:100%}.acp-acc .acp-btn{flex:1}}
 .ac-sedes,.ac-hist{margin:0 0 10px 18px}

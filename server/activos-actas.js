@@ -76,7 +76,7 @@ function crear(db, g, tipo, ids, quien) {
   const texto = require('./activos-formularios').textoActa(db, tipo); // Fase 372: copia fija
   const elementos = elegidos.map((c) => {
     const e = { tipo: nombresTipo[c.tipo] || c.tipo, codigo: c.codigo, marca: c.marca, modelo: c.modelo, serial: c.serial };
-    if (tipo === 'devolucion') { e.queda = (A.ESTADOS.find((s) => s.codigo === c.queda) || {}).nombre || c.queda; e.motivo = c.motivo; }
+    if (tipo === 'devolucion') { e.queda = A.estadoNombre(db, c.queda); /* Fase INV6: con el nombre que tenga el estado */ e.motivo = c.motivo; }
     return e;
   });
   const agente = { nombre: g.nombre, documento: g.documento, sede: g.sede, operacion: g.operacion };
@@ -132,7 +132,7 @@ async function leerFirmada(db, id, opts) {
 function auto(db, { tipo, agente: g, items, motivo, tecnico, quien }) {
   if (!TIPOS_TODOS[tipo] || !items || !items.length) return null;
   const nombresTipo = Object.fromEntries(A.tipos(db, { todos: true }).map((t) => [t.codigo, t.nombre]));
-  const estadoN = (c) => (A.ESTADOS.find((s) => s.codigo === c) || {}).nombre || c || '';
+  const estadoN = (c) => (c ? A.estadoNombre(db, c) : ''); // Fase INV6
   const elementos = items.map((x) => {
     const e = { tipo: nombresTipo[x.a.tipo] || x.a.tipo, codigo: x.a.codigo, marca: x.a.marca, modelo: x.a.modelo, serial: x.a.serial };
     if (x.dir) e.dir = x.dir;

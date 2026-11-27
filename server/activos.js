@@ -19,6 +19,37 @@ const ESTADOS = [
   { codigo: 'de_baja', nombre: 'De baja' },
 ];
 const ESTADO_CODIGOS = ESTADOS.map((e) => e.codigo);
+// Fase INV6 (HTML de Edwin): los estados se pueden RENOMBRAR (no quitar ni agregar: de ellos dependen las actas y
+// los movimientos). El código no cambia; el nombre nuevo se guarda en activos_estados y vale en los dos inventarios.
+const ESTADO_NOMBRE_MAX = 40;
+function estados(db) {
+  const m = new Map(db.prepare('SELECT codigo, nombre FROM activos_estados').all().map((r) => [r.codigo, r.nombre]));
+  return ESTADOS.map((e) => ({ codigo: e.codigo, nombre: m.get(e.codigo) || e.nombre, base: e.nombre }));
+}
+function estadoNombre(db, codigo) { const e = estados(db).find((x) => x.codigo === codigo); return e ? e.nombre : (codigo || ''); }
+// nombres = { codigo: 'Nombre nuevo' } (uno o varios). Vacío o igual al de siempre = vuelve al de siempre.
+function renombrarEstados(db, nombres, quien) {
+  if (!nombres || typeof nombres !== 'object' || Array.isArray(nombres)) return { error: 'Datos no válidos' };
+  const claves = Object.keys(nombres);
+  if (!claves.length || claves.some((c) => !ESTADO_CODIGOS.includes(c))) return { error: 'Los estados no se pueden agregar ni quitar: solo cambiarles el nombre' };
+  const final = Object.fromEntries(estados(db).map((e) => [e.codigo, e.nombre]));
+  for (const c of claves) {
+    if (typeof nombres[c] !== 'string') return { error: 'Datos no válidos' };
+    const v = nombres[c].trim().replace(/\s+/g, ' ');
+    if (v && (v.length < 2 || v.length > ESTADO_NOMBRE_MAX)) return { error: 'Cada nombre de estado debe tener entre 2 y ' + ESTADO_NOMBRE_MAX + ' caracteres' };
+    final[c] = v || ESTADOS.find((e) => e.codigo === c).nombre;
+  }
+  const vistos = new Set();
+  for (const c of ESTADO_CODIGOS) { const k = final[c].toLocaleLowerCase('es'); if (vistos.has(k)) return { error: 'Dos estados no pueden llamarse igual: «' + final[c] + '»' }; vistos.add(k); }
+  const ahora = new Date().toISOString();
+  db.transaction(() => {
+    for (const c of claves) {
+      if (final[c] === ESTADOS.find((e) => e.codigo === c).nombre) db.prepare('DELETE FROM activos_estados WHERE codigo = ?').run(c);
+      else db.prepare('INSERT INTO activos_estados (codigo, nombre, actualizadoEn, actualizadoPor) VALUES (?,?,?,?) ON CONFLICT(codigo) DO UPDATE SET nombre = excluded.nombre, actualizadoEn = excluded.actualizadoEn, actualizadoPor = excluded.actualizadoPor').run(c, final[c], ahora, quien || '');
+    }
+  })();
+  return { estados: estados(db) };
+}
 // Fase 372 (E4): «motivos» = motivos frecuentes de cambio de estado, devolución y cambio (sugerencias; el motivo sigue libre).
 const LISTAS = { sedes: 'Sedes', operaciones: 'Operaciones', proveedores: 'Proveedores', motivos: 'Motivos frecuentes' };
 // Tipos y sus campos propios (además de código, marca, modelo, serial, sede, operación y observaciones).
@@ -152,7 +183,11 @@ CREATE TABLE IF NOT EXISTS activos_asignaciones (
 );
 CREATE INDEX IF NOT EXISTS idx_activos_asig_activo ON activos_asignaciones(activoId, hasta);
 CREATE INDEX IF NOT EXISTS idx_activos_asig_agente ON activos_asignaciones(agenteId, hasta);
-CREATE UNIQUE INDEX IF NOT EXISTS ux_activos_asig_abierta ON activos_asignaciones(activoId) WHERE hasta IS NULL;`);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_activos_asig_abierta ON activos_asignaciones(activoId) WHERE hasta IS NULL;
+-- Fase INV6: nombre propio de cada estado (solo los renombrados; el código no cambia).
+CREATE TABLE IF NOT EXISTS activos_estados (
+  codigo TEXT PRIMARY KEY, nombre TEXT NOT NULL, actualizadoEn TEXT NOT NULL, actualizadoPor TEXT NOT NULL DEFAULT ''
+);`);
   const ins = db.prepare('INSERT OR IGNORE INTO activos_tipos (codigo, nombre, plural, orden, campos) VALUES (?, ?, ?, ?, ?)');
   TIPOS_BASE.forEach((t, i) => ins.run(t.codigo, t.nombre, t.plural, i + 1, JSON.stringify(t.campos)));
   // Fase 376: ámbito de cada tipo; los de inmuebles se siembran (sin elementos).
@@ -508,6 +543,8 @@ function importar(db, tipoCodigo, filas, confirmar, quien) {
   if (!t) return { error: 'Elige el tipo de elemento' };
   if (!Array.isArray(filas) || filas.length < 2 || filas.length > 2001 || !filas.every(Array.isArray)) return { error: 'El archivo debe traer encabezados y entre 1 y 2.000 filas' };
   const m = mapaColumnas(t, filas[0]);
+  // Fase INV6: también vale el nombre propio de los estados que se pueden importar (si se renombraron).
+  const estTxt = Object.assign({}, ESTADO_TEXTO); estados(db).filter((e) => ['libre', 'en_reparacion', 'malo'].includes(e.codigo)).forEach((e) => { estTxt[_norm(e.nombre)] = e.codigo; });
   if (!Object.values(m).some((x) => x.k === 'codigo') && t.codigo !== 'ADMINISTRABLE') return { error: 'Falta la columna «Código»' };
   const NOMBRE_FIJA = { codigo: 'Código', marca: 'Marca', modelo: 'Modelo', serial: 'Serial', sede: 'Sede', operacion: 'Operación', proveedor: 'Propietario / proveedor', observaciones: 'Observaciones', estado: 'Estado' };
   const reconocidas = Object.values(m).map((x) => (x.dato ? (t.campos.find((c) => c.k === x.k) || {}).l || x.k : NOMBRE_FIJA[x.k]));
@@ -519,10 +556,10 @@ function importar(db, tipoCodigo, filas, confirmar, quien) {
       let v = fila[idx];
       if (v === null || v === undefined || String(v).trim() === '') continue;
       if (x.dato) { const c = t.campos.find((z) => z.k === x.k); b.datos[x.k] = c && c.t === 'numero' ? Number(String(v).replace(/[^\d.,-]/g, '').replace(/\.(?=\d{3}(\D|$))/g, '').replace(',', '.')) : String(v).trim(); }
-      else if (x.k === 'estado') { const e = ESTADO_TEXTO[_norm(v)]; if (e) b.estado = e; else b.estado = '?' + String(v).slice(0, 30); }
+      else if (x.k === 'estado') { const e = estTxt[_norm(v)]; if (e) b.estado = e; else b.estado = '?' + String(v).slice(0, 30); }
       else b[x.k] = String(v).trim();
     }
-    if (typeof b.estado === 'string' && b.estado.startsWith('?')) { resultado.push({ fila: i + 2, error: 'Estado «' + b.estado.slice(1) + '»: usa Libre, En reparación o Malo' }); return; }
+    if (typeof b.estado === 'string' && b.estado.startsWith('?')) { resultado.push({ fila: i + 2, error: 'Estado «' + b.estado.slice(1) + '»: usa ' + ['libre', 'en_reparacion', 'malo'].map((c) => estadoNombre(db, c)).join(', ').replace(/, ([^,]*)$/, ' o $1') }); return; }
     const v = validar(db, b, { nuevo: true });
     if (v.error) { resultado.push({ fila: i + 2, codigo: b.codigo || '', error: v.error }); return; }
     // Administrable sin código: el automático se calcula al guardar (no se comparan entre sí).
@@ -551,4 +588,4 @@ function importar(db, tipoCodigo, filas, confirmar, quien) {
 }
 
 module.exports = { CEDULA_SIN_GH, historialGeneral, mapaColumnas, importar, ADMIN_SUBTIPOS_I5, ADMIN_CODIGO_BASE, agregarCamposI5, siguienteCodigoAdmin, ipRepetida, reasignar, agenteParaAsignar, CAMPOS_I2, agregarCamposI2, RENDIMIENTOS, rendimientoDe, AMBITOS, TIPOS_INMUEBLES, ambitoDe, ESTADOS_AL_SOLTAR, validarAgente, agentes, agente, crearAgente, editarAgente, agenteDetalle, asignar, devolver, cambiarElemento,
-  ESTADOS, ESTADO_CODIGOS, LISTAS, TIPOS_BASE, puede, crearTablas, tipos, tipo, lista, guardarLista, validar, crear, obtener, editar, cambiarEstado, listar, resumen, historial };
+  ESTADOS, ESTADO_CODIGOS, estados, estadoNombre, renombrarEstados, ESTADO_NOMBRE_MAX, LISTAS, TIPOS_BASE, puede, crearTablas, tipos, tipo, lista, guardarLista, validar, crear, obtener, editar, cambiarEstado, listar, resumen, historial };
