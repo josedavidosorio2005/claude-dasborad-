@@ -7,6 +7,22 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.288.0 — Noviembre 2026
+
+**Inventario de sistemas: campos obligatorios y tecnologías que se asignan a agentes.**
+
+- Al registrar un elemento, todos los campos son obligatorios, como en el diseño de Edwin. Si falta
+  alguno, el formulario dice cuáles («Todos los campos son obligatorios. Faltan: …») y los marca.
+- El precio se pide a los elementos propios (InConexion®) y la renta mensual a los de un proveedor:
+  el formulario muestra solo el que aplica según el propietario.
+- «Nueva tecnología» tiene la casilla «Se asigna a agentes»: si está marcada, la tecnología funciona
+  como un portátil (se asigna a un agente, con acta); si no, es un componente del inventario. No se
+  puede cambiar cuando ya hay elementos de ese tipo.
+- Los tipos de siempre siguen igual: torres, monitores, teclados, mouse, diademas y portátiles se
+  asignan; los equipos administrables y los inmuebles, no.
+- La importación desde Excel sigue aceptando filas incompletas (quedan en «Con datos pendientes»).
+- No cambia ningún dato guardado.
+
 ## v1.286.0 — Noviembre 2026
 
 **ORLANT · Gestión STA: gráficas de agendas más simples (pedido de Edwin).**
