@@ -7,6 +7,15 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.287.0 — Noviembre 2026
+
+**ORLANT · Gestión STA: «Agendas por asesor» y «Gestiones por día» más simples (pedido de Edwin).**
+
+- «Agendas por asesor» queda igual que por entidad y por servicio: un solo número por barra, con la
+  palabra «agendas» (por ejemplo «79 agendas»). El largo y el orden de las barras van por ese número.
+- «Gestiones por día» muestra solo la línea de gestiones (sin la de citas ni su leyenda).
+- Vale para «Gráficas» del administrador y para la pestaña del cliente de ORLANT. No cambia ningún dato.
+
 ## v1.286.0 — Noviembre 2026
 
 **ORLANT · Gestión STA: gráficas de agendas más simples (pedido de Edwin).**
