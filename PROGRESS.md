@@ -8,7 +8,7 @@ narrativo de cada fase, fase por fase, vive en
 
 ## Estado actual
 
-- **Versión**: `1.284.0` (ver `server/package.json`, expuesta en
+- **Versión**: `1.298.0` (ver `server/package.json`, expuesta en
   `/api/health` y en el menú de usuario de cada página).
 - **Marca**: logo/isotipo en `public/img/marca/` (originales de diseño
   fuera del repo, nunca commiteados), favicon en `public/favicon*`,
@@ -684,6 +684,17 @@ mismo orden):
 - Gestión STA: «Cargar histórico» acepta archivos grandes (hasta 8 MB, como la carga de la base); septiembre daba «Cuerpo demasiado grande» (v1.275.1, 2026-11-25)
 - Cierre del 25/11 en la tarde — histórico del STA cargado en producción (6.770 casos), #959–#965 en producción y pendientes al día (solo docs, 2026-11-25)
 - Gestión STA: «Gestionados» y «Mi efectividad» de la asesora suman sus gestiones del histórico que cuentan (v1.276.0, 2026-11-25)
+- Fase STA14 — Gestión STA (pedido de Edwin, 27/11): agendas por entidad y por servicio con un solo número («N agendas», el de las citas), recuadros sin «Agendas (efectivas)» ni «Fuera de gestión» («Citas agendadas» → «Agendas») y sin las gráficas por fecha de ingreso, autorización y expiración (v1.286.0, 2026-11-27)
+- Fase STA15 — Gestión STA (pedido de Edwin, 27/11): «Agendas por asesor» con un solo número («N agendas», el de las citas) y «Gestiones por día» solo con la línea de gestiones (v1.287.0, 2026-11-27)
+- Fase M3 — Malla de la asesora («Mi malla»): Horario | Pausa 1 | Almuerzo | Pausa 2 en columnas; en el celular, una pausa por línea (v1.288.0, 2026-11-27)
+- Fase EQ6 — Centro de cargas de ORLANT: cuadrito «Equidad profesionales» al lado del de Calidad; la sección de Equidad sale solo al abrirlo (v1.291.0, 2026-11-27, #986)
+- Fase INV1 — Inventario de sistemas con la apariencia del HTML de Edwin: siempre oscuro (solo su ventana), panel sin dados de baja, menú plegable con pasos, contadores y usuario, «Volver», botones laterales «Menú»/«Inicio» y botón flotante «Inventario» (v1.292.0, 2026-11-27, #982)
+- Fase INV2 — Inventario: todos los campos obligatorios al registrar y editar (precio para los propios, renta para los de un proveedor) y «Se asigna a agentes» por tipo en «Nueva tecnología» (v1.293.0, 2026-11-27, #984)
+- Fase INV4 — Inventario (parte 4, HTML de Edwin): actas «Por completar» → «Por firmar» → «Firmada»; completar (fecha, quién entrega o recibe por Sistemas, técnico, observaciones) y generar el PDF (v1.294.0, 2026-11-27, #988)
+- Fase INV6 — Inventario (parte 6, HTML de Edwin): copia de seguridad en .json (solo descargar) y estados que se pueden renombrar (sin agregar ni quitar) (v1.295.0, 2026-11-27, #989)
+- Fase INV5 — Inventario (parte 5, HTML de Edwin, completa): hojas imprimibles: ficha de cada elemento y «Agentes y equipos asignados» (Excel y PDF); sin armado de equipos ni componentes por decisión de Edwin (27/11: cada elemento por separado, sin «equipo de mesa») (v1.296.0, 2026-11-27, #990)
+- Fase INV3 — Inventario (parte 3, HTML de Edwin): agentes desde las personas activas de Gestión humana, estado de Gestión humana de cada agente, a un retirado no se le entrega nada y entrega de varios elementos con una sola acta (v1.297.0, 2026-11-27)
+- Fase W10 — Borrar la réplica oculta «MOBILIZE PRUEBAS API» (migración destructiva con respaldo, todo o nada y control del MOBILIZE real); panel de Wolkvox de MOBILIZE pasa al real (v1.298.0, 2026-11-27, PR #978 SIN mergear: espera el «OK borrar» del usuario)
 - Fase 309 — Revisión de seguridad: el cliente ya no recibe el nombre de los líderes en `GET /metas`; resto en `docs/revision-seguridad-2026-11-09.md` (v1.154.1, 2026-11-10)
 - Fase 308 — Revisión antes de la reunión con clientes y pendientes del supervisor (solo docs, 2026-11-10)
 - Fase 307 — Calidad para que los líderes evalúen: ORLANT conserva su Calidad y suma «Resultado de los monitoreos» al final; Aurora ya lo tenía (se muestra con el primer monitoreo) (v1.154.0, 2026-11-10)

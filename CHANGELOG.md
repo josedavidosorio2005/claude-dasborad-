@@ -7,7 +7,7 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
-## v1.284.0 — Noviembre 2026
+## v1.298.0 — Noviembre 2026
 
 **MOBILIZE: se borra la copia de pruebas «MOBILIZE PRUEBAS API».**
 
@@ -18,6 +18,166 @@ sepan que hay nuevo, que se corrigio y que falta.
 - El panel de Wolkvox (estado, «Probar conexión» y «Diagnóstico de red») pasa
   al tablero del MOBILIZE real, solo para el administrador, y muestra la
   última consulta automática.
+
+## v1.297.0 — Noviembre 2026
+
+**Inventario de sistemas: agentes desde Gestión humana y entrega de varios elementos con una sola acta, como en el diseño de Edwin.**
+
+- En **Agentes** hay un buscador **«Buscar en Gestión humana»**: se escribe la cédula o el nombre y salen las
+  personas activas de Gestión humana. Al elegir una se llenan su nombre y su cédula. Si la persona no está, el
+  agente se sigue pudiendo escribir a mano (con el aviso de siempre).
+- La lista de agentes tiene la columna **«Gestión humana»**: Activo en GH, Retirado, Vacaciones, Ausente, Sale
+  pronto o No está en GH. La ficha de cada agente lo explica con fechas.
+- A una persona que Gestión humana tiene como **retirada** no se le entrega, cambia ni reasigna nada: solo se le
+  reciben sus elementos con «Devolver».
+- En la ficha del agente, **«Entregar elementos»**: una fila por tipo con los elementos libres, se elige uno por
+  tipo, se escriben la fecha y la observación de la entrega, y se genera **una sola acta** con todo, ya lista para
+  imprimir y firmar («Por firmar»).
+- Las alertas de Gestión humana siguen en Actas › «Novedades de GH».
+- Funciona igual con el acceso de Gestión humana a Talento humano apagado o prendido. No cambia ningún dato
+  guardado.
+
+## v1.296.0 — Noviembre 2026
+
+**Inventario: hojas para imprimir, como en el diseño de Edwin (primera parte).**
+
+- Cada elemento tiene el botón **«Imprimir ficha»**: una hoja con todos sus datos (también los de su tipo), a
+  quién está asignado y desde cuándo, y sus últimos movimientos. Si está asignado, trae las firmas de entrega y
+  recibo, como la ficha de Edwin.
+- En **Agentes** están los botones **Excel** y **PDF** de la hoja «Agentes y equipos asignados»: cada agente con
+  su documento, operación, sede, lo que tiene asignado hoy y si está activo.
+
+## v1.295.0 — Noviembre 2026
+
+**Inventario: copia de seguridad (.json) y estados con el nombre que se quiera, como en el diseño de Edwin.**
+
+- En «Ajustes y datos» está la tarjeta **«Copia de seguridad (.json)»**: descarga todo el inventario (tipos,
+  elementos, historial, agentes, asignaciones, actas y listas) en un archivo para guardarlo aparte. Solo se
+  descarga: los datos siguen en el servidor, con su respaldo diario, y no se restauran desde ese archivo.
+- La tarjeta **«Estados»** ahora deja cambiarles el nombre (por ejemplo, «Libre» → «Disponible»). No se agregan
+  ni se quitan estados, porque de ellos dependen las actas. Dejarlo vacío vuelve al nombre de siempre.
+- El nombre nuevo se ve en los filtros, en los elementos, en las actas nuevas, en el Excel y al importar.
+- No cambia ningún dato guardado.
+
+## v1.294.0 — Noviembre 2026
+
+**Inventario de sistemas: las actas se completan antes de imprimirlas, como en el diseño de Edwin.**
+
+- Cada acta que se crea sola (al asignar, devolver, cambiar, mandar a reparación, recibir de reparación, marcar
+  malo o dar de baja) queda primero **«Por completar»**.
+- Con «Completar y generar PDF» se escriben la fecha del acta, quién entrega o recibe por Sistemas, el técnico o
+  proveedor (en reparación y en el recibo de reparación) y, si se quiere, observaciones. Al generar el PDF el acta
+  pasa a **«Por firmar»**; firmada y subida, queda **«Firmada»**.
+- El PDF del acta trae esa fecha, quién entrega o recibe por Sistemas y las observaciones.
+- Actas tiene la tarjeta «Por completar» y la pestaña «Actas pendientes» muestra las por completar y las por
+  firmar. El conteo del menú y del Panel general también suma las dos.
+- Las actas hechas a mano y las que ya estaban impresas siguen «Por firmar». No se borra ni cambia ningún dato.
+
+## v1.293.0 — Noviembre 2026
+
+**Inventario de sistemas: campos obligatorios y tecnologías que se asignan a agentes.**
+
+- Al registrar un elemento, todos los campos son obligatorios, como en el diseño de Edwin. Si falta
+  alguno, el formulario dice cuáles («Todos los campos son obligatorios. Faltan: …») y los marca.
+- El precio se pide a los elementos propios (InConexion®) y la renta mensual a los de un proveedor:
+  el formulario muestra solo el que aplica según el propietario.
+- «Nueva tecnología» tiene la casilla «Se asigna a agentes»: si está marcada, la tecnología funciona
+  como un portátil (se asigna a un agente, con acta); si no, es un componente del inventario. No se
+  puede cambiar cuando ya hay elementos de ese tipo.
+- Los tipos de siempre siguen igual: torres, monitores, teclados, mouse, diademas y portátiles se
+  asignan; los equipos administrables y los inmuebles, no.
+- La importación desde Excel sigue aceptando filas incompletas (quedan en «Con datos pendientes»).
+- No cambia ningún dato guardado.
+
+## v1.292.0 — Noviembre 2026
+
+**Inventario de sistemas: se ve como el HTML de Edwin.**
+
+- El Inventario de sistemas se ve siempre en tema oscuro, como el diseño de Edwin. Solo su
+  ventana: el resto de la plataforma sigue con el tema que cada uno eligió.
+- El «Panel general» ya no cuenta los dados de baja (siguen en la lista y en el Historial).
+- El menú del Inventario tiene secciones que se pliegan («Menú», «Ciclo de elementos» y
+  «Gestión»), con los pasos del 1 al 5, cuántos elementos hay en cada estado y, al pie,
+  el usuario con el que se entró.
+- Desde la vista «Inventario» hay un botón «Volver» a la pantalla de antes.
+- Botones a la izquierda: «Menú» (muestra u oculta el menú) e «Inicio» (sale del Inventario).
+  Abajo a la derecha, el botón «Inventario» abre la vista Inventario y, si ya está abierta,
+  vuelve a la pantalla de antes. Solo aparecen dentro del Inventario.
+- No cambia ningún dato.
+
+## v1.291.0 — Noviembre 2026
+
+**ORLANT · Centro de cargas: «Equidad profesionales» como un cuadrito más (pedido de Edwin).**
+
+- En el Centro de cargas de ORLANT hay un cuadrito «Equidad profesionales» al lado del de Calidad,
+  con el mismo estilo: «Al día» o «Pendiente», cuántos meses tienen datos en el año y la última carga.
+- La sección de Equidad (explicación, botones Pólizas / Medicina prepagada / Particulares y los meses)
+  sale solo al hacer clic en el cuadrito, como Calidad; «Módulos» vuelve a los cuadritos.
+- No cambia cómo se cargan las bases ni ningún dato.
+
+## v1.288.0 — Noviembre 2026
+
+**Malla de turnos: la asesora ve su horario y sus pausas en columnas (pedido de Edwin).**
+
+- En «Mi malla» (lo que ve la asesora) el horario ya no sale pegado a las pausas: cada día muestra
+  Horario | Pausa 1 | Almuerzo | Pausa 2 en columnas con su encabezado, separadas por una línea suave.
+- Los días de descanso dicen «Descanso» en Horario y dejan las demás columnas vacías.
+- En el celular cada día muestra el horario y debajo una pausa por línea, sin salirse de la pantalla.
+- «Puntual» y las novedades siguen igual. No cambia ningún dato.
+
+## v1.287.0 — Noviembre 2026
+
+**ORLANT · Gestión STA: «Agendas por asesor» y «Gestiones por día» más simples (pedido de Edwin).**
+
+- «Agendas por asesor» queda igual que por entidad y por servicio: un solo número por barra, con la
+  palabra «agendas» (por ejemplo «79 agendas»). El largo y el orden de las barras van por ese número.
+- «Gestiones por día» muestra solo la línea de gestiones (sin la de citas ni su leyenda).
+- Vale para «Gráficas» del administrador y para la pestaña del cliente de ORLANT. No cambia ningún dato.
+
+## v1.286.0 — Noviembre 2026
+
+**ORLANT · Gestión STA: gráficas de agendas más simples (pedido de Edwin).**
+
+- En «Agendas por entidad» y «Agendas por servicio» cada barra muestra un solo número, con la
+  palabra «agendas» (por ejemplo «71 agendas»): es el número de citas, que es el más alto. El largo
+  y el orden de las barras van por ese número.
+- Recuadros de arriba: se quitaron «Agendas (efectivas)» y «Fuera de gestión»; el de citas
+  agendadas ahora se llama «Agendas». Las gráficas de gestiones por entidad y por servicio
+  muestran solo el número de gestiones.
+- Se quitaron del final de las gráficas «Por fecha ingreso STA», «Por fecha autorización» y
+  «Por fecha expiración».
+- Vale para «Gráficas» del administrador y para la pestaña del cliente de ORLANT. No cambia ningún dato.
+
+## v1.285.0 — Noviembre 2026
+
+**ORLANT · Gestión STA: más gráficas y con los números a la vista.**
+
+- En «Gráficas» (administrador) y en la pestaña del cliente de ORLANT hay cuatro gráficas
+  nuevas: agendas por entidad y por servicio, y, después de «Codificación general»,
+  gestiones por entidad y por servicio. Usan los mismos filtros de arriba.
+- Todas las gráficas del STA muestran el número sobre cada barra, columna, punto o porción
+  (en la dona, las porciones muy chicas lo muestran en la leyenda).
+- «Codificación general» muestra todas las codificaciones, sin juntar las pequeñas en «Otros».
+- No cambia ningún dato.
+
+## v1.284.0 — Noviembre 2026
+
+**Clínica Aurora (copia de pruebas): el Tráfico de WhatsApp trae las abandonadas y el ATA.**
+
+- En la copia de pruebas de Aurora, el Tráfico de WhatsApp ya no queda sin
+  abandonadas ni sin ATA: los toma del mismo reporte de skills de Wolkvox que
+  trae el Flujo (igual que el archivo con el que se carga el Aurora real).
+  Nunca se calculan restando contestados de recibidos.
+- El nivel de servicio sigue fuera (sale de otra base) y el AHT (TMO) y la
+  espera siguen vacíos: ese reporte no los trae.
+
+## v1.283.3 — Noviembre 2026
+
+**Administración: revisión previa al borrado de la copia de pruebas de MOBILIZE.**
+
+- Una consulta solo para el administrador cuenta cuántos datos tiene la copia
+  de pruebas «MOBILIZE PRUEBAS API» (y, para comparar, el MOBILIZE real). No
+  cambia ni borra nada.
 
 ## v1.283.2 — Noviembre 2026
 

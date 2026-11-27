@@ -94,7 +94,9 @@ test('E5: el supervisor guarda pausas y almuerzo; la asesora los ve en su vista,
   Object.assign(global, L);
   const UI = require('../../public/js/malla.js');
   const html = UI.mallaMiaHtml(mia);
-  assert.ok(html.includes('<span class="ml-mia-pausas">Pausa 10:00–10:15 · Almuerzo 12:30–13:30 · Pausa 15:30–15:40</span>'));
+  // Fase M3 (Edwin, 27/11): cada pausa en su columna (antes, una línea pegada al horario).
+  assert.ok(html.includes('<th scope="col" class="ml-mia-pz">Pausa 1</th><th scope="col" class="ml-mia-pz">Almuerzo</th><th scope="col" class="ml-mia-pz">Pausa 2</th>'));
+  assert.ok(html.includes('<td class="ml-mia-pz" data-etq="Pausa 1">10:00–10:15</td><td class="ml-mia-pz" data-etq="Almuerzo">12:30–13:30</td><td class="ml-mia-pz" data-etq="Pausa 2">15:30–15:40</td>'));
   if (!Object.keys(turno.festivos || {}).length) assert.ok(html.includes('Horas de la semana: <strong>42 h</strong>'));
 });
 
@@ -106,7 +108,7 @@ test('E5: un grupo guardado antes sigue igual en la API y en la vista (sin pausa
   Object.assign(global, L);
   const UI = require('../../public/js/malla.js');
   const html = UI.mallaMiaHtml({ semanas: [{ semana: '2030-03-04', turno: { grupo: 'Antes', horario: VIEJO, especiales: [], festivos: {}, color: 1 }, novedades: [] }] });
-  assert.ok(!html.includes('ml-mia-pausas'), 'sin línea de pausas');
+  assert.ok(!html.includes('ml-mia-pz'), 'sin columnas de pausas'); // Fase M3
   assert.ok(html.includes('Horas de la semana: <strong>18 h</strong>'));
 });
 

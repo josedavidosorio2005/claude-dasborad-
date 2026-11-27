@@ -577,6 +577,88 @@ L("function gestFiltradas(ag,d,h){ return Object.values(S.casos).filter(c=>c._es
 L("const todos=Object.values(S.casos).filter(c=>c._agente===agenteActual && c._estado==='gestionado').sort(",
   "const todos=Object.values(S.casos).filter(c=>c._agente===agenteActual && c._estado==='gestionado').concat(S.histCuenta||[]).sort(");
 
+// 8i) Pedidos de Edwin (reunión 26/11/2026), Gráficas (admin y cliente): agendas por entidad y por servicio; después de
+// Codificación, gestiones por entidad y por servicio; números sobre barras, columnas, puntos y porciones; Codificación
+// con TODAS las codificaciones (sin «Otros»). Solo visual: no cambia datos.
+M('          <div class="card"><h3>Codificación general</h3><p class="nota">Distribución de todas las gestiones por tipificación</p><div id="grDona"></div></div>\n',
+  '          <div class="card"><h3>Agendas por entidad</h3><p class="nota">Agendas de las gestiones efectivas, por entidad</p><div id="grAgEnt"></div></div>\n' +
+  '          <div class="card"><h3>Agendas por servicio</h3><p class="nota">Agendas de las gestiones efectivas, por servicio</p><div id="grAgServ"></div></div>\n' +
+  '          <div class="card"><h3>Codificación general</h3><p class="nota">Distribución de todas las gestiones por tipificación</p><div id="grDona"></div></div>\n' +
+  '          <div class="card"><h3>Gestiones por entidad</h3><p class="nota">Casos codificados por entidad</p><div id="grGeEnt"></div></div>\n' +
+  '          <div class="card"><h3>Gestiones por servicio</h3><p class="nota">Casos codificados por servicio</p><div id="grGeServ"></div></div>\n');
+L("    a0=a1; });\n  return `<div class=\"dona\">", "    a0=a1; });\n  segs+=etiquetasDona(items,total,cx,cy,(R+r)/2);\n  return `<div class=\"dona\">");
+L('function agrupar(lista,fn,max=7){', `// Pedido de Edwin (26/11): el número sobre cada porción. Solo donde cabe (≥ 4 % de la dona); el resto sigue en la leyenda.
+function etiquetasDona(items,total,cx,cy,rad){
+  if(!total) return ''; let a0=-Math.PI/2, g='';
+  items.forEach(it=>{ const a=it.n/total*Math.PI*2, md=a0+a/2; a0+=a;
+    if(items.length>1&&it.n/total<0.04) return;
+    const x=items.length===1?cx:cx+rad*Math.cos(md), y=items.length===1?cy-rad:cy+rad*Math.sin(md);
+    g+=\`<text x="\${x.toFixed(1)}" y="\${(y+4).toFixed(1)}" text-anchor="middle" class="val-dona" style="pointer-events:none">\${fmt(it.n)}</text>\`; });
+  return g;
+}
+// Color de una codificación: las 8 primeras de la lista con su color de siempre; las demás, la paleta en orden (ya no «Otros»).
+function colTipiN(t,k){ const i=S.tipis.indexOf(t); return i>=0&&i<8? PAL[i] : PAL[k%PAL.length]; }
+// Barras por un campo de la base (Entidad, Servicio) de una lista de gestiones.
+// conCitas (agendas): pedido de Edwin (27/11, Fase STA14): UN solo número por barra, el más alto entre casos agendados
+// y citas (las citas, que suelen ser más), con la etiqueta «agendas»; el largo y el orden van por ese número.
+function valAgendas(o){ return Math.max(o.n,o.citas); }
+function filasCampoGest(lista,campo,conCitas){ const mp=new Map();
+  lista.forEach(c=>{ const k=String(c[campo]||'').trim()||'(vacío)'; const o=mp.get(k)||{n:0,citas:0}; o.n++; o.citas+=(c._citas||0); mp.set(k,o); });
+  const v=o=>conCitas?valAgendas(o):o.n;
+  return [...mp.entries()].sort((x,y)=>v(y[1])-v(x[1])||x[0].localeCompare(y[0],'es')).map(([k,o])=>({label:k,vals:[v(o)],
+    etq:conCitas?\`\${fmt(v(o))} agendas\`:fmt(o.n),
+    tip:\`<b>\${esc(k)}</b><br>\${conCitas?\`Agendas: <b>\${fmt(v(o))}</b>\`:\`Gestiones: <b>\${fmt(o.n)}</b>\`}\`})); }
+function agrupar(lista,fn,max=7){`);
+L(`  const asesCon=ases.filter(a=>dat(a.id).g>0);`, `  // Pedido de Edwin (26/11): agendas y gestiones por entidad y por servicio (mismos filtros de arriba).
+  const agen=gs.filter(esEf);
+  [['grAgEnt','Entidad'],['grAgServ','Servicio']].forEach(([id,campo])=>{ $(id).innerHTML= agen.length? hbarSVG(id,filasCampoGest(agen,campo,true),[{nombre:'Agendas',color:G_AG}],{maxLabel:30}) : vacioG('No hay agendas con estos filtros.'); });
+  [['grGeEnt','Entidad'],['grGeServ','Servicio']].forEach(([id,campo])=>{ $(id).innerHTML= gs.length? hbarSVG(id,filasCampoGest(gs,campo,false),[{nombre:'Gestiones',color:G_LIN}],{maxLabel:30}) : vacioG(); });
+
+  const asesCon=ases.filter(a=>dat(a.id).g>0);`);
+L(`    const cnt=agrupar(gs,c=>c._tipi,7);
+    $('grDona').innerHTML=donaSVG(cnt.map(([t,n])=>({nombre:t,n,color:t==='Otros'?OTRO:colTipi(t)})),gs.length,'gestiones');`,
+`    const cnt=agrupar(gs,c=>c._tipi,Infinity); // pedido de Edwin (26/11): TODAS las codificaciones, sin «Otros»
+    $('grDona').innerHTML=donaSVG(cnt.map(([t,n],k)=>({nombre:t,n,color:colTipiN(t,k)})),gs.length,'gestiones');`);
+L('if(tots[i]&&cats.length<=14) g+=`<text x="${cx}" y="${y(tots[i])-6}" text-anchor="middle" class="val">${fmt(tots[i])}</text>`;',
+  'if(tots[i]&&(cats.length<=14||iw/cats.length>=30)) g+=`<text x="${cx}" y="${y(tots[i])-6}" text-anchor="middle" class="val">${fmt(tots[i])}</text>`;');
+L("  if(series.length<=4&&cats.length) series.forEach(s=>{ const v=s.vals[s.vals.length-1]; g+=`<text x=\"${x(cats.length-1)+8}\" y=\"${y(v)-8}\" class=\"val\">${fmt(v)}</text>`; });",
+  "  if(cats.length<=45&&iw/Math.max(1,cats.length)>=26) series.forEach((s,k)=>s.vals.forEach((v,i)=>{ if(series.length>2&&!v) return; g+=`<text x=\"${x(i)}\" y=\"${k%2?y(v)+16:y(v)-8}\" text-anchor=\"middle\" class=\"val\">${fmt(v)}</text>`; }));\n  else if(series.length<=4&&cats.length) series.forEach(s=>{ const v=s.vals[s.vals.length-1]; g+=`<text x=\"${x(cats.length-1)+8}\" y=\"${y(v)-8}\" class=\"val\">${fmt(v)}</text>`; });");
+css = una(css, 'svg.ch text.val{fill:var(--txt);font-size:12px;font-weight:600}', 'svg.ch text.val{fill:var(--txt);font-size:12px;font-weight:600}\n.dona svg text.val-dona{fill:#fff;font-size:12px;font-weight:700;paint-order:stroke;stroke:rgba(0,0,0,.45);stroke-width:2.5px}');
+
+// 8j) Pedido de Edwin (27/11, Fase STA14): fuera las tres gráficas del final de la Gestión STA («Por Fecha Ingreso
+// Sta», «Por Fecha Autorización» y «Por Fecha Expiración»), en Gráficas (admin) y en la vista del cliente.
+M('\n        <div class="card ancho"><h3>Por Fecha Ingreso Sta</h3><p class="nota">Casos según el día en que ingresaron al STA</p><div id="grIng"></div></div>', '');
+M('\n        <div class="card"><h3>Por Fecha Autorización</h3><p class="nota">Casos por mes de autorización</p><div id="grAut"></div></div>', '');
+M('\n        <div class="card"><h3>Por Fecha Expiración</h3><p class="nota">Casos por mes de expiración</p><div id="grExp"></div></div>', '');
+L("  const ids=['grEnt2','grServ2','grEst','grCups','grIng','grAut','grExp'];", "  const ids=['grEnt2','grServ2','grEst','grCups'];");
+L(`  // fecha ingreso por día
+  const fi=U.map(c=>(c['Fecha Ingreso Sta']||'').slice(0,10)).filter(Boolean).sort();
+  if(!fi.length) $('grIng').innerHTML=vacioG('Sin fechas de ingreso.');
+  else { const dI=[...new Set(fi)];
+    const ser=SER.map((s,k)=>({...s,vals:dI.map(x=>U.filter(c=>(c['Fecha Ingreso Sta']||'').startsWith(x)&&parte(c)===k).length)}));
+    $('grIng').innerHTML = dI.length>20 ? lineaSVG('grIng',dI,ser)+leyenda(ser) : colSVG('grIng',dI,ser,{fmtX:dm})+leyenda(ser); }
+  const porMes=(campo,id)=>{ const ms=[...new Set(U.map(c=>(c[campo]||'').slice(0,7)).filter(Boolean))].sort();
+    if(!ms.length){ $(id).innerHTML=vacioG('Sin fechas.'); return; }
+    const ser=SER.map((s,k)=>({...s,vals:ms.map(m=>U.filter(c=>(c[campo]||'').startsWith(m)&&parte(c)===k).length)}));
+    $(id).innerHTML=colSVG(id,ms,ser)+leyenda(ser); };
+  porMes('Fecha Autorizacion','grAut'); porMes('Fecha Expiracion','grExp');
+`, '');
+
+// Recuadros de arriba (pedido de Edwin, 27/11): fuera «Agendas (efectivas)» y «Fuera de gestión»; el de citas se llama «Agendas».
+L("[['Gestionados',fmt(gs.length)],['Agendas (efectivas)',fmt(nEf)],['Citas agendadas',fmt(citas)],", "[['Gestionados',fmt(gs.length)],['Agendas',fmt(citas)],");
+L(",['Fuera de gestión',fmt(todos.filter(c=>c._estado==='fuera').length)]]", "]");
+
+// 8k) Pedido de Edwin (27/11, Fase STA15): «Agendas por asesor» como por entidad y por servicio (un solo número,
+// «N agendas», con el valor de citas: valAgendas; largo y orden por ese número; sin «citas») y «Gestiones por día» solo
+// con la línea de Gestiones (sin la de Citas ni su leyenda).
+M('<p class="nota">Casos agendados por cada asesor y citas que dio</p>', '<p class="nota">Agendas de cada asesor</p>');
+M('<p class="nota">Casos codificados y citas dadas cada día hábil</p>', '<p class="nota">Casos codificados cada día hábil</p>');
+L("vacioG(ases.length?'Ninguna asesora tiene agendas ni citas con estos filtros.':'No hay asesores.')", "vacioG(ases.length?'Ninguna asesora tiene agendas con estos filtros.':'No hay asesores.')");
+L("  else { const rows=asesAg.map(a=>{ const o=dat(a.id); return {label:a.nombre,vals:[o.e],etq:`${fmt(o.e)} agendas · ${fmt(o.citas)} citas`,\n      tip:`<b>${esc(a.nombre)}</b><br>Agendas: <b>${fmt(o.e)}</b><br>Citas: <b>${fmt(o.citas)}</b><br>Gestionados: ${fmt(o.g)}<br>Efectividad: ${pct(o.citas,o.g)} %`}; }).sort((x,y)=>y.vals[0]-x.vals[0]);",
+  "  else { const rows=asesAg.map(a=>{ const o=dat(a.id), v=valAgendas({n:o.e,citas:o.citas}); return {label:a.nombre,vals:[v],etq:`${fmt(v)} agendas`,\n      tip:`<b>${esc(a.nombre)}</b><br>Agendas: <b>${fmt(v)}</b><br>Gestionados: ${fmt(o.g)}<br>Efectividad: ${pct(o.citas,o.g)} %`}; }).sort((x,y)=>y.vals[0]-x.vals[0]||x.label.localeCompare(y.label,'es'));");
+L("    const serD=[{nombre:'Gestiones',color:G_LIN,vals:dias.map(x=>gs.filter(c=>c._fg.startsWith(x)).length)},{nombre:'Citas',color:'#eda100',vals:dias.map(x=>gs.filter(c=>c._fg.startsWith(x)).reduce((t,c)=>t+(c._citas||0),0))}];\n    $('grDia').innerHTML=lineaSVG('grDia',dias,serD)+leyenda(serD);",
+  "    const serD=[{nombre:'Gestiones',color:G_LIN,vals:dias.map(x=>gs.filter(c=>c._fg.startsWith(x)).length)}];\n    $('grDia').innerHTML=lineaSVG('grDia',dias,serD);");
+
 // 9) Manejadores en línea (onclick, onchange, oninput, onkeydown): sus llamadas pasan a STAapp.<función>.
 const nombres = [...new Set([...js.matchAll(/(?:^|\n)(?:async )?function (\w+)\(/g)].map((m) => m[1]))];
 const reLlamada = new RegExp('(^|[^.\\w$])(' + nombres.join('|') + ')\\(', 'g');

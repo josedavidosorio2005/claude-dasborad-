@@ -7,6 +7,7 @@ const { test, before } = require('node:test');
 const assert = require('node:assert/strict');
 const bcrypt = require('bcryptjs');
 const { request, app, db, tokenFor, MASTER_PASSWORD } = require('./helpers');
+const { completar, completarEdicion } = require('./helpers-activos'); // Fase INV2: registrar y editar exigen todos los campos
 
 const H = (t) => ({ Authorization: 'Bearer ' + t });
 const tk = {};
@@ -19,7 +20,7 @@ before(async () => {
   for (const u of ['sis', 'sup', 'rep']) tk[u] = await tokenFor('f372_' + u, 'Clave#2026x');
 });
 const put = (t, url, b) => request(app).put('/api' + url).set(H(t)).send(b);
-const post = (t, url, b) => request(app).post('/api' + url).set(H(t)).send(b);
+const post = (t, url, b) => request(app).post('/api' + url).set(H(t)).send(url === '/activos' ? completar(b) : b);
 const config = async (t) => (await request(app).get('/api/activos/config').set(H(t || tk.sis))).body;
 const hist = (accion) => db.prepare('SELECT detalle FROM historial WHERE accion = ? ORDER BY id DESC').all(accion);
 
@@ -54,7 +55,7 @@ test('editar campos: agregar, ocultar y reordenar; la clave y el tipo de dato no
   assert.equal(t1.campos.find((c) => c.k === 'tipo_disco').l, 'Tipo de disco duro');
   assert.match(hist('ACTIVO_TIPO_EDITADO')[0].detalle, /^10 campo\(s\), 1 oculto\(s\)$/); // Fase 377: + 3 campos del diseño
   // Al editar el elemento, lo guardado en el campo oculto se conserva aunque no se envíe (ni se puede cambiar).
-  const ed = await put(tk.sis, '/activos/' + id, { datos: { ram_gb: 32, puertos_usb: 4, tipo_disco: 'SSD', procesador: 'Otro inventado' } });
+  const ed = await put(tk.sis, '/activos/' + id, completarEdicion('TORRE', { datos: { ram_gb: 32, puertos_usb: 4, tipo_disco: 'SSD', procesador: 'Otro inventado' } }));
   assert.equal(ed.status, 200, JSON.stringify(ed.body));
   assert.deepEqual([ed.body.activo.datos.procesador, ed.body.activo.datos.ram_gb, ed.body.activo.datos.puertos_usb], ['Inventado i7', 32, 4]);
   // Un campo no se borra; su tipo de dato no cambia; una clave inventada no entra.
@@ -96,7 +97,7 @@ test('tipo nuevo: se registra con sus campos; desactivar solo sin elementos vige
   assert.ok(!cf.tipos.some((t) => t.codigo === 'CAMARA_WEB'), 'fuera de Registrar');
   assert.equal(cf.tiposTodos.find((t) => t.codigo === 'CAMARA_WEB').activo, false, 'sigue en Ajustes');
   assert.match((await post(tk.sis, '/activos', { tipo: 'CAMARA_WEB', codigo: 'CW-2' })).body.error, /Elige el tipo/);
-  assert.equal((await put(tk.sis, '/activos/' + el.body.activo.id, { observaciones: 'Sigue editable' })).status, 200, 'el elemento de un tipo desactivado se edita');
+  assert.equal((await put(tk.sis, '/activos/' + el.body.activo.id, completarEdicion('CAMARA_WEB', { observaciones: 'Sigue editable' }))).status, 200, 'el elemento de un tipo desactivado se edita');
   assert.equal((await put(tk.sis, '/activos/config/tipos/CAMARA_WEB/activo', { activo: true })).status, 200);
   assert.equal((await put(tk.sis, '/activos/config/tipos/CAMARA_WEB/activo', { activo: 'no' })).status, 400);
 });

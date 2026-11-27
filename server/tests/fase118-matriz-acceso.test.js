@@ -193,7 +193,7 @@ declarar(['PUT /monitoreos/:id', 'DELETE /monitoreos/:id'], 'calidadManage');
 declarar(['PUT /monitoreos/:id/asesor'], 'admin');
 declarar(['POST /monitoreos/revisar-asesores'], 'calidadEval'); // Fase 353: vista previa de nombres sin usuario (solo lee)
 declarar(['GET /calidad/enlace', 'POST /calidad/enlace', 'POST /calidad/enlace/revertir'], 'admin'); // Fase 353
-declarar(['GET /wolkvox/estado', 'POST /wolkvox/probar', 'POST /wolkvox/diagnostico-red', 'POST /wolkvox/auto/ejecutar', 'POST /wolkvox/real/hueco', 'GET /wolkvox/agentes', 'PUT /wolkvox/agentes', 'GET /wolkvox/replica-mobilize/inventario'], 'admin'); // W10: + dry-run del borrado de la réplica de MOBILIZE // AU2: + agentes de Inconexión (réplica de Aurora) // A3: + ejecutar ahora // A30: + hueco del real // W3: + diagnóstico de red // Fase W2: solo admin y solo la replica interna (404 para las demas)
+declarar(['GET /wolkvox/estado', 'POST /wolkvox/probar', 'POST /wolkvox/diagnostico-red', 'POST /wolkvox/auto/ejecutar', 'POST /wolkvox/real/hueco', 'GET /wolkvox/agentes', 'PUT /wolkvox/agentes', 'GET /wolkvox/replica-mobilize/inventario'], 'admin'); // W10a: + dry-run (solo lectura) del borrado de la réplica de MOBILIZE // AU2: + agentes de Inconexión (réplica de Aurora) // A3: + ejecutar ahora // A30: + hueco del real // W3: + diagnóstico de red // Fase W2: solo admin y solo la replica interna (404 para las demas)
 // Fase 356: «Sugerencias / Tickets». Crear, listar y ver: cualquier autenticado, auto-scoped por
 // autor (ajeno: 404). Contador y estado: ADMIN o REPORTES; borrar: solo ADMIN. Esas tres (y que
 // un ajeno no vea ni conteste) se prueban rol por rol en fase356-tickets.test.js.
@@ -376,11 +376,11 @@ declarar(['POST /admin/ver-como/fin'], 'skip');
 // Fase 369 (E1): Inventario de sistemas -- ADMIN y SISTEMAS, probado rol por rol en fase369-inventario-sistemas.test.js.
 declarar(['GET /activos/config', 'GET /activos/resumen', 'GET /activos/novedades-gh' /* Fase GH4 */, 'GET /activos/panel' /* Fase GH5 */, 'GET /activos', 'POST /activos', 'PUT /activos/:id', 'POST /activos/:id/estado', 'GET /activos/:id/historial', 'PUT /activos/listas/:lista',
   // Fase 370 (E2): agentes y asignación, también probados rol por rol en fase370-inventario-agentes.test.js.
-  'GET /activos/agentes', 'POST /activos/agentes', 'POST /activos/gh-nombre' /* 25/11: nombre desde Talento humano */, 'GET /activos/agentes/:id', 'PUT /activos/agentes/:id', 'POST /activos/:id/asignar', 'POST /activos/:id/reasignar', 'POST /activos/:id/devolver', 'POST /activos/:id/cambiar',
+  'GET /activos/agentes', 'POST /activos/agentes', 'POST /activos/gh-nombre' /* 25/11: nombre desde Talento humano */, 'GET /activos/gh-personas', 'POST /activos/agentes/:id/entregar' /* Fase INV3 */, 'GET /activos/agentes/:id', 'PUT /activos/agentes/:id', 'POST /activos/:id/asignar', 'POST /activos/:id/reasignar', 'POST /activos/:id/devolver', 'POST /activos/:id/cambiar',
   // Fase 371 (E3): actas, probadas rol por rol en fase371-inventario-actas.test.js.
-  'GET /activos/agentes/:id/actas', 'POST /activos/agentes/:id/actas', 'GET /activos/actas', 'POST /activos/actas/:id/anular', 'GET /activos/historial', 'POST /activos/importar', 'GET /activos/actas/:id', 'POST /activos/actas/:id/firmada', 'GET /activos/actas/:id/firmada',
+  'GET /activos/agentes/:id/actas', 'POST /activos/agentes/:id/actas', 'GET /activos/actas', 'POST /activos/actas/:id/anular', 'GET /activos/historial', 'POST /activos/importar', 'GET /activos/actas/:id', 'POST /activos/actas/:id/completar' /* Fase INV4 */, 'POST /activos/actas/:id/firmada', 'GET /activos/actas/:id/firmada',
   // Fase 372 (E4): formularios y textos, probados rol por rol en fase372-inventario-formularios.test.js.
-  'POST /activos/config/tipos', 'PUT /activos/config/tipos/:codigo', 'PUT /activos/config/tipos/:codigo/activo', 'PUT /activos/config/textos/:clave'], 'skip');
+  'PUT /activos/config/estados', 'GET /activos/copia' /* Fase INV6 */, 'POST /activos/config/tipos', 'PUT /activos/config/tipos/:codigo', 'PUT /activos/config/tipos/:codigo/activo', 'PUT /activos/config/textos/:clave'], 'skip');
 declarar(['GET /gerencia/kpis', 'GET /gerencia/periodos', 'GET /gerencia/resumen'], 'modulo:Gerencia');
 declarar(['POST /gerencia/kpis', 'PUT /gerencia/kpis/:id', 'DELETE /gerencia/kpis/:id', 'POST /gerencia/carga'], 'moduloYcarga:Gerencia');
 // Fase GH2: «Talento humano» (app de Edwin) -- ADMIN; GESTION_HUMANA solo con GH_ROL_ACTIVO=1; probado

@@ -330,8 +330,11 @@ async function correrUnaVez(opts) {
       return terminar();
     }
     // Fase AU2 (mapeo de Edwin, 26/11): en Aurora solo entran las skills del Flujo de la lista (LINEA DE ENTRADA).
+    let filasWa = null;
     if (dest.filtros && dest.filtros.flujoSkills) {
       const AG = require('./wolkvox-agentes');
+      // Fase AU5: antes de descartarlas, las filas de las skills de WhatsApp dan sus abandonadas y su ATA.
+      if (dest.filtros.waSkills) filasWa = require('./wolkvox-wa-skill1').filasWhatsapp(filas, dest.filtros.waSkills);
       const antes = filas.length;
       for (let i = filas.length - 1; i >= 0; i--) if (!AG.enLista(dest.filtros.flujoSkills, filas[i].skillName)) filas.splice(i, 1);
       if (antes !== filas.length) partes.push(mes + ': ' + (antes - filas.length) + ' filas de otras skills fuera');
@@ -358,6 +361,10 @@ async function correrUnaVez(opts) {
       if (ya) { res.meses.push({ mes, estado: 'con_datos' }); partes.push(mes + ': ya tiene ' + ya + ' filas (carga), no se toca'); continue; }
     }
     const w = ing.reemplazarMesFlujo(db, { mes, filas: v.filas, cargadoPorNombre: QUIEN, archivoNombre: ARCHIVO, conservar: CONSERVAR, campana: CAMPANA });
+    if (filasWa) { // Fase AU5: abandonadas y ATA del WhatsApp (solo esos dos números), y completa el Tráfico ya cargado
+      const g = require('./wolkvox-wa-skill1').guardarDelFlujo(db, CAMPANA, mes, filasWa);
+      partes.push(mes + ': WhatsApp de skill_1: ' + g.guardadas + ' filas día-skill (abandonadas y ATA), ' + g.actualizadas + ' filas de Tráfico de WhatsApp completadas');
+    }
     res.meses.push({ mes, estado: 'ok', dias: dias.length, sinLlamadas, filas: w.filas, skills: w.skills, reemplazadas: w.reemplazadas, conservados: w.conservados });
     partes.push(mes + ': ' + dias.length + ' días, ' + w.filas + ' filas, ' + w.skills + ' skills, reemplazó ' + w.reemplazadas +
       (w.conservados ? ', ' + w.conservados + ' AHT/espera del archivo' : '') + (omitidas ? ', ' + omitidas + ' filas de total omitidas' : '') + (sinLlamadas ? ', ' + sinLlamadas + ' filas sin llamadas descartadas' : '') + (sinMapeo ? ', ' + sinMapeo + ' filas de skills sin mapear fuera' : '') + ', con respaldo');

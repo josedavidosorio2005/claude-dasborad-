@@ -33,7 +33,7 @@
   /* Acento de la interfaz: pestana activa, foco, bordes al pasar el mouse (= serie 1) */
   --acento:#0072B2; --acento-texto:#0072B2; --acento-suave:#eaf4fb;
 }
-:root[data-theme="dark"]{
+#activos-overlay,:root[data-theme="dark"]{
   --serie-1:#56B4E9; --serie-2:#7D6CEF; --serie-3:#E77EB3; --serie-4:#60DCDC; --serie-5:#D9B27A; --serie-6:#6F96EB;
   --serie-7:#F10F81; --serie-8:#E5DCC8; --serie-9:#CBC2EB; --serie-10:#519CA4; --serie-11:#B7E5F6; --serie-12:#2A7BEE;
   --serie-13:#A48CF2; --serie-14:#BDACF6; --serie-15:#4282B8; --serie-16:#8CA3D4; --serie-17:#8EC7C2; --serie-18:#80B8D1;

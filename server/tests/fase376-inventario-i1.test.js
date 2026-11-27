@@ -8,6 +8,7 @@ const assert = require('node:assert/strict');
 const path = require('path');
 const bcrypt = require('bcryptjs');
 const { request, app, db, tokenFor, MASTER_PASSWORD } = require('./helpers');
+const { completar } = require('./helpers-activos'); // Fase INV2: registrar exige todos los campos
 
 const H = (t) => ({ Authorization: 'Bearer ' + t });
 const tk = {};
@@ -18,7 +19,7 @@ before(async () => {
   tk.sis = await tokenFor('f376_sis', 'Clave#2026x');
 });
 const get = (url) => request(app).get('/api' + url).set(H(tk.sis));
-const post = (url, b) => request(app).post('/api' + url).set(H(tk.sis)).send(b);
+const post = (url, b) => request(app).post('/api' + url).set(H(tk.sis)).send(url === '/activos' ? completar(b) : b);
 
 test('dos inventarios con el mismo motor: tipos, lista y resumen por ámbito', async () => {
   const sis = (await get('/activos/config')).body, inm = (await get('/activos/config?ambito=inmuebles')).body;
