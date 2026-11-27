@@ -176,5 +176,5 @@ test('navegador: los «Fuera de gestión» no son sin asignar ni disponibles; ti
 test('navegador: «Agendas por asesor» solo con las asesoras que tienen agendas o citas', () => {
   assert.match(APP, /const asesAg=ases\.filter\(a=>\{ const o=dat\(a\.id\); return o\.e>0\|\|o\.citas>0; \}\);/);
   assert.match(APP, /else \{ const rows=asesAg\.map\(a=>\{/);
-  assert.match(APP, /Ninguna asesora tiene agendas ni citas con estos filtros\./);
+  assert.match(APP, /Ninguna asesora tiene agendas con estos filtros\./); // STA15: sin «citas»
 });

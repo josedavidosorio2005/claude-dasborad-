@@ -648,6 +648,17 @@ L(`  // fecha ingreso por día
 L("[['Gestionados',fmt(gs.length)],['Agendas (efectivas)',fmt(nEf)],['Citas agendadas',fmt(citas)],", "[['Gestionados',fmt(gs.length)],['Agendas',fmt(citas)],");
 L(",['Fuera de gestión',fmt(todos.filter(c=>c._estado==='fuera').length)]]", "]");
 
+// 8k) Pedido de Edwin (27/11, Fase STA15): «Agendas por asesor» como por entidad y por servicio (un solo número,
+// «N agendas», con el valor de citas: valAgendas; largo y orden por ese número; sin «citas») y «Gestiones por día» solo
+// con la línea de Gestiones (sin la de Citas ni su leyenda).
+M('<p class="nota">Casos agendados por cada asesor y citas que dio</p>', '<p class="nota">Agendas de cada asesor</p>');
+M('<p class="nota">Casos codificados y citas dadas cada día hábil</p>', '<p class="nota">Casos codificados cada día hábil</p>');
+L("vacioG(ases.length?'Ninguna asesora tiene agendas ni citas con estos filtros.':'No hay asesores.')", "vacioG(ases.length?'Ninguna asesora tiene agendas con estos filtros.':'No hay asesores.')");
+L("  else { const rows=asesAg.map(a=>{ const o=dat(a.id); return {label:a.nombre,vals:[o.e],etq:`${fmt(o.e)} agendas · ${fmt(o.citas)} citas`,\n      tip:`<b>${esc(a.nombre)}</b><br>Agendas: <b>${fmt(o.e)}</b><br>Citas: <b>${fmt(o.citas)}</b><br>Gestionados: ${fmt(o.g)}<br>Efectividad: ${pct(o.citas,o.g)} %`}; }).sort((x,y)=>y.vals[0]-x.vals[0]);",
+  "  else { const rows=asesAg.map(a=>{ const o=dat(a.id), v=valAgendas({n:o.e,citas:o.citas}); return {label:a.nombre,vals:[v],etq:`${fmt(v)} agendas`,\n      tip:`<b>${esc(a.nombre)}</b><br>Agendas: <b>${fmt(v)}</b><br>Gestionados: ${fmt(o.g)}<br>Efectividad: ${pct(o.citas,o.g)} %`}; }).sort((x,y)=>y.vals[0]-x.vals[0]||x.label.localeCompare(y.label,'es'));");
+L("    const serD=[{nombre:'Gestiones',color:G_LIN,vals:dias.map(x=>gs.filter(c=>c._fg.startsWith(x)).length)},{nombre:'Citas',color:'#eda100',vals:dias.map(x=>gs.filter(c=>c._fg.startsWith(x)).reduce((t,c)=>t+(c._citas||0),0))}];\n    $('grDia').innerHTML=lineaSVG('grDia',dias,serD)+leyenda(serD);",
+  "    const serD=[{nombre:'Gestiones',color:G_LIN,vals:dias.map(x=>gs.filter(c=>c._fg.startsWith(x)).length)}];\n    $('grDia').innerHTML=lineaSVG('grDia',dias,serD);");
+
 // 9) Manejadores en línea (onclick, onchange, oninput, onkeydown): sus llamadas pasan a STAapp.<función>.
 const nombres = [...new Set([...js.matchAll(/(?:^|\n)(?:async )?function (\w+)\(/g)].map((m) => m[1]))];
 const reLlamada = new RegExp('(^|[^.\\w$])(' + nombres.join('|') + ')\\(', 'g');
