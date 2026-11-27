@@ -581,8 +581,8 @@ L("const todos=Object.values(S.casos).filter(c=>c._agente===agenteActual && c._e
 // Codificación, gestiones por entidad y por servicio; números sobre barras, columnas, puntos y porciones; Codificación
 // con TODAS las codificaciones (sin «Otros»). Solo visual: no cambia datos.
 M('          <div class="card"><h3>Codificación general</h3><p class="nota">Distribución de todas las gestiones por tipificación</p><div id="grDona"></div></div>\n',
-  '          <div class="card"><h3>Agendas por entidad</h3><p class="nota">Casos agendados (efectivos) y citas, por entidad</p><div id="grAgEnt"></div></div>\n' +
-  '          <div class="card"><h3>Agendas por servicio</h3><p class="nota">Casos agendados (efectivos) y citas, por servicio</p><div id="grAgServ"></div></div>\n' +
+  '          <div class="card"><h3>Agendas por entidad</h3><p class="nota">Agendas de las gestiones efectivas, por entidad</p><div id="grAgEnt"></div></div>\n' +
+  '          <div class="card"><h3>Agendas por servicio</h3><p class="nota">Agendas de las gestiones efectivas, por servicio</p><div id="grAgServ"></div></div>\n' +
   '          <div class="card"><h3>Codificación general</h3><p class="nota">Distribución de todas las gestiones por tipificación</p><div id="grDona"></div></div>\n' +
   '          <div class="card"><h3>Gestiones por entidad</h3><p class="nota">Casos codificados por entidad</p><div id="grGeEnt"></div></div>\n' +
   '          <div class="card"><h3>Gestiones por servicio</h3><p class="nota">Casos codificados por servicio</p><div id="grGeServ"></div></div>\n');
@@ -598,12 +598,16 @@ function etiquetasDona(items,total,cx,cy,rad){
 }
 // Color de una codificación: las 8 primeras de la lista con su color de siempre; las demás, la paleta en orden (ya no «Otros»).
 function colTipiN(t,k){ const i=S.tipis.indexOf(t); return i>=0&&i<8? PAL[i] : PAL[k%PAL.length]; }
-// Barras por un campo de la base (Entidad, Servicio) de una lista de gestiones. conCitas: agendas, con sus citas en la etiqueta.
+// Barras por un campo de la base (Entidad, Servicio) de una lista de gestiones.
+// conCitas (agendas): pedido de Edwin (27/11, Fase STA14): UN solo número por barra, el más alto entre casos agendados
+// y citas (las citas, que suelen ser más), con la etiqueta «agendas»; el largo y el orden van por ese número.
+function valAgendas(o){ return Math.max(o.n,o.citas); }
 function filasCampoGest(lista,campo,conCitas){ const mp=new Map();
   lista.forEach(c=>{ const k=String(c[campo]||'').trim()||'(vacío)'; const o=mp.get(k)||{n:0,citas:0}; o.n++; o.citas+=(c._citas||0); mp.set(k,o); });
-  return [...mp.entries()].sort((x,y)=>y[1].n-x[1].n||x[0].localeCompare(y[0],'es')).map(([k,o])=>({label:k,vals:[o.n],
-    etq:conCitas?\`\${fmt(o.n)} agendas · \${fmt(o.citas)} citas\`:fmt(o.n),
-    tip:\`<b>\${esc(k)}</b><br>\${conCitas?\`Agendas: <b>\${fmt(o.n)}</b><br>Citas: <b>\${fmt(o.citas)}</b>\`:\`Gestiones: <b>\${fmt(o.n)}</b>\`}\`})); }
+  const v=o=>conCitas?valAgendas(o):o.n;
+  return [...mp.entries()].sort((x,y)=>v(y[1])-v(x[1])||x[0].localeCompare(y[0],'es')).map(([k,o])=>({label:k,vals:[v(o)],
+    etq:conCitas?\`\${fmt(v(o))} agendas\`:fmt(o.n),
+    tip:\`<b>\${esc(k)}</b><br>\${conCitas?\`Agendas: <b>\${fmt(v(o))}</b>\`:\`Gestiones: <b>\${fmt(o.n)}</b>\`}\`})); }
 function agrupar(lista,fn,max=7){`);
 L(`  const asesCon=ases.filter(a=>dat(a.id).g>0);`, `  // Pedido de Edwin (26/11): agendas y gestiones por entidad y por servicio (mismos filtros de arriba).
   const agen=gs.filter(esEf);
@@ -620,6 +624,29 @@ L('if(tots[i]&&cats.length<=14) g+=`<text x="${cx}" y="${y(tots[i])-6}" text-anc
 L("  if(series.length<=4&&cats.length) series.forEach(s=>{ const v=s.vals[s.vals.length-1]; g+=`<text x=\"${x(cats.length-1)+8}\" y=\"${y(v)-8}\" class=\"val\">${fmt(v)}</text>`; });",
   "  if(cats.length<=45&&iw/Math.max(1,cats.length)>=26) series.forEach((s,k)=>s.vals.forEach((v,i)=>{ if(series.length>2&&!v) return; g+=`<text x=\"${x(i)}\" y=\"${k%2?y(v)+16:y(v)-8}\" text-anchor=\"middle\" class=\"val\">${fmt(v)}</text>`; }));\n  else if(series.length<=4&&cats.length) series.forEach(s=>{ const v=s.vals[s.vals.length-1]; g+=`<text x=\"${x(cats.length-1)+8}\" y=\"${y(v)-8}\" class=\"val\">${fmt(v)}</text>`; });");
 css = una(css, 'svg.ch text.val{fill:var(--txt);font-size:12px;font-weight:600}', 'svg.ch text.val{fill:var(--txt);font-size:12px;font-weight:600}\n.dona svg text.val-dona{fill:#fff;font-size:12px;font-weight:700;paint-order:stroke;stroke:rgba(0,0,0,.45);stroke-width:2.5px}');
+
+// 8j) Pedido de Edwin (27/11, Fase STA14): fuera las tres gráficas del final de la Gestión STA («Por Fecha Ingreso
+// Sta», «Por Fecha Autorización» y «Por Fecha Expiración»), en Gráficas (admin) y en la vista del cliente.
+M('\n        <div class="card ancho"><h3>Por Fecha Ingreso Sta</h3><p class="nota">Casos según el día en que ingresaron al STA</p><div id="grIng"></div></div>', '');
+M('\n        <div class="card"><h3>Por Fecha Autorización</h3><p class="nota">Casos por mes de autorización</p><div id="grAut"></div></div>', '');
+M('\n        <div class="card"><h3>Por Fecha Expiración</h3><p class="nota">Casos por mes de expiración</p><div id="grExp"></div></div>', '');
+L("  const ids=['grEnt2','grServ2','grEst','grCups','grIng','grAut','grExp'];", "  const ids=['grEnt2','grServ2','grEst','grCups'];");
+L(`  // fecha ingreso por día
+  const fi=U.map(c=>(c['Fecha Ingreso Sta']||'').slice(0,10)).filter(Boolean).sort();
+  if(!fi.length) $('grIng').innerHTML=vacioG('Sin fechas de ingreso.');
+  else { const dI=[...new Set(fi)];
+    const ser=SER.map((s,k)=>({...s,vals:dI.map(x=>U.filter(c=>(c['Fecha Ingreso Sta']||'').startsWith(x)&&parte(c)===k).length)}));
+    $('grIng').innerHTML = dI.length>20 ? lineaSVG('grIng',dI,ser)+leyenda(ser) : colSVG('grIng',dI,ser,{fmtX:dm})+leyenda(ser); }
+  const porMes=(campo,id)=>{ const ms=[...new Set(U.map(c=>(c[campo]||'').slice(0,7)).filter(Boolean))].sort();
+    if(!ms.length){ $(id).innerHTML=vacioG('Sin fechas.'); return; }
+    const ser=SER.map((s,k)=>({...s,vals:ms.map(m=>U.filter(c=>(c[campo]||'').startsWith(m)&&parte(c)===k).length)}));
+    $(id).innerHTML=colSVG(id,ms,ser)+leyenda(ser); };
+  porMes('Fecha Autorizacion','grAut'); porMes('Fecha Expiracion','grExp');
+`, '');
+
+// Recuadros de arriba (pedido de Edwin, 27/11): fuera «Agendas (efectivas)» y «Fuera de gestión»; el de citas se llama «Agendas».
+L("[['Gestionados',fmt(gs.length)],['Agendas (efectivas)',fmt(nEf)],['Citas agendadas',fmt(citas)],", "[['Gestionados',fmt(gs.length)],['Agendas',fmt(citas)],");
+L(",['Fuera de gestión',fmt(todos.filter(c=>c._estado==='fuera').length)]]", "]");
 
 // 9) Manejadores en línea (onclick, onchange, oninput, onkeydown): sus llamadas pasan a STAapp.<función>.
 const nombres = [...new Set([...js.matchAll(/(?:^|\n)(?:async )?function (\w+)\(/g)].map((m) => m[1]))];

@@ -7,6 +7,20 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.286.0 — Noviembre 2026
+
+**ORLANT · Gestión STA: gráficas de agendas más simples (pedido de Edwin).**
+
+- En «Agendas por entidad» y «Agendas por servicio» cada barra muestra un solo número, con la
+  palabra «agendas» (por ejemplo «71 agendas»): es el número de citas, que es el más alto. El largo
+  y el orden de las barras van por ese número.
+- Recuadros de arriba: se quitaron «Agendas (efectivas)» y «Fuera de gestión»; el de citas
+  agendadas ahora se llama «Agendas». Las gráficas de gestiones por entidad y por servicio
+  muestran solo el número de gestiones.
+- Se quitaron del final de las gráficas «Por fecha ingreso STA», «Por fecha autorización» y
+  «Por fecha expiración».
+- Vale para «Gráficas» del administrador y para la pestaña del cliente de ORLANT. No cambia ningún dato.
+
 ## v1.285.0 — Noviembre 2026
 
 **ORLANT · Gestión STA: más gráficas y con los números a la vista.**
