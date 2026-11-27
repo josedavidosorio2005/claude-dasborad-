@@ -173,7 +173,7 @@
    TEMA OSCURO — mismo set de tokens de arriba, redefinido.
    --c-brand NO se redefine a propósito (ver comentario arriba).
    ═══════════════════════════════════════════════════════════ */
-:root[data-theme="dark"]{
+#activos-overlay,:root[data-theme="dark"]{
   --c-primary:#5fc9ea; --c-primary-mid:#3fa8cc; --c-primary-light:#2f7fa0;
   --c-primary-darker:#082028; --c-primary-soft:#1a5a72;
 
@@ -1814,16 +1814,16 @@ html[data-motion="off"] #gd-panels .aurora-kpi,html[data-motion="off"] #gd-panel
    (todos >= 4.5:1, por encima del 3:1 que pide un objeto grafico, WCAG 1.4.11).
    Prueba: server/tests/fase163-visual-secciones.test.js. */
 :root{ --c-acento-llamadas:#1F5F99; --c-acento-whatsapp:#0B6E78; --c-acento-salida:#7A3E9D; }
-:root[data-theme="dark"]{ --c-acento-llamadas:#7CB7EA; --c-acento-whatsapp:#5CC8D0; --c-acento-salida:#C9A0F0; }
+#activos-overlay,:root[data-theme="dark"]{ --c-acento-llamadas:#7CB7EA; --c-acento-whatsapp:#5CC8D0; --c-acento-salida:#C9A0F0; }
 /* Fase 196: mapa de calor de "Flujo por hora" (tres niveles: verde, amarillo, gris; nunca rosado).
    Contraste del TEXTO sobre cada celda (contrasteRazon): claro 5,84 / 8,94 / 9,07; oscuro 5,01 / 6,48 / 7,45.
    El numero siempre esta escrito: el color no es la unica senal. */
 :root{ --c-calor-alto:#74B859; --c-calor-alto-texto:#12321A; --c-calor-medio:#F5D54A; --c-calor-medio-texto:#3D3000; --c-calor-bajo:#D9DEE2; --c-calor-bajo-texto:#2E363C; }
-:root[data-theme="dark"]{ --c-calor-alto:#3F7D34; --c-calor-alto-texto:#FFFFFF; --c-calor-medio:#B8961A; --c-calor-medio-texto:#1A1400; --c-calor-bajo:#3A4A53; --c-calor-bajo-texto:#E3E8EB; }
+#activos-overlay,:root[data-theme="dark"]{ --c-calor-alto:#3F7D34; --c-calor-alto-texto:#FFFFFF; --c-calor-medio:#B8961A; --c-calor-medio-texto:#1A1400; --c-calor-bajo:#3A4A53; --c-calor-bajo-texto:#E3E8EB; }
 /* Fase 209: escala roja de Abandonadas (alto rojo, medio rojo claro; el bajo es el gris de arriba).
    Contraste del texto: claro 5,44 / 6,37; oscuro 6,04 / 7,99. */
 :root{ --c-calor-rojo-alto:#C0392B; --c-calor-rojo-alto-texto:#FFFFFF; --c-calor-rojo-medio:#F08A78; --c-calor-rojo-medio-texto:#4A0D06; }
-:root[data-theme="dark"]{ --c-calor-rojo-alto:#B3362A; --c-calor-rojo-alto-texto:#FFFFFF; --c-calor-rojo-medio:#6E2A24; --c-calor-rojo-medio-texto:#FFD9D4; }
+#activos-overlay,:root[data-theme="dark"]{ --c-calor-rojo-alto:#B3362A; --c-calor-rojo-alto-texto:#FFFFFF; --c-calor-rojo-medio:#6E2A24; --c-calor-rojo-medio-texto:#FFD9D4; }
 .gd-sec-llamadas, .gd-tab-sec-llamadas{ --gd-acento:var(--c-acento-llamadas); }
 .gd-sec-whatsapp, .gd-tab-sec-whatsapp{ --gd-acento:var(--c-acento-whatsapp); }
 .gd-sec-salida, .gd-tab-sec-salida{ --gd-acento:var(--c-acento-salida); }
@@ -2521,7 +2521,7 @@ div.ca-bar-fila{cursor:default}
    El semaforo (--c-success/--c-warning/--c-danger) NO cambia: queda solo para estados. */
 :root{ --c-primary-mid:var(--acento); --c-info-bg:var(--acento-suave); --c-purple:var(--serie-2);
   --c-acento-llamadas:var(--serie-1); --c-acento-whatsapp:var(--serie-4); --c-acento-salida:var(--serie-2); }
-:root[data-theme="dark"]{ --c-primary-mid:var(--acento); --c-info-bg:var(--acento-suave); --c-purple:var(--serie-2);
+#activos-overlay,:root[data-theme="dark"]{ --c-primary-mid:var(--acento); --c-info-bg:var(--acento-suave); --c-purple:var(--serie-2);
   --c-acento-llamadas:var(--serie-1); --c-acento-whatsapp:var(--serie-4); --c-acento-salida:var(--serie-2); }
 .atab.atab-active{color:var(--acento-texto);border-bottom-color:var(--acento);background:var(--acento-suave);}
 .atab:hover{color:var(--acento-texto);}
@@ -3026,6 +3026,11 @@ circle.acp-l-ingresos{fill:var(--c-brand-blue)}circle.acp-l-asignaciones{fill:va
   .ac-menu-oculto{display:flex}
   .ac-menu-btn{width:auto;flex:1 1 calc(50% - 4px)}
 }
+/* Fase INV1 (pedido de Edwin, 26/11/2026): el Inventario de sistemas va SIEMPRE en tema oscuro, como su HTML,
+   solo dentro de su ventana (#activos-overlay). No copia colores: #activos-overlay comparte los mismos bloques
+   :root[data-theme="dark"] de paleta.css y de esta hoja (selector «#activos-overlay,:root[data-theme="dark"]»). */
+#activos-overlay{color-scheme:dark;color:var(--c-text)}
+#activos-overlay > .modal{background:var(--c-bg);color:var(--c-text)}
 /* Fase 372 (E4): editor de formularios por tipo. */
 .ac-tipo-form{margin:0 0 12px}
 .ac-ce-lista{list-style:none;margin:8px 0 10px;padding:0;display:flex;flex-direction:column;gap:8px}
@@ -3395,88 +3400,3 @@ html.ver-como-activo body{padding-bottom:84px}
 :root:not([data-theme="dark"]) .aurora-kpis{gap:12px}
 :root:not([data-theme="dark"]) .gd-sec > .aurora-card + .aurora-card{margin-top:18px}
 
-/* Fase INV1 (pedido de Edwin, 26/11/2026): el Inventario de sistemas va SIEMPRE en tema oscuro, como su HTML,
-   solo dentro de su ventana (#activos-overlay). Son los mismos tokens del tema oscuro de SinCo (paleta.css y
-   :root[data-theme=dark] de esta hoja); la prueba faseINV1 revisa que sigan iguales. */
-#activos-overlay{color-scheme:dark;color:var(--c-text);
-  --serie-1:#56B4E9;
-  --serie-2:#7D6CEF;
-  --serie-3:#E77EB3;
-  --serie-4:#60DCDC;
-  --serie-5:#D9B27A;
-  --serie-6:#6F96EB;
-  --serie-7:#F10F81;
-  --serie-8:#E5DCC8;
-  --serie-9:#CBC2EB;
-  --serie-10:#519CA4;
-  --serie-11:#B7E5F6;
-  --serie-12:#2A7BEE;
-  --serie-13:#A48CF2;
-  --serie-14:#BDACF6;
-  --serie-15:#4282B8;
-  --serie-16:#8CA3D4;
-  --serie-17:#8EC7C2;
-  --serie-18:#80B8D1;
-  --serie-19:#AFF8F1;
-  --serie-20:#15A0EF;
-  --serie-texto-1:#56B4E9;
-  --serie-texto-2:#A097F4;
-  --serie-texto-3:#E77EB3;
-  --serie-texto-4:#60DCDC;
-  --serie-texto-5:#D9B27A;
-  --serie-texto-6:#8AA8EF;
-  --btn-primario-bg:#004150;
-  --btn-primario-fg:#ffffff;
-  --btn-secundario-bg:#132c35;
-  --btn-secundario-fg:#56B4E9;
-  --btn-secundario-borde:#56B4E9;
-  --btn-suave-bg:#122f42;
-  --btn-suave-fg:#cfe9f8;
-  --btn-suave-borde:#2c5a78;
-  --acento:#56B4E9;
-  --acento-texto:#56B4E9;
-  --acento-suave:#122f42;
-  --c-primary:#5fc9ea;
-  --c-primary-mid:#3fa8cc;
-  --c-primary-light:#2f7fa0;
-  --c-primary-darker:#082028;
-  --c-primary-soft:#1a5a72;
-  --c-surface:#132c35;
-  --c-bg:#0a1e25;
-  --c-surface-subtle:#17343e;
-  --c-surface-alt:#1a3941;
-  --c-surface-alt2:#143038;
-  --c-hover-bg:#1c3e49;
-  --c-border:#2a4a56;
-  --c-border-soft:#23414c;
-  --c-border-soft2:#1f3b45;
-  --c-text:#dbe9ee;
-  --c-text-2:#a9c3cc;
-  --c-text-muted:#7fa3ae;
-  --c-text-muted2:#8fb4bf;
-  --c-text-link:#7dd6f0;
-  --c-success:#3ecf7e;
-  --c-success-dark:#4ade80;
-  --c-success-bg:#123a26;
-  --c-danger:#f0665a;
-  --c-danger-dark:#f87171;
-  --c-danger-bg:#3a1c1c;
-  --c-warning:#f0a248;
-  --c-warning-dark:#fbbf24;
-  --c-warning-bg:#3a2a10;
-  --c-success-text:#4ade80;
-  --c-warning-text:#fbbf24;
-  --c-danger-text:#fca5a5;
-  --c-accent:#ffd54f;
-  --c-accent-bg:#3a2f0a;
-  --c-purple:#c084fc;
-  --c-info-bg:#122f42;
-  --c-on-primary-soft:#7dd6f0;
-  --c-actualizacion:#FF8C1A;
-  --c-border-control:#5a8290;
-  --shadow-rgb:0,0,0;
-  --shadow-sm:0 2px 8px rgba(var(--shadow-rgb),0.35);
-  --shadow-md:0 2px 12px rgba(var(--shadow-rgb),0.4);
-  --shadow-lg:0 8px 40px rgba(var(--shadow-rgb),0.55);
-}
-#activos-overlay > .modal{background:var(--c-bg);color:var(--c-text)}
