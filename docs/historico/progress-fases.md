@@ -23087,3 +23087,10 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
 - **Cambio:** sección 8k del generador `scripts/orlant/generar-sta.js` y lo regenerado (`public/js/orlant-sta-app.js`). Usa el mismo `valAgendas` de la STA14 (max(casos agendados, citas)); subtítulo «Agendas de cada asesor»; el aviso vacío ya no dice «ni citas». La Efectividad (citas ÷ gestiones) no cambia.
 - **Pruebas:** `faseSTA15-agendas-asesor-gestiones-dia.test.js` (3); ajustada la del aviso vacío en la prueba del 25/11.
 - **Revisión visual local** (copia de la base demo con 400 casos INVENTADOS, Playwright con Brave): admin y cliente, 375/768/1440 en claro y oscuro: «79 agendas» por asesor, una sola línea por día, sin «citas» en esas tarjetas, 0 errores de consola.
+
+## Malla de la asesora: horario y pausas en columnas (Fase M3, v1.288.0, 2026-11-27)
+
+- **Pedido (Edwin, 27/11):** en «Mi malla» («Esta semana») el horario salía pegado a las pausas («08:30 – 17:30Pausa 10:30–10:45 · Almuerzo…»). Columnas con encabezado y línea vertical suave: Horario | Pausa 1 | Almuerzo | Pausa 2; en descanso, «Descanso» en Horario y lo demás vacío; en el celular (375 px), el horario y debajo una pausa por línea, sin desbordar. «Puntual» y novedades igual. Sin cambiar datos.
+- **Cambio:** `public/js/malla-logic.js` (`mallaPausasPartes`, `mallaColsPausaSemana`: solo las columnas que tiene la semana, en orden), `public/js/malla.js` (`mallaMiaHtml`: una celda por columna, `data-etq` para el celular; la celda de puntualidad sigue al final) y `public/css/styles.css` (línea `border-left` con `--c-border-soft`; ≤ 600 px cada día es un bloque y cada pausa lleva su nombre; celdas vacías ocultas en el celular).
+- **Pruebas:** `faseM3-malla-asesor-columnas.test.js` (3); ajustada `faseE5-malla-pausas` (antes esperaba la línea pegada).
+- **Revisión visual local** (la función real con un horario INVENTADO, estilos de la app, un día «Puntual»; Playwright con Brave): 375/768/1440 en claro y oscuro: columnas con encabezado, descanso solo en Horario, en 375 una pausa por línea, sin desborde y 0 errores de consola.
