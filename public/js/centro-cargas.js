@@ -88,7 +88,7 @@ async function _ccCargar() {
     if (gen !== _ccGeneracion) return; // Fase 241: ya se eligio otro cliente
     _cc.modulos = r.modulos || [];
     // PR 5: el servidor solo manda los modulos que puede cargar; un modulo pedido (atajo del tablero) que no esta, abre las tarjetas.
-    if (_cc.modulo && !_cc.modulos.some(function (m) { return m.id === _cc.modulo; })) _cc.modulo = null;
+    if (_cc.modulo && !_ccEsEquidad() && !_cc.modulos.some(function (m) { return m.id === _cc.modulo; })) _cc.modulo = null;
     // PR 2: versiones guardadas (Deshacer, 30 dias) de este cliente.
     try { _cc.versiones = (await apiRequest('GET', '/centro-cargas/' + encodeURIComponent(_cc.cliente) + '/versiones')).versiones || []; }
     catch (e2) { _cc.versiones = []; }
@@ -98,7 +98,7 @@ async function _ccCargar() {
     return;
   }
   if (gen !== _ccGeneracion) return;
-  if (_cc.modulo && !_cc.modulos.some(function (m) { return m.id === _cc.modulo; })) _cc.modulo = null;
+  if (_cc.modulo && !_ccEsEquidad() && !_cc.modulos.some(function (m) { return m.id === _cc.modulo; })) _cc.modulo = null;
   _ccRender();
   // Fase 354: en el padre de un cliente con sedes, el aviso de que se sube por sede.
   if (typeof _ccTieneSedes === 'function' && _ccTieneSedes(_cc.cliente)) {
@@ -138,7 +138,15 @@ function _ccOcultarTeleventas() {
 
 function _ccRender() {
   var cm = document.getElementById('centro-modal'); if (cm) cm.scrollTop = 0;
-  if (_cc.modulo) _ccRenderModulo(); else _ccRenderTarjetas();
+  if (typeof ccEquidadMostrar === 'function') ccEquidadMostrar(_ccEsEquidad()); // pedido de Edwin (27/11): solo abierta
+  if (_ccEsEquidad()) _ccRenderEquidad(); else if (_cc.modulo) _ccRenderModulo(); else _ccRenderTarjetas();
+}
+// Pedido de Edwin (27/11): «Equidad profesionales» se abre desde su cuadrito, como un módulo más (solo ORLANT).
+function _ccEsEquidad() { return _cc.cliente === 'ORLANT' && typeof CC_EQUIDAD_ID !== 'undefined' && _cc.modulo === CC_EQUIDAD_ID; }
+function _ccRenderEquidad() {
+  document.getElementById('cc-migas').innerHTML = '<a role="button" tabindex="0" onclick="ccVolverTarjetas()">' + esc(_cc.cliente) + '</a> <span aria-hidden="true">›</span> <span aria-current="page">Equidad profesionales</span>';
+  document.getElementById('cc-body').innerHTML = '<button type="button" class="btn-cancel cc-volver" onclick="ccVolverTarjetas()">' + iconoSvg('arrow-left') + ' Módulos</button>' +
+    (typeof _ceq !== 'undefined' && _ceq.datos ? '' : '<div class="cc-cargando">Cargando…</div>');
 }
 
 function _ccRenderTarjetas() {
@@ -150,6 +158,9 @@ function _ccRenderTarjetas() {
     return;
   }
   var html = '<p class="cc-intro">Elige qué quieres cargar. Cada módulo se carga con su propio archivo.</p><div class="cc-tarjetas">';
+  // Pedido de Edwin (27/11): cuadrito «Equidad profesionales» al lado del de Calidad (si no hay Calidad, al final).
+  var eq = _cc.cliente === 'ORLANT' && typeof ccEquidadTarjetaHtml === 'function' && typeof _ceq !== 'undefined' && _ceq.datos ? ccEquidadTarjetaHtml(_ceq.datos, _cc.anio, mesActual) : '';
+  var conCalidad = _cc.modulos.some(function (m) { return m.id === 'calidad'; });
   _cc.modulos.forEach(function (m) {
     var r = centroResumenModulo(m, mesActual);
     var alDia = m.cargas.every(function (c) { return (c.meses.filter(function (x) { return x.mes === anterior; })[0] || {}).registros > 0; });
@@ -164,8 +175,9 @@ function _ccRenderTarjetas() {
       (r.ultimaCarga ? '<span class="cc-tarjeta-sub">Última carga: ' + esc(centroFechaCorta(r.ultimaCarga)) + '</span>' : '') +
       (m.cargas.length > 1 ? '<span class="cc-tarjeta-sub">' + m.cargas.length + ' archivos: ' + esc(m.cargas.map(function (c) { return c.nombre; }).join(' y ')) + '</span>' : '') +
       '</button>';
+    if (m.id === 'calidad') html += eq;
   });
-  document.getElementById('cc-body').innerHTML = html + '</div>';
+  document.getElementById('cc-body').innerHTML = html + (conCalidad ? '' : eq) + '</div>';
 }
 
 function _ccMesAnterior(mes) {

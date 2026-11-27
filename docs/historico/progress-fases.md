@@ -23087,3 +23087,10 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
 - **Cambio:** sección 8k del generador `scripts/orlant/generar-sta.js` y lo regenerado (`public/js/orlant-sta-app.js`). Usa el mismo `valAgendas` de la STA14 (max(casos agendados, citas)); subtítulo «Agendas de cada asesor»; el aviso vacío ya no dice «ni citas». La Efectividad (citas ÷ gestiones) no cambia.
 - **Pruebas:** `faseSTA15-agendas-asesor-gestiones-dia.test.js` (3); ajustada la del aviso vacío en la prueba del 25/11.
 - **Revisión visual local** (copia de la base demo con 400 casos INVENTADOS, Playwright con Brave): admin y cliente, 375/768/1440 en claro y oscuro: «79 agendas» por asesor, una sola línea por día, sin «citas» en esas tarjetas, 0 errores de consola.
+
+## Centro de cargas: cuadrito «Equidad profesionales» (Fase EQ6, v1.288.0, 2026-11-27, PR SIN mergear)
+
+- **Pedido (Edwin, 27/11):** en el Centro de cargas de ORLANT, un cuadrito «Equidad profesionales» al lado del de Calidad, con el mismo estilo (estado «Al día» o «Pendiente», meses con datos en 2026 y última carga); la sección de Equidad sale solo al hacer clic, como Calidad, y no siempre abierta. Sin cambiar la carga ni los datos.
+- **Cambio:** `public/js/centro-equidad.js` (`ccEquidadResumenAnio`, `ccEquidadTarjetaHtml`, `CC_EQUIDAD_ID = 'equidad'`, `ccEquidadMostrar`; `#cc-equidad` queda oculto salvo con el cuadrito abierto) y `public/js/centro-cargas.js` (el cuadrito va después de Calidad o al final; `_ccEsEquidad` / `_ccRenderEquidad` con migas y «Módulos»). «Al día»: cada base tiene el mes anterior cargado (en un año pasado, si tiene datos); si no, «Pendiente». Mismas rutas de carga.
+- **Pruebas:** `faseEQ6-equidad-cuadrito-centro.test.js` (3).
+- **Revisión visual local** (copia de la base demo, 72 citas INVENTADAS por la API en sep y oct de 2026, Playwright con Brave): 375/768/1440 en claro y oscuro: el cuadrito sale después de Calidad («Al día», 2 meses, última carga), la sección cerrada hasta el clic, abierta con 3 bases y 12 meses, «Módulos» la vuelve a cerrar; sin desborde y 0 errores de consola.

@@ -7,6 +7,16 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.288.0 — Noviembre 2026
+
+**ORLANT · Centro de cargas: «Equidad profesionales» como un cuadrito más (pedido de Edwin).**
+
+- En el Centro de cargas de ORLANT hay un cuadrito «Equidad profesionales» al lado del de Calidad,
+  con el mismo estilo: «Al día» o «Pendiente», cuántos meses tienen datos en el año y la última carga.
+- La sección de Equidad (explicación, botones Pólizas / Medicina prepagada / Particulares y los meses)
+  sale solo al hacer clic en el cuadrito, como Calidad; «Módulos» vuelve a los cuadritos.
+- No cambia cómo se cargan las bases ni ningún dato.
+
 ## v1.287.0 — Noviembre 2026
 
 **ORLANT · Gestión STA: «Agendas por asesor» y «Gestiones por día» más simples (pedido de Edwin).**
