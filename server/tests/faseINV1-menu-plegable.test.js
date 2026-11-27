@@ -33,8 +33,12 @@ test('plegar «Ciclo de elementos»: sus pantallas se ocultan, menos la abierta;
 
 test('CSS: lo plegado se oculta, pero en el celular se ve todo; activosPlegarSeccion vuelve a pintar el menú', () => {
   const css = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'css', 'styles.css'), 'utf8');
-  assert.match(css, /\n\.ac-menu-oculto\{display:none\}/);
-  assert.match(css, /@media \(max-width: 760px\)\{[\s\S]{0,300}?\.ac-menu-sec\{display:none\}\n  \.ac-menu-oculto\{display:flex\}/);
+  // .ac-menu-btn.ac-menu-oculto: más específico que .ac-menu-btn{display:flex} (que va después); con solo
+  // .ac-menu-oculto la sección cambiaba la flecha pero no ocultaba nada (lo encontró la revisión visual).
+  const iOculto = css.indexOf('\n.ac-menu-btn.ac-menu-oculto{display:none}');
+  assert.ok(iOculto >= 0);
+  assert.ok(iOculto < css.indexOf('\n.ac-menu-btn{display:flex'), 'la regla general va después: por eso hace falta la clase doble');
+  assert.match(css, /@media \(max-width: 760px\)\{[\s\S]{0,300}?\.ac-menu-sec\{display:none\}\n  \.ac-menu-btn\.ac-menu-oculto\{display:flex\}/);
   const src = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'js', 'activos.js'), 'utf8');
   assert.match(src, /function activosPlegarSeccion\(sec\) \{\n  _ac\.plegadas = _ac\.plegadas \|\| \{\};\n  _ac\.plegadas\[sec\] = !_ac\.plegadas\[sec\];\n  _acPintarMenu\(\);/);
 });

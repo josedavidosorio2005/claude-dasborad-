@@ -3002,7 +3002,7 @@ circle.acp-l-ingresos{fill:var(--c-brand-blue)}circle.acp-l-asignaciones{fill:va
 .ac-menu-sec{display:flex;justify-content:space-between;align-items:center;width:100%;min-height:44px;margin:10px 0 2px;padding:0 10px;border:0;border-radius:var(--r-sm);background:transparent;cursor:pointer;font-family:inherit;font-size:var(--fs-small);font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--c-text-2)}
 .ac-menu-sec:first-child{margin-top:0}
 .ac-menu-sec:hover{background:var(--c-hover-bg)}
-.ac-menu-oculto{display:none}
+.ac-menu-btn.ac-menu-oculto{display:none} /* más específico que .ac-menu-btn{display:flex}, que va después */
 .ac-menu-btn{display:flex;align-items:center;gap:8px;min-height:44px;width:100%;padding:8px 10px;border:0;border-radius:var(--r-sm);background:transparent;color:var(--c-text);font:inherit;font-size:var(--fs-body);text-align:left;cursor:pointer}
 .ac-menu-btn:hover{background:var(--c-surface)}
 .ac-menu-btn[aria-current="page"]{background:var(--c-brand);color:var(--c-on-brand);font-weight:600} /* auditoría 24/11: en oscuro --c-primary es claro y el blanco quedaba en 1,9:1 */
@@ -3023,7 +3023,7 @@ circle.acp-l-ingresos{fill:var(--c-brand-blue)}circle.acp-l-asignaciones{fill:va
   .ac-layout{grid-template-columns:minmax(0,1fr)}
   .ac-menu{position:static;flex-direction:row;flex-wrap:wrap}
   .ac-menu-sec{display:none}
-  .ac-menu-oculto{display:flex}
+  .ac-menu-btn.ac-menu-oculto{display:flex}
   .ac-menu-btn{width:auto;flex:1 1 calc(50% - 4px)}
 }
 /* Fase INV1 (pedido de Edwin, 26/11/2026): el Inventario de sistemas va SIEMPRE en tema oscuro, como su HTML,
@@ -3039,11 +3039,11 @@ circle.acp-l-ingresos{fill:var(--c-brand-blue)}circle.acp-l-asignaciones{fill:va
 .ac-rail-btn{display:flex;flex-direction:column;align-items:center;gap:8px;min-width:44px;min-height:44px;padding:14px 10px;border:1px solid var(--acento);border-left:0;border-radius:0 var(--r-lg) var(--r-lg) 0;background:var(--btn-primario-bg);color:var(--btn-primario-fg);font:inherit;font-size:var(--fs-small);font-weight:700;cursor:pointer;box-shadow:var(--shadow-md)}
 .ac-rail-btn span{writing-mode:vertical-rl;letter-spacing:.04em}
 .ac-rail-btn .icono{width:22px;height:22px}
-.ac-rail-btn:hover,.ac-rail-btn[aria-pressed="true"]{background:var(--acento);color:var(--c-bg)}
+.ac-rail-btn[aria-pressed="true"]{background:var(--acento);color:var(--c-bg)}
 .ac-rail-btn:focus-visible{outline:2px solid var(--c-focus);outline-offset:2px}
 .ac-rail-btn[aria-expanded="false"]{background:var(--acento-suave);color:var(--acento-texto)}
 .ac-rail-inicio{border-color:var(--c-success);background:var(--c-success-bg);color:var(--c-success-text)}
-.ac-rail-inicio:hover{background:var(--c-success);color:var(--c-bg)}
+@media (hover:hover){.ac-rail-btn:hover{background:var(--acento);color:var(--c-bg)}.ac-rail-inicio:hover{background:var(--c-success);color:var(--c-bg)}} /* en táctil el hover se queda pegado */
 .ac-rail-fab{position:absolute;z-index:var(--z-fab);right:28px;bottom:24px;flex-direction:row;padding:12px 20px;border-left:1px solid var(--acento);border-radius:999px}
 .ac-rail-fab span{writing-mode:horizontal-tb}
 .ac-sin-menu{grid-template-columns:minmax(0,1fr)}
