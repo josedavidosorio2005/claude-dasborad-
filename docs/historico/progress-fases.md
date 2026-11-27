@@ -23094,6 +23094,12 @@ Wolkvox queda en pausa por decisión de Edwin. Un PR por punto, uno a la vez.
 - **Cambio:** `public/js/malla-logic.js` (`mallaPausasPartes`, `mallaColsPausaSemana`: solo las columnas que tiene la semana, en orden), `public/js/malla.js` (`mallaMiaHtml`: una celda por columna, `data-etq` para el celular; la celda de puntualidad sigue al final) y `public/css/styles.css` (línea `border-left` con `--c-border-soft`; ≤ 600 px cada día es un bloque y cada pausa lleva su nombre; celdas vacías ocultas en el celular).
 - **Pruebas:** `faseM3-malla-asesor-columnas.test.js` (3); ajustada `faseE5-malla-pausas` (antes esperaba la línea pegada).
 - **Revisión visual local** (la función real con un horario INVENTADO, estilos de la app, un día «Puntual»; Playwright con Brave): 375/768/1440 en claro y oscuro: columnas con encabezado, descanso solo en Horario, en 375 una pausa por línea, sin desborde y 0 errores de consola.
+## Centro de cargas: cuadrito «Equidad profesionales» (Fase EQ6, v1.291.0, 2026-11-27, PR SIN mergear)
+
+- **Pedido (Edwin, 27/11):** en el Centro de cargas de ORLANT, un cuadrito «Equidad profesionales» al lado del de Calidad, con el mismo estilo (estado «Al día» o «Pendiente», meses con datos en 2026 y última carga); la sección de Equidad sale solo al hacer clic, como Calidad, y no siempre abierta. Sin cambiar la carga ni los datos.
+- **Cambio:** `public/js/centro-equidad.js` (`ccEquidadResumenAnio`, `ccEquidadTarjetaHtml`, `CC_EQUIDAD_ID = 'equidad'`, `ccEquidadMostrar`; `#cc-equidad` queda oculto salvo con el cuadrito abierto) y `public/js/centro-cargas.js` (el cuadrito va después de Calidad o al final; `_ccEsEquidad` / `_ccRenderEquidad` con migas y «Módulos»). «Al día»: cada base tiene el mes anterior cargado (en un año pasado, si tiene datos); si no, «Pendiente». Mismas rutas de carga.
+- **Pruebas:** `faseEQ6-equidad-cuadrito-centro.test.js` (3).
+- **Revisión visual local** (copia de la base demo, 72 citas INVENTADAS por la API en sep y oct de 2026, Playwright con Brave): 375/768/1440 en claro y oscuro: el cuadrito sale después de Calidad («Al día», 2 meses, última carga), la sección cerrada hasta el clic, abierta con 3 bases y 12 meses, «Módulos» la vuelve a cerrar; sin desborde y 0 errores de consola.
 
 ## Inventario: hojas imprimibles (Fase INV5, tramo 1, v1.294.0, 2026-11-27, PR SIN mergear)
 
