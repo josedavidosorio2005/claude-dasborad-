@@ -7,7 +7,7 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
-## v1.296.0 — Noviembre 2026
+## v1.293.0 — Noviembre 2026
 
 **Inventario de sistemas: campos obligatorios y tecnologías que se asignan a agentes.**
 
@@ -22,6 +22,22 @@ sepan que hay nuevo, que se corrigio y que falta.
   asignan; los equipos administrables y los inmuebles, no.
 - La importación desde Excel sigue aceptando filas incompletas (quedan en «Con datos pendientes»).
 - No cambia ningún dato guardado.
+
+## v1.292.0 — Noviembre 2026
+
+**Inventario de sistemas: se ve como el HTML de Edwin.**
+
+- El Inventario de sistemas se ve siempre en tema oscuro, como el diseño de Edwin. Solo su
+  ventana: el resto de la plataforma sigue con el tema que cada uno eligió.
+- El «Panel general» ya no cuenta los dados de baja (siguen en la lista y en el Historial).
+- El menú del Inventario tiene secciones que se pliegan («Menú», «Ciclo de elementos» y
+  «Gestión»), con los pasos del 1 al 5, cuántos elementos hay en cada estado y, al pie,
+  el usuario con el que se entró.
+- Desde la vista «Inventario» hay un botón «Volver» a la pantalla de antes.
+- Botones a la izquierda: «Menú» (muestra u oculta el menú) e «Inicio» (sale del Inventario).
+  Abajo a la derecha, el botón «Inventario» abre la vista Inventario y, si ya está abierta,
+  vuelve a la pantalla de antes. Solo aparecen dentro del Inventario.
+- No cambia ningún dato.
 
 ## v1.291.0 — Noviembre 2026
 

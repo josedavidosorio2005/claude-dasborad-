@@ -2224,6 +2224,13 @@
     </div><!-- .ac-main -->
     </div><!-- .ac-layout -->
   </div>
+  <!-- Fase INV1 (HTML de Edwin): botones laterales solo dentro del Inventario. Van después del .modal para
+       que el foco inicial siga siendo la ventana; la trampa de Tab de la ventana también los recorre. -->
+  <div class="ac-rail ac-rail-izq">
+    <button type="button" class="ac-rail-btn" id="ac-rail-menu" aria-controls="ac-menu" aria-expanded="true" onclick="activosAlternarMenu()" title="Ocultar el menú"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-menu"></use></svg><span>Menú</span></button>
+    <button type="button" class="ac-rail-btn ac-rail-inicio" id="ac-rail-inicio" onclick="activosCerrar()" title="Volver al inicio de SinCo"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-layout-dashboard"></use></svg><span>Inicio</span></button>
+  </div>
+  <button type="button" class="ac-rail-btn ac-rail-fab" id="ac-rail-inv" aria-pressed="false" onclick="activosAlternarInventario()" title="Abrir el inventario"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-package"></use></svg><span>Inventario</span></button>
 </div>
 
 <!-- Fase 356: «Sugerencias / Tickets» (cualquier usuario con sesión; ADMIN y REPORTES gestionan). -->

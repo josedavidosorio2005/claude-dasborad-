@@ -43,22 +43,34 @@ async function activosAbrir(ambito) {
   _acEl('activos-title').textContent = AC_TITULO[_ac.ambito];
   var sel = _acEl('ac-r-tipo'); if (sel) sel.innerHTML = ''; // los tipos cambian según el inventario
   openModal('activos-overlay');
+  activosAlternarMenu(true); // Fase INV1: el menú siempre arranca visible
+  _ac.prev = null;
   _acMotivos();
   activosTab('panel');
 }
 function activosAbrirInmuebles() { return activosAbrir('inmuebles'); } // Fase 376: tarjeta «Inventario de inmuebles»
 // Menú lateral con los conteos de cada estado (del resumen).
-function activosMenuHtml(ambito, actual, resumen) {
+// Fase INV1 (pedido de Edwin): al pie del menú, el usuario de la sesión (como «Usuario: …» en su HTML).
+// Fase INV1: secciones plegables («Menú», «Ciclo de elementos», «Gestión»), como su HTML. `plegadas`: {sección: true}.
+// En una sección plegada solo queda a la vista la pantalla abierta. En el celular (≤ 760 px) no hay títulos de
+// sección: allí se ve todo siempre (CSS).
+function activosMenuHtml(ambito, actual, resumen, usuario, plegadas) {
+  plegadas = plegadas || {};
+  var sec = '';
   var pe = (resumen && resumen.porEstado) || {};
   var n = { libres: pe.libre, asignados: pe.en_uso, reparacion: pe.en_reparacion, malos: pe.malo, elementos: resumen ? resumen.total : null, actas: resumen && resumen.actasPorFirmar !== undefined ? resumen.actasPorFirmar : null,
     novedadesgh: resumen && resumen.novedadesGH ? resumen.novedadesGH.retirados + resumen.novedadesGH.ausentes : null }; // Fase GH4
   return (AC_MENU[ambito] || AC_MENU.sistemas).map(function (x) {
-    if (x[0] === 'sec') return '<p class="ac-menu-sec">' + esc(x[1]) + '</p>';
+    if (x[0] === 'sec') {
+      sec = x[1];
+      var pl = !!plegadas[sec];
+      return '<button type="button" class="ac-menu-sec" aria-expanded="' + !pl + '" onclick="activosPlegarSeccion(\'' + esc(sec) + '\')">' + esc(sec) + '<span aria-hidden="true">' + (pl ? '▸' : '▾') + '</span></button>';
+    }
     var c = n[x[0]];
-    return '<button type="button" class="ac-menu-btn" data-ac-vista="' + x[0] + '"' + (x[0] === actual ? ' aria-current="page"' : '') + ' onclick="activosTab(\'' + x[0] + '\')">' +
+    return '<button type="button" class="ac-menu-btn' + (plegadas[sec] && x[0] !== actual ? ' ac-menu-oculto' : '') + '" data-ac-vista="' + x[0] + '"' + (x[0] === actual ? ' aria-current="page"' : '') + ' onclick="activosTab(\'' + x[0] + '\')">' +
       (x[2] ? '<span class="ac-paso" aria-hidden="true">' + x[2] + '</span>' : '') + '<span class="ac-menu-txt">' + esc(x[1]) + '</span>' +
       (c !== undefined && c !== null ? '<span class="ac-menu-n">' + Number(c) + '</span>' : '') + '</button>';
-  }).join('');
+  }).join('') + (usuario ? '<p class="ac-menu-pie">Usuario: <b>' + esc(usuario) + '</b></p>' : '');
 }
 // El ciclo de un elemento (diseño de Edwin), con los pasos que llevan a su vista.
 function activosFlujoHtml(ambito) {
@@ -70,21 +82,54 @@ function activosFlujoHtml(ambito) {
 }
 async function _acRefrescarMenu() {
   try { _ac.resumen = await apiRequest('GET', '/activos/resumen?ambito=' + _ac.ambito); } catch (e) { /* el menú sigue sin conteos */ }
-  _acEl('ac-menu').innerHTML = activosMenuHtml(_ac.ambito, _ac.tab, _ac.resumen);
+  _acPintarMenu();
+}
+function _acPintarMenu() {
+  _acEl('ac-menu').innerHTML = activosMenuHtml(_ac.ambito, _ac.tab, _ac.resumen, typeof currentUser !== 'undefined' && currentUser ? currentUser.nombre || currentUser.user : '', _ac.plegadas);
+}
+// Fase INV1: pliega o despliega una sección del menú (se recuerda mientras la página siga abierta).
+function activosPlegarSeccion(sec) {
+  _ac.plegadas = _ac.plegadas || {};
+  _ac.plegadas[sec] = !_ac.plegadas[sec];
+  _acPintarMenu();
+}
+// Fase INV1 (pedido de Edwin): desde la vista «Inventario», botón para volver a la pantalla de antes.
+function activosVolverHtml(prev) {
+  if (!prev || prev === 'elementos' || !AC_VISTA_TXT[prev]) return '';
+  return '<button type="button" class="ac-volver" onclick="activosTab(\'' + esc(prev) + '\')">← Volver a ' + esc(AC_VISTA_TXT[prev][0]) + '</button>';
 }
 function activosCerrar() { closeModal('activos-overlay'); }
+// Fase INV1 (HTML de Edwin): botón lateral «Menú» = muestra u oculta el menú del Inventario (empieza visible).
+function activosAlternarMenu(mostrar) {
+  var lay = document.querySelector('#activos-overlay .ac-layout'); if (!lay) return;
+  var ver = typeof mostrar === 'boolean' ? mostrar : lay.classList.contains('ac-sin-menu');
+  lay.classList.toggle('ac-sin-menu', !ver);
+  var b = _acEl('ac-rail-menu');
+  if (b) { b.setAttribute('aria-expanded', String(ver)); b.title = ver ? 'Ocultar el menú' : 'Mostrar el menú'; }
+}
+// Botón flotante «Inventario»: abre la vista Inventario; si ya está abierta, vuelve a la pantalla de antes.
+function activosDestinoFab(tab, prev) { return tab === 'elementos' ? (prev && prev !== 'elementos' && AC_VISTA_TXT[prev] ? prev : 'panel') : 'elementos'; }
+function activosAlternarInventario() { activosTab(activosDestinoFab(_ac.tab, _ac.prev)); }
+function _acPintarFab() {
+  var b = _acEl('ac-rail-inv'); if (!b) return;
+  var en = _ac.tab === 'elementos';
+  b.setAttribute('aria-pressed', String(en));
+  b.title = en ? 'Cerrar el inventario y volver' : 'Abrir el inventario';
+}
 
 function activosTab(tab) {
   if (!AC_VISTA_TXT[tab]) tab = 'panel';
   if (tab === 'novedadesgh' && _ac.ambito !== 'inmuebles') { _ac.actasPestana = 'novedades'; tab = 'actas'; } // Fase GH5d: las novedades viven en Actas, como Edwin
   if (_ac.ambito === 'inmuebles' && (tab === 'agentes' || tab === 'asignados' || tab === 'actas' || tab === 'admin' || tab === 'novedadesgh')) tab = 'panel'; // inmuebles no se asignan a agentes
+  if (tab === 'elementos' && _ac.tab && _ac.tab !== 'elementos') _ac.prev = _ac.tab; // Fase INV1: «Volver» como en el HTML de Edwin
   _ac.tab = tab;
   _acError('');
   var seccion = AC_VISTA_ESTADO[tab] ? 'elementos' : tab; // las vistas por estado usan la lista de elementos
   ['panel', 'elementos', 'agentes', 'registrar', 'ajustes', 'actas', 'admin', 'historial'].forEach(function (t) { _acEl('ac-p-' + t).classList.toggle('hidden', t !== seccion); });
   var txt = AC_VISTA_TXT[tab];
-  _acEl('ac-vista-cab').innerHTML = '<h4 class="ac-vista-tit">' + esc(txt[0]) + '</h4><p class="vis-ayuda">' + esc(txt[1]) + '</p>' + (tab === 'registrar' ? activosFlujoHtml(_ac.ambito) : '') /* Fase GH5: el panel de Edwin no lleva el flujo */;
+  _acEl('ac-vista-cab').innerHTML = '<h4 class="ac-vista-tit">' + esc(txt[0]) + '</h4><p class="vis-ayuda">' + esc(txt[1]) + '</p>' + (tab === 'registrar' ? activosFlujoHtml(_ac.ambito) : '') /* Fase GH5: el panel de Edwin no lleva el flujo */ + (tab === 'elementos' ? activosVolverHtml(_ac.prev) : '');
   _acRefrescarMenu();
+  _acPintarFab();
   var main = document.querySelector('#activos-overlay .ac-main'); if (main) main.scrollTop = 0;
   if (tab === 'panel') _acPanel();
   if (seccion === 'elementos') { _ac.estadoFijo = AC_VISTA_ESTADO[tab] || null; _acEl('ac-f-estado-ig').classList.toggle('hidden', !!_ac.estadoFijo); activosCerrarDetalleSinBuscar(); _acFiltrosYLista(); _acInvTipos(); }
@@ -109,11 +154,11 @@ function activosPanelHtml(r, config) {
   }).join('');
   var sedes = (r.porSede || []).map(function (s) { return '<li>' + esc(s.sede) + ': <b>' + s.n + '</b></li>'; }).join('');
   // Fase 377 (I2): rendimiento por RAM (torres y portátiles); cada tarjeta abre el inventario con ese filtro.
-  var rend = r.porRendimiento ? '<h4 class="ac-sub">Rendimiento según la RAM (sin los dados de baja)</h4><div class="ac-kpis">' + (config.rendimientos || []).map(function (x) {
+  var rend = r.porRendimiento ? '<h4 class="ac-sub">Rendimiento según la RAM</h4><div class="ac-kpis">' + (config.rendimientos || []).map(function (x) {
     return '<button type="button" class="ac-kpi ac-rend-kpi" onclick="activosVerRendimiento(\'' + x.codigo + '\')"><b>' + (r.porRendimiento[x.codigo] || 0) + '</b><span class="vis-pill ' + AC_CLASE_REND[x.codigo] + '">' + esc(x.nombre) + '</span><span class="vis-ayuda">' + esc(x.ayuda) + '</span></button>';
   }).join('') + '</div>' : '';
   return tarjetas + rend + '<div class="table-wrap"><table class="vis-tabla"><thead><tr><th scope="col">Tipo</th>' + est.map(function (e) { return '<th scope="col" class="vis-num">' + esc(e.nombre) + '</th>'; }).join('') + '</tr></thead><tbody>' + filas + '</tbody></table></div>' +
-    (sedes ? '<h4 class="ac-sub">Por sede (sin los dados de baja)</h4><ul class="ac-sedes">' + sedes + '</ul>' : '');
+    (sedes ? '<h4 class="ac-sub">Por sede</h4><ul class="ac-sedes">' + sedes + '</ul>' : '');
 }
 async function _acPanel() {
   var c = _acEl('ac-p-panel');
@@ -1145,7 +1190,7 @@ async function activosDescargarFirmada(id) {
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { activosMenuHtml: activosMenuHtml, activosFlujoHtml: activosFlujoHtml, AC_MENU: AC_MENU, AC_VISTA_ESTADO: AC_VISTA_ESTADO, activosTiposHtml: activosTiposHtml, activosCampoEditorHtml: activosCampoEditorHtml, activosEditorTipoHtml: activosEditorTipoHtml, activosLeerCampos: activosLeerCampos, activosPanelHtml: activosPanelHtml, activosListaHtml: activosListaHtml, activosConsulta: activosConsulta, activosRendHtml: activosRendHtml, activosGestionHtml: activosGestionHtml, activosAgenteSelectHtml: activosAgenteSelectHtml, activosAgenteBody: activosAgenteBody, activosActasHtml: activosActasHtml, activosActasKpisHtml: activosActasKpisHtml, activosActasAviso: activosActasAviso, activosFilasExport: activosFilasExport, activosReportePrintHtml: activosReportePrintHtml, activosHistorialHtml: activosHistorialHtml, activosImportarColumnas: activosImportarColumnas, activosImportarResultadoHtml: activosImportarResultadoHtml, activosAdminHtml: activosAdminHtml, activosAdminKpisHtml: activosAdminKpisHtml, activosAdminSubtiposHtml: activosAdminSubtiposHtml, AC_ESTADO_ADMIN: AC_ESTADO_ADMIN, activosCampoHtml: activosCampoHtml, activosAgentesHtml: activosAgentesHtml, activosActaPrintHtml: activosActaPrintHtml };
+  module.exports = { activosDestinoFab: activosDestinoFab, activosVolverHtml: activosVolverHtml,activosMenuHtml: activosMenuHtml, activosFlujoHtml: activosFlujoHtml, AC_MENU: AC_MENU, AC_VISTA_ESTADO: AC_VISTA_ESTADO, activosTiposHtml: activosTiposHtml, activosCampoEditorHtml: activosCampoEditorHtml, activosEditorTipoHtml: activosEditorTipoHtml, activosLeerCampos: activosLeerCampos, activosPanelHtml: activosPanelHtml, activosListaHtml: activosListaHtml, activosConsulta: activosConsulta, activosRendHtml: activosRendHtml, activosGestionHtml: activosGestionHtml, activosAgenteSelectHtml: activosAgenteSelectHtml, activosAgenteBody: activosAgenteBody, activosActasHtml: activosActasHtml, activosActasKpisHtml: activosActasKpisHtml, activosActasAviso: activosActasAviso, activosFilasExport: activosFilasExport, activosReportePrintHtml: activosReportePrintHtml, activosHistorialHtml: activosHistorialHtml, activosImportarColumnas: activosImportarColumnas, activosImportarResultadoHtml: activosImportarResultadoHtml, activosAdminHtml: activosAdminHtml, activosAdminKpisHtml: activosAdminKpisHtml, activosAdminSubtiposHtml: activosAdminSubtiposHtml, AC_ESTADO_ADMIN: AC_ESTADO_ADMIN, activosCampoHtml: activosCampoHtml, activosAgentesHtml: activosAgentesHtml, activosActaPrintHtml: activosActaPrintHtml };
 }
 
 // ── Fase GH4 (plan de Gestión humana): «Novedades desde Gestión Humana» (diseño de Edwin) ──
@@ -1190,7 +1235,8 @@ if (typeof module !== 'undefined' && module.exports) module.exports.activosNoved
 // ── Fase GH5 (pedido del usuario, 23/11): «Panel general» igual al diseño de Edwin ──
 // Chips «Ver gráficas de», tarjetas con detalle, dona por estado y por RAM, barras por tipo/sede/operación,
 // marcas, valor, renta, calidad de los datos y movimientos de 6 meses. Datos: GET /activos/panel.
-var ACP_ESTADOS = [['en_uso', 'En uso'], ['libre', 'Libres'], ['en_reparacion', 'En reparación'], ['malo', 'Malos'], ['de_baja', 'Dados de baja']];
+// Fase INV1 (pedido de Edwin, 26/11): el panel no muestra los dados de baja (siguen en la lista y en el historial).
+var ACP_ESTADOS = [['en_uso', 'En uso'], ['libre', 'Libres'], ['en_reparacion', 'En reparación'], ['malo', 'Malos']];
 var ACP_REND = [['bajo', 'Bajo (menos de 8 GB)'], ['medio', 'Medio (8 a 15 GB)'], ['alto', 'Alto (16 GB o más)'], ['sin', 'Sin dato (RAM no registrada)']];
 var ACP_MOV = [['ingresos', 'Ingresos'], ['asignaciones', 'Asignaciones'], ['devoluciones', 'Devoluciones'], ['danos', 'Daños y reparaciones']];
 function _acpPct(n, t) { return t ? Math.round(n * 1000 / t) / 10 : 0; }
@@ -1250,9 +1296,9 @@ function activosPanel2Html(p) {
   if (!p.total) return cab + '<div class="acp-kpis">' + kpis.join('') + '</div><p class="vis-vacio">Aún no hay elementos. Regístralos en «Registrar ingreso».</p>';
   var segE = ACP_ESTADOS.map(function (x) { return [x[0], e[x[0]] || 0, x[1]]; });
   var g = [];
-  g.push(_acpCard('¿En qué estado están los equipos y elementos?', 'Cuántos están en uso, libres, en reparación, malos o dados de baja.',
-    '<div class="acp-dona-w">' + _acpDona(segE, p.total, 'elementos', 'e') + _acpFilasEstado(segE, p.total, 'e') + '</div>',
-    '<span>' + _acpPct(enUso, p.total) + '% en uso · ' + (e.libre || 0) + ' libres para entregar</span>' + _acpBtn('Ver libres', "activosTab('libres')")));
+  g.push(_acpCard('¿En qué estado están los equipos y elementos?', 'Cuántos están en uso, libres, en reparación o malos.',
+    '<div class="acp-dona-w">' + _acpDona(segE, vivos, 'elementos', 'e') + _acpFilasEstado(segE, vivos, 'e') + '</div>',
+    '<span>' + _acpPct(enUso, vivos) + '% en uso · ' + (e.libre || 0) + ' libres para entregar</span>' + _acpBtn('Ver libres', "activosTab('libres')")));
   if (p.porRendimiento) {
     var r = p.porRendimiento, tr = ACP_REND.reduce(function (a, x) { return a + (r[x[0]] || 0); }, 0), segR = ACP_REND.map(function (x) { return [x[0], r[x[0]] || 0, x[1]]; });
     g.push(_acpCard('Rendimiento según la memoria RAM', 'Torres y portátiles. Bajo: menos de 8 GB · Medio: 8 a 15 GB · Alto: 16 GB o más.',
@@ -1262,10 +1308,10 @@ function activosPanel2Html(p) {
   var maxT = Math.max.apply(null, p.porTipo.map(function (t) { return t.total; }).concat([1]));
   var ley = _acpLeyenda(ACP_ESTADOS, 'e');
   g.push(_acpCard('¿Cuántos hay de cada tipo?', 'Todos los elementos registrados, por tipo y estado.', ley + _acpApiladas(p.porTipo, maxT),
-    '<span>' + p.total + ' elementos en total</span>' + _acpBtn('Ver inventario', "activosTab('elementos')")));
+    '<span>' + vivos + ' elementos en total</span>' + _acpBtn('Ver inventario', "activosTab('elementos')")));
   var maxS = Math.max.apply(null, p.porSede.map(function (t) { return t.total; }).concat([1]));
   var sinS = p.porSede.filter(function (s) { return s.sin; })[0];
-  g.push(_acpCard('Elementos por sede', 'Cantidad por sede, separada por estado (sin los dados de baja).', ley + _acpApiladas(p.porSede, maxS),
+  g.push(_acpCard('Elementos por sede', 'Cantidad por sede, separada por estado.', ley + _acpApiladas(p.porSede, maxS),
     '<span>' + (sinS ? sinS.total : 0) + ' sin sede registrada</span>' + _acpBtn('Ver datos', "activosTab('elementos')")));
   var maxO = Math.max.apply(null, p.porOperacion.map(function (t) { return t.total; }).concat([1]));
   var sinO = p.porOperacion.filter(function (s) { return s.sin; })[0];
@@ -1273,7 +1319,7 @@ function activosPanel2Html(p) {
     '<span>' + (sinO ? sinO.total : 0) + ' sin operación asignada</span>' + _acpBtn('Ver datos', "activosTab('elementos')")));
   g.push(_acpCard('Marcas más comunes', 'Marcas de todos los elementos.', _acpSimples(p.marcas.map(function (m) { return { nombre: m.nombre, v: m.n }; }), 'acp-c-marca'),
     '<span>' + p.total + ' registrados</span>' + _acpBtn('Ver datos', "activosTab('elementos')")));
-  g.push(_acpCard('Valor del inventario por elemento', 'Suma del precio de compra de los elementos propios de InConexion (sin los dados de baja ni los rentados).',
+  g.push(_acpCard('Valor del inventario por elemento', 'Suma del precio de compra de los elementos propios de InConexion (sin los rentados).',
     _acpSimples(p.valor.porTipo.map(function (v) { return { nombre: v.nombre, v: v.valor }; }), 'acp-c-valor', _acpMiles),
     '<span>Total: <b>' + _acpMiles(p.valor.total) + '</b> · ' + p.valor.sinPrecio + ' propio(s) sin precio</span>' + _acpBtn('Ver datos', "activosTab('elementos')")));
   g.push(_acpCard('Renta mensual por elemento', 'Lo que se paga cada mes por elementos de proveedores diferentes a InConexion, por proveedor.',
