@@ -79,7 +79,7 @@ function _cc2Campo(c) {
   if (c.k === 'fecha') return '<label class="cc2-f"><span class="cc2-lt">Fecha del monitoreo *</span><input type="date" id="' + id + '" value="' + esc(calFechaHoyLocal()) + '" max="' + esc(calFechaHoyLocal()) + '" min="2020-01-01" required></label>';
   if (c.k === 'evaluador') return '<label class="cc2-f">' + lbl + '<input type="text" id="' + id + '" value="' + esc(currentUser ? currentUser.nombre : 'Administrador') + '" disabled></label>';
   // Fase 318: canal auditado del formulario de siempre de ORLANT (se guarda en `canal`).
-  if (c.k === 'canal') return '<label class="cc2-f">' + lbl + '<select id="' + id + '"><option value="LLAMADA">Llamada</option><option value="WPP">WhatsApp / Chat</option></select></label>';
+  if (c.k === 'canal') return '<label class="cc2-f">' + lbl + '<select id="' + id + '"><option value="LLAMADA">Llamada</option><option value="WPP">WhatsApp / Chat</option><option value="CORREO">Correo</option></select></label>';
   if (c.k === 'tipoLlamada') return '<label class="cc2-f">' + lbl + '<select id="' + id + '"><option value="">Selecciona…</option><option>Entrada</option><option>Salida</option></select></label>';
   if (c.k === 'codificacion') {
     var activas = calCodificacionesActivas(_ccampana);

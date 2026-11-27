@@ -486,7 +486,7 @@ function renderCalMonitoreosTable(){
     html += '<tr><td colspan="'+((verTel?12:11)+(conAcciones?1:0))+'" style="text-align:center;color:var(--c-text-muted)">'+(totalSinBuscar&&clSinResultadosTexto('mon')?esc(clSinResultadosTexto('mon')):'Sin monitoreos registrados'+(_cmesFiltro?' en '+_cmesFiltro:'')+(conOrigen&&conOrigen.origen?' con ese origen':''))+'</td></tr>';
   } else {
     corte.filas.forEach(function(m){
-      var canalLbl = calEstadoHtml(m.canal==='WPP' ? '💬 WPP' : '📞 Llamada');
+      var canalLbl = calEstadoHtml(m.canal==='WPP' ? '💬 WPP' : m.canal==='CORREO' ? '✉️ Correo' : '📞 Llamada');
       html += '<tr><td>'+esc(textoFormatoNombre(m.asesor))+(m.origen==='encuesta'?' <span class="cen-marca" title="Monitoreo originado en una encuesta mal calificada">Encuesta</span>':'')+'</td><td>'+(typeof ceFechaConLlamadaHtml==='function'?ceFechaConLlamadaHtml(m,esc):esc(m.fecha||'-'))+'</td><td>'+canalLbl+'</td><td>'+esc(m.idLlamada||'-')+'</td>'+(verTel?'<td>'+esc(m.telefono||'—')+'</td>':'')+'<td>'+esc(m.codificacion||'-')+'</td><td>'+esc(m.evaluador||'-')+'</td>'+
         '<td class="peak">'+m.puntaje+'</td><td>'+calEstadoHtml(m.clasificacion)+'</td><td>'+m.fallos+'</td><td>'+calEstadoHtml(m.nivelCritico)+'</td>'+
         (conAcciones?('<td class="cal-acciones cl-acc"><div class="cl-acc-btns">'+
@@ -814,7 +814,7 @@ function verSupervisionLider(camp, mes, liderNombre){
     html += '<tr><td colspan="6" style="text-align:center;color:var(--c-text-muted)">Sin monitoreos registrados este mes</td></tr>';
   } else {
     misMon.forEach(function(m){
-      var canalLbl = calEstadoHtml(m.canal==='WPP' ? '💬 WPP' : '📞 Llamada');
+      var canalLbl = calEstadoHtml(m.canal==='WPP' ? '💬 WPP' : m.canal==='CORREO' ? '✉️ Correo' : '📞 Llamada');
       html += '<tr><td>'+(typeof ceFechaConLlamadaHtml==='function'?ceFechaConLlamadaHtml(m,esc):esc(m.fecha||'-'))+'</td><td>'+esc(textoFormatoNombre(m.asesor))+'</td><td>'+canalLbl+'</td><td class="peak">'+m.puntaje+'</td><td>'+calEstadoHtml(m.clasificacion)+'</td><td>'+calEstadoHtml(m.nivelCritico)+'</td></tr>';
     });
   }

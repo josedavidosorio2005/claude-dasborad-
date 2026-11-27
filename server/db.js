@@ -5673,6 +5673,43 @@ function corregirItemSede33HLM() {
 }
 runOnceMigration('faseCM1_hlm_sede33_confirmacion_v1', corregirItemSede33HLM);
 
+// Fase CM2 (27/11/2026, pedido de Edwin con OK del usuario): campañas nuevas de Calidad, como Aurora (Fase 153) y
+// Hospital La María (Fase 160): ficha en el registro y tablero desde la plantilla, SOLO con el módulo Calidad, la
+// pestaña oculta y sin datos. No crea usuarios, permisos ni plantillas (las plantillas se importan en Calidad ›
+// Plantillas): nadie las ve salvo el administrador completo. Idempotente (si la fila o el tablero existen, no hace nada).
+const CAMPANAS_CM2 = [
+  ['CLINICA BIVETT', 'Dashboard Clínica Bivett'],
+  ['CONSULTORIO DR. JULIAN MOLANO', 'Dashboard Consultorio Dr. Julián Molano'],
+  ['CONSULTORIO DR. ANDRES YEPES', 'Dashboard Consultorio Dr. Andrés Yépes'],
+  ['INFONDO', 'Dashboard Infondo'],
+  ['SASCHA FITNESS', 'Dashboard Sascha Fitness'],
+  ['CARTERA', 'Dashboard Cartera'],
+];
+function crearCampanasCalidadCM2() {
+  const { generarLayout } = require('./plantillas-cliente');
+  const now = new Date().toISOString();
+  let creadas = 0;
+  db.transaction(() => {
+    for (const [nombre, titulo] of CAMPANAS_CM2) {
+      const maxOrden = db.prepare('SELECT COALESCE(MAX(orden), 0) AS m FROM clientes_registro').get().m;
+      creadas += db.prepare(
+        `INSERT OR IGNORE INTO clientes_registro (nombre, orden, dashboard, modulos, parametros, logo, activo, createdAt, updatedAt)
+         VALUES (?, ?, 1, ?, ?, NULL, 1, ?, ?)`
+      ).run(nombre, maxOrden + 1, JSON.stringify(['calidad']), JSON.stringify({ sedes: [], asesorVisibleCliente: false, traficoDosHojas: false, especificos: [] }), now, now).changes;
+      if (!db.prepare('SELECT 1 FROM dashboards_config WHERE cliente = ?').get(nombre)) {
+        const cfg = generarLayout({ nombre, titulo, modulos: ['calidad'], visibles: [] });
+        db.prepare(
+          `INSERT INTO dashboards_config (cliente, titulo, vista, secciones, layout, activo, createdAt, updatedAt)
+           VALUES (?, ?, NULL, ?, ?, 1, ?, ?)`
+        ).run(nombre, cfg.titulo, JSON.stringify(cfg.secciones), JSON.stringify(cfg.layout), now, now);
+      }
+    }
+  })();
+  if (!config.isTest) console.log('[db] Fase CM2: ' + creadas + ' campaña(s) nueva(s) de Calidad (ocultas, solo administrador).');
+  return creadas;
+}
+runOnceMigration('faseCM2_campanas_calidad_edwin_v1', crearCampanasCalidadCM2);
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {
@@ -5778,3 +5815,5 @@ module.exports.crearSedesHospitalLaMaria = crearSedesHospitalLaMaria; // Fase 35
 module.exports.prenderDatosAnterioresHlm = prenderDatosAnterioresHlm; // Fase 354b
 module.exports.agregarStaGestionOrlant = agregarStaGestionOrlant; // Fase STA: prueba de idempotencia
 module.exports.corregirItemSede33HLM = corregirItemSede33HLM; // Fase CM1: prueba
+module.exports.crearCampanasCalidadCM2 = crearCampanasCalidadCM2; // Fase CM2: prueba
+module.exports.CAMPANAS_CM2 = CAMPANAS_CM2;

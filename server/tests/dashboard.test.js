@@ -564,7 +564,7 @@ test('DELETE /api/dashboards/config/:cliente borra la configuracion pero NUNCA l
 test('dashboard/clientes y dashboard/secciones: ORLANT y MOBILIZE (Fase 134) + CLINICA AURORA (Fase 153) + HOSPITAL LA MARIA (Fase 160)', async () => {
   const t = await tokenFor('admin', MASTER_PASSWORD);
   const cl = await request(app).get('/api/dashboard/clientes').set(auth(t));
-  assert.deepEqual(cl.body.clientes.slice().sort(), ['CLINICA AURORA', 'CLINICA AURORA PRUEBAS API', 'HOSPITAL LA MARIA', 'HOSPITAL LA MARIA - CASTILLA', 'HOSPITAL LA MARIA - SEDE 33', 'MOBILIZE', 'ORLANT', 'ORLANT PRUEBAS API']); // Fase 354: + las 2 sedes de HLM // Fase W1: + la replica interna (el admin la ve)
+  assert.deepEqual(cl.body.clientes.slice().sort(), ['CARTERA', 'CLINICA AURORA', 'CLINICA AURORA PRUEBAS API', 'CLINICA BIVETT', 'CONSULTORIO DR. ANDRES YEPES', 'CONSULTORIO DR. JULIAN MOLANO', 'HOSPITAL LA MARIA', 'HOSPITAL LA MARIA - CASTILLA', 'HOSPITAL LA MARIA - SEDE 33', 'INFONDO', 'MOBILIZE', 'ORLANT', 'ORLANT PRUEBAS API', 'SASCHA FITNESS'] /* Fase CM2: + 6 campañas de Calidad */); // Fase 354: + las 2 sedes de HLM // Fase W1: + la replica interna (el admin la ve)
 
   const orl = await request(app).get('/api/dashboard/secciones/' + encodeURIComponent('ORLANT')).set(auth(t));
   assert.equal(orl.status, 200);

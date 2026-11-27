@@ -19,15 +19,25 @@ var _cmMesGlobal = (typeof require === 'function') ? require('./mes-global-logic
 // fijas. `labelAlt` deja aceptar esas variantes SIN que Edwin tenga que
 // editar el archivo cada mes -- mismo patron que labelAlt en
 // INASISTENCIA_COLUMNAS (inasistencia-logic.js).
+// Fase CM2 (27/11/2026): encabezados de las plantillas nuevas de Edwin (Bivett, Sascha Fitness, Infondo, Cartera)
+// y la columna «Codificación», que hasta ahora no se leía en ninguna campaña.
 var CM_COLUMNAS_FIJAS = [
-  { key: 'asesor', label: 'ASESOR', labelAlt: ['NOMBRE DEL ASESOR'] },
-  { key: 'fecha', label: 'FECHA' },
-  { key: 'canal', label: 'CANAL' },
-  { key: 'idLlamada', label: 'ID LLAMADA', labelAlt: ['ID / LLAMADA - WPP', 'ID/LLAMADA - WPP'] },
-  { key: 'telefono', label: 'TELEFONO', labelAlt: ['# TELEFONO'] },
+  { key: 'asesor', label: 'ASESOR', labelAlt: ['NOMBRE DEL ASESOR', 'NOMBRES Y APELLIDOS'] },
+  { key: 'fecha', label: 'FECHA', labelAlt: ['FECHA DE MONITOREO'] },
+  { key: 'canal', label: 'CANAL', labelAlt: ['CANAL (CHAT/CORREO)', 'MEDIO DE COMUNICACION'] },
+  { key: 'idLlamada', label: 'ID LLAMADA', labelAlt: ['ID / LLAMADA - WPP', 'ID/LLAMADA - WPP', 'ID / LLAMADA', 'ID CHAT', 'ENLACE CHAT O IDENTIFICADOR'] },
+  { key: 'telefono', label: 'TELEFONO', labelAlt: ['# TELEFONO', 'NUMERO TELEFONO', 'NUMERO DE TELEFONO'] },
+  { key: 'codificacion', label: 'CODIFICACION' },
   { key: 'evaluador', label: 'EVALUADOR' },
   { key: 'observaciones', label: 'OBSERVACIONES', labelAlt: ['OBSERVACIONES GENERALES'] },
 ];
+// Canal del Excel → LLAMADA | WPP | CORREO (Fase CM2: «Correo» de Sascha Fitness; antes quedaba como llamada).
+function cmCanal(v){
+  var s = _cmNorm(v);
+  if(s.indexOf('correo')!==-1 || s.indexOf('email')!==-1 || s.indexOf('e-mail')!==-1) return 'CORREO';
+  if(s.indexOf('wpp')!==-1 || s.indexOf('whatsapp')!==-1 || s.indexOf('chat')!==-1) return 'WPP';
+  return 'LLAMADA';
+}
 var CM_LABELS_OBLIGATORIAS = ['asesor', 'fecha'];
 // Cuantas filas (desde el principio de la hoja) se revisan buscando el
 // encabezado real -- suficiente para el layout real (titulo + leyenda +
@@ -158,8 +168,7 @@ function cmParseRows(aoa, items){
     if(_cmFechaLimites.fechaLimitesEsFutura(fecha)){ avisos.push('Fila '+fila+' ('+asesor+'): FECHA '+fecha+' esta en el futuro, se omitio.'); continue; }
     if(_cmFechaLimites.fechaLimitesEsSospechosaAntigua(fecha)){ avisos.push('Fila '+fila+' ('+asesor+'): FECHA '+fecha+' es anterior a 2020, revisa si esta bien digitada (no se omitio).'); }
 
-    var canalRaw = map.fijas.canal!==undefined ? _cmNorm(row[map.fijas.canal]) : '';
-    var canal = (canalRaw.indexOf('wpp')!==-1 || canalRaw.indexOf('whatsapp')!==-1 || canalRaw.indexOf('chat')!==-1) ? 'WPP' : 'LLAMADA';
+    var canal = map.fijas.canal!==undefined ? cmCanal(row[map.fijas.canal]) : 'LLAMADA';
 
     var answers = {};
     var respondidos = 0;
@@ -175,6 +184,7 @@ function cmParseRows(aoa, items){
       canal: canal,
       idLlamada: map.fijas.idLlamada!==undefined ? (row[map.fijas.idLlamada]==null?'':String(row[map.fijas.idLlamada]).trim()) : '',
       telefono: map.fijas.telefono!==undefined ? (row[map.fijas.telefono]==null?'':String(row[map.fijas.telefono]).trim()) : '',
+      codificacion: map.fijas.codificacion!==undefined ? (row[map.fijas.codificacion]==null?'':String(row[map.fijas.codificacion]).trim().slice(0,120)) : '',
       evaluador: map.fijas.evaluador!==undefined ? (row[map.fijas.evaluador]==null?'':String(row[map.fijas.evaluador]).trim()) : '',
       observaciones: map.fijas.observaciones!==undefined ? (row[map.fijas.observaciones]==null?'':String(row[map.fijas.observaciones]).trim()) : '',
       answers: answers,
@@ -188,6 +198,7 @@ if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     CM_COLUMNAS_FIJAS: CM_COLUMNAS_FIJAS,
     CM_LABELS_OBLIGATORIAS: CM_LABELS_OBLIGATORIAS,
+    cmCanal: cmCanal, // Fase CM2
     cmHeaderItemNumero: cmHeaderItemNumero,
     cmColIndexMap: cmColIndexMap,
     cmDetectarFilaEncabezado: cmDetectarFilaEncabezado,

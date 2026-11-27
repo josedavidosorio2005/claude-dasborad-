@@ -264,7 +264,7 @@ const createMonitoreoBody = z.object({
   // siendo obligatoria en el body porque el formulario la sigue mostrando
   // (bloqueada, con hoy ya puesto) y la carga masiva reusa este schema.
   fecha: fechaSchema,
-  canal: z.enum(['LLAMADA', 'WPP']).default('LLAMADA'),
+  canal: z.enum(['LLAMADA', 'WPP', 'CORREO']).default('LLAMADA'), // Fase CM2: + CORREO (Sascha Fitness)
   idLlamada: textoCortoOpt,
   telefono: textoCortoOpt,
   codificacion: textoCortoOpt,
@@ -341,7 +341,7 @@ const updateMonitoreoBody = z
     // Fase 95 (tema A): el servidor solo aplica un cambio de fecha si el
     // actor es administrador completo (correcciones) -- ver routes/calidad.js.
     fecha: fechaSchema.optional(),
-    canal: z.enum(['LLAMADA', 'WPP']).optional(),
+    canal: z.enum(['LLAMADA', 'WPP', 'CORREO']).optional(),
     idLlamada: z.string().trim().max(200).optional(),
     telefono: z.string().trim().max(200).optional(),
     codificacion: z.string().trim().max(200).optional(),

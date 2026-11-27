@@ -7,6 +7,21 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.300.0 — Noviembre 2026
+
+**Calidad: campañas nuevas de Edwin y la carga masiva lee más columnas.**
+
+- Campañas nuevas, por ahora solo para el administrador: Clínica Bivett,
+  Consultorio Dr. Julián Molano, Consultorio Dr. Andrés Yépes, Infondo, Sascha
+  Fitness y Cartera. Tienen Calidad; su plantilla se importa en Calidad ›
+  Plantillas.
+- La carga masiva de monitoreos reconoce los encabezados de esas plantillas
+  («Nombres y apellidos», «Fecha de monitoreo», «Medio de comunicación», «ID
+  chat», «Enlace chat o identificador», «ID / Llamada», «Número teléfono»).
+- La columna «Codificación» del archivo ahora se guarda (antes se ignoraba).
+- Nuevo canal «Correo» en Calidad (Sascha Fitness), además de Llamada y
+  WhatsApp / Chat.
+
 ## v1.299.0 — Noviembre 2026
 
 **Calidad: la carga masiva deja elegir la plantilla.**

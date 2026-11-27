@@ -104,7 +104,7 @@ test('una base nueva termina todas las migraciones con Aurora, creada despues de
     'faseW9_retirar_replica_mobilize_v1', // Fase W9: la replica de Mobilize sale de los tableros (no toca Aurora/HLM)
     'fase353_monitoreos_enlace_exacto_v1', // Fase 353: solo llena monitoreos.asesorUserId por nombre exacto (no toca Aurora/HLM)
     'fase353_monitoreos_enlace_exacto_v2', // Fase 353b
-    'fase354_hlm_sedes_v1', 'fase354b_hlm_datos_anteriores_v1', 'fase376_inventario_listas_v1', 'fase377_inventario_campos_v1', 'fase380_inventario_administrables_v1', 'faseSTA_orlant_gestion_base_v1', 'faseA32_no_conectadas_meses_v1', 'faseCM1_hlm_sede33_confirmacion_v1' /* Fase CM1: solo el texto de un ítem de la plantilla Sede 33 */, 'faseEQ_orlant_equidad_tab_v1']; // Fase 354b: prende «Datos anteriores» en parametros del padre // Fase 354: crea las 2 sedes de HLM (filas nuevas) y agrega parametros.sedes al padre // Fase 353b: lo mismo con nombre_clave() (tildes, Ñ, espacios especiales)
+    'fase354_hlm_sedes_v1', 'fase354b_hlm_datos_anteriores_v1', 'fase376_inventario_listas_v1', 'fase377_inventario_campos_v1', 'fase380_inventario_administrables_v1', 'faseSTA_orlant_gestion_base_v1', 'faseA32_no_conectadas_meses_v1', 'faseCM1_hlm_sede33_confirmacion_v1', 'faseCM2_campanas_calidad_edwin_v1' /* Fase CM2: 6 campañas nuevas de Calidad (filas nuevas; no toca Aurora/HLM) */ /* Fase CM1: solo el texto de un ítem de la plantilla Sede 33 */, 'faseEQ_orlant_equidad_tab_v1']; // Fase 354b: prende «Datos anteriores» en parametros del padre // Fase 354: crea las 2 sedes de HLM (filas nuevas) y agrega parametros.sedes al padre // Fase 353b: lo mismo con nombre_clave() (tildes, Ñ, espacios especiales)
   assert.deepEqual(orden.slice(iAur + 1).filter((n) => !POSTERIORES.includes(n)), [], 'ninguna migracion vieja corre despues de crear Aurora');
   assert.ok(fila(), 'Aurora sigue ahi al final');
   const r = reg.leerRegistro(db).find((c) => c.nombre === AURORA);
@@ -150,7 +150,7 @@ test('sin plantilla de Calidad (no se inventan items) y sin usuarios ni permisos
 
 test('ORLANT y MOBILIZE no cambian: registro igual a la semilla y dashboards iguales a la foto', () => {
   // Fase 160: HLM se prueba en fase160-crear-hlm.test.js.
-  const r = reg.leerRegistro(db).filter((c) => c.nombre !== AURORA && c.nombre !== 'HOSPITAL LA MARIA' && c.nombre !== 'SURA' && c.nombre !== 'MOBILIZE PRUEBAS API' && c.nombre !== 'ORLANT PRUEBAS API' && c.nombre !== 'CLINICA AURORA PRUEBAS API' && !c.parametros.sedeDe); // Fase 354: las sedes en fase354-hlm-sedes // Fase W1: la replica en faseW1-replica-interna // Fase 215: SURA en fase215-sura-televentas
+  const r = reg.leerRegistro(db).filter((c) => c.nombre !== AURORA && c.nombre !== 'HOSPITAL LA MARIA' && c.nombre !== 'SURA' && c.nombre !== 'MOBILIZE PRUEBAS API' && c.nombre !== 'ORLANT PRUEBAS API' && c.nombre !== 'CLINICA AURORA PRUEBAS API' && !require('../db').CAMPANAS_CM2.some((x) => x[0] === c.nombre) /* Fase CM2 */ && !c.parametros.sedeDe); // Fase 354: las sedes en fase354-hlm-sedes // Fase W1: la replica en faseW1-replica-interna // Fase 215: SURA en fase215-sura-televentas
   assert.deepEqual(r.map((c) => ({ nombre: c.nombre, modulos: c.modulos, parametros: c.parametros, logo: c.logo })),
     reg.REGISTRO_INICIAL.map((c) => ({ nombre: c.nombre, modulos: c.modulos, parametros: c.parametros, logo: c.logo })));
   for (const c of ['ORLANT', 'MOBILIZE']) {

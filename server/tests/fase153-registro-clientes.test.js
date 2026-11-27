@@ -25,10 +25,11 @@ const AURORA = 'CLINICA AURORA';
 // Fase 160: + HOSPITAL LA MARIA, por su propia migracion (fase160-crear-hlm.test.js).
 const CON_AURORA = ANTES.concat([AURORA, 'HOSPITAL LA MARIA']);
 // Fase 215: SURA tiene tablero propio (Televentas) y no tiene Calidad.
+const CM2 = ['CLINICA BIVETT', 'CONSULTORIO DR. JULIAN MOLANO', 'CONSULTORIO DR. ANDRES YEPES', 'INFONDO', 'SASCHA FITNESS', 'CARTERA']; // Fase CM2: 6 campañas nuevas de Calidad, al final del registro
 const CON_SURA = CON_AURORA.concat(['SURA']);
 // Fase W1: + la replica interna de Mobilize (solo admin), al final; sin Calidad.
 // Fase 354: + las 2 sedes de HLM justo despues de HLM (mismo orden, por nombre); sin Calidad todavia.
-const CON_REPLICA = CON_AURORA.concat(['HOSPITAL LA MARIA - CASTILLA', 'HOSPITAL LA MARIA - SEDE 33', 'SURA', 'ORLANT PRUEBAS API', 'CLINICA AURORA PRUEBAS API']); // Fase N5: + replica de ORLANT // Fase AU1: + replica de Aurora // Fase W9: la de Mobilize sale de los tableros (dashboard = 0)
+const CON_REPLICA = CON_AURORA.concat(['HOSPITAL LA MARIA - CASTILLA', 'HOSPITAL LA MARIA - SEDE 33', 'SURA', 'ORLANT PRUEBAS API', 'CLINICA AURORA PRUEBAS API']).concat(CM2); // Fase N5: + replica de ORLANT // Fase AU1: + replica de Aurora // Fase W9: la de Mobilize sale de los tableros (dashboard = 0)
 
 function listaDeConstants(nombre) {
   const m = leer('constants.js').match(new RegExp('var ' + nombre + " = \\[([^\\]]*)\\];"));
@@ -38,7 +39,7 @@ function listaDeConstants(nombre) {
 
 test('el registro sembrado da exactamente las listas de antes', () => {
   assert.deepEqual(reg.listaClientes(db), CON_REPLICA);
-  assert.deepEqual(reg.campanasCalidad(db), CON_SURA); // Fase 321: SURA con Calidad (asesores y Mis resultados)
+  assert.deepEqual(reg.campanasCalidad(db), CON_SURA.concat(CM2)); // Fase 321: SURA con Calidad (asesores y Mis resultados)
   assert.deepEqual(reg.REGISTRO_INICIAL.map((c) => c.nombre), ANTES, 'la semilla sigue siendo solo ORLANT y MOBILIZE');
   // El respaldo de constants.js sigue igual a la semilla.
   assert.deepEqual(listaDeConstants('CLIENTES_LIST'), ANTES);
@@ -50,7 +51,7 @@ test('el registro sembrado da exactamente las listas de antes', () => {
 test('la semilla describe los modulos y parametros reales de ORLANT y MOBILIZE', () => {
   const r = Object.fromEntries(reg.leerRegistro(db).map((c) => [c.nombre, c]));
   // Fase W9: el registro completo sigue teniendo la replica de Mobilize (no se borra nada; solo dashboard = 0).
-  assert.deepEqual(Object.keys(r), CON_REPLICA.slice(0, CON_REPLICA.indexOf('ORLANT PRUEBAS API')).concat(['ORLANT PRUEBAS API', 'CLINICA AURORA PRUEBAS API']) /* Fase W10: sin la réplica de MOBILIZE */);
+  assert.deepEqual(Object.keys(r), CON_REPLICA.slice(0, CON_REPLICA.indexOf('ORLANT PRUEBAS API')).concat(['ORLANT PRUEBAS API', 'CLINICA AURORA PRUEBAS API']).concat(CM2) /* Fase W10: sin la réplica de MOBILIZE */);
   assert.ok(r.ORLANT.modulos.includes('whatsapp_tiempos'));
   assert.ok(!r.ORLANT.modulos.includes('llamadas_unicas'));
   assert.ok(r.MOBILIZE.modulos.includes('llamadas_unicas') && r.MOBILIZE.modulos.includes('encuesta'));
@@ -85,9 +86,9 @@ test('GET /api/dashboard/clientes expone las listas del registro (y sigue igual 
   const t = await tokenFor('admin', MASTER_PASSWORD);
   const r = await request(app).get('/api/dashboard/clientes').set(auth(t));
   assert.equal(r.status, 200);
-  assert.deepEqual(r.body.clientes.slice().sort(), [AURORA, 'CLINICA AURORA PRUEBAS API', 'HOSPITAL LA MARIA', 'HOSPITAL LA MARIA - CASTILLA', 'HOSPITAL LA MARIA - SEDE 33', 'MOBILIZE', 'ORLANT', 'ORLANT PRUEBAS API']); // Fase 354 // Fase W1
+  assert.deepEqual(r.body.clientes.slice().sort(), [AURORA, 'CLINICA AURORA PRUEBAS API', 'HOSPITAL LA MARIA', 'HOSPITAL LA MARIA - CASTILLA', 'HOSPITAL LA MARIA - SEDE 33', 'MOBILIZE', 'ORLANT', 'ORLANT PRUEBAS API'].concat(CM2).sort()); // Fase CM2 // Fase 354 // Fase W1
   assert.deepEqual(r.body.listaClientes, CON_REPLICA);
-  assert.deepEqual(r.body.campanasCalidad, CON_SURA); // Fase 321
+  assert.deepEqual(r.body.campanasCalidad, CON_SURA.concat(CM2)); // Fase 321 // Fase CM2
   assert.deepEqual(Object.keys(r.body).sort(), ['campanasCalidad', 'clientes', 'listaClientes', 'registro']);
   const sin = await request(app).get('/api/dashboard/clientes');
   assert.equal(sin.status, 401);
