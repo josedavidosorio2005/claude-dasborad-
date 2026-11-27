@@ -425,8 +425,15 @@ function agentes(db, q) {
   const where = [], p = [];
   if (!q.todos) where.push('g.activo = 1');
   if (q.q) { where.push('(g.nombre LIKE ? OR g.documento LIKE ?)'); const s = '%' + String(q.q).slice(0, 60).replace(/[%_]/g, '') + '%'; p.push(s, s); }
-  return db.prepare(`SELECT g.*, (SELECT COUNT(*) FROM activos_asignaciones s WHERE s.agenteId = g.id AND s.hasta IS NULL) AS elementos
+  const lista = db.prepare(`SELECT g.*, (SELECT COUNT(*) FROM activos_asignaciones s WHERE s.agenteId = g.id AND s.hasta IS NULL) AS elementos
     FROM activos_agentes g ${where.length ? 'WHERE ' + where.join(' AND ') : ''} ORDER BY g.activo DESC, g.nombre LIMIT 3000`).all(...p);
+  if (!q.equipos) return lista;
+  // Fase INV5 (HTML de Edwin, hoja «Agentes y equipos asignados»): lo que tiene asignado hoy cada agente.
+  const por = new Map();
+  db.prepare(`SELECT s.agenteId, a.codigo, COALESCE(t.nombre, a.tipo) AS tipo FROM activos_asignaciones s JOIN activos a ON a.id = s.activoId
+    LEFT JOIN activos_tipos t ON t.codigo = a.tipo WHERE s.hasta IS NULL ORDER BY t.orden, a.codigo`).all()
+    .forEach((r) => { if (!por.has(r.agenteId)) por.set(r.agenteId, []); por.get(r.agenteId).push({ tipo: r.tipo, codigo: r.codigo }); });
+  return lista.map((g) => Object.assign(g, { equipos: por.get(g.id) || [] }));
 }
 function agente(db, id) { return db.prepare('SELECT * FROM activos_agentes WHERE id = ?').get(id) || null; }
 // Pedido de Edwin (25/11/2026): una cédula que no está en Talento humano.

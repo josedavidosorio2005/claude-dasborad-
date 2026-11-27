@@ -2114,6 +2114,7 @@
           <div class="ig"><label for="ac-ag-q">Buscar agente</label><input type="search" id="ac-ag-q" maxlength="60" placeholder="Nombre o documento" onchange="activosBuscarAgentes()"></div>
           <label class="ac-check"><input type="checkbox" id="ac-ag-todos" onchange="activosBuscarAgentes()"> Ver también los inactivos</label>
         </div>
+        <div class="ac-chips"><p class="vis-ayuda">Hoja «Agentes y equipos asignados» con estos filtros.</p><div class="ac-export" role="group" aria-label="Descargar"><button type="button" class="btn-cancel ac-btn" onclick="activosExportar('agentes', 'xlsx')">Excel</button><button type="button" class="btn-cancel ac-btn" onclick="activosExportar('agentes', 'pdf')">PDF</button></div></div>
         <div id="ac-ag-lista" aria-live="polite"></div>
       </div>
       <div id="ac-ag-detalle" class="hidden"></div>

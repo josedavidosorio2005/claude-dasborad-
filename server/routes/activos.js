@@ -220,7 +220,7 @@ router.put('/activos/listas/:lista', requireActor, wrap((req, res) => {
 const logAg = (accion, g, req, detalle) => logEvent(accion, { nombre: 'agente #' + g.id, user: '-', rol: 'activos' }, actorLabel(req.actor), detalle || '');
 router.get('/activos/agentes', requireActor, wrap((req, res) => {
   if (!permitido(req, res)) return;
-  const q = { todos: req.query.todos === '1' };
+  const q = { todos: req.query.todos === '1', equipos: req.query.equipos === '1' }; // Fase INV5: equipos=1 trae lo asignado
   if (typeof req.query.q === 'string' && req.query.q.trim()) q.q = req.query.q.trim();
   res.json({ agentes: A.agentes(db, q) });
 }));
