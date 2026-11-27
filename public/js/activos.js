@@ -43,6 +43,8 @@ async function activosAbrir(ambito) {
   _acEl('activos-title').textContent = AC_TITULO[_ac.ambito];
   var sel = _acEl('ac-r-tipo'); if (sel) sel.innerHTML = ''; // los tipos cambian según el inventario
   openModal('activos-overlay');
+  activosAlternarMenu(true); // Fase INV1: el menú siempre arranca visible
+  _ac.prev = null;
   _acMotivos();
   activosTab('panel');
 }
@@ -97,6 +99,23 @@ function activosVolverHtml(prev) {
   return '<button type="button" class="ac-volver" onclick="activosTab(\'' + esc(prev) + '\')">← Volver a ' + esc(AC_VISTA_TXT[prev][0]) + '</button>';
 }
 function activosCerrar() { closeModal('activos-overlay'); }
+// Fase INV1 (HTML de Edwin): botón lateral «Menú» = muestra u oculta el menú del Inventario (empieza visible).
+function activosAlternarMenu(mostrar) {
+  var lay = document.querySelector('#activos-overlay .ac-layout'); if (!lay) return;
+  var ver = typeof mostrar === 'boolean' ? mostrar : lay.classList.contains('ac-sin-menu');
+  lay.classList.toggle('ac-sin-menu', !ver);
+  var b = _acEl('ac-rail-menu');
+  if (b) { b.setAttribute('aria-expanded', String(ver)); b.title = ver ? 'Ocultar el menú' : 'Mostrar el menú'; }
+}
+// Botón flotante «Inventario»: abre la vista Inventario; si ya está abierta, vuelve a la pantalla de antes.
+function activosDestinoFab(tab, prev) { return tab === 'elementos' ? (prev && prev !== 'elementos' && AC_VISTA_TXT[prev] ? prev : 'panel') : 'elementos'; }
+function activosAlternarInventario() { activosTab(activosDestinoFab(_ac.tab, _ac.prev)); }
+function _acPintarFab() {
+  var b = _acEl('ac-rail-inv'); if (!b) return;
+  var en = _ac.tab === 'elementos';
+  b.setAttribute('aria-pressed', String(en));
+  b.title = en ? 'Cerrar el inventario y volver' : 'Abrir el inventario';
+}
 
 function activosTab(tab) {
   if (!AC_VISTA_TXT[tab]) tab = 'panel';
@@ -110,6 +129,7 @@ function activosTab(tab) {
   var txt = AC_VISTA_TXT[tab];
   _acEl('ac-vista-cab').innerHTML = '<h4 class="ac-vista-tit">' + esc(txt[0]) + '</h4><p class="vis-ayuda">' + esc(txt[1]) + '</p>' + (tab === 'registrar' ? activosFlujoHtml(_ac.ambito) : '') /* Fase GH5: el panel de Edwin no lleva el flujo */ + (tab === 'elementos' ? activosVolverHtml(_ac.prev) : '');
   _acRefrescarMenu();
+  _acPintarFab();
   var main = document.querySelector('#activos-overlay .ac-main'); if (main) main.scrollTop = 0;
   if (tab === 'panel') _acPanel();
   if (seccion === 'elementos') { _ac.estadoFijo = AC_VISTA_ESTADO[tab] || null; _acEl('ac-f-estado-ig').classList.toggle('hidden', !!_ac.estadoFijo); activosCerrarDetalleSinBuscar(); _acFiltrosYLista(); _acInvTipos(); }
@@ -1122,7 +1142,7 @@ async function activosDescargarFirmada(id) {
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { activosVolverHtml: activosVolverHtml, activosMenuHtml: activosMenuHtml, activosFlujoHtml: activosFlujoHtml, AC_MENU: AC_MENU, AC_VISTA_ESTADO: AC_VISTA_ESTADO, activosTiposHtml: activosTiposHtml, activosCampoEditorHtml: activosCampoEditorHtml, activosEditorTipoHtml: activosEditorTipoHtml, activosLeerCampos: activosLeerCampos, activosPanelHtml: activosPanelHtml, activosListaHtml: activosListaHtml, activosConsulta: activosConsulta, activosRendHtml: activosRendHtml, activosGestionHtml: activosGestionHtml, activosAgenteSelectHtml: activosAgenteSelectHtml, activosAgenteBody: activosAgenteBody, activosActasHtml: activosActasHtml, activosActasKpisHtml: activosActasKpisHtml, activosActasAviso: activosActasAviso, activosFilasExport: activosFilasExport, activosReportePrintHtml: activosReportePrintHtml, activosHistorialHtml: activosHistorialHtml, activosImportarColumnas: activosImportarColumnas, activosImportarResultadoHtml: activosImportarResultadoHtml, activosAdminHtml: activosAdminHtml, activosAdminKpisHtml: activosAdminKpisHtml, activosAdminSubtiposHtml: activosAdminSubtiposHtml, AC_ESTADO_ADMIN: AC_ESTADO_ADMIN, activosCampoHtml: activosCampoHtml, activosAgentesHtml: activosAgentesHtml, activosActaPrintHtml: activosActaPrintHtml };
+  module.exports = { activosDestinoFab: activosDestinoFab, activosVolverHtml: activosVolverHtml,activosMenuHtml: activosMenuHtml, activosFlujoHtml: activosFlujoHtml, AC_MENU: AC_MENU, AC_VISTA_ESTADO: AC_VISTA_ESTADO, activosTiposHtml: activosTiposHtml, activosCampoEditorHtml: activosCampoEditorHtml, activosEditorTipoHtml: activosEditorTipoHtml, activosLeerCampos: activosLeerCampos, activosPanelHtml: activosPanelHtml, activosListaHtml: activosListaHtml, activosConsulta: activosConsulta, activosRendHtml: activosRendHtml, activosGestionHtml: activosGestionHtml, activosAgenteSelectHtml: activosAgenteSelectHtml, activosAgenteBody: activosAgenteBody, activosActasHtml: activosActasHtml, activosActasKpisHtml: activosActasKpisHtml, activosActasAviso: activosActasAviso, activosFilasExport: activosFilasExport, activosReportePrintHtml: activosReportePrintHtml, activosHistorialHtml: activosHistorialHtml, activosImportarColumnas: activosImportarColumnas, activosImportarResultadoHtml: activosImportarResultadoHtml, activosAdminHtml: activosAdminHtml, activosAdminKpisHtml: activosAdminKpisHtml, activosAdminSubtiposHtml: activosAdminSubtiposHtml, AC_ESTADO_ADMIN: AC_ESTADO_ADMIN, activosCampoHtml: activosCampoHtml, activosAgentesHtml: activosAgentesHtml, activosActaPrintHtml: activosActaPrintHtml };
 }
 
 // ── Fase GH4 (plan de Gestión humana): «Novedades desde Gestión Humana» (diseño de Edwin) ──

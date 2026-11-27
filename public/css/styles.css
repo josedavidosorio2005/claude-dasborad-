@@ -3031,6 +3031,32 @@ circle.acp-l-ingresos{fill:var(--c-brand-blue)}circle.acp-l-asignaciones{fill:va
    :root[data-theme="dark"] de paleta.css y de esta hoja (selector «#activos-overlay,:root[data-theme="dark"]»). */
 #activos-overlay{color-scheme:dark;color:var(--c-text)}
 #activos-overlay > .modal{background:var(--c-bg);color:var(--c-text)}
+/* Fase INV1b (HTML de Edwin): botones laterales «Menú» e «Inicio» a la izquierda y el botón flotante «Inventario»,
+   solo dentro de la ventana del Inventario (van dentro de #activos-overlay). Sin colores nuevos: solo tokens. */
+#activos-overlay > .modal.modal-activos{padding-left:72px;padding-bottom:96px}
+.ac-rail{position:absolute;z-index:var(--z-fab);display:flex;flex-direction:column;gap:10px}
+.ac-rail-izq{left:0;top:50%;transform:translateY(-50%)}
+.ac-rail-btn{display:flex;flex-direction:column;align-items:center;gap:8px;min-width:44px;min-height:44px;padding:14px 10px;border:1px solid var(--acento);border-left:0;border-radius:0 var(--r-lg) var(--r-lg) 0;background:var(--btn-primario-bg);color:var(--btn-primario-fg);font:inherit;font-size:var(--fs-small);font-weight:700;cursor:pointer;box-shadow:var(--shadow-md)}
+.ac-rail-btn span{writing-mode:vertical-rl;letter-spacing:.04em}
+.ac-rail-btn .icono{width:22px;height:22px}
+.ac-rail-btn:hover,.ac-rail-btn[aria-pressed="true"]{background:var(--acento);color:var(--c-bg)}
+.ac-rail-btn:focus-visible{outline:2px solid var(--c-focus);outline-offset:2px}
+.ac-rail-btn[aria-expanded="false"]{background:var(--acento-suave);color:var(--acento-texto)}
+.ac-rail-inicio{border-color:var(--c-success);background:var(--c-success-bg);color:var(--c-success-text)}
+.ac-rail-inicio:hover{background:var(--c-success);color:var(--c-bg)}
+.ac-rail-fab{position:absolute;z-index:var(--z-fab);right:28px;bottom:24px;flex-direction:row;padding:12px 20px;border-left:1px solid var(--acento);border-radius:999px}
+.ac-rail-fab span{writing-mode:horizontal-tb}
+.ac-sin-menu{grid-template-columns:minmax(0,1fr)}
+.ac-sin-menu > .ac-menu{display:none}
+@media (max-width:760px){
+  #activos-overlay > .modal.modal-activos{padding-left:16px;padding-right:16px;padding-bottom:84px}
+  .ac-rail-izq{top:auto;bottom:16px;left:12px;transform:none;flex-direction:row}
+  .ac-rail-btn{padding:10px;border-left:1px solid var(--acento);border-radius:var(--r-lg)}
+  .ac-rail-inicio{border-color:var(--c-success)}
+  .ac-rail-btn span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  .ac-rail-fab{right:12px;bottom:16px;padding:10px 16px}
+  .ac-rail-fab span{position:static;width:auto;height:auto;overflow:visible;clip:auto}
+}
 /* Fase 372 (E4): editor de formularios por tipo. */
 .ac-tipo-form{margin:0 0 12px}
 .ac-ce-lista{list-style:none;margin:8px 0 10px;padding:0;display:flex;flex-direction:column;gap:8px}
