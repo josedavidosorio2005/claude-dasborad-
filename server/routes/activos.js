@@ -27,7 +27,7 @@ function conElementos(tipos) {
 router.get('/activos/config', requireActor, wrap((req, res) => {
   if (!permitido(req, res)) return;
   const ambito = A.ambitoDe(req.query.ambito); // Fase 376: sistemas (por defecto) o inmuebles
-  res.json({ ambito, estados: A.ESTADOS, rendimientos: A.RENDIMIENTOS, /* Fase 377 */ tipos: A.tipos(db, { ambito }), listas: Object.fromEntries(Object.keys(A.LISTAS).map((k) => [k, A.lista(db, k)])),
+  res.json({ ambito, estados: A.estados(db) /* Fase INV6: con los nombres propios */, rendimientos: A.RENDIMIENTOS, /* Fase 377 */ tipos: A.tipos(db, { ambito }), listas: Object.fromEntries(Object.keys(A.LISTAS).map((k) => [k, A.lista(db, k)])),
     // Fase 372 (E4): para Ajustes › Formularios (todos los tipos, también los desactivados) y los textos del acta.
     tiposTodos: conElementos(A.tipos(db, { todos: true, ambito })), textos: F.textos(db), textosNombres: Object.fromEntries(Object.entries(F.TEXTOS).map(([k, t]) => [k, t.nombre])) });
 }));
@@ -78,6 +78,24 @@ router.put('/activos/config/tipos/:codigo/activo', requireActor, wrap((req, res)
   if (r.error) return res.status(r.status || 400).json({ error: r.error });
   if (!r.sinCambio) logTipo('ACTIVO_TIPO_ACTIVO', r.tipo, req, r.tipo.activo ? 'activado' : 'desactivado');
   res.json({ tipo: r.tipo });
+}));
+// Fase INV6 (HTML de Edwin): renombrar estados (sin agregar ni quitar).
+router.put('/activos/config/estados', requireActor, wrap((req, res) => {
+  if (!permitido(req, res)) return;
+  const b = req.body || {};
+  if (Object.keys(b).some((k) => k !== 'nombres')) return res.status(400).json({ error: 'Datos no válidos' });
+  const r = A.renombrarEstados(db, b.nombres, actorLabel(req.actor));
+  if (r.error) return res.status(400).json({ error: r.error });
+  logEvent('ACTIVO_ESTADOS', { nombre: 'estados del inventario', user: '-', rol: 'activos' }, actorLabel(req.actor), r.estados.map((e) => e.nombre).join(', '));
+  res.json(r);
+}));
+// Fase INV6 (HTML de Edwin): copia de seguridad en .json, solo para descargar (no se restaura desde la plataforma).
+router.get('/activos/copia', requireActor, wrap((req, res) => {
+  if (!permitido(req, res)) return;
+  const c = require('../activos-copia').copia(db, req.query.ambito);
+  logEvent('ACTIVO_COPIA_JSON', { nombre: 'inventario ' + c.ambito, user: '-', rol: 'activos' }, actorLabel(req.actor), c.conteos.elementos + ' elementos');
+  res.set('Cache-Control', 'no-store');
+  res.json(c);
 }));
 router.put('/activos/config/textos/:clave', requireActor, wrap((req, res) => {
   if (!permitido(req, res)) return;

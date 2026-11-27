@@ -31,6 +31,8 @@ var AC_VISTA_TXT = {
 var AC_TITULO = { sistemas: 'Inventario de sistemas', inmuebles: 'Inventario de inmuebles' };
 function _acEl(id) { return document.getElementById(id); }
 function _acError(m) { var e = _acEl('ac-error'); e.textContent = m || ''; e.classList.toggle('hidden', !m); }
+// Fase INV6: si el estado se renombró en Ajustes, su nombre nuevo; si no, el texto de siempre de esa vista.
+function _acEstadoTxt(c, porDefecto) { var e = ((_ac.config && _ac.config.estados) || []).find(function (x) { return x.codigo === c; }); return e && e.base && e.nombre !== e.base ? e.nombre : (porDefecto || (e ? e.nombre : c)); }
 function _acEstadoNombre(c) { var e = ((_ac.config && _ac.config.estados) || []).find(function (x) { return x.codigo === c; }); return e ? e.nombre : c; }
 function _acTipo(c) { return ((_ac.config && _ac.config.tipos) || []).find(function (t) { return t.codigo === c; }) || null; }
 var AC_CLASE_ESTADO = { libre: 'vis-verde', en_uso: 'vis-gris', en_reparacion: 'vis-amarillo', malo: 'vis-rojo', de_baja: 'vis-gris' };
@@ -276,7 +278,7 @@ function activosInvTiposHtml(tipos, porTipo, actual) {
   var cards = activos.map(function (t) {
     var x = porTipo[t.codigo] || {}, total = Object.keys(x).reduce(function (a, k) { return a + (x[k] || 0); }, 0);
     return '<article class="acp-card aci-card' + (actual === t.codigo ? ' aci-sel' : '') + '"><div class="acr-top"><h4><span class="acl-tipo" data-tipo="' + esc(t.codigo) + '">' + esc(t.nombre) + '</span></h4><b class="aci-total" title="Total">' + total + '</b></div>' +
-      '<dl class="aci-est">' + est.map(function (e) { return '<div><dt>' + esc(e[1]) + '</dt><dd>' + (x[e[0]] || 0) + '</dd></div>'; }).join('') + '</dl>' +
+      '<dl class="aci-est">' + est.map(function (e) { return '<div><dt>' + esc(_acEstadoTxt(e[0], e[1])) + '</dt><dd>' + (x[e[0]] || 0) + '</dd></div>'; }).join('') + '</dl>' +
       '<button type="button" class="acp-btn" onclick="activosInvTipo(\'' + esc(t.codigo) + '\')">Ver detalle</button></article>';
   }).join('');
   return chips + '<div class="acr-grid aci-grid">' + cards + '</div>';
@@ -482,9 +484,9 @@ function activosFilasExport(vista, lista, config) {
   if (vista === 'actas') return { titulo: 'Actas', cols: ['N.º', 'Tipo', 'Fecha', 'Agente', 'Elementos', 'Motivo', 'Estado'],
     filas: lista.map(function (a) { return [a.numero, a.tipoNombre, f(a.fecha), a.agente ? a.agente.nombre : '', a.elementos.map(function (e) { return e.tipo + ' ' + e.codigo; }).join(', '), a.motivo || '', a.estado === 'anulada' ? 'Anulada' : a.firmada ? 'Firmada' : a.atrasada ? 'Atrasada' : a.estado === 'completar' ? 'Por completar' : 'Por firmar']; }) };
   if (vista === 'historial') return { titulo: 'Historial del inventario', cols: ['Fecha', 'Tipo', 'Código', 'Acción', 'Antes', 'Después', 'Motivo', 'Quién'],
-    filas: lista.map(function (h) { return [f(h.fecha), tipoN(h.tipo), h.codigo, h.accion, AC_ESTADO_TXT[h.estadoAntes] || h.estadoAntes || '', AC_ESTADO_TXT[h.estadoDespues] || h.estadoDespues || '', h.motivo || '', h.quien || '']; }) };
+    filas: lista.map(function (h) { return [f(h.fecha), tipoN(h.tipo), h.codigo, h.accion, (h.estadoAntes ? _acEstadoTxt(h.estadoAntes, AC_ESTADO_TXT[h.estadoAntes]) : ''), (h.estadoDespues ? _acEstadoTxt(h.estadoDespues, AC_ESTADO_TXT[h.estadoDespues]) : '') || '', h.motivo || '', h.quien || '']; }) };
   return { titulo: 'Inventario', cols: ['Código', 'Tipo', 'Estado', 'Marca', 'Modelo', 'Serial', 'RAM (GB)', 'Sede', 'Operación', 'Propietario / proveedor', 'Agente'],
-    filas: lista.map(function (a) { var d = a.datos || {}; return [a.codigo, tipoN(a.tipo), AC_ESTADO_TXT[a.estado] || a.estado, a.marca || '', a.modelo || '', a.serial || '', typeof d.ram_gb === 'number' ? d.ram_gb : '', a.sede || '', a.operacion || '', a.proveedor || '', a.agente ? a.agente.nombre : '']; }) };
+    filas: lista.map(function (a) { var d = a.datos || {}; return [a.codigo, tipoN(a.tipo), _acEstadoTxt(a.estado, AC_ESTADO_TXT[a.estado]), a.marca || '', a.modelo || '', a.serial || '', typeof d.ram_gb === 'number' ? d.ram_gb : '', a.sede || '', a.operacion || '', a.proveedor || '', a.agente ? a.agente.nombre : '']; }) };
 }
 // Página para imprimir / guardar como PDF (todo escapado, sin scripts).
 function activosReportePrintHtml(t, cuando) {
@@ -694,9 +696,41 @@ function _acAjustes() {
   _acEl('ac-imp-res').innerHTML = '';
   _acEl('ac-aj-estados').innerHTML = activosAjEstadosHtml(_ac.config.estados); // Fase GH5d
 }
-// Fase GH5d: tarjeta «Estados» (solo lectura) y «Exportar todo a Excel».
+// Fase GH5d: tarjeta «Estados» y «Exportar todo a Excel». Fase INV6 (HTML de Edwin): los estados se pueden
+// renombrar (no agregar ni quitar); vacío = el nombre de siempre.
 function activosAjEstadosHtml(estados) {
-  return (estados || []).map(function (e) { return '<li><span class="vis-pill ' + (AC_CLASE_ESTADO[e.codigo] || 'vis-gris') + '">' + esc(e.nombre) + '</span></li>'; }).join('');
+  return (estados || []).map(function (e) {
+    var id = 'ac-est-' + esc(e.codigo);
+    return '<li class="aj-estado ig"><label for="' + id + '"><span class="vis-pill ' + (AC_CLASE_ESTADO[e.codigo] || 'vis-gris') + '">' + esc(e.nombre) + '</span>' +
+      (e.base && e.base !== e.nombre ? ' <span class="vis-ayuda">(antes «' + esc(e.base) + '»)</span>' : '') + '</label>' +
+      '<input type="text" id="' + id + '" data-codigo="' + esc(e.codigo) + '" maxlength="40" value="' + esc(e.nombre) + '" placeholder="' + esc(e.base || e.nombre) + '"></li>';
+  }).join('');
+}
+async function activosGuardarEstados() {
+  _acError('');
+  var nombres = {};
+  Array.prototype.forEach.call(document.querySelectorAll('#ac-aj-estados input[data-codigo]'), function (i) { nombres[i.getAttribute('data-codigo')] = i.value; });
+  try {
+    var r = await apiRequest('PUT', '/activos/config/estados', { nombres: nombres });
+    _ac.config.estados = r.estados;
+    _acEl('ac-aj-estados').innerHTML = activosAjEstadosHtml(r.estados);
+    var f = _acEl('ac-f-estado'); if (f) f.innerHTML = _acOpciones(_ac.config.estados, f.value, 'Todos los estados');
+    showToast('Nombres de los estados guardados', 'ok');
+  } catch (e) { _acError(e.message); }
+}
+// Fase INV6 (HTML de Edwin): copia de seguridad (.json) para guardar aparte. Solo se descarga; no se restaura aquí.
+function activosCopiaNombre(ambito, hoy) { return 'inventario-' + (ambito === 'inmuebles' ? 'inmuebles' : 'sistemas') + '-' + hoy + '.json'; }
+async function activosDescargarCopia() {
+  _acError('');
+  try {
+    var r = await apiRequest('GET', '/activos/copia?ambito=' + encodeURIComponent(_ac.ambito || 'sistemas'));
+    var blob = new Blob([JSON.stringify(r, null, 2)], { type: 'application/json' });
+    var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    a.download = activosCopiaNombre(r.ambito, new Date(Date.now() - 5 * 3600 * 1000).toISOString().slice(0, 10));
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+    showToast('Copia descargada: ' + r.conteos.elementos + ' elementos', 'ok');
+  } catch (e) { _acError(e.message); }
 }
 function activosAjustesExcel() { _ac.panelTipo = ''; activosPanelExcel(); }
 // Fase 372: los motivos frecuentes se sugieren en los campos de motivo (datalist); el motivo sigue libre.
@@ -1442,3 +1476,4 @@ if (typeof module !== 'undefined' && module.exports) { module.exports.activosPan
 if (typeof module !== 'undefined' && module.exports) Object.assign(module.exports, { activosFaltanTxt: activosFaltanTxt, activosEsPropio: activosEsPropio, activosAsignableHtml: activosAsignableHtml }); // Fase INV2
 if (typeof module !== 'undefined' && module.exports) module.exports.activosCedulaAviso = activosCedulaAviso; // 25/11: aviso de la cédula (pruebas)
 if (typeof module !== 'undefined' && module.exports) { module.exports.activosActasKpisHtml = activosActasKpisHtml; module.exports.activosActasHtml = activosActasHtml; module.exports.activosActaCompletarHtml = activosActaCompletarHtml; module.exports.activosActaPrintHtml = activosActaPrintHtml; } // Fase INV4 (pruebas)
+if (typeof module !== 'undefined' && module.exports) { module.exports.activosAjEstadosHtml = activosAjEstadosHtml; module.exports.activosCopiaNombre = activosCopiaNombre; } // Fase INV6 (pruebas)

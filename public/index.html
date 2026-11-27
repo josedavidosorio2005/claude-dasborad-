@@ -2203,8 +2203,11 @@
       <article class="acp-card aj-card"><h4>Motivos frecuentes</h4>
         <div class="ig"><label for="ac-l-motivos">Motivos frecuentes</label><textarea id="ac-l-motivos" rows="6" aria-describedby="ac-l-motivos-ayuda"></textarea><span class="vis-ayuda" id="ac-l-motivos-ayuda">Se sugieren al escribir un motivo; se puede escribir otro.</span><button type="button" class="btn-cancel ac-btn" onclick="activosGuardarLista('motivos')">Guardar motivos</button></div>
       </article>
-      <article class="acp-card aj-card"><h4>Estados</h4><p class="acp-ayuda">Son fijos: de ellos dependen las actas (entrega, devolución, reparación, baja).</p>
-        <ul id="ac-aj-estados" class="aj-estados"></ul>
+      <article class="acp-card aj-card"><h4>Estados</h4><p class="acp-ayuda">Puedes cambiarles el nombre; no se agregan ni se quitan (de ellos dependen las actas). Vale para los dos inventarios; vacío = el nombre de siempre.</p>
+        <ul id="ac-aj-estados" class="aj-estados"></ul><button type="button" class="btn-cancel ac-btn" onclick="activosGuardarEstados()">Guardar nombres</button>
+      </article>
+      <article class="acp-card aj-card"><h4>Copia de seguridad (.json)</h4><p class="acp-ayuda">Descarga todo este inventario en un archivo para guardarlo aparte. Solo se descarga: los datos siguen en el servidor, con respaldo diario, y no se restauran desde aquí.</p>
+        <div class="acr-acc"><button type="button" class="acp-btn" onclick="activosDescargarCopia()">Descargar copia (.json)</button></div>
       </article>
       </div>
       <article class="acp-card aj-card aj-ancha">

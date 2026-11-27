@@ -7,6 +7,18 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.295.0 — Noviembre 2026
+
+**Inventario: copia de seguridad (.json) y estados con el nombre que se quiera, como en el diseño de Edwin.**
+
+- En «Ajustes y datos» está la tarjeta **«Copia de seguridad (.json)»**: descarga todo el inventario (tipos,
+  elementos, historial, agentes, asignaciones, actas y listas) en un archivo para guardarlo aparte. Solo se
+  descarga: los datos siguen en el servidor, con su respaldo diario, y no se restauran desde ese archivo.
+- La tarjeta **«Estados»** ahora deja cambiarles el nombre (por ejemplo, «Libre» → «Disponible»). No se agregan
+  ni se quitan estados, porque de ellos dependen las actas. Dejarlo vacío vuelve al nombre de siempre.
+- El nombre nuevo se ve en los filtros, en los elementos, en las actas nuevas, en el Excel y al importar.
+- No cambia ningún dato guardado.
+
 ## v1.294.0 — Noviembre 2026
 
 **Inventario de sistemas: las actas se completan antes de imprimirlas, como en el diseño de Edwin.**
