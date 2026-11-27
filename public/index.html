@@ -2103,6 +2103,11 @@
     <!-- Fase 370 (E2): agentes y asignación por elemento. -->
     <section id="ac-p-agentes" class="hidden" aria-label="Agentes">
       <div id="ac-ag-zona">
+        <div class="ac-gh-buscar" id="ac-ag-gh"><!-- Fase INV3 (HTML de Edwin): los agentes salen de Gestión humana -->
+          <div class="ig"><label for="ac-ag-gh-q">Buscar en Gestión humana</label><input type="search" id="ac-ag-gh-q" maxlength="60" placeholder="Cédula o nombre" autocomplete="off" aria-describedby="ac-ag-gh-ayuda" aria-controls="ac-ag-gh-res" oninput="activosGhBuscarDiferido()"></div>
+          <p class="vis-ayuda" id="ac-ag-gh-ayuda">Los agentes salen de las personas activas de Gestión humana: elige una y se llenan su nombre y cédula. Si no está, escríbelo a mano.</p>
+          <ul id="ac-ag-gh-res" class="ac-gh-res" aria-live="polite"></ul>
+        </div>
         <form id="ac-ag-form" class="ac-filtros" onsubmit="activosCrearAgente(event)" novalidate>
           <div class="ig"><label for="ac-ag-nombre">Nombre del agente</label><input type="text" id="ac-ag-nombre" maxlength="80" required></div>
           <div class="ig"><label for="ac-ag-documento">Documento (opcional)</label><input type="text" id="ac-ag-documento" maxlength="20" inputmode="numeric" autocomplete="off" aria-describedby="ac-ag-doc-aviso" onchange="activosCedulaGh('ac-ag-documento','ac-ag-nombre','ac-ag-doc-aviso')"><p class="ac-gh-aviso" id="ac-ag-doc-aviso" role="status" aria-live="polite"></p></div>

@@ -53,6 +53,23 @@ router.post('/activos/gh-nombre', requireActor, (req, res, next) => (permitido(r
   res.json(nombre ? { encontrado: true, nombre } : { encontrado: false });
 }));
 
+// Fase INV3 (HTML de Edwin): los agentes salen de las personas ACTIVAS de Gestión humana. Busca por cédula o nombre
+// (3 a 60 caracteres); devuelve solo nombre y documento, máximo 20. Con límite propio (se busca mientras se escribe).
+const ghPersonasLimite = rateLimit({
+  windowMs: GH_NOMBRE_VENTANA_MS,
+  max: 120,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => 'gh-personas:' + String(req.actor && (req.actor.id != null ? req.actor.id : req.actor.user)),
+  message: { error: 'Demasiadas búsquedas en Gestión humana. Espera unos minutos.' },
+});
+router.get('/activos/gh-personas', requireActor, (req, res, next) => (permitido(req, res) ? next() : undefined), ghPersonasLimite, wrap((req, res) => {
+  const q = typeof req.query.q === 'string' ? req.query.q.trim() : '';
+  if (q.length < 3 || q.length > 60) return res.status(400).json({ error: 'Escribe de 3 a 60 caracteres' });
+  res.set('Cache-Control', 'no-store');
+  res.json({ personas: NGH.personas(db, q), hayGH: NGH.indice(db).total > 0 });
+}));
+
 // ── Fase 372 (E4): formularios editables (tipos y sus campos) y textos del acta. Historial sin datos personales.
 const logTipo = (accion, t, req, detalle) => logEvent(accion, { nombre: t.nombre + ' (' + t.codigo + ')', user: '-', rol: 'activos' }, actorLabel(req.actor), detalle || '');
 const resumenCampos = (t) => t.campos.length + ' campo(s)' + (t.campos.some((c) => c.oculto) ? ', ' + t.campos.filter((c) => c.oculto).length + ' oculto(s)' : '');
@@ -222,7 +239,8 @@ router.get('/activos/agentes', requireActor, wrap((req, res) => {
   if (!permitido(req, res)) return;
   const q = { todos: req.query.todos === '1', equipos: req.query.equipos === '1' }; // Fase INV5: equipos=1 trae lo asignado
   if (typeof req.query.q === 'string' && req.query.q.trim()) q.q = req.query.q.trim();
-  res.json({ agentes: A.agentes(db, q) });
+  const I = NGH.indice(db); // Fase INV3: estado en Gestión humana de cada agente (null si Gestión humana no tiene datos)
+  res.json({ agentes: A.agentes(db, q).map((g) => Object.assign(g, { gh: NGH.estadoAgente(I, g) })), hayGH: I.total > 0 });
 }));
 router.post('/activos/agentes', requireActor, wrap((req, res) => {
   if (!permitido(req, res)) return;
@@ -241,7 +259,34 @@ function agentePorId(req, res) {
 router.get('/activos/agentes/:id', requireActor, wrap((req, res) => {
   if (!permitido(req, res)) return;
   const g = agentePorId(req, res); if (!g) return;
-  res.json(A.agenteDetalle(db, g));
+  res.json(Object.assign(A.agenteDetalle(db, g), { gh: NGH.estadoAgente(NGH.indice(db), g) })); // Fase INV3
+}));
+// Fase INV3 (HTML de Edwin): entregar varios elementos libres (uno por tipo) con UNA sola acta, ya completada con la
+// fecha y la observación de la entrega (queda «Por firmar»). Todo o nada.
+router.post('/activos/agentes/:id/entregar', requireActor, wrap((req, res) => {
+  if (!permitido(req, res)) return;
+  const g = agentePorId(req, res); if (!g) return;
+  const b = req.body;
+  if (!b || typeof b !== 'object' || Array.isArray(b) || Object.keys(b).some((k) => !['ids', 'fecha', 'observaciones'].includes(k))) return res.status(400).json({ error: 'Datos no válidos' });
+  const obs = typeof b.observaciones === 'string' ? b.observaciones.trim() : '';
+  if (obs.length < 3) return res.status(400).json({ error: 'Escribe la observación de la entrega' });
+  let r, acta = null;
+  try {
+    db.transaction(() => {
+      r = A.entregar(db, g, b.ids, actorLabel(req.actor));
+      if (r.error) throw Object.assign(new Error(r.error), { esperado: true });
+      const items = r.elementos.filter((a) => ACT.llevaActa(db, a)).map((a) => ({ a, dir: 'recibe' }));
+      if (items.length) {
+        const nueva = ACT.auto(db, { tipo: 'entrega', agente: g, items, motivo: obs, quien: actorLabel(req.actor) });
+        const quien = String(actorLabel(req.actor) || '').trim();
+        const c = ACT.completar(db, nueva, { fecha: b.fecha, entrega: quien.length >= 3 ? quien : 'Sistemas', observaciones: obs }, actorLabel(req.actor));
+        if (c.error) throw Object.assign(new Error(c.error), { esperado: true });
+        acta = c.acta;
+      }
+    })();
+  } catch (e) { if (e.esperado) return res.status(400).json({ error: e.message }); throw e; }
+  r.elementos.forEach((a) => log('ACTIVO_ASIGNACION', a, req, 'a agente #' + g.id + ' (entrega de ' + r.elementos.length + ')'));
+  res.json({ agente: g, elementos: r.elementos, acta });
 }));
 router.put('/activos/agentes/:id', requireActor, wrap((req, res) => {
   if (!permitido(req, res)) return;

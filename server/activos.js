@@ -475,16 +475,48 @@ function _cerrar(db, a, estado, motivo, quien, ahora, accion) {
   db.prepare('UPDATE activos SET estado = ?, updatedAt = ? WHERE id = ?').run(estado, ahora, a.id);
   _hist(db, a.id, accion, a.estado, estado, motivo + (a.agente ? ' · de ' + a.agente.nombre : ''), quien);
 }
-function asignar(db, a, agenteId, quien) {
-  if (a.tipo === 'ADMINISTRABLE') return { error: 'Los equipos administrables no se asignan a un agente' };
+// Fase INV3 (HTML de Edwin): a quien Gestión humana tiene como RETIRADO no se le entrega nada (solo se le reciben
+// los elementos). Si no está en Gestión humana se sigue avisando, sin bloquear (decisión de Edwin del 25/11,
+// CEDULA_SIN_GH). Mensaje de error o null.
+function ghNoRecibe(db, g) {
+  const NGH = require('./gh-novedades');
+  const st = NGH.estadoAgente(NGH.indice(db), g);
+  return st && st.t === 'retiro' ? g.nombre + ' aparece retirado en Gestión humana: no puede recibir elementos (solo devolverlos)' : null;
+}
+function _noAsignable(db, a) {
+  if (a.tipo === 'ADMINISTRABLE') return 'Los equipos administrables no se asignan a un agente';
   const ta = tipo(db, a.tipo, { todos: true }); // Fase INV2: «Se asigna a agentes» del tipo
-  if (ta && !ta.asignable) return { error: ta.plural + ': este tipo no se asigna a agentes (es un componente del inventario)' };
-  if (a.agente) return { error: 'Ya está asignado a ' + a.agente.nombre };
-  if (a.estado !== 'libre') return { error: 'Solo se asigna un elemento libre' };
+  if (ta && !ta.asignable) return ta.plural + ': este tipo no se asigna a agentes (es un componente del inventario)';
+  if (a.agente) return a.codigo + ': ya está asignado a ' + a.agente.nombre;
+  if (a.estado !== 'libre') return a.codigo + ': solo se asigna un elemento libre';
+  return null;
+}
+function asignar(db, a, agenteId, quien) {
+  const no = _noAsignable(db, a);
+  if (no) return { error: no.startsWith(a.codigo + ': ') ? no.slice(a.codigo.length + 2).replace(/^./, (c) => c.toUpperCase()) : no };
   const g = Number.isInteger(agenteId) ? agente(db, agenteId) : null;
   if (!g || !g.activo) return { error: 'Elige un agente activo' };
+  const gh = ghNoRecibe(db, g); if (gh) return { error: gh };
   db.transaction(() => _abrir(db, a, g, quien, new Date().toISOString(), '', 'Asignación'))();
   return { activo: obtener(db, a.id), agente: g };
+}
+// Fase INV3 (HTML de Edwin, «Entregar seleccionados y generar acta»): varios elementos libres a un agente en un
+// solo paso, uno por tipo. Todo o nada. -> { agente, antes: [elementos antes], elementos: [después] } o { error }
+const ENTREGA_MAX = 20;
+function entregar(db, g, ids, quien) {
+  if (!g || !g.activo) return { error: 'Elige un agente activo' };
+  if (!Array.isArray(ids) || !ids.length) return { error: 'Elige al menos un elemento para entregar' };
+  if (ids.length > ENTREGA_MAX || ids.some((x) => !Number.isInteger(x) || x < 1) || new Set(ids).size !== ids.length) return { error: 'Datos no válidos' };
+  const gh = ghNoRecibe(db, g); if (gh) return { error: gh };
+  const antes = ids.map((id) => obtener(db, id));
+  if (antes.some((a) => !a)) return { error: 'Elemento no encontrado' };
+  for (const a of antes) { const no = _noAsignable(db, a); if (no) return { error: no }; }
+  if (new Set(antes.map((a) => a.tipo)).size !== antes.length) return { error: 'Entrega un solo elemento de cada tipo' };
+  db.transaction(() => {
+    const ahora = new Date().toISOString();
+    for (const a of antes) _abrir(db, a, g, quien, ahora, antes.length > 1 ? 'Entrega de ' + antes.length + ' elementos' : '', 'Asignación');
+  })();
+  return { agente: g, antes, elementos: antes.map((a) => obtener(db, a.id)) };
 }
 function _motivoYEstado(estado, motivo) {
   if (!ESTADOS_AL_SOLTAR.includes(estado)) return { error: 'Elige cómo queda el elemento: libre, en reparación o malo' };
@@ -507,6 +539,7 @@ function cambiarElemento(db, a, nuevoId, estado, motivo, quien) {
   if (n.tipo !== a.tipo) return { error: 'El elemento nuevo debe ser del mismo tipo' };
   if (n.estado !== 'libre' || n.agente) return { error: 'El elemento nuevo debe estar libre' };
   const g = agente(db, a.agente.id);
+  const gh = ghNoRecibe(db, g); if (gh) return { error: gh + '. Usa «Devolver»' }; // Fase INV3
   db.transaction(() => {
     const ahora = new Date().toISOString();
     _cerrar(db, a, estado, r.m, quien, ahora, 'Cambio de elemento');
@@ -521,6 +554,7 @@ function reasignar(db, a, agenteId, motivo, quien) {
   const g = Number.isInteger(agenteId) ? agente(db, agenteId) : null;
   if (!g || !g.activo) return { error: 'Elige un agente activo' };
   if (g.id === a.agente.id) return { error: 'Ya está asignado a ese agente' };
+  const gh = ghNoRecibe(db, g); if (gh) return { error: gh }; // Fase INV3
   const m = _txt(motivo, 300);
   if (m.length < 3) return { error: 'Escribe el motivo' };
   db.transaction(() => {
@@ -622,5 +656,5 @@ function importar(db, tipoCodigo, filas, confirmar, quien) {
   return Object.assign(resumen, { importadas: validas.length });
 }
 
-module.exports = { faltanTexto, camposFaltantes, esPropio, CEDULA_SIN_GH, historialGeneral, mapaColumnas, importar, ADMIN_SUBTIPOS_I5, ADMIN_CODIGO_BASE, agregarCamposI5, siguienteCodigoAdmin, ipRepetida, reasignar, agenteParaAsignar, CAMPOS_I2, agregarCamposI2, RENDIMIENTOS, rendimientoDe, AMBITOS, TIPOS_INMUEBLES, ambitoDe, ESTADOS_AL_SOLTAR, validarAgente, agentes, agente, crearAgente, editarAgente, agenteDetalle, asignar, devolver, cambiarElemento,
+module.exports = { ghNoRecibe, entregar, ENTREGA_MAX, faltanTexto, camposFaltantes, esPropio, CEDULA_SIN_GH, historialGeneral, mapaColumnas, importar, ADMIN_SUBTIPOS_I5, ADMIN_CODIGO_BASE, agregarCamposI5, siguienteCodigoAdmin, ipRepetida, reasignar, agenteParaAsignar, CAMPOS_I2, agregarCamposI2, RENDIMIENTOS, rendimientoDe, AMBITOS, TIPOS_INMUEBLES, ambitoDe, ESTADOS_AL_SOLTAR, validarAgente, agentes, agente, crearAgente, editarAgente, agenteDetalle, asignar, devolver, cambiarElemento,
   ESTADOS, ESTADO_CODIGOS, estados, estadoNombre, renombrarEstados, ESTADO_NOMBRE_MAX, LISTAS, TIPOS_BASE, puede, crearTablas, tipos, tipo, lista, guardarLista, validar, crear, obtener, editar, cambiarEstado, listar, resumen, historial };
