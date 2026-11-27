@@ -8,6 +8,7 @@ const assert = require('node:assert/strict');
 const path = require('path');
 const bcrypt = require('bcryptjs');
 const { request, app, db, tokenFor, MASTER_PASSWORD } = require('./helpers');
+const { crearIncompleto } = require('./helpers-activos'); // Fase INV2: registrar exige todos los campos
 const P = require('../activos-panel');
 
 const H = (t) => ({ Authorization: 'Bearer ' + t });
@@ -21,7 +22,7 @@ before(async () => {
   tk.admin = await tokenFor('admin', MASTER_PASSWORD);
   tk.sis = await tokenFor('gh5_sis', 'Clave#2026x');
   tk.rep = await tokenFor('gh5_rep', 'Clave#2026x');
-  const post = (b) => request(app).post('/api/activos').set(H(tk.sis)).send(b);
+  const post = async (b) => crearIncompleto(b); // Fase INV2: incompletos a propósito, como los deja la importación
   const L = (await request(app).get('/api/activos/config').set(H(tk.sis))).body.listas;
   PROV = L.proveedores.find((p) => !/inconexi/i.test(p));
   assert.ok(PROV, 'hay un proveedor distinto de InConexion');

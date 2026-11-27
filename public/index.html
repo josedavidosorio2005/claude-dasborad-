@@ -2121,19 +2121,20 @@
     <section id="ac-p-registrar" class="hidden" aria-label="Registrar">
       <div id="ac-r-tarjetas"></div><!-- Fase GH5b: una tarjeta por tipo, como el diseño de Edwin -->
       <form id="ac-r-form" onsubmit="activosRegistrar(event)" novalidate>
+        <p class="vis-ayuda">Todos los campos son obligatorios. El precio es de los elementos propios (InConexion®) y la renta mensual, de los de un proveedor.</p>
         <div class="ac-filtros">
           <div class="ig"><label for="ac-r-tipo">Tipo de elemento</label><select id="ac-r-tipo" onchange="activosCambioTipo()"></select></div>
           <div class="ig"><label for="ac-r-codigo">Código (etiqueta)</label><input type="text" id="ac-r-codigo" maxlength="40" required aria-describedby="ac-r-codigo-ayuda"><p class="vis-ayuda hidden" id="ac-r-codigo-ayuda">Equipo administrable: déjalo vacío y se asigna solo según el tipo (servidor desde 5001, switch 6001, DVR / NVR 7001, router o firewall 8001, access point 9001, UPS 4001, otro 4501).</p></div>
           <div class="ig"><label for="ac-r-estado">Entra como</label><select id="ac-r-estado"><option value="libre">Libre</option><option value="en_reparacion">En reparación</option><option value="malo">Malo</option></select></div>
-          <div class="ig"><label for="ac-r-marca">Marca</label><input type="text" id="ac-r-marca" maxlength="60"></div>
-          <div class="ig"><label for="ac-r-modelo">Modelo</label><input type="text" id="ac-r-modelo" maxlength="60"></div>
-          <div class="ig"><label for="ac-r-serial">Serial</label><input type="text" id="ac-r-serial" maxlength="80"></div>
-          <div class="ig"><label for="ac-r-sede">Sede</label><select id="ac-r-sede"></select></div>
-          <div class="ig"><label for="ac-r-operacion">Operación</label><select id="ac-r-operacion"></select></div>
-          <div class="ig"><label for="ac-r-proveedor">Propietario / proveedor</label><select id="ac-r-proveedor"></select></div>
+          <div class="ig"><label for="ac-r-marca">Marca</label><input type="text" id="ac-r-marca" maxlength="60" aria-required="true"></div>
+          <div class="ig"><label for="ac-r-modelo">Modelo</label><input type="text" id="ac-r-modelo" maxlength="60" aria-required="true"></div>
+          <div class="ig"><label for="ac-r-serial">Serial</label><input type="text" id="ac-r-serial" maxlength="80" aria-required="true"></div>
+          <div class="ig"><label for="ac-r-sede">Sede</label><select id="ac-r-sede" aria-required="true"></select></div>
+          <div class="ig"><label for="ac-r-operacion">Operación</label><select id="ac-r-operacion" aria-required="true"></select></div>
+          <div class="ig"><label for="ac-r-proveedor">Propietario / proveedor</label><select id="ac-r-proveedor" aria-required="true" onchange="activosAjustarPrecioRenta()"></select></div>
         </div>
         <div class="ac-filtros" id="ac-r-campos"></div>
-        <div class="ig"><label for="ac-r-obs">Observaciones</label><textarea id="ac-r-obs" rows="2" maxlength="500"></textarea></div>
+        <div class="ig"><label for="ac-r-obs">Observaciones</label><textarea id="ac-r-obs" rows="2" maxlength="500" aria-required="true"></textarea></div>
         <p class="ml-nota" id="ac-r-nota" role="status" aria-live="polite"></p>
         <div class="modal-btns"><button type="submit" class="btn-primary">Registrar</button></div>
       </form>

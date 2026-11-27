@@ -19,12 +19,17 @@ function permitido(req, res) {
 const idValido = (v) => /^[1-9]\d{0,9}$/.test(String(v));
 const log = (accion, a, req, detalle) => logEvent(accion, { nombre: a ? a.tipo + ' ' + a.codigo : '-', user: '-', rol: 'activos' }, actorLabel(req.actor), detalle || '');
 
+// Fase INV2: cuántos elementos tiene cada tipo (con elementos, «Se asigna a agentes» ya no se cambia).
+function conElementos(tipos) {
+  const n = new Map(db.prepare('SELECT tipo, COUNT(*) n FROM activos GROUP BY tipo').all().map((r) => [r.tipo, r.n]));
+  return tipos.map((t) => Object.assign({}, t, { elementos: n.get(t.codigo) || 0 }));
+}
 router.get('/activos/config', requireActor, wrap((req, res) => {
   if (!permitido(req, res)) return;
   const ambito = A.ambitoDe(req.query.ambito); // Fase 376: sistemas (por defecto) o inmuebles
   res.json({ ambito, estados: A.ESTADOS, rendimientos: A.RENDIMIENTOS, /* Fase 377 */ tipos: A.tipos(db, { ambito }), listas: Object.fromEntries(Object.keys(A.LISTAS).map((k) => [k, A.lista(db, k)])),
     // Fase 372 (E4): para Ajustes › Formularios (todos los tipos, también los desactivados) y los textos del acta.
-    tiposTodos: A.tipos(db, { todos: true, ambito }), textos: F.textos(db), textosNombres: Object.fromEntries(Object.entries(F.TEXTOS).map(([k, t]) => [k, t.nombre])) });
+    tiposTodos: conElementos(A.tipos(db, { todos: true, ambito })), textos: F.textos(db), textosNombres: Object.fromEntries(Object.entries(F.TEXTOS).map(([k, t]) => [k, t.nombre])) });
 }));
 
 // ── Pedido de Edwin (25/11/2026): nombre desde Talento humano al escribir la cédula de un agente nuevo ──
@@ -113,7 +118,7 @@ router.get('/activos', requireActor, wrap((req, res) => {
 }));
 router.post('/activos', requireActor, wrap((req, res) => {
   if (!permitido(req, res)) return;
-  const v = A.validar(db, req.body, { nuevo: true });
+  const v = A.validar(db, req.body, { nuevo: true, completo: true }); // Fase INV2: todos los campos obligatorios
   if (v.error) return res.status(400).json({ error: v.error });
   const r = A.crear(db, v.valores, actorLabel(req.actor));
   if (r.error) return res.status(r.status || 400).json({ error: r.error });
@@ -128,7 +133,7 @@ router.put('/activos/:id', requireActor, wrap((req, res) => {
   if (!a) return res.status(404).json({ error: 'Elemento no encontrado' });
   const b = req.body || {};
   if ('tipo' in b || 'codigo' in b || 'estado' in b) return res.status(400).json({ error: 'El tipo, el código y el estado no se editan aquí' });
-  const v = A.validar(db, b, { nuevo: false, tipo: a.tipo });
+  const v = A.validar(db, b, { nuevo: false, tipo: a.tipo, completo: true });
   if (v.error) return res.status(400).json({ error: v.error });
   const n = A.editar(db, a, v.valores, actorLabel(req.actor));
   log('ACTIVO_EDICION', n, req);

@@ -6,13 +6,14 @@ const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const bcrypt = require('bcryptjs');
 const { request, app, db, tokenFor, MASTER_PASSWORD } = require('./helpers');
+const { completar } = require('./helpers-activos'); // Fase INV2: registrar exige todos los campos
 const NGH = require('../gh-novedades');
 
 const H = (t) => ({ Authorization: 'Bearer ' + t });
 const K = 'inconexion_gh_empleados_v1';
 const tk = {};
 const ids = {};
-const P = (url, b) => request(app).post('/api/activos' + url).set(H(tk.sis)).send(b);
+const P = (url, b) => request(app).post('/api/activos' + url).set(H(tk.sis)).send(url === '' ? completar(b) : b);
 const guardarGH = (clave, valor) => db.prepare(`INSERT INTO gh_estado (clave, valor, version, actualizadoPor, actualizadoAt) VALUES (?,?,1,'prueba',?)
   ON CONFLICT(clave) DO UPDATE SET valor = excluded.valor`).run(clave, JSON.stringify(valor), new Date().toISOString());
 const HOY = NGH.hoyColombia();

@@ -9,6 +9,7 @@ const assert = require('node:assert/strict');
 const path = require('path');
 const bcrypt = require('bcryptjs');
 const { request, app, db, tokenFor } = require('./helpers');
+const { completar, crearIncompleto } = require('./helpers-activos'); // Fase INV2: registrar exige todos los campos
 const A = require('../activos');
 
 const H = (t) => ({ Authorization: 'Bearer ' + t });
@@ -19,7 +20,7 @@ before(async () => {
   tk = await tokenFor('f377_sis', 'Clave#2026x');
 });
 const get = (url) => request(app).get('/api' + url).set(H(tk));
-const post = (url, b) => request(app).post('/api' + url).set(H(tk)).send(b);
+const post = (url, b) => request(app).post('/api' + url).set(H(tk)).send(url === '/activos' ? completar(b) : b);
 const codigos = async (q) => (await get('/activos?ambito=sistemas&' + q)).body.activos.map((a) => a.codigo).sort();
 
 test('campos nuevos en su lugar y propietarios precargados (migración)', async () => {
@@ -49,14 +50,15 @@ test('agregar los campos es idempotente y respeta lo que Sistemas ocultó o reno
 test('rendimiento según la RAM en la lista, el detalle y el panel', async () => {
   assert.deepEqual([A.rendimientoDe(4), A.rendimientoDe(7.9), A.rendimientoDe(8), A.rendimientoDe(15), A.rendimientoDe(16), A.rendimientoDe(undefined), A.rendimientoDe(0)], ['bajo', 'bajo', 'medio', 'medio', 'alto', 'sin', 'sin']);
   for (const [codigo, ram] of [['T-1', 4], ['T-2', 8], ['T-3', 16], ['T-4', null]]) {
-    const r = await post('/activos', { tipo: 'TORRE', codigo, sede: 'Medellín', operacion: 'Mobilize', marca: 'MarcaX', modelo: 'M1', serial: 'S-' + codigo, proveedor: 'Alcom', datos: ram ? { ram_gb: ram, velocidad: '2,9 GHz', precio: 1500000, renta_mensual: 90000 } : {} });
+    const b = { tipo: 'TORRE', codigo, sede: 'Medellín', operacion: 'Mobilize', marca: 'MarcaX', modelo: 'M1', serial: 'S-' + codigo, proveedor: 'Alcom', datos: ram ? { ram_gb: ram, velocidad: '2,9 GHz', precio: 1500000, renta_mensual: 90000 } : {} };
+    const r = ram ? await post('/activos', b) : crearIncompleto(b); // Fase INV2: sin RAM solo llega por la importación
     assert.equal(r.status, 201, JSON.stringify(r.body));
   }
-  const p = await post('/activos', { tipo: 'PORTATIL', codigo: 'P-1', datos: { ram_gb: 12, tipo_disco: 'SSD' } });
+  const p = crearIncompleto({ tipo: 'PORTATIL', codigo: 'P-1', datos: { ram_gb: 12, tipo_disco: 'SSD' } }); // datos pendientes (importación)
   assert.equal(p.status, 201, JSON.stringify(p.body));
   assert.equal(p.body.activo.rendimiento, 'medio');
   assert.equal(p.body.activo.datos.tipo_disco, 'SSD');
-  const m = await post('/activos', { tipo: 'MONITOR', codigo: 'MO-1', serial: 'S-T-1', datos: { precio: 400000 } });
+  const m = crearIncompleto({ tipo: 'MONITOR', codigo: 'MO-1', serial: 'S-T-1', datos: { precio: 400000 } });
   assert.equal(m.body.activo.rendimiento, null, 'un monitor no lleva rendimiento');
   assert.deepEqual(await codigos('rend=bajo'), ['T-1']);
   assert.deepEqual(await codigos('rend=medio'), ['P-1', 'T-2']);
