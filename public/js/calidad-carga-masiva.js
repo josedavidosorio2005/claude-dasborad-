@@ -9,11 +9,37 @@
 // CARTERA INTERNA (14 items, ver server/calidad-plantillas-seed.js). El
 // parseo en si (puro, sin DOM) vive en calidad-carga-masiva-logic.js.
 
-var _cmParsed = null; // { campana, archivoNombre, filas } listo para POST
+var _cmParsed = null; // { campana, archivoNombre, filas, plantillaId? } listo para POST
+
+// Fase CM1 (27/11/2026): una campaña con varias plantillas (p. ej. las dos sedes de Hospital La María) elige con
+// cuál se lee y se califica el archivo. Con una sola, la principal, como siempre (sin selector).
+var _cmPlantillaSel = {};
+function cmPlantillasElegibles(){ return typeof calPlantillasUsables === 'function' ? calPlantillasUsables(_ccampana) : []; }
+function cmPlantillaElegida(){
+  var lista = cmPlantillasElegibles();
+  if(lista.length < 2) return null;
+  var id = _cmPlantillaSel[_ccampana];
+  return lista.find(function(p){ return p.id === id; }) || lista.find(function(p){ return p.principal; }) || lista[0];
+}
+function cmItems(){ var p = cmPlantillaElegida(); return p ? (p.items || []) : calItemsPrincipal(_ccampana); }
+function cmRenderPlantillaSel(){
+  var cont = document.getElementById('cm-plantilla-sel');
+  if(!cont) return;
+  var lista = cmPlantillasElegibles(), elegida = cmPlantillaElegida();
+  if(!elegida){ cont.innerHTML = ''; return; }
+  cont.innerHTML = '<div class="ig cm-plantilla-sel"><label for="cm-plantilla">Plantilla con la que se califica el archivo</label>' +
+    '<select id="cm-plantilla" onchange="cmElegirPlantilla(this.value)">' +
+    lista.map(function(p){ return '<option value="'+p.id+'"'+(p.id===elegida.id?' selected':'')+'>'+esc(p.nombre || p.campana)+(p.principal?' (principal)':'')+'</option>'; }).join('') +
+    '</select></div>';
+}
+function cmElegirPlantilla(v){
+  _cmPlantillaSel[_ccampana] = v ? Number(v) : null;
+  cancelarPreviewMonitoreos(); // otra plantilla: se vuelve a elegir el archivo
+}
 
 function descargarPlantillaMonitoreos(){
   if(typeof XLSX==='undefined'){ showToast('No se pudo cargar el generador de Excel.'); return; }
-  var items = calItemsPrincipal(_ccampana); // Fase 237: la carga masiva usa la principal
+  var items = cmItems(); // Fase CM1: la elegida (o la principal si hay una sola)
   if(!items.length){ showToast('Esta campana no tiene plantilla de calificacion.'); return; }
 
   // Fase 117: item.label viene del diccionario de criterios de Calidad,
@@ -37,11 +63,13 @@ function descargarPlantillaMonitoreos(){
   XLSX.utils.book_append_sheet(wb, wsMonitoreos, 'Monitoreos');
   XLSX.utils.book_append_sheet(wb, wsDic, 'Diccionario');
   XLSX.utils.book_append_sheet(wb, wsResumen, 'Resumen por Asesor');
-  XLSX.writeFile(wb, 'plantilla_monitoreos_'+String(_ccampana||'').replace(/\s+/g,'_')+'.xlsx');
+  var pDesc = cmPlantillaElegida(); // Fase CM1: el nombre del archivo dice de qué plantilla es
+  XLSX.writeFile(wb, 'plantilla_monitoreos_'+String((pDesc && pDesc.nombre) || _ccampana || '').replace(/[\s·]+/g,'_')+'.xlsx');
 }
 
 async function procesarArchivoMonitoreos(input){
-  var items = calItemsPrincipal(_ccampana); // Fase 237: la carga masiva usa la principal
+  var plantilla = cmPlantillaElegida(); // Fase CM1
+  var items = cmItems();
   if(!items.length){ showToast('Esta campana no tiene plantilla de calificacion.'); input.value=''; return; }
   var file = input.files && input.files[0];
   if(!file) return;
@@ -61,9 +89,10 @@ async function procesarArchivoMonitoreos(input){
   if(res.error){ showToast(res.error, 'error'); input.value=''; return; }
 
   _cmParsed = { campana: _ccampana, archivoNombre: file.name, filas: res.filas };
+  if(plantilla) _cmParsed.plantillaId = plantilla.id;
   // Fase 353: avisa de los nombres que no coinciden exacto con un usuario ASESOR (no llegarian a su portal).
   var avEnlace = typeof calEnlaceAvisosCarga === 'function' ? await calEnlaceAvisosCarga(_ccampana, res.filas) : [];
-  _renderPreviewMonitoreos(file.name, res.filas, avEnlace.concat(res.avisos||[]));
+  _renderPreviewMonitoreos(file.name + (plantilla ? ' · plantilla «' + (plantilla.nombre || plantilla.campana) + '»' : ''), res.filas, avEnlace.concat(res.avisos||[]));
 }
 
 function _renderPreviewMonitoreos(nombre, filas, avisos){
@@ -86,6 +115,7 @@ function cancelarPreviewMonitoreos(){
   if(input) input.value = '';
   var avisos = document.getElementById('cm-avisos');
   if(avisos) avisos.innerHTML = '';
+  cmRenderPlantillaSel(); // Fase CM1
 }
 
 async function guardarMonitoreosMasivo(){

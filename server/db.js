@@ -5653,6 +5653,26 @@ function crearNoConectadasMeses() {
 }
 runOnceMigration('faseA32_no_conectadas_meses_v1', crearNoConectadasMeses);
 
+// Fase CM1 (27/11/2026, pedido de Edwin con OK del usuario): en la plantilla «Hospital La María · Sede 33» el ítem 3
+// quedó «Conformación de datos»; el diccionario de Edwin dice «Confirmación de datos». Solo cambia ese texto (las
+// respuestas se guardan por número de ítem: puntajes, pesos y críticos no cambian). Solo si el texto es exactamente el
+// de hoy; si la plantilla no existe o ya se corrigió, no hace nada.
+function corregirItemSede33HLM() {
+  const rows = db.prepare("SELECT id, items FROM calidad_plantillas WHERE campana = 'HOSPITAL LA MARIA' AND nombre = 'Hospital La María · Sede 33'").all();
+  let n = 0;
+  for (const r of rows) {
+    let items;
+    try { items = JSON.parse(r.items); } catch (e) { continue; }
+    if (!Array.isArray(items)) continue;
+    let cambio = false;
+    for (const it of items) if (it && it.label === 'Conformación de datos') { it.label = 'Confirmación de datos'; cambio = true; }
+    if (cambio) { db.prepare('UPDATE calidad_plantillas SET items = ?, updatedAt = ? WHERE id = ?').run(JSON.stringify(items), new Date().toISOString(), r.id); n++; }
+  }
+  if (!config.isTest) console.log('[db] Fase CM1: ítem «Confirmación de datos» de la Sede 33 de Hospital La María: ' + n + ' plantilla(s) corregida(s).');
+  return n;
+}
+runOnceMigration('faseCM1_hlm_sede33_confirmacion_v1', corregirItemSede33HLM);
+
 // Cierre ordenado (graceful shutdown / tests). Idempotente.
 function closeDb() {
   try {
@@ -5757,3 +5777,4 @@ module.exports.REPLICA_API = REPLICA_API;
 module.exports.crearSedesHospitalLaMaria = crearSedesHospitalLaMaria; // Fase 354: prueba de idempotencia
 module.exports.prenderDatosAnterioresHlm = prenderDatosAnterioresHlm; // Fase 354b
 module.exports.agregarStaGestionOrlant = agregarStaGestionOrlant; // Fase STA: prueba de idempotencia
+module.exports.corregirItemSede33HLM = corregirItemSede33HLM; // Fase CM1: prueba

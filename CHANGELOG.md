@@ -7,6 +7,23 @@ sepan que hay nuevo, que se corrigio y que falta.
 
 
 
+## v1.299.0 — Noviembre 2026
+
+**Calidad: la carga masiva deja elegir la plantilla.**
+
+- En Calidad › Carga masiva, si la campaña tiene más de una plantilla (como
+  Hospital La María, con Sede Castilla y Sede 33), aparece «Plantilla con la
+  que se califica el archivo». El archivo se lee y se califica con esa
+  plantilla, y cada monitoreo queda guardado con ella. El Excel de ejemplo
+  también se descarga con la plantilla elegida.
+- Las campañas con tablero y varias plantillas (como Hospital La María) ahora
+  ven esa pestaña. En «Cargar datos», la hoja de monitoreos de esas campañas
+  avisa que se cargue en Calidad › Carga masiva, para no calificar todo con
+  una sola plantilla. Las demás hojas se cargan igual.
+- Con una sola plantilla todo sigue igual.
+- Hospital La María · Sede 33: el ítem 3 ahora dice «Confirmación de datos»
+  (decía «Conformación»). Los pesos y los puntajes no cambian.
+
 ## v1.298.0 — Noviembre 2026
 
 **MOBILIZE: se borra la copia de pruebas «MOBILIZE PRUEBAS API».**

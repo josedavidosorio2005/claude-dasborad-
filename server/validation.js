@@ -292,6 +292,7 @@ const monitoreoBulkFila = createMonitoreoBody.omit({ campana: true, encuestaConn
 const monitoreoBulkBody = z.object({
   campana: campanaSchema,
   archivoNombre: z.string().trim().max(300).optional().default(''),
+  plantillaId: z.coerce.number().int().positive().optional(), // Fase CM1: sin ella, la principal de la campaña
   filas: z
     .array(monitoreoBulkFila)
     .min(1, 'El archivo no tiene filas validas')

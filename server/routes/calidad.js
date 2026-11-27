@@ -838,11 +838,17 @@ router.post(
     if (!canEvaluateCampaign(req.actor, b.campana)) {
       return res.status(403).json({ error: 'No tiene permiso para evaluar esta campana' });
     }
-    const plantillaRow = getPlantillaRow(b.campana);
+    // Fase CM1 (27/11/2026): la carga masiva puede elegir la plantilla (una campaña con varias, p. ej. las dos
+    // sedes de Hospital La María). Sin plantillaId, la principal, como siempre. Mismas reglas que calificar uno.
+    const plantillaRow = getPlantillaRow(b.campana, b.plantillaId);
     if (!plantillaRow) {
-      return res.status(400).json({ error: 'Esa campana no tiene plantilla de calificacion' });
+      return res.status(400).json({ error: b.plantillaId ? 'Esa plantilla no es de esta campaña o no está activa' : 'Esa campana no tiene plantilla de calificacion' });
+    }
+    if (!canUsePlantilla(req.actor, familiaDe(plantillaRow), plantillaRow)) {
+      return res.status(403).json({ error: 'No tiene acceso a esa plantilla de calificación' });
     }
     const plantilla = toPlantilla(plantillaRow);
+    const plantillaIdGuardado = plantillaRow.principal && !plantillaRow.campos ? null : plantillaRow.id; // igual que POST /monitoreos
     const now = nowStr();
     const evaluadorDefault = req.actor.nombre;
     const evaluadorUserId = req.actor.isMasterAdmin ? null : req.actor.id;
@@ -854,17 +860,17 @@ router.post(
       `INSERT INTO monitoreos
          (campana, asesor, asesorUserId, fecha, mes, canal, idLlamada, telefono, codificacion,
           evaluador, evaluadorUserId, answers, puntaje, clasificacion, fallos,
-          nivelCritico, observaciones, createdAt)
+          nivelCritico, observaciones, createdAt, plantillaId)
        VALUES (@campana,@asesor,@asesorUserId,@fecha,@mes,@canal,@idLlamada,@telefono,@codificacion,
                @evaluador,@evaluadorUserId,@answers,@puntaje,@clasificacion,@fallos,
-               @nivelCritico,@observaciones,@createdAt)`
+               @nivelCritico,@observaciones,@createdAt,@plantillaId)`
     );
     const actualizar = db.prepare(
       `UPDATE monitoreos SET
          canal=@canal, telefono=@telefono, codificacion=@codificacion, evaluador=@evaluador,
          evaluadorUserId=@evaluadorUserId, answers=@answers, puntaje=@puntaje,
          clasificacion=@clasificacion, fallos=@fallos, nivelCritico=@nivelCritico,
-         observaciones=@observaciones, asesorUserId=COALESCE(asesorUserId, @asesorUserId)
+         observaciones=@observaciones, asesorUserId=COALESCE(asesorUserId, @asesorUserId), plantillaId=@plantillaId
        WHERE id=@id`
     );
 
@@ -910,6 +916,7 @@ router.post(
           nivelCritico: score.nivelCritico,
           observaciones: fila.observaciones || null,
           createdAt: now,
+          plantillaId: plantillaIdGuardado,
         };
         const existente = fila.idLlamada ? buscarExistente.get(b.campana, fila.asesor, fila.fecha, fila.idLlamada) : null;
         if (existente) {
@@ -932,7 +939,7 @@ router.post(
       b.campana,
       b.campana,
       req.actor,
-      `Carga masiva "${b.archivoNombre || 'sin nombre'}": ${insertadas} nueva(s), ${actualizadas} actualizada(s), ${omitidas} omitida(s)`
+      `Carga masiva "${b.archivoNombre || 'sin nombre'}"${b.plantillaId ? ' con la plantilla «' + (plantillaRow.nombre || plantillaRow.campana) + '»' : ''}: ${insertadas} nueva(s), ${actualizadas} actualizada(s), ${omitidas} omitida(s)`
     );
     const sinUsuario = enlace.revisarNombres(db, b.campana, alias.filas.map((f) => f.asesor)); // Fase 353
     res.status(201).json({ insertadas, actualizadas, omitidas, avisos, filasUnificadasPorAlias: alias.filasUnificadas, asesoresUnificadosPorAlias: alias.asesoresUnificados, sinUsuario });

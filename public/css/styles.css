@@ -3456,6 +3456,10 @@ html.ver-como-activo body{padding-bottom:84px}
 @media (max-width: 768px){
   #asesor-alerta-nuevos .btn-sm{min-height:44px;min-width:44px;padding:8px 16px}
 }
+/* Fase CM1: Calidad › Carga masiva, plantilla con la que se califica el archivo */
+.cm-plantilla-sel{max-width:440px;margin:6px 0 12px}
+.cm-plantilla-sel select{width:100%}
+
 /* Fase 348 (E): TEMA CLARO — las tarjetas y bloques se confundian con el fondo (gris muy claro contra
    blanco). Sombra suave en dos capas + un aro de 1px casi invisible que marca el borde, y un poco
    mas de aire entre tarjetas. Solo en claro (el oscuro no cambia) y sin colores nuevos: las sombras
