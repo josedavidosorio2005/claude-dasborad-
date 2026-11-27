@@ -449,20 +449,22 @@ function mallaMiaHtml(r) {
     var nov = mallaMisNovedadesHtml(s.novedades); // Fase 373
     if (!s.turno) return '<section class="aurora-card"><div class="aurora-card-title">' + esc(titulo) + '</div><p class="vis-vacio">Todavía no tienes turno asignado.</p>' + nov + '</section>';
     var esp = s.turno.especiales || [];
+    var cols = typeof mallaColsPausaSemana === 'function' ? mallaColsPausaSemana(s.turno.horario) : []; // pedido de Edwin (27/11): una columna por pausa
     var filas = MALLA_DIAS.map(function (d) {
       var t = s.turno.horario[d.n] || s.turno.horario[String(d.n)] || null;
       var f = mallaFechaDelDia(s.semana, d.n);
       var especial = esp.indexOf(d.n) !== -1 ? ' <span class="vis-pill vis-amarillo ml-especial">Horario especial</span>' : '';
       var fest = s.turno.festivos && (s.turno.festivos[d.n] || s.turno.festivos[String(d.n)]); // Fase M1 (B)
       if (fest) especial = ' <span class="vis-pill vis-gris ml-festivo">Festivo: ' + esc(fest) + '</span>' + especial;
-      // Pedido de Edwin (24/11): pausas y almuerzo del día en una línea discreta, solo si el grupo los tiene.
-      var pz = mallaPausasTexto(t);
-      return '<tr data-fecha="' + esc(f) + '"' + (t ? '' : ' class="ml-descanso"') + '><th scope="row">' + d.largo + ' ' + esc(f.slice(8, 10) + '/' + f.slice(5, 7)) + '</th><td>' + esc(mallaTurnoTexto(t)) + especial +
-        (pz ? '<span class="ml-mia-pausas">' + esc(pz) + '</span>' : '') + '</td><td class="ml-punt-celda"></td></tr>'; // Fase 368: celda de puntualidad
+      // Pedido de Edwin (27/11): Horario | Pausa 1 | Almuerzo | Pausa 2, cada una en su columna (vacías en descanso).
+      var pz = {}; (typeof mallaPausasPartes === 'function' ? mallaPausasPartes(t) : []).forEach(function (x) { pz[x.k] = x.txt; });
+      return '<tr data-fecha="' + esc(f) + '"' + (t ? '' : ' class="ml-descanso"') + '><th scope="row">' + d.largo + ' ' + esc(f.slice(8, 10) + '/' + f.slice(5, 7)) + '</th><td>' + esc(mallaTurnoTexto(t)) + especial + '</td>' +
+        cols.map(function (c) { return '<td class="ml-mia-pz' + (pz[c.k] ? '' : ' ml-mia-pz-vacia') + '" data-etq="' + esc(c.etq) + '">' + esc(pz[c.k] || '') + '</td>'; }).join('') +
+        '<td class="ml-punt-celda"></td></tr>'; // Fase 368: celda de puntualidad
     }).join('');
     var hs = mallaHorasSemana(s.turno.horario);
     return '<section class="aurora-card ml-mia ml-color-' + (s.turno.color || 1) + '"><div class="aurora-card-title">' + esc(titulo) + '</div><p class="ml-nota"><span class="ml-punto" aria-hidden="true"></span>Grupo: <strong>' + esc(s.turno.grupo) + '</strong></p>' +
-      '<div class="table-wrap"><table class="ml-tabla ml-tabla-mia"><thead><tr><th scope="col">Día</th><th scope="col">Horario</th><th scope="col"><span class="sr-only">Puntualidad</span></th></tr></thead><tbody>' + filas + '</tbody></table></div>' +
+      '<div class="table-wrap"><table class="ml-tabla ml-tabla-mia"><thead><tr><th scope="col">Día</th><th scope="col">Horario</th>' + cols.map(function (c) { return '<th scope="col" class="ml-mia-pz">' + esc(c.etq) + '</th>'; }).join('') + '<th scope="col"><span class="sr-only">Puntualidad</span></th></tr></thead><tbody>' + filas + '</tbody></table></div>' +
       // El total solo con el horario del grupo: un horario especial no trae almuerzo y daría otra cuenta.
       (esp.length ? '' : '<p class="ml-mia-total">Horas de la semana: <strong>' + mallaHorasTexto(hs.minutos) + '</strong></p>') + nov + '</section>';
   }).join('');
