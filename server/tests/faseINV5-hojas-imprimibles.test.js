@@ -5,6 +5,7 @@ const { test, before } = require('node:test');
 const assert = require('node:assert/strict');
 const bcrypt = require('bcryptjs');
 const { request, app, db, tokenFor } = require('./helpers');
+const { completar } = require('./helpers-activos'); // Fase INV2: registrar exige todos los campos
 
 const H = (t) => ({ Authorization: 'Bearer ' + t });
 let tk;
@@ -17,7 +18,7 @@ before(async () => {
       .run('Persona Inventada ' + u, u, rol, bcrypt.hashSync('Clave#2026x', 4), '{}', new Date().toISOString());
   }
   tk = { sis: await tokenFor('inv5_sis', 'Clave#2026x'), sup: await tokenFor('inv5_sup', 'Clave#2026x') };
-  for (const [tipo, codigo] of [['DIADEMA', 'INV5-D1'], ['TORRE', 'INV5-T1'], ['MONITOR', 'INV5-M1']]) ids[codigo] = (await P('/activos', { tipo, codigo, marca: 'MarcaX', sede: '' })).body.activo.id;
+  for (const [tipo, codigo] of [['DIADEMA', 'INV5-D1'], ['TORRE', 'INV5-T1'], ['MONITOR', 'INV5-M1']]) ids[codigo] = (await P('/activos', completar({ tipo, codigo, marca: 'MarcaX' }))).body.activo.id; // Fase INV2: todos los campos
   ids.ag1 = (await P('/activos/agentes', { nombre: 'Agente Inventado INV5 Uno', documento: '7500001' })).body.agente.id;
   ids.ag2 = (await P('/activos/agentes', { nombre: 'Agente Inventado INV5 Dos', documento: '7500002' })).body.agente.id;
   await P('/activos/' + ids['INV5-T1'] + '/asignar', { agenteId: ids.ag1 });

@@ -30,17 +30,27 @@ CREATE INDEX IF NOT EXISTS idx_activos_actas_agente ON activos_actas(agenteId, n
   // Fase 379 (I4): automáticas (agenteId 0 = sin agente), motivo, técnico y anulación (un acta no se borra).
   for (const [c, def] of [['auto', 'INTEGER NOT NULL DEFAULT 0'], ['motivo', "TEXT NOT NULL DEFAULT ''"], ['tecnico', "TEXT NOT NULL DEFAULT ''"], ['sede', "TEXT NOT NULL DEFAULT ''"],
     ['anuladaEn', 'TEXT'], ['anuladaPor', 'TEXT'], ['anuladaMotivo', 'TEXT']]) if (!cols.includes(c)) db.exec('ALTER TABLE activos_actas ADD COLUMN ' + c + ' ' + def);
+  // Fase INV4 (HTML de Edwin): «Por completar» → «Por firmar» → «Firmada». Un acta automática nace por completar:
+  // se completan la fecha, quién entrega o recibe por Sistemas, el técnico y las observaciones, y se genera el PDF.
+  // Solo agrega columnas. Las que ya existían: las manuales ya se imprimieron al crearlas (quedan «por firmar»);
+  // las automáticas sin firmar quedan «por completar».
+  if (!cols.includes('generadaEn')) {
+    for (const [c, def] of [['generadaEn', 'TEXT'], ['generadaPor', "TEXT NOT NULL DEFAULT ''"], ['fechaActa', "TEXT NOT NULL DEFAULT ''"], ['entrega', "TEXT NOT NULL DEFAULT ''"], ['observaciones', "TEXT NOT NULL DEFAULT ''"]]) db.exec('ALTER TABLE activos_actas ADD COLUMN ' + c + ' ' + def);
+    db.exec("UPDATE activos_actas SET generadaEn = fecha, generadaPor = quien, fechaActa = substr(fecha, 1, 10) WHERE auto = 0 OR firmadaKey IS NOT NULL");
+  }
 }
 
 function _publica(r) {
   if (!r) return null;
   const firmada = r.firmadaKey ? { en: r.firmadaEn, por: r.firmadaPor, bytes: r.firmadaBytes } : null;
   const anulada = r.anuladaEn ? { en: r.anuladaEn, por: r.anuladaPor, motivo: r.anuladaMotivo } : null;
-  const estado = anulada ? 'anulada' : firmada ? 'firmada' : 'pendiente';
+  // Fase INV4: «completar» = por completar (falta generar el PDF); «pendiente» = por firmar.
+  const estado = anulada ? 'anulada' : firmada ? 'firmada' : r.generadaEn ? 'pendiente' : 'completar';
   return { id: r.id, numero: r.numero, tipo: r.tipo, tipoNombre: TIPOS_TODOS[r.tipo] || r.tipo, agenteId: r.agenteId || null, fecha: r.fecha,
     agente: r.agenteId ? JSON.parse(r.agente) : null, elementos: JSON.parse(r.elementos), quien: r.quien, texto: r.texto || null,
     auto: !!r.auto, motivo: r.motivo || '', tecnico: r.tecnico || '', sede: r.sede || '', firmada, anulada, estado,
-    atrasada: estado === 'pendiente' && diasHabiles(r.fecha) >= DIAS_ATRASO };
+    generada: r.generadaEn ? { en: r.generadaEn, por: r.generadaPor || '' } : null, fechaActa: r.fechaActa || '', entrega: r.entrega || '', observaciones: r.observaciones || '',
+    atrasada: (estado === 'pendiente' || estado === 'completar') && diasHabiles(r.fecha) >= DIAS_ATRASO }; // Edwin: 3+ días hábiles sin cerrar
 }
 // Días hábiles (lunes a viernes, hora de Colombia) desde la fecha hasta ahora; sin festivos.
 function diasHabiles(desdeIso, ahora) {
@@ -76,15 +86,16 @@ function crear(db, g, tipo, ids, quien) {
   const texto = require('./activos-formularios').textoActa(db, tipo); // Fase 372: copia fija
   const elementos = elegidos.map((c) => {
     const e = { tipo: nombresTipo[c.tipo] || c.tipo, codigo: c.codigo, marca: c.marca, modelo: c.modelo, serial: c.serial };
-    if (tipo === 'devolucion') { e.queda = (A.ESTADOS.find((s) => s.codigo === c.queda) || {}).nombre || c.queda; e.motivo = c.motivo; }
+    if (tipo === 'devolucion') { e.queda = A.estadoNombre(db, c.queda); /* Fase INV6: con el nombre que tenga el estado */ e.motivo = c.motivo; }
     return e;
   });
   const agente = { nombre: g.nombre, documento: g.documento, sede: g.sede, operacion: g.operacion };
   let id;
   db.transaction(() => {
     const numero = (db.prepare('SELECT COALESCE(MAX(numero), 0) n FROM activos_actas').get().n) + 1;
-    id = Number(db.prepare('INSERT INTO activos_actas (numero, tipo, agenteId, fecha, agente, elementos, quien, texto) VALUES (?,?,?,?,?,?,?,?)')
-      .run(numero, tipo, g.id, new Date().toISOString(), JSON.stringify(agente), JSON.stringify(elementos), quien, texto).lastInsertRowid);
+    const ahora = new Date().toISOString(); // Fase INV4: la manual se imprime al crearla (queda «por firmar»)
+    id = Number(db.prepare('INSERT INTO activos_actas (numero, tipo, agenteId, fecha, agente, elementos, quien, texto, generadaEn, generadaPor, fechaActa, entrega) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)')
+      .run(numero, tipo, g.id, ahora, JSON.stringify(agente), JSON.stringify(elementos), quien, texto, ahora, quien, ahora.slice(0, 10), quien).lastInsertRowid);
   })();
   return { acta: obtener(db, id) };
 }
@@ -132,7 +143,7 @@ async function leerFirmada(db, id, opts) {
 function auto(db, { tipo, agente: g, items, motivo, tecnico, quien }) {
   if (!TIPOS_TODOS[tipo] || !items || !items.length) return null;
   const nombresTipo = Object.fromEntries(A.tipos(db, { todos: true }).map((t) => [t.codigo, t.nombre]));
-  const estadoN = (c) => (A.ESTADOS.find((s) => s.codigo === c) || {}).nombre || c || '';
+  const estadoN = (c) => (c ? A.estadoNombre(db, c) : ''); // Fase INV6
   const elementos = items.map((x) => {
     const e = { tipo: nombresTipo[x.a.tipo] || x.a.tipo, codigo: x.a.codigo, marca: x.a.marca, modelo: x.a.modelo, serial: x.a.serial };
     if (x.dir) e.dir = x.dir;
@@ -161,13 +172,16 @@ function tipoPorEstado(antes, despues) {
   if (despues === 'libre' && antes === 'en_uso') return 'devolucion';
   return null;
 }
-// Lista general con filtros: estado (pendiente, firmada, anulada, atrasada), tipo y búsqueda.
+// Lista general con filtros: estado (completar = por completar, pendiente = por firmar, sincerrar = las dos, firmada,
+// anulada, atrasada), tipo y búsqueda.
 function listar(db, q) {
   const where = [], p = [];
   if (q.tipo && TIPOS_TODOS[q.tipo]) { where.push('tipo = ?'); p.push(q.tipo); }
   if (q.estado === 'firmada') where.push('firmadaKey IS NOT NULL AND anuladaEn IS NULL');
   if (q.estado === 'anulada') where.push('anuladaEn IS NOT NULL');
-  if (q.estado === 'pendiente' || q.estado === 'atrasada') where.push('firmadaKey IS NULL AND anuladaEn IS NULL');
+  if (q.estado === 'completar') where.push('firmadaKey IS NULL AND anuladaEn IS NULL AND generadaEn IS NULL');
+  if (q.estado === 'pendiente') where.push('firmadaKey IS NULL AND anuladaEn IS NULL AND generadaEn IS NOT NULL');
+  if (q.estado === 'sincerrar' || q.estado === 'atrasada') where.push('firmadaKey IS NULL AND anuladaEn IS NULL');
   if (q.q) { const t = '%' + String(q.q).slice(0, 60).replace(/[%_]/g, '') + '%'; where.push('(CAST(numero AS TEXT) LIKE ? OR agente LIKE ? OR elementos LIKE ? OR motivo LIKE ? OR tecnico LIKE ?)'); p.push(t, t, t, t, t); }
   let l = db.prepare('SELECT * FROM activos_actas ' + (where.length ? 'WHERE ' + where.join(' AND ') : '') + ' ORDER BY numero DESC LIMIT 1000').all(...p).map(_publica);
   if (q.estado === 'atrasada') l = l.filter((x) => x.atrasada);
@@ -175,7 +189,7 @@ function listar(db, q) {
 }
 function resumen(db) {
   const todas = db.prepare('SELECT * FROM activos_actas').all().map(_publica);
-  return { pendientes: todas.filter((x) => x.estado === 'pendiente').length, firmadas: todas.filter((x) => x.estado === 'firmada').length,
+  return { porCompletar: todas.filter((x) => x.estado === 'completar').length, pendientes: todas.filter((x) => x.estado === 'pendiente').length, firmadas: todas.filter((x) => x.estado === 'firmada').length,
     atrasadas: todas.filter((x) => x.atrasada).length, anuladas: todas.filter((x) => x.estado === 'anulada').length, total: todas.length };
 }
 // Anular (nunca borrar): con motivo; una firmada no se anula.
@@ -188,4 +202,28 @@ function anular(db, acta, motivo, quien) {
   return { acta: obtener(db, acta.id) };
 }
 
-module.exports = { TIPOS_AUTO, TIPOS_TODOS, DIAS_ATRASO, diasHabiles, auto, llevaActa, tipoPorEstado, listar, resumen, anular, TIPOS_ACTA, PDF_MAX_BYTES, crearTablas, obtener, deAgente, candidatos, crear, bucket, leerPdf, guardarFirmada, leerFirmada };
+// ── Fase INV4 (HTML de Edwin): completar un acta y generar su PDF para firmar ──
+// b = { fecha: 'AAAA-MM-DD', entrega: quién entrega o recibe por Sistemas, tecnico (reparación y recibo), observaciones }.
+const CON_TECNICO = ['reparacion', 'retorno'];
+function completar(db, acta, b, quien) {
+  if (acta.anulada) return { error: 'El acta está anulada' };
+  if (acta.firmada) return { error: 'El acta ya está firmada' };
+  if (acta.estado !== 'completar') return { error: 'Esta acta ya se completó: descarga su PDF para firmarla' };
+  if (!b || typeof b !== 'object' || Array.isArray(b) || Object.keys(b).some((k) => !['fecha', 'entrega', 'tecnico', 'observaciones'].includes(k))) return { error: 'Datos no válidos' };
+  const fecha = typeof b.fecha === 'string' ? b.fecha.trim() : '';
+  const d = /^\d{4}-\d{2}-\d{2}$/.test(fecha) ? new Date(fecha + 'T12:00:00Z') : null;
+  if (!d || isNaN(d) || d.toISOString().slice(0, 10) !== fecha || fecha < '2020-01-01') return { error: 'Escribe la fecha del acta' };
+  const hoyCo = new Date(Date.now() - 5 * 3600 * 1000).toISOString().slice(0, 10);
+  if (fecha > hoyCo) return { error: 'La fecha del acta no puede ser posterior a hoy' };
+  const txt = (v, max) => (typeof v === 'string' ? v.trim().replace(/[ \t]+/g, ' ').slice(0, max) : '');
+  const entrega = txt(b.entrega, 80);
+  if (entrega.length < 3) return { error: 'Escribe quién ' + (['devolucion', 'retorno'].includes(acta.tipo) ? 'recibe' : 'entrega') + ' por Sistemas' };
+  let tecnico = acta.tecnico || '';
+  if (CON_TECNICO.includes(acta.tipo)) { tecnico = txt(b.tecnico, 80) || tecnico; if (tecnico.length < 2) return { error: 'Escribe el técnico o proveedor' }; }
+  const observaciones = txt(b.observaciones, 500);
+  db.prepare('UPDATE activos_actas SET generadaEn = ?, generadaPor = ?, fechaActa = ?, entrega = ?, tecnico = ?, observaciones = ? WHERE id = ? AND generadaEn IS NULL')
+    .run(new Date().toISOString(), quien || '', fecha, entrega, tecnico, observaciones, acta.id);
+  return { acta: obtener(db, acta.id) };
+}
+
+module.exports = { completar, CON_TECNICO, TIPOS_AUTO, TIPOS_TODOS, DIAS_ATRASO, diasHabiles, auto, llevaActa, tipoPorEstado, listar, resumen, anular, TIPOS_ACTA, PDF_MAX_BYTES, crearTablas, obtener, deAgente, candidatos, crear, bucket, leerPdf, guardarFirmada, leerFirmada };

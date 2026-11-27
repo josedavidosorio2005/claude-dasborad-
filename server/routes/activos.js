@@ -19,12 +19,17 @@ function permitido(req, res) {
 const idValido = (v) => /^[1-9]\d{0,9}$/.test(String(v));
 const log = (accion, a, req, detalle) => logEvent(accion, { nombre: a ? a.tipo + ' ' + a.codigo : '-', user: '-', rol: 'activos' }, actorLabel(req.actor), detalle || '');
 
+// Fase INV2: cuántos elementos tiene cada tipo (con elementos, «Se asigna a agentes» ya no se cambia).
+function conElementos(tipos) {
+  const n = new Map(db.prepare('SELECT tipo, COUNT(*) n FROM activos GROUP BY tipo').all().map((r) => [r.tipo, r.n]));
+  return tipos.map((t) => Object.assign({}, t, { elementos: n.get(t.codigo) || 0 }));
+}
 router.get('/activos/config', requireActor, wrap((req, res) => {
   if (!permitido(req, res)) return;
   const ambito = A.ambitoDe(req.query.ambito); // Fase 376: sistemas (por defecto) o inmuebles
-  res.json({ ambito, estados: A.ESTADOS, rendimientos: A.RENDIMIENTOS, /* Fase 377 */ tipos: A.tipos(db, { ambito }), listas: Object.fromEntries(Object.keys(A.LISTAS).map((k) => [k, A.lista(db, k)])),
+  res.json({ ambito, estados: A.estados(db) /* Fase INV6: con los nombres propios */, rendimientos: A.RENDIMIENTOS, /* Fase 377 */ tipos: A.tipos(db, { ambito }), listas: Object.fromEntries(Object.keys(A.LISTAS).map((k) => [k, A.lista(db, k)])),
     // Fase 372 (E4): para Ajustes › Formularios (todos los tipos, también los desactivados) y los textos del acta.
-    tiposTodos: A.tipos(db, { todos: true, ambito }), textos: F.textos(db), textosNombres: Object.fromEntries(Object.entries(F.TEXTOS).map(([k, t]) => [k, t.nombre])) });
+    tiposTodos: conElementos(A.tipos(db, { todos: true, ambito })), textos: F.textos(db), textosNombres: Object.fromEntries(Object.entries(F.TEXTOS).map(([k, t]) => [k, t.nombre])) });
 }));
 
 // ── Pedido de Edwin (25/11/2026): nombre desde Talento humano al escribir la cédula de un agente nuevo ──
@@ -74,6 +79,24 @@ router.put('/activos/config/tipos/:codigo/activo', requireActor, wrap((req, res)
   if (!r.sinCambio) logTipo('ACTIVO_TIPO_ACTIVO', r.tipo, req, r.tipo.activo ? 'activado' : 'desactivado');
   res.json({ tipo: r.tipo });
 }));
+// Fase INV6 (HTML de Edwin): renombrar estados (sin agregar ni quitar).
+router.put('/activos/config/estados', requireActor, wrap((req, res) => {
+  if (!permitido(req, res)) return;
+  const b = req.body || {};
+  if (Object.keys(b).some((k) => k !== 'nombres')) return res.status(400).json({ error: 'Datos no válidos' });
+  const r = A.renombrarEstados(db, b.nombres, actorLabel(req.actor));
+  if (r.error) return res.status(400).json({ error: r.error });
+  logEvent('ACTIVO_ESTADOS', { nombre: 'estados del inventario', user: '-', rol: 'activos' }, actorLabel(req.actor), r.estados.map((e) => e.nombre).join(', '));
+  res.json(r);
+}));
+// Fase INV6 (HTML de Edwin): copia de seguridad en .json, solo para descargar (no se restaura desde la plataforma).
+router.get('/activos/copia', requireActor, wrap((req, res) => {
+  if (!permitido(req, res)) return;
+  const c = require('../activos-copia').copia(db, req.query.ambito);
+  logEvent('ACTIVO_COPIA_JSON', { nombre: 'inventario ' + c.ambito, user: '-', rol: 'activos' }, actorLabel(req.actor), c.conteos.elementos + ' elementos');
+  res.set('Cache-Control', 'no-store');
+  res.json(c);
+}));
 router.put('/activos/config/textos/:clave', requireActor, wrap((req, res) => {
   if (!permitido(req, res)) return;
   const b = req.body || {};
@@ -92,7 +115,7 @@ router.get('/activos/resumen', requireActor, wrap((req, res) => {
   if (!permitido(req, res)) return;
   const r = A.resumen(db, req.query.ambito);
   if (A.ambitoDe(req.query.ambito) === 'sistemas') {
-    r.actasPorFirmar = ACT.resumen(db).pendientes; // Fase 379: conteo del menú
+    const ra = ACT.resumen(db); r.actasPorFirmar = ra.pendientes + ra.porCompletar; // Fase 379: conteo del menú (INV4: por completar o firmar, como Edwin)
     const N = NGH.novedades(db); // Fase GH4: retirados y ausentes hoy con equipos (conteo del menú)
     r.novedadesGH = { retirados: N.retirados.length, ausentes: N.ausentes.length };
   }
@@ -113,7 +136,7 @@ router.get('/activos', requireActor, wrap((req, res) => {
 }));
 router.post('/activos', requireActor, wrap((req, res) => {
   if (!permitido(req, res)) return;
-  const v = A.validar(db, req.body, { nuevo: true });
+  const v = A.validar(db, req.body, { nuevo: true, completo: true }); // Fase INV2: todos los campos obligatorios
   if (v.error) return res.status(400).json({ error: v.error });
   const r = A.crear(db, v.valores, actorLabel(req.actor));
   if (r.error) return res.status(r.status || 400).json({ error: r.error });
@@ -128,7 +151,7 @@ router.put('/activos/:id', requireActor, wrap((req, res) => {
   if (!a) return res.status(404).json({ error: 'Elemento no encontrado' });
   const b = req.body || {};
   if ('tipo' in b || 'codigo' in b || 'estado' in b) return res.status(400).json({ error: 'El tipo, el código y el estado no se editan aquí' });
-  const v = A.validar(db, b, { nuevo: false, tipo: a.tipo });
+  const v = A.validar(db, b, { nuevo: false, tipo: a.tipo, completo: true });
   if (v.error) return res.status(400).json({ error: v.error });
   const n = A.editar(db, a, v.valores, actorLabel(req.actor));
   log('ACTIVO_EDICION', n, req);
@@ -343,10 +366,20 @@ router.get('/activos/actas/:id', requireActor, wrap((req, res) => {
   const a = actaPorId(req, res); if (!a) return;
   res.json({ acta: a });
 }));
+// Fase INV4 (HTML de Edwin): completar el acta y generar su PDF para firmar (queda «por firmar»).
+router.post('/activos/actas/:id/completar', requireActor, wrap((req, res) => {
+  if (!permitido(req, res)) return;
+  const a = actaPorId(req, res); if (!a) return;
+  const r = ACT.completar(db, a, req.body, actorLabel(req.actor));
+  if (r.error) return res.status(400).json({ error: r.error });
+  logEvent('ACTIVO_ACTA_GENERADA', { nombre: 'acta ' + a.numero, user: '-', rol: 'activos' }, actorLabel(req.actor), a.tipo);
+  res.json(r);
+}));
 router.post('/activos/actas/:id/firmada', requireActor, wrap(async (req, res) => {
   if (!permitido(req, res)) return;
   const a = actaPorId(req, res); if (!a) return;
   if (a.anulada) return res.status(400).json({ error: 'El acta está anulada' }); // Fase 379
+  if (a.estado === 'completar') return res.status(400).json({ error: 'Primero completa el acta y genera el PDF para firmar' }); // Fase INV4
   if (!ACT.bucket()) return res.status(503).json({ error: 'Falta configurar dónde se guardan las actas firmadas (S3). Pídeselo al administrador.' });
   const p = ACT.leerPdf((req.body || {}).pdf);
   if (p.error) return res.status(400).json({ error: p.error });

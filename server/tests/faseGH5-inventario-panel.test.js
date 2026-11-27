@@ -8,6 +8,7 @@ const assert = require('node:assert/strict');
 const path = require('path');
 const bcrypt = require('bcryptjs');
 const { request, app, db, tokenFor, MASTER_PASSWORD } = require('./helpers');
+const { crearIncompleto } = require('./helpers-activos'); // Fase INV2: registrar exige todos los campos
 const P = require('../activos-panel');
 
 const H = (t) => ({ Authorization: 'Bearer ' + t });
@@ -21,7 +22,7 @@ before(async () => {
   tk.admin = await tokenFor('admin', MASTER_PASSWORD);
   tk.sis = await tokenFor('gh5_sis', 'Clave#2026x');
   tk.rep = await tokenFor('gh5_rep', 'Clave#2026x');
-  const post = (b) => request(app).post('/api/activos').set(H(tk.sis)).send(b);
+  const post = async (b) => crearIncompleto(b); // Fase INV2: incompletos a propósito, como los deja la importación
   const L = (await request(app).get('/api/activos/config').set(H(tk.sis))).body.listas;
   PROV = L.proveedores.find((p) => !/inconexi/i.test(p));
   assert.ok(PROV, 'hay un proveedor distinto de InConexion');
@@ -156,7 +157,7 @@ test('GH5c: columnas y acciones de Edwin en las listas, y la vista «Inventario�
   assert.match(inv, /Ver detalle/);
 });
 
-test('GH5d: Ajustes en tarjetas (mismos campos de antes) con Estados de solo lectura', () => {
+test('GH5d: Ajustes en tarjetas (mismos campos de antes); INV6: Estados solo se renombran', () => {
   const fs = require('fs');
   const html = fs.readFileSync(path.join(__dirname, '..', '..', 'public', 'index.html'), 'utf8');
   const i = html.indexOf('<section id="ac-p-ajustes"'); const sec = html.slice(i, html.indexOf('</section>', i));
@@ -166,5 +167,7 @@ test('GH5d: Ajustes en tarjetas (mismos campos de antes) con Estados de solo lec
   const UI = require(path.join(__dirname, '..', '..', 'public', 'js', 'activos.js'));
   const e = UI.activosAjEstadosHtml([{ codigo: 'libre', nombre: 'Libre' }, { codigo: 'malo', nombre: 'Malo' }]);
   assert.match(e, /vis-verde">Libre<[\s\S]*vis-rojo">Malo</);
-  assert.ok(!/<(input|select|textarea|button)/.test(e), 'los estados no se editan');
+  // Fase INV6 (HTML de Edwin): ahora se renombran (un campo de texto por estado); no hay cómo agregar ni quitar.
+  assert.equal((e.match(/<input type="text"/g) || []).length, 2, 'un campo por estado');
+  assert.ok(!/<(select|button)/.test(e), 'sin agregar ni quitar');
 });

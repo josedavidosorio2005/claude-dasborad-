@@ -2122,19 +2122,20 @@
     <section id="ac-p-registrar" class="hidden" aria-label="Registrar">
       <div id="ac-r-tarjetas"></div><!-- Fase GH5b: una tarjeta por tipo, como el diseño de Edwin -->
       <form id="ac-r-form" onsubmit="activosRegistrar(event)" novalidate>
+        <p class="vis-ayuda">Todos los campos son obligatorios. El precio es de los elementos propios (InConexion®) y la renta mensual, de los de un proveedor.</p>
         <div class="ac-filtros">
           <div class="ig"><label for="ac-r-tipo">Tipo de elemento</label><select id="ac-r-tipo" onchange="activosCambioTipo()"></select></div>
           <div class="ig"><label for="ac-r-codigo">Código (etiqueta)</label><input type="text" id="ac-r-codigo" maxlength="40" required aria-describedby="ac-r-codigo-ayuda"><p class="vis-ayuda hidden" id="ac-r-codigo-ayuda">Equipo administrable: déjalo vacío y se asigna solo según el tipo (servidor desde 5001, switch 6001, DVR / NVR 7001, router o firewall 8001, access point 9001, UPS 4001, otro 4501).</p></div>
           <div class="ig"><label for="ac-r-estado">Entra como</label><select id="ac-r-estado"><option value="libre">Libre</option><option value="en_reparacion">En reparación</option><option value="malo">Malo</option></select></div>
-          <div class="ig"><label for="ac-r-marca">Marca</label><input type="text" id="ac-r-marca" maxlength="60"></div>
-          <div class="ig"><label for="ac-r-modelo">Modelo</label><input type="text" id="ac-r-modelo" maxlength="60"></div>
-          <div class="ig"><label for="ac-r-serial">Serial</label><input type="text" id="ac-r-serial" maxlength="80"></div>
-          <div class="ig"><label for="ac-r-sede">Sede</label><select id="ac-r-sede"></select></div>
-          <div class="ig"><label for="ac-r-operacion">Operación</label><select id="ac-r-operacion"></select></div>
-          <div class="ig"><label for="ac-r-proveedor">Propietario / proveedor</label><select id="ac-r-proveedor"></select></div>
+          <div class="ig"><label for="ac-r-marca">Marca</label><input type="text" id="ac-r-marca" maxlength="60" aria-required="true"></div>
+          <div class="ig"><label for="ac-r-modelo">Modelo</label><input type="text" id="ac-r-modelo" maxlength="60" aria-required="true"></div>
+          <div class="ig"><label for="ac-r-serial">Serial</label><input type="text" id="ac-r-serial" maxlength="80" aria-required="true"></div>
+          <div class="ig"><label for="ac-r-sede">Sede</label><select id="ac-r-sede" aria-required="true"></select></div>
+          <div class="ig"><label for="ac-r-operacion">Operación</label><select id="ac-r-operacion" aria-required="true"></select></div>
+          <div class="ig"><label for="ac-r-proveedor">Propietario / proveedor</label><select id="ac-r-proveedor" aria-required="true" onchange="activosAjustarPrecioRenta()"></select></div>
         </div>
         <div class="ac-filtros" id="ac-r-campos"></div>
-        <div class="ig"><label for="ac-r-obs">Observaciones</label><textarea id="ac-r-obs" rows="2" maxlength="500"></textarea></div>
+        <div class="ig"><label for="ac-r-obs">Observaciones</label><textarea id="ac-r-obs" rows="2" maxlength="500" aria-required="true"></textarea></div>
         <p class="ml-nota" id="ac-r-nota" role="status" aria-live="polite"></p>
         <div class="modal-btns"><button type="submit" class="btn-primary">Registrar</button></div>
       </form>
@@ -2155,7 +2156,7 @@
       <div class="ac-chips ac-actas-cab"><div id="ac-ac-pestanas" class="acp-chips" role="group" aria-label="Ver actas"></div><button type="button" class="btn-primary ac-btn" onclick="activosActaManual()">Generar acta manual</button></div><!-- Fase GH5d -->
       <div id="ac-ac-zona">
       <div class="ac-filtros">
-        <div class="ig"><label for="ac-ac-estado">Estado</label><select id="ac-ac-estado" onchange="activosActasBuscar()"><option value="">Todas</option><option value="pendiente">Por firmar</option><option value="atrasada">Atrasadas</option><option value="firmada">Firmadas</option><option value="anulada">Anuladas</option></select></div>
+        <div class="ig"><label for="ac-ac-estado">Estado</label><select id="ac-ac-estado" onchange="activosActasBuscar()"><option value="">Todas</option><option value="sincerrar">Pendientes (por completar o firmar)</option><option value="completar">Por completar</option><option value="pendiente">Por firmar</option><option value="atrasada">Atrasadas</option><option value="firmada">Firmadas</option><option value="anulada">Anuladas</option></select></div>
         <div class="ig"><label for="ac-ac-tipo">Tipo</label><select id="ac-ac-tipo" onchange="activosActasBuscar()"></select></div>
         <div class="ig"><label for="ac-ac-q">Buscar</label><input type="search" id="ac-ac-q" maxlength="60" placeholder="Número, agente, código, motivo…" onchange="activosActasBuscar()"></div>
       </div>
@@ -2203,8 +2204,11 @@
       <article class="acp-card aj-card"><h4>Motivos frecuentes</h4>
         <div class="ig"><label for="ac-l-motivos">Motivos frecuentes</label><textarea id="ac-l-motivos" rows="6" aria-describedby="ac-l-motivos-ayuda"></textarea><span class="vis-ayuda" id="ac-l-motivos-ayuda">Se sugieren al escribir un motivo; se puede escribir otro.</span><button type="button" class="btn-cancel ac-btn" onclick="activosGuardarLista('motivos')">Guardar motivos</button></div>
       </article>
-      <article class="acp-card aj-card"><h4>Estados</h4><p class="acp-ayuda">Son fijos: de ellos dependen las actas (entrega, devolución, reparación, baja).</p>
-        <ul id="ac-aj-estados" class="aj-estados"></ul>
+      <article class="acp-card aj-card"><h4>Estados</h4><p class="acp-ayuda">Puedes cambiarles el nombre; no se agregan ni se quitan (de ellos dependen las actas). Vale para los dos inventarios; vacío = el nombre de siempre.</p>
+        <ul id="ac-aj-estados" class="aj-estados"></ul><button type="button" class="btn-cancel ac-btn" onclick="activosGuardarEstados()">Guardar nombres</button>
+      </article>
+      <article class="acp-card aj-card"><h4>Copia de seguridad (.json)</h4><p class="acp-ayuda">Descarga todo este inventario en un archivo para guardarlo aparte. Solo se descarga: los datos siguen en el servidor, con respaldo diario, y no se restauran desde aquí.</p>
+        <div class="acr-acc"><button type="button" class="acp-btn" onclick="activosDescargarCopia()">Descargar copia (.json)</button></div>
       </article>
       </div>
       <article class="acp-card aj-card aj-ancha">
@@ -2224,6 +2228,13 @@
     </div><!-- .ac-main -->
     </div><!-- .ac-layout -->
   </div>
+  <!-- Fase INV1 (HTML de Edwin): botones laterales solo dentro del Inventario. Van después del .modal para
+       que el foco inicial siga siendo la ventana; la trampa de Tab de la ventana también los recorre. -->
+  <div class="ac-rail ac-rail-izq">
+    <button type="button" class="ac-rail-btn" id="ac-rail-menu" aria-controls="ac-menu" aria-expanded="true" onclick="activosAlternarMenu()" title="Ocultar el menú"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-menu"></use></svg><span>Menú</span></button>
+    <button type="button" class="ac-rail-btn ac-rail-inicio" id="ac-rail-inicio" onclick="activosCerrar()" title="Volver al inicio de SinCo"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-layout-dashboard"></use></svg><span>Inicio</span></button>
+  </div>
+  <button type="button" class="ac-rail-btn ac-rail-fab" id="ac-rail-inv" aria-pressed="false" onclick="activosAlternarInventario()" title="Abrir el inventario"><svg class="icono" aria-hidden="true" focusable="false"><use href="img/iconos/lucide.svg#i-package"></use></svg><span>Inventario</span></button>
 </div>
 
 <!-- Fase 356: «Sugerencias / Tickets» (cualquier usuario con sesión; ADMIN y REPORTES gestionan). -->
