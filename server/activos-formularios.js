@@ -50,7 +50,18 @@ function _enUso(db, codigo) {
 // -> { error } o { valores: { nombre, plural, campos } }
 function validarTipo(db, b, actual) {
   if (!b || typeof b !== 'object' || Array.isArray(b)) return { error: 'Datos no válidos' };
-  if (Object.keys(b).some((k) => !['nombre', 'plural', 'campos'].includes(k))) return { error: 'Datos no válidos' };
+  if (Object.keys(b).some((k) => !['nombre', 'plural', 'campos', 'asignable'].includes(k))) return { error: 'Datos no válidos' };
+  // Fase INV2 (HTML de Edwin): «Se asigna a agentes». Sí: funciona como un portátil; No: es un componente del
+  // inventario. Un tipo nuevo se asigna salvo que se diga lo contrario. No se cambia si el tipo ya tiene elementos.
+  if ('asignable' in b && typeof b.asignable !== 'boolean') return { error: 'Datos no válidos' };
+  let asignable = actual ? actual.asignable !== false : true;
+  if ('asignable' in b && b.asignable !== asignable) {
+    if (actual && actual.codigo === 'ADMINISTRABLE') return { error: 'Los equipos administrables no se asignan a agentes' };
+    if (actual && (actual.ambito || 'sistemas') === 'inmuebles') return { error: 'Los inmuebles no se asignan a agentes' };
+    const n = actual ? db.prepare('SELECT COUNT(*) n FROM activos WHERE tipo = ?').get(actual.codigo).n : 0;
+    if (n) return { error: '«Se asigna a agentes» no se puede cambiar: ya hay ' + n + ' elemento(s) de este tipo' };
+    asignable = b.asignable;
+  }
   const nombre = _txt(b.nombre, 40), plural = _txt(b.plural, 40);
   if (nombre.length < 2) return { error: 'Escribe el nombre del tipo (2 a 40 caracteres)' };
   if (plural.length < 2) return { error: 'Escribe el plural del tipo (2 a 40 caracteres)' };
@@ -96,7 +107,7 @@ function validarTipo(db, b, actual) {
   }
   const faltan = [...previos.values()].filter((p) => !claves.has(p.k));
   if (faltan.length) return { error: 'Un campo no se borra: oculta «' + faltan[0].l + '» en vez de quitarlo' };
-  return { valores: { nombre, plural, campos } };
+  return { valores: { nombre, plural, campos, asignable } };
 }
 
 function crearTipo(db, b, ambito) {
@@ -107,7 +118,9 @@ function crearTipo(db, b, ambito) {
   let codigo = base, i = 2;
   while (existentes.has(codigo)) codigo = base.slice(0, 17) + '_' + i++;
   const orden = (db.prepare('SELECT COALESCE(MAX(orden), 0) n FROM activos_tipos').get().n) + 1;
-  db.prepare('INSERT INTO activos_tipos (codigo, nombre, plural, orden, activo, campos, ambito) VALUES (?,?,?,?,1,?,?)').run(codigo, v.valores.nombre, v.valores.plural, orden, JSON.stringify(v.valores.campos), A.ambitoDe(ambito));
+  const amb = A.ambitoDe(ambito);
+  if (amb === 'inmuebles' && b.asignable === true) return { error: 'Los inmuebles no se asignan a agentes' };
+  db.prepare('INSERT INTO activos_tipos (codigo, nombre, plural, orden, activo, campos, ambito, asignable) VALUES (?,?,?,?,1,?,?,?)').run(codigo, v.valores.nombre, v.valores.plural, orden, JSON.stringify(v.valores.campos), amb, amb === 'inmuebles' ? 0 : (v.valores.asignable ? 1 : 0));
   return { tipo: A.tipo(db, codigo, { todos: true }) };
 }
 function editarTipo(db, codigo, b) {
@@ -115,7 +128,7 @@ function editarTipo(db, codigo, b) {
   if (!actual) return { error: 'Tipo no encontrado', status: 404 };
   const v = validarTipo(db, b, actual);
   if (v.error) return v;
-  db.prepare('UPDATE activos_tipos SET nombre = ?, plural = ?, campos = ? WHERE codigo = ?').run(v.valores.nombre, v.valores.plural, JSON.stringify(v.valores.campos), codigo);
+  db.prepare('UPDATE activos_tipos SET nombre = ?, plural = ?, campos = ?, asignable = ? WHERE codigo = ?').run(v.valores.nombre, v.valores.plural, JSON.stringify(v.valores.campos), v.valores.asignable ? 1 : 0, codigo);
   return { tipo: A.tipo(db, codigo, { todos: true }), antes: actual };
 }
 // Desactivar: solo sin elementos vigentes (todos de baja o ninguno). Sus elementos de baja se siguen viendo.

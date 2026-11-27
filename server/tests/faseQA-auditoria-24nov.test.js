@@ -36,8 +36,9 @@ test('Inventario: títulos de las gráficas y menú seleccionado con contraste A
 test('Inventario, movimientos por mes: en hora de Colombia, no en la del servidor (UTC)', async () => {
   const { request, app, db, tokenFor, MASTER_PASSWORD } = require('./helpers');
   const P = require('../activos-panel');
+  const { completar } = require('./helpers-activos'); // Fase INV2: registrar exige todos los campos
   const admin = await tokenFor('admin', MASTER_PASSWORD);
-  const r = await request(app).post('/api/activos').set({ Authorization: 'Bearer ' + admin }).send({ tipo: 'MOUSE', codigo: 'QA-24NOV-1' });
+  const r = await request(app).post('/api/activos').set({ Authorization: 'Bearer ' + admin }).send(completar({ tipo: 'MOUSE', codigo: 'QA-24NOV-1' }));
   assert.equal(r.status, 201, JSON.stringify(r.body));
   const id = r.body.activo.id;
   db.prepare('DELETE FROM activos_historial WHERE activoId = ?').run(id); // solo el movimiento de la prueba

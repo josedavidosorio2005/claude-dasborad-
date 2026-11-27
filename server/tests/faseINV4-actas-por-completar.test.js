@@ -6,6 +6,7 @@ const { test, before } = require('node:test');
 const assert = require('node:assert/strict');
 const bcrypt = require('bcryptjs');
 const { request, app, db, tokenFor } = require('./helpers');
+const { completar } = require('./helpers-activos'); // Fase INV2: registrar exige todos los campos
 
 const H = (t) => ({ Authorization: 'Bearer ' + t });
 let tk;
@@ -19,7 +20,7 @@ before(async () => {
   }
   tk = { sis: await tokenFor('inv4_sis', 'Clave#2026x'), sup: await tokenFor('inv4_sup', 'Clave#2026x') };
   for (const [tipo, codigo] of [['DIADEMA', 'INV4-D1'], ['TORRE', 'INV4-T1']]) {
-    const r = await P('/activos', { tipo, codigo, marca: 'MarcaX', sede: '' });
+    const r = await P('/activos', completar({ tipo, codigo, marca: 'MarcaX' })); // Fase INV2: todos los campos
     assert.equal(r.status, 201, JSON.stringify(r.body));
     ids[codigo] = r.body.activo.id;
   }
